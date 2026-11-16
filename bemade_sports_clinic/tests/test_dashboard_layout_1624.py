@@ -37,6 +37,7 @@ from odoo.tests import tagged
 from odoo.addons.bemade_sports_clinic.controllers.app_dashboard import AppDashboardPortal
 from odoo.addons.bemade_portal_kit_dashboard.models import portal_kit_dashboard as dash_engine
 from odoo.addons.bemade_sports_clinic.models import sc_dashboard
+from odoo.addons.bemade_sports_clinic.models.sc_app_nav import SC_APP
 from odoo.addons.bemade_sports_clinic.tests.dashboard_common_1624 import Dashboard1624Common
 
 ORDER = ['today', 'todo', 'coverage', 'missing_timesheets', 'indicators', 'announcements',
@@ -50,8 +51,10 @@ class TestDashboardLayout1624(Dashboard1624Common):
 
     # -- UC-L1 ---------------------------------------------------------------
     def test_registry_round_one(self):
-        self.assertEqual([spec['key'] for spec in self.env['portal.kit.dashboard']._pk_widgets()], ORDER)
-        for spec in self.env['portal.kit.dashboard']._pk_widgets():
+        widgets = self.env['portal.kit.dashboard'].pk_dash_app_widgets(SC_APP)
+        self.assertEqual([spec['key'] for spec in widgets], ORDER)
+        for spec in widgets:
+            self.assertEqual(spec['app'], SC_APP)
             self.assertTrue(self.env.ref(spec['template'], raise_if_not_found=False), spec['key'])
             self.assertTrue(callable(getattr(AppDashboardPortal, spec['builder'], None)), spec['key'])
             # The key exists (an unknown one raises).

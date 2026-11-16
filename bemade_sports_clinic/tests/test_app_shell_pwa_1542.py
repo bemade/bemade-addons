@@ -37,6 +37,7 @@ from odoo.tests import tagged
 from odoo.tools import file_open
 
 from odoo.addons.bemade_sports_clinic.models.sc_app_pwa import SC_PWA_ICONS, SC_PWA_IMG, sc_fill_pwa_branding
+from odoo.addons.bemade_sports_clinic.models.sc_app_nav import SC_APP
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
 PWA_URLS = ('/my/app.webmanifest', '/my/service-worker.js', '/my/app/offline')
@@ -82,11 +83,14 @@ class TestAppShellPwa1542(AppShellCommon):
     # -- UC-P2 -----------------------------------------------------------
     def test_manifest_is_fit_crew(self):
         self._switch(True)
+        # Task 5391: the public manifest is the database's default app — Fit
+        # Crew's (named, should another consumer share the database).
+        self.env['ir.config_parameter'].sudo().set_param('bemade_portal_kit.default_app', SC_APP)
         resp = self.url_open('/my/app.webmanifest', allow_redirects=False)
         self.assertEqual(resp.status_code, 200)
         self.assertIn('application/manifest+json', resp.headers['Content-Type'])
         manifest = json.loads(resp.text)
-        labels = self.env['portal.kit'].pk_nav_labels()
+        labels = self.env['portal.kit'].pk_nav_labels(app=SC_APP)
         self.assertEqual({key: manifest[key] for key in manifest if key != 'icons'}, {
             'name': 'Le Fit Crew',
             'short_name': 'Fit Crew',

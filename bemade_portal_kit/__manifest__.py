@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.14.1',
+    'version': '19.0.1.15.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -23,7 +23,8 @@ notification and undo; version 1.9 its edit cards, sheets, tabs, lazy load
 and clamps; version 1.10 its autosave field; version 1.11 its app layout,
 user menu and shell components; version 1.12 the app's switch, its
 preferences, settings, « More », account and security pages, help,
-search, calendar and picker.
+search, calendar and picker; version 1.15 scopes every registry per app
+(several consumers in one database, below).
 
 Registries
 ----------
@@ -31,22 +32,85 @@ Every registry is a hook method on the abstract model ``portal.kit``. A
 consumer inherits ``portal.kit`` (``_inherit``) and extends the hook with
 ``super()``:
 
-* ``_pk_roles()`` -> ``{role: {'groups': (xmlid, ...), 'app': bool, ...}}``.
-  A user holds a role when they belong to any of its groups. ``'app': False``
+* ``_pk_apps()`` -> ``{app: {...}}`` (version 1.15): each app's
+  registration, see « Apps » below.
+* ``_pk_roles()`` -> ``{role: {'groups': (xmlid, ...), 'app': key, ...}}``.
+  A user holds a role when they belong to any of its groups. ``'app'``
+  names the consumer's app (``'app': 'myapp'``; the legacy ``True``, or no
+  key, is the app ``'default'``); ``'app': False``
   marks a role that does not put its holder in the app (e.g. backend users).
   Extra keys are kept for the consumer's own use.
 * ``_pk_nav()`` -> a list of ``pk_nav(key, label, icon, url, include,
-  sequence, placement, exclude=(), requires=None, subtitle=None)`` entries.
+  sequence, placement, exclude=(), requires=None, subtitle=None, app=None)``
+  entries.
   ``placement`` lists where the entry shows (e.g. ``tab``, ``rail``,
   ``plus``); ``requires(ctx)`` is an optional feature gate.
 * ``_pk_visibility()`` -> ``{key: {'include', 'exclude', 'system', 'model',
   'field'}}``: what a role may SEE, asked from templates by key.
 * ``_pk_pages()`` -> a list of ``Page(key, url=, label=, parent=, context=,
-  path=, from_url=, return_url=)``: each page's parent, crumb label and URL
-  pattern. The pages with a ``path`` form the allowlist of in-app return
-  URLs.
+  path=, from_url=, return_url=, app=)``: each page's parent, crumb label
+  and URL pattern. The pages with a ``path`` form the allowlist of in-app
+  return URLs.
 
-An entry re-declared under an existing key replaces it in place.
+An entry re-declared under an existing key (of the same app) replaces it in
+place.
+
+Apps (version 1.15)
+-------------------
+Several consumers may be installed in one database (the bemade-addons CI
+installs them all). Each declares an APP and every lookup is resolved in
+the viewer's app, so one consumer's pages, menus, tiles and layout never
+reach another's users, whatever the load order.
+
+How to declare an app:
+
+1. Give each of your roles your app's key: ``'app': 'myapp'`` (a role that
+   does not put its holder in an app keeps ``'app': False``). Role names
+   are global: prefix them if another consumer may use the same name.
+2. Tag every entry you register with it: ``pk_nav(..., app='myapp')``,
+   ``Page(..., app='myapp')`` / ``pk_static_page(..., app='myapp')``,
+   ``pk_dash_widget(..., app='myapp')``, ``pk_dash_filter(...,
+   app='myapp')``, a scope field's and a search provider's ``'app'``. An
+   entry without an app is SHARED by every app (the kit's « Settings »,
+   « More », « Install the app », account and security pages). To change a
+   shared entry for your app, re-declare its key with your app: it replaces
+   the shared one for your app only.
+3. Register the app in ``_pk_apps()`` (all keys optional; extend with
+   ``super()``)::
+
+       {'myapp': {
+           'sequence': 10,                  # the order of the apps
+           'layout': 'myapp.my_layout',     # the kit's own pages' layout
+           'brand': {...} or callable(kit), # merged over _pk_brand()
+           'home': 'myapp.my_home',         # the dashboard's home page
+           'home_render': 'method',         # or a controller method(values)
+           'pref_fields': {field: values},  # added to /my/app/pref's
+           'help_keys': {page: help key}, 'help_tabbed': (help key, ...),
+           'search_placeholder': _lt('...'),
+           'pwa': {'start_url', 'manifest_id', 'shortcuts' (a list or
+                   callable(kit)), 'offline_style' (a dict or
+                   callable(kit, pwa))},
+       }}
+
+   These replace overriding ``_pk_layout``, ``_pk_pref_fields``,
+   ``_pk_search_placeholder``, ``_pk_help_keys`` / ``_pk_help_tabbed``,
+   the ``_pk_pwa_*`` hooks, the dashboard's ``_pk_dash_render`` or the
+   portal's ``home()`` (the kit dispatches ``/my/home`` to the app's home).
+
+The viewer's app is ``_pk_app(user)``: the app of their app roles (several:
+the lowest ``sequence``, then the lowest key). A user without an app role,
+and the public pages (``/my/app.webmanifest``), read the database's default
+app ``_pk_default_app()``: the system parameter
+``bemade_portal_kit.default_app`` when it names an app, else the only app,
+else the first one. ``_pk_current_app()`` is that resolution for the
+current request. Every accessor takes ``app=None`` (default: the current
+app): ``pk_pages``, ``pk_match_url``, ``pk_resolve``, ``pk_visible_nav``,
+``pk_nav_entries``, ``pk_nav_label``, ``pk_nav_labels``,
+``pk_search_providers``, ``pk_brand``; a URL matches the app's own pages
+before the shared ones. A hook that builds a cached registry and reads
+another one names its app (``pk_nav_label('teams', app='myapp')``). Save
+specs and visibility keys stay global (keyed by model / key, checked
+against the roles).
 
 Visibility rule: an entry is visible when the user's roles intersect
 ``include`` and do not intersect ``exclude`` (exclude wins). A key flagged
@@ -58,6 +122,11 @@ Rules for consumers
 -------------------
 * The hooks hold code only. Each database caches the result per registry, so
   a hook must never depend on the current user, record or request.
+* Hooks resolve per app, never per user (version 1.15): an override that
+  answers for its own app only tests the app
+  (``self._pk_current_app() == 'myapp'``, the dashboard's
+  ``viewer['app']``) and calls ``super()`` for every other app. Never test
+  the user's groups to tell two consumers apart.
 * Per-user roles go in ``res.users._pk_extra_roles()``, which is never
   cached. ``res.users._pk_roles()`` = the group roles + the extra roles.
 * Because the registries are per database, an addon's entries exist only in
@@ -65,12 +134,15 @@ Rules for consumers
 
 API
 ---
-On ``env['portal.kit']``: ``pk_roles()``, ``pk_app_roles()``,
-``pk_is_visible(spec, roles)``, ``pk_visible_nav(roles, placement, ctx)``,
-``pk_nav_entries()``, ``pk_nav_label(key)``, ``pk_nav_labels()``,
-``pk_visibility()``, ``pk_can(key, roles, is_system=False)``,
-``pk_pages()``, ``pk_match_url(url)``, ``pk_resolve(key, values,
-request_url=None, request_return_url=None)`` and
+On ``env['portal.kit']``: ``pk_roles()``, ``pk_app_roles(app=None)``,
+``pk_apps()``, ``pk_app_spec(app=None)``, ``_pk_app(user=None)``,
+``_pk_default_app()``, ``_pk_current_app()``,
+``pk_is_visible(spec, roles)``, ``pk_visible_nav(roles, placement, ctx,
+app=None)``, ``pk_nav_entries(app=None)``, ``pk_nav_label(key,
+app=None)``, ``pk_nav_labels(app=None)``, ``pk_visibility()``,
+``pk_can(key, roles, is_system=False)``, ``pk_pages(app=None)``,
+``pk_match_url(url, app=None)``, ``pk_resolve(key, values,
+request_url=None, request_return_url=None, app=None)`` and
 ``pk_safe_return_url(value, fallback, prefixes=None)``. The pure helpers
 (``Page``, ``pk_nav``, ``pk_static_page``, ``pk_safe_return_url``,
 ``pk_readable``, ``pk_arg``) are in ``odoo.addons.bemade_portal_kit.tools``.

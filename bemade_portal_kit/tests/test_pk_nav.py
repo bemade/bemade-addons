@@ -68,7 +68,9 @@ class TestPkNav(TransactionCase):
     def test_entry_shape(self):
         entry = pk_nav('kit_x', 'X', 'icon', '/x', ['kit_a'], 5, BOTH)
         self.assertEqual(set(entry), {'key', 'label', 'icon', 'url', 'include', 'exclude',
-                                      'requires', 'placement', 'sequence', 'subtitle'})
+                                      'requires', 'placement', 'sequence', 'subtitle', 'app'})
+        self.assertIsNone(entry['app'], 'task 5391: shared by every app unless named')
+        self.assertEqual(pk_nav('kit_x', 'X', 'icon', '/x', ['kit_a'], 5, BOTH, app='north')['app'], 'north')
         self.assertEqual(entry['include'], frozenset({'kit_a'}))
         self.assertEqual(entry['exclude'], frozenset())
         self.assertEqual(entry['placement'], BOTH)

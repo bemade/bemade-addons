@@ -5,9 +5,10 @@ The mapping model, the « ? » of the app bar, the user menu's « Aide » and
 bemade_portal_kit; edited in Administration › Aide de l'application). The
 clinic brings, through the kit's hooks on ``portal.kit``:
 
-* ``_pk_help_keys``: its pages' help keys (``SC_HELP_KEYS``);
-* ``_pk_help_tabbed``: the player and team pages refine the key with their
-  tab (« player.injuries »);
+* its app's ``help_keys`` (its pages' help keys, ``SC_HELP_KEYS``) and
+  ``help_tabbed`` (the player and team pages refine the key with their tab,
+  « player.injuries »), task 5391: the kit's per-app registration
+  (``_pk_apps``);
 * ``_pk_help_url``: the user guide is website_knowledge's public pages
   (``/knowledge/article/<id>``, a SOFT dependency, Enterprise): such a link
   is offered only while website_knowledge is installed, and opens through
@@ -18,6 +19,8 @@ clinic brings, through the kit's hooks on ``portal.kit``:
 import re
 
 from odoo import api, models
+
+from .sc_app_nav import SC_APP
 
 # App-shell page template -> help key.
 SC_HELP_KEYS = {
@@ -88,10 +91,12 @@ class SportsClinicHelp(models.AbstractModel):
     _inherit = 'portal.kit'
 
     @api.model
-    def _pk_help_keys(self):
-        keys = dict(super()._pk_help_keys())
-        keys.update(SC_HELP_KEYS)
-        return keys
+    def _pk_apps(self):
+        apps = dict(super()._pk_apps())
+        app = dict(apps.get(SC_APP) or {})
+        app.update({'help_keys': SC_HELP_KEYS, 'help_tabbed': SC_HELP_TABBED})
+        apps[SC_APP] = app
+        return apps
 
     @api.model
     def _pk_help_page_key(self, page):
@@ -101,14 +106,13 @@ class SportsClinicHelp(models.AbstractModel):
         return super()._pk_help_page_key(page)
 
     @api.model
-    def _pk_help_tabbed(self):
-        return tuple(super()._pk_help_tabbed()) + SC_HELP_TABBED
-
-    @api.model
     def _pk_help_url(self, url):
         """A /knowledge/… page needs website_knowledge (soft dependency) and
-        opens through /my/guide/<id>; an app URL is never a help link."""
+        opens through /my/guide/<id>; an app URL is never a help link (in
+        the clinic's app)."""
         url = super()._pk_help_url(url)
+        if not self._sc_is_app():
+            return url
         if not url or url.startswith('/my') or 'subpath=knowledge' in url:
             return False
         if url.startswith('/knowledge/'):

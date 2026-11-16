@@ -13,6 +13,8 @@ Acceptance criteria:
 from odoo import Command
 from odoo.tests import TransactionCase, tagged
 
+from odoo.addons.bemade_sports_clinic.models.sc_app_nav import SC_APP
+
 
 @tagged('post_install', '-at_install')
 class TestBookingsPortalKit5196(TransactionCase):
@@ -28,7 +30,7 @@ class TestBookingsPortalKit5196(TransactionCase):
         })
 
     def _keys(self, roles, placement, ctx):
-        return [e['key'] for e in self.env['portal.kit'].pk_visible_nav(roles, placement, ctx)]
+        return [e['key'] for e in self.env['portal.kit'].pk_visible_nav(roles, placement, ctx, app=SC_APP)]
 
     # -- UC-BK1 -----------------------------------------------------------
     def test_requires_gates_bookings(self):
@@ -47,11 +49,11 @@ class TestBookingsPortalKit5196(TransactionCase):
     # -- UC-BK2 -----------------------------------------------------------
     def test_pages(self):
         kit = self.env['portal.kit']
-        self.assertEqual(kit.pk_match_url('/my/bookings?filterby=past')[0], 'sc_app_bookings')
-        self.assertEqual(kit.pk_match_url('/my/bookings/calendar')[0], 'sc_app_bookings')
+        self.assertEqual(kit.pk_match_url('/my/bookings?filterby=past', app=SC_APP)[0], 'sc_app_bookings')
+        self.assertEqual(kit.pk_match_url('/my/bookings/calendar', app=SC_APP)[0], 'sc_app_bookings')
         booking = self.env['calendar.event'].create({'name': 'Kit 5196 booking'})
-        nav = kit.pk_resolve('sc_app_booking_edit', {'booking': booking})
+        nav = kit.pk_resolve('sc_app_booking_edit', {'booking': booking}, app=SC_APP)
         self.assertEqual(nav['parent_url'], '/my/bookings')
         self.assertEqual([url for _label, url in nav['crumbs']], ['/my/app/more', '/my/bookings'])
-        self.assertEqual(str(kit.pk_pages()['sc_app_booking_cancel'].url({'booking': booking})),
+        self.assertEqual(str(kit.pk_pages(app=SC_APP)['sc_app_booking_cancel'].url({'booking': booking})),
                          '/my/bookings/%s/cancel' % booking.id)

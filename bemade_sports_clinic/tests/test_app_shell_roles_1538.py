@@ -23,6 +23,7 @@ from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.bemade_portal_kit.tests.common import pk_hook, pk_hooks
 from odoo.addons.bemade_sports_clinic.models import sc_app_roles as registry
+from odoo.addons.bemade_sports_clinic.models.sc_app_nav import SC_APP
 
 
 @tagged('post_install', '-at_install')
@@ -73,7 +74,7 @@ class TestAppShellRoles1538(TransactionCase):
 
     def test_app_roles_exclude_internal_only(self):
         """A plain internal user (no clinic role) is not an app user."""
-        app_roles = self.env['portal.kit'].pk_app_roles()
+        app_roles = self.env['portal.kit'].pk_app_roles(SC_APP)
         self.assertFalse(frozenset({'internal'}) & app_roles)
         self.assertTrue(frozenset({'coach'}) & app_roles)
         for reserved in registry.RESERVED_ROLES:
@@ -83,7 +84,7 @@ class TestAppShellRoles1538(TransactionCase):
 
     # -- UC-R2 -----------------------------------------------------------
     def _keys(self, roles, placement, ctx=None):
-        return [e['key'] for e in self.env['portal.kit'].pk_visible_nav(roles, placement, ctx or {})]
+        return [e['key'] for e in self.env['portal.kit'].pk_visible_nav(roles, placement, ctx or {}, app=SC_APP)]
 
     def test_tabs_union_of_roles(self):
         coach_tabs = self._keys(self.coach._sc_app_roles(), 'tab')

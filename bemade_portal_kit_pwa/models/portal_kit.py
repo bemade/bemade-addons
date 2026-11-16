@@ -4,10 +4,17 @@
 """Task 5201 (kit P6): the installable app's resolver and hooks on
 ``portal.kit``.
 
-* ``_pk_pwa()``: the effective app (company fields, else the brand hook's
-  defaults and the kit's neutral icons); never cached (per company);
-* hooks ``_pk_pwa_start_url()``, ``_pk_pwa_manifest_id()``,
-  ``_pk_pwa_shortcuts()``, ``_pk_pwa_offline_style(pwa)``;
+* ``_pk_pwa(app=None)``: the effective installable app of ``app`` (default:
+  the viewer's app; company fields, else the brand's defaults and the
+  kit's neutral icons); never cached (per company);
+* hooks ``_pk_pwa_start_url(app)``, ``_pk_pwa_manifest_id(app)``,
+  ``_pk_pwa_shortcuts(app)``, ``_pk_pwa_offline_style(pwa)``: by default
+  they read the app's ``pwa`` registration (``portal.kit._pk_apps()``,
+  task 5391);
+* task 5391: ``/my/app.webmanifest`` is the database's default app
+  (``_pk_default_app()``), ``/my/app/<app>.webmanifest`` each app's
+  (``_pk_pwa_manifest_url(app)``); the service worker and the offline page
+  are the default app's (one worker per site);
 * ``_pk_pwa_manifest()``, ``_pk_pwa_icon(name)``, ``_pk_pwa_precache()``,
   ``_pk_pwa_sw_version()``;
 * the « More » entry ``install`` and the page ``pk_app_install``.
@@ -30,6 +37,8 @@ _lt = LazyTranslate(__name__)
 PWA = 'bemade_portal_kit_pwa'
 PK_PWA_OFFLINE_URL = '/my/app/offline'
 PK_PWA_INSTALL_URL = '/my/app/install'
+PK_PWA_MANIFEST_URL = '/my/app.webmanifest'
+PK_PWA_APP_MANIFEST_URL = '/my/app/%s.webmanifest'
 PK_PWA_ICON_URL = '/my/app/icon/'
 PK_PWA_OFFLINE_CSS = '/bemade_portal_kit_pwa/static/src/css/pk_offline.css'
 _DEFAULT_IMG = 'bemade_portal_kit_pwa/static/src/img/'
@@ -105,68 +114,100 @@ class PortalKit(models.AbstractModel):
     # Hooks
     # ------------------------------------------------------------------
     @api.model
-    def _pk_pwa_start_url(self):
-        """The installed app's start URL (default: the brand's home)."""
-        return self._pk_brand().get('home_url') or '/my'
+    def _pk_pwa_spec(self, app=None):
+        """The ``pwa`` registration of ``app`` (``_pk_apps()``), or ``{}``."""
+        return self.pk_app_spec(app).get('pwa') or {}
 
     @api.model
-    def _pk_pwa_manifest_id(self):
-        """The manifest ``id`` (default: the start URL). Never change it on
-        a live app: an installed app with another id is a second app."""
-        return self._pk_pwa_start_url()
+    def _pk_pwa_start_url(self, app=None):
+        """The installed app's start URL: the app's ``pwa.start_url``, else
+        the brand's home."""
+        return (self._pk_pwa_spec(app).get('start_url')
+                or self.pk_brand(app=app).get('home_url') or '/my')
 
     @api.model
-    def _pk_pwa_shortcuts(self):
-        """``[{'name': str, 'url': str}]``: the app icon's shortcuts
-        (default: none)."""
-        return []
+    def _pk_pwa_manifest_id(self, app=None):
+        """The manifest ``id``: the app's ``pwa.manifest_id``, else the start
+        URL. Never change it on a live app: an installed app with another id
+        is a second app (two apps of one database: give each its own)."""
+        return self._pk_pwa_spec(app).get('manifest_id') or self._pk_pwa_start_url(app)
+
+    @api.model
+    def _pk_pwa_shortcuts(self, app=None):
+        """``[{'name': str, 'url': str}]``: the app icon's shortcuts, the
+        app's ``pwa.shortcuts`` (a list, or ``callable(kit)``); default:
+        none."""
+        shortcuts = self._pk_pwa_spec(app).get('shortcuts') or []
+        if callable(shortcuts):
+            shortcuts = shortcuts(self)
+        return [{'name': str(item['name']), 'url': item['url']} for item in shortcuts or []]
+
+    @api.model
+    def _pk_pwa_manifest_url(self, app=None):
+        """The manifest URL of ``app`` (default: the viewer's app): the
+        public ``/my/app.webmanifest`` for the default app (an installed
+        app keeps its URL), else ``/my/app/<app>.webmanifest``."""
+        app = self._pk_resolve_app(app)
+        if not app or app == self._pk_default_app():
+            return PK_PWA_MANIFEST_URL
+        return PK_PWA_APP_MANIFEST_URL % app
 
     @api.model
     def _pk_pwa_offline_style(self, pwa):
         """The offline page's colours and fonts (``--pk-offline-<key>``):
         bg, fg, muted, accent, accent-fg, font, title-font,
         title-transform, title-spacing. Default: the background colour and
-        readable neutral text, the kit's accent; the system fonts."""
+        readable neutral text, the kit's accent; the system fonts. The
+        app's ``pwa.offline_style`` (a dict, or ``callable(kit, pwa)``) is
+        merged over it."""
         bg = pwa['background_color']
         dark = pk_pwa_is_dark(bg)
-        return {
+        style = {
             'bg': bg,
             'fg': '#f8fafc' if dark else '#0f172a',
             'muted': '#94a3b8' if dark else '#475569',
             'accent': '#3b82f6' if dark else '#2563eb',
             'accent-fg': '#ffffff',
         }
+        own = self._pk_pwa_spec(pwa.get('app')).get('offline_style')
+        if callable(own):
+            own = own(self, pwa)
+        style.update(own or {})
+        return style
 
     # ------------------------------------------------------------------
     # Resolver
     # ------------------------------------------------------------------
     @api.model
-    def _pk_pwa(self):
-        """The effective installable app of the current company:
-        ``{name, short_name, background_color, theme_color, start_url, id,
-        scope, display, shortcuts, icons: {url name: url}, offline_url,
-        install_url}``."""
+    def _pk_pwa(self, app=None):
+        """The effective installable app ``app`` (default: the viewer's app)
+        of the current company: ``{app, name, short_name, background_color,
+        theme_color, start_url, id, scope, display, shortcuts, icons: {url
+        name: url}, offline_url, install_url, manifest_url}``."""
+        app = self._pk_resolve_app(app)
         company = self.env.company.sudo()
-        brand = self._pk_brand()
+        brand = self.pk_brand(app=app)
         name = (company.pk_pwa_name or '').strip() or brand.get('name') or ''
         short_name = (company.pk_pwa_short_name or '').strip() or name
         light = pk_pwa_color((brand.get('theme_colors') or {}).get('light')) or '#ffffff'
         background = pk_pwa_color(company.pk_pwa_background_color) or light
         theme = pk_pwa_color(company.pk_pwa_theme_color) or background
-        start_url = self._pk_pwa_start_url()
+        start_url = self._pk_pwa_start_url(app)
         return {
+            'app': app or False,
             'name': name,
             'short_name': short_name,
             'background_color': background,
             'theme_color': theme,
             'start_url': start_url,
-            'id': self._pk_pwa_manifest_id() or start_url,
+            'id': self._pk_pwa_manifest_id(app) or start_url,
             'scope': '/',
             'display': 'standalone',
-            'shortcuts': [dict(shortcut) for shortcut in self._pk_pwa_shortcuts()],
+            'shortcuts': [dict(shortcut) for shortcut in self._pk_pwa_shortcuts(app)],
             'icons': {icon[0]: PK_PWA_ICON_URL + icon[0] for icon in PK_PWA_ICONS},
             'offline_url': PK_PWA_OFFLINE_URL,
             'install_url': PK_PWA_INSTALL_URL,
+            'manifest_url': self._pk_pwa_manifest_url(app),
         }
 
     @api.model
@@ -222,7 +263,9 @@ class PortalKit(models.AbstractModel):
             ('res_field', 'in', [icon[1] for icon in PK_PWA_ICONS])], ['res_field', 'checksum'])
         checksums = sorted((att['res_field'], att['checksum'] or '') for att in attachments)
         branding = {
-            'pwa': {key: value for key, value in pwa.items() if key != 'shortcuts'},
+            # Task 5391: the app key and manifest URL are not branding.
+            'pwa': {key: value for key, value in pwa.items()
+                    if key not in ('shortcuts', 'app', 'manifest_url')},
             'style': self._pk_pwa_offline_style(pwa),
             'precache': self._pk_pwa_precache(pwa),
             'icons': checksums,

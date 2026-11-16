@@ -10,7 +10,7 @@
          manifest, the iOS icon and title. -->
     <template id="pk_pwa_head" name="Portal kit: installable app head">
         <t t-set="pk_pwa_head" t-value="request.env['portal.kit']._pk_pwa()"/>
-        <link rel="manifest" href="/my/app.webmanifest"/>
+        <link rel="manifest" t-att-href="pk_pwa_head['manifest_url']"/>
         <link rel="apple-touch-icon" t-att-href="pk_pwa_head['icons']['apple-touch-icon.png']"/>
         <meta name="apple-mobile-web-app-capable" content="yes"/>
         <meta name="mobile-web-app-capable" content="yes"/>

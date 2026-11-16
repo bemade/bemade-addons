@@ -7,13 +7,16 @@
   colours, the 5 icons) get the Fit Crew values, ONLY where they are empty
   (an administrator's later edit is kept). Run by the install hook and the
   19.0.1.147.0 post-migration;
-* the hooks: start URL (and manifest id) ``/my/home``, the Teams / Players
-  shortcuts, the offline page's Fit Crew colours and fonts.
+* the app's ``pwa`` registration (task 5391; ``portal.kit._pk_apps()``):
+  start URL (and manifest id) ``/my/home``, the Teams / Players shortcuts,
+  the offline page's Fit Crew colours and fonts.
 """
 import base64
 
 from odoo import api, models
 from odoo.tools import file_open
+
+from .sc_app_nav import SC_APP
 
 SC_PWA_IMG = 'bemade_sports_clinic/static/src/img/'
 # The values installed apps had before the move (task 1542): the manifest
@@ -50,39 +53,47 @@ def sc_fill_pwa_branding(env):
     return written
 
 
+def _sc_pwa_shortcuts(kit):
+    """The Teams / Players shortcuts: the clinic app's nav labels (a
+    registry without them, e.g. the kit's own tests: no shortcut)."""
+    labels = kit.pk_nav_labels(app=SC_APP)
+    return [
+        {'name': labels[key], 'url': url}
+        for key, url in (('teams', '/my/teams'), ('players', '/my/players')) if key in labels
+    ]
+
+
+# The offline page as Fit Crew had it (task 1542): Minuit (the background
+# colour, the kit's default), the neon retry button, DM Sans / Teko (when the
+# device has them).
+SC_PWA_OFFLINE_STYLE = {
+    'fg': '#e5e5e5',
+    'muted': '#a9a8ae',
+    'accent': '#a4c754',
+    'accent-fg': '#120e12',
+    'font': '"DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    'title-font': '"Teko", "DM Sans", system-ui, sans-serif',
+    'title-transform': 'uppercase',
+    'title-spacing': '0.02em',
+}
+
+
 class PortalKit(models.AbstractModel):
     _inherit = 'portal.kit'
 
     @api.model
-    def _pk_pwa_start_url(self):
-        # The dashboard; also the manifest id since task 1542 (never change
-        # it: installed apps would become a second app).
-        return '/my/home'
-
-    @api.model
-    def _pk_pwa_shortcuts(self):
-        labels = self.pk_nav_labels()
-        # The nav entries' labels (a registry without them, e.g. the kit's
-        # own tests: no shortcut).
-        return super()._pk_pwa_shortcuts() + [
-            {'name': labels[key], 'url': url}
-            for key, url in (('teams', '/my/teams'), ('players', '/my/players')) if key in labels
-        ]
-
-    @api.model
-    def _pk_pwa_offline_style(self, pwa):
-        style = dict(super()._pk_pwa_offline_style(pwa))
-        # The offline page as Fit Crew had it (task 1542): Minuit, the neon
-        # retry button, DM Sans / Teko (when the device has them).
-        style.update({
-            'bg': pwa['background_color'],
-            'fg': '#e5e5e5',
-            'muted': '#a9a8ae',
-            'accent': '#a4c754',
-            'accent-fg': '#120e12',
-            'font': '"DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-            'title-font': '"Teko", "DM Sans", system-ui, sans-serif',
-            'title-transform': 'uppercase',
-            'title-spacing': '0.02em',
-        })
-        return style
+    def _pk_apps(self):
+        """Task 5391: the clinic app's installable app (the kit's
+        ``pwa`` registration)."""
+        apps = dict(super()._pk_apps())
+        app = dict(apps.get(SC_APP) or {})
+        app['pwa'] = {
+            # The dashboard; also the manifest id since task 1542 (never
+            # change it: installed apps would become a second app).
+            'start_url': '/my/home',
+            'manifest_id': '/my/home',
+            'shortcuts': _sc_pwa_shortcuts,
+            'offline_style': SC_PWA_OFFLINE_STYLE,
+        }
+        apps[SC_APP] = app
+        return apps

@@ -132,12 +132,12 @@ class TestPkPwa(HttpCase):
         self.assertEqual(self._manifest()['theme_color'], '#102030')
         kit_cls = type(self.env['portal.kit'])
         from unittest.mock import patch
-        with patch.object(kit_cls, '_pk_pwa_start_url', lambda self: '/my/t-home'), \
-                patch.object(kit_cls, '_pk_pwa_shortcuts', lambda self: [{'name': 'T One', 'url': '/my/t1'}]):
+        with patch.object(kit_cls, '_pk_pwa_start_url', lambda self, app=None: '/my/t-home'), \
+                patch.object(kit_cls, '_pk_pwa_shortcuts', lambda self, app=None: [{'name': 'T One', 'url': '/my/t1'}]):
             manifest = self._manifest()
         self.assertEqual((manifest['id'], manifest['start_url']), ('/my/t-home', '/my/t-home'))
         self.assertEqual(manifest['shortcuts'], [{'name': 'T One', 'url': '/my/t1'}])
-        with patch.object(kit_cls, '_pk_pwa_manifest_id', lambda self: '/my/t-id'):
+        with patch.object(kit_cls, '_pk_pwa_manifest_id', lambda self, app=None: '/my/t-id'):
             self.assertEqual(self._manifest()['id'], '/my/t-id')
 
     # ------------------------------------------------------------- UC-W3

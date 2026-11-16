@@ -7,3 +7,4 @@ from . import test_pk_dashboard_migration
 from . import test_pk_dashboard_static
 from . import test_pk_dashboard_hoot
 from . import test_pk_dashboard_version_guard
+from . import test_pk_dashboard_apps

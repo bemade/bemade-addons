@@ -36,14 +36,16 @@ def pk_is_visible(spec, roles):
 
 
 def pk_nav(key, label, icon, url, include, sequence, placement,
-           exclude=(), requires=None, subtitle=None):
+           exclude=(), requires=None, subtitle=None, app=None):
     """A nav entry. ``placement``: where it shows (e.g. ``('tab', 'rail')``);
-    ``requires``: an optional ``callable(ctx) -> bool`` feature gate."""
+    ``requires``: an optional ``callable(ctx) -> bool`` feature gate;
+    ``app`` (task 5391): the app it belongs to (``None``: shared by every
+    app of the database)."""
     return {
         'key': key, 'label': label, 'icon': icon, 'url': url,
         'include': frozenset(include), 'exclude': frozenset(exclude),
         'requires': requires, 'placement': tuple(placement),
-        'sequence': sequence, 'subtitle': subtitle,
+        'sequence': sequence, 'subtitle': subtitle, 'app': app or None,
     }
 
 
@@ -67,13 +69,16 @@ class Page:
       Together they are the return-URL allowlist.
     * ``return_url(v)``: optional, the page's « came from » URL (default
       ``v['return_url']``, else the request's ``?return_url=``).
+    * ``app`` (task 5391): the app the page belongs to (``None``: shared by
+      every app of the database).
     """
     __slots__ = ('key', 'parent', 'has_parent', 'url', 'label', 'context', 'path',
-                 'from_url', 'return_url')
+                 'from_url', 'return_url', 'app')
 
     def __init__(self, key, *, parent=None, url=None, label=None, context=None,
-                 path=None, from_url=None, return_url=None):
+                 path=None, from_url=None, return_url=None, app=None):
         self.key = key
+        self.app = app or None
         self.has_parent = parent is not None
         self.parent = parent or (lambda v: None)
         self.url = url if callable(url) or url is None else (lambda v, _u=url: _u)
@@ -84,13 +89,68 @@ class Page:
         self.return_url = return_url
 
     def __repr__(self):
-        return '<Page %s>' % self.key
+        return '<Page %s%s>' % (self.key, ' (%s)' % self.app if self.app else '')
 
 
-def pk_static_page(key, url, label, parent=None, path=None):
+def pk_static_page(key, url, label, parent=None, path=None, app=None):
     """A page with a fixed URL (its path defaults to the URL itself)."""
     return Page(key, url=url, label=label, parent=parent,
-                path=path or re.escape(url))
+                path=path or re.escape(url), app=app)
+
+
+# ---------------------------------------------------------------------------
+# Apps (task 5391)
+# ---------------------------------------------------------------------------
+
+
+def pk_role_app(value):
+    """A role spec's ``'app'`` -> its app key: a string as is, ``True`` (the
+    legacy flag) or missing -> ``'default'``, anything false -> ``False``
+    (not an app role)."""
+    if value is True:
+        return 'default'
+    if isinstance(value, str) and value:
+        return value
+    return False
+
+
+def pk_app_scoped(entries, app, key_of, own_first=False):
+    """The entries ``app`` sees, from a registry holding every app's:
+    the shared ones (``app`` None) and ``app``'s own, an own entry
+    replacing a shared one of the same key. ``own_first``: ``app``'s own
+    entries first (a URL matches them before the shared ones), else in
+    declaration order (an own entry takes the place of the shared one it
+    replaces)."""
+    own = {}
+    for entry in entries:
+        if pk_entry_app(entry) == app and app:
+            own[key_of(entry)] = entry
+    scoped = []
+    seen = set()
+    for entry in entries:
+        entry_key = key_of(entry)
+        current = pk_entry_app(entry)
+        if current is None:
+            chosen = own.get(entry_key, entry)
+        elif current == app:
+            chosen = entry
+        else:
+            continue
+        if entry_key in seen:
+            continue
+        seen.add(entry_key)
+        scoped.append(chosen)
+    if own_first:
+        scoped.sort(key=lambda entry: 0 if pk_entry_app(entry) else 1)
+    return scoped
+
+
+def pk_entry_app(entry):
+    """The app of a registry entry (a ``Page``, a nav / widget / provider
+    dict): ``None`` when shared."""
+    if isinstance(entry, Page):
+        return entry.app
+    return entry.get('app') or None
 
 
 # ---------------------------------------------------------------------------

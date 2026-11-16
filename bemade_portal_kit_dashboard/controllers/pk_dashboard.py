@@ -4,10 +4,12 @@
 """The configurable dashboard's pages (task 5202, kit P7; moved from the
 first consumer, same URLs and answers).
 
-* ``/my/home`` while the app's switch is on: the dashboard
-  (``pk_dash_page`` on the app layout; a consumer's own page that calls
-  ``pk_dash_home``: ``_pk_dash_home_template()``, or its own rendering:
-  ``_pk_dash_render(values)``);
+* ``/my/home`` while the app's switch is on: the dashboard of the viewer's
+  app (task 5391: ``portal.kit._pk_apps()[app]``: ``home``, a page that
+  calls ``pk_dash_home``, or ``home_render``, the name of a controller
+  method ``(values) -> response`` drawing it; default: ``pk_dash_page`` on
+  the app layout). A consumer never overrides ``home()`` /
+  ``_pk_dash_render`` for that;
 * ``/my/app/dashboard/configure``: the configure sheet (``pk_dash_configure``)
   and its POST routes ``/save``, ``/move``, ``/add``, ``/remove``,
   ``/reset``. Each answers JSON ``{ok}`` / ``{ok: false, error}`` (400) to
@@ -19,7 +21,8 @@ Extension points (a consumer's controller that inherits ``PortalKitShell``
 is merged with this one, its overrides win):
 
 * ``_pk_dash_context(Dash, viewer)``: the context every widget builder
-  receives (``viewer``, ``universe``, plus the consumer's own);
+  receives (``viewer``, ``universe``, plus the consumer's own; a consumer
+  adds its keys for its own app only, ``viewer['app']``);
 * the builders, ``builder(instance, scope, ctx) -> dict`` (named by each
   widget's ``builder``);
 * ``_pk_dash_page_values(values, ctx)``: the page parts, the values the
@@ -68,15 +71,20 @@ class PortalKitDashboard(PortalKitShell):
         return self._pk_dash_render(values)
 
     def _pk_dash_render(self, values):
-        """The home's response (default: ``_pk_dash_home_template()`` drawn
-        by ``_pk_page``). A consumer that draws its home with its own values
-        overrides this."""
+        """The home's response: the viewer's app's ``home_render`` method
+        (task 5391), else ``_pk_dash_home_template()`` drawn by
+        ``_pk_page``."""
+        method = request.env['portal.kit'].pk_app_spec().get('home_render')
+        if method:
+            return getattr(self, method)(values)
         return self._pk_page(self._pk_dash_home_template(), values)
 
     def _pk_dash_home_template(self):
-        """The home's template: ``pk_dash_page``, or a consumer's page that
-        calls ``pk_dash_home`` (its page key is the template's name)."""
-        return 'bemade_portal_kit_dashboard.pk_dash_page'
+        """The home's template: the viewer's app's ``home`` (a page that
+        calls ``pk_dash_home``, its page key the template's name), else
+        ``pk_dash_page``."""
+        return (request.env['portal.kit'].pk_app_spec().get('home')
+                or 'bemade_portal_kit_dashboard.pk_dash_page')
 
     def _pk_dash_context(self, Dash, viewer):
         """What every builder receives as ``ctx`` (a consumer adds its own
@@ -98,7 +106,7 @@ class PortalKitDashboard(PortalKitShell):
         for instance in Dash._pk_dash_layout(viewer):
             if not instance['enabled']:
                 continue
-            spec = Dash._pk_dash_widget(instance['widget'])
+            spec = Dash._pk_dash_widget(instance['widget'], app=viewer.get('app'))
             scope = None
             if spec['scoped']:
                 scope = Dash._pk_dash_scope_resolve(instance['settings'], viewer, ctx['universe'])
@@ -149,7 +157,7 @@ class PortalKitDashboard(PortalKitShell):
     # ------------------------------------------------------------------
     def _pk_dash_configure_row(self, Dash, instance, layout, viewer, filters, scope_fields, scope_options):
         env = request.env
-        spec = Dash._pk_dash_widget(instance['widget'])
+        spec = Dash._pk_dash_widget(instance['widget'], app=viewer.get('app'))
         settings = instance['settings']
         zone_ids = [inst['id'] for inst in layout if inst['zone'] == instance['zone']]
         row = {
@@ -204,8 +212,8 @@ class PortalKitDashboard(PortalKitShell):
         Dash = request.env['portal.kit.dashboard']
         viewer = Dash._pk_dash_viewer()
         layout = Dash._pk_dash_layout(viewer)
-        filters = Dash._pk_dash_filters()
-        scope_fields = Dash._pk_dash_scope_fields()
+        filters = Dash._pk_dash_app_filters(viewer.get('app'))
+        scope_fields = Dash._pk_dash_app_scope_fields(viewer.get('app'))
         scope_options = Dash._pk_dash_scope_options(Dash._pk_dash_scope_universe(viewer)) if scope_fields else {}
         rows = [self._pk_dash_configure_row(Dash, instance, layout, viewer, filters, scope_fields, scope_options)
                 for instance in layout]
@@ -260,10 +268,10 @@ class PortalKitDashboard(PortalKitShell):
         filters (a ``multi`` one with its ``<name>_present`` marker, so that
         none ticked is « none »)."""
         settings = {}
-        for field in Dash._pk_dash_scope_fields():
+        for field in Dash._pk_dash_app_scope_fields():
             if field['name'] in post:
                 settings[field['name']] = pk_csv_ints(post.get(field['name']))
-        for name, decl in Dash._pk_dash_filters().items():
+        for name, decl in Dash._pk_dash_app_filters().items():
             if decl['type'] == 'multi':
                 if post.get('%s_present' % name):
                     settings[name] = request.httprequest.form.getlist(name)
