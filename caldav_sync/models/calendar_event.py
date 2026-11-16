@@ -1168,6 +1168,11 @@ class CalendarEvent(models.Model):
         # midnights, which the calendar would shift into the next day.
         allday = isinstance(start, date) and not isinstance(start, datetime)
         if allday:
+            if isinstance(end, datetime):
+                # Some clients pair a DATE DTSTART with a DATE-TIME DTEND. Read it
+                # as the exclusive end date: midnight ends the previous day, any
+                # other time still covers that day.
+                end = end.date() + timedelta(days=0 if end.time() == time(0) else 1)
             # DTEND is exclusive for all-day events and may be omitted (one day).
             last_day = (end - timedelta(days=1)) if end else start
             start = datetime.combine(start, time(8))

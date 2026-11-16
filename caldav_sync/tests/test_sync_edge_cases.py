@@ -602,6 +602,40 @@ class TestExtractComponentText(TransactionCase):
 
 
 @tagged("post_install", "-at_install")
+class TestAlldayMixedDtend(TransactionCase):
+    """An all-day DTSTART (DATE) with a DATE-TIME DTEND must not crash the poll."""
+
+    def _values(self, dtend_line):
+        from icalendar import Calendar
+
+        ics = (
+            "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//test//test//EN\r\n"
+            "BEGIN:VEVENT\r\nUID:allday-mixed-dtend\r\nSUMMARY:Mixed\r\n"
+            "DTSTAMP:20261101T000000Z\r\nDTSTART;VALUE=DATE:20261120\r\n"
+            f"{dtend_line}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+        )
+        component = Calendar.from_ical(ics).walk("VEVENT")[0]
+        return self.env["calendar.event"]._get_values_from_ical_component(
+            component, self.env.user, for_creation=True
+        )
+
+    def test_datetime_dtend_midnight(self):
+        values = self._values("DTEND:20261121T000000Z")
+        self.assertTrue(values["allday"])
+        self.assertEqual(values["start"], datetime(2026, 11, 20, 8, 0))
+        self.assertEqual(values["stop"], datetime(2026, 11, 20, 18, 0))
+
+    def test_datetime_dtend_during_day(self):
+        values = self._values("DTEND:20261122T100000Z")
+        self.assertEqual(values["start"], datetime(2026, 11, 20, 8, 0))
+        self.assertEqual(values["stop"], datetime(2026, 11, 22, 18, 0))
+
+    def test_datetime_dtend_same_day(self):
+        values = self._values("DTEND:20261120T100000Z")
+        self.assertEqual(values["stop"], datetime(2026, 11, 20, 18, 0))
+
+
+@tagged("post_install", "-at_install")
 class TestSyncWriteToCaldav(TransactionCase, CaldavTestCommon):
     """Tests for _sync_write_to_caldav method."""
 
