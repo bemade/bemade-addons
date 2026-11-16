@@ -7,6 +7,8 @@ from werkzeug.exceptions import Forbidden
 from odoo import http
 from odoo.http import request
 
+from odoo.addons.homeschool_portal.models.portal_kit import HS_APP
+
 
 _STATIC = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "src")
 _asset_version = None
@@ -35,7 +37,9 @@ class PracticePortal(http.Controller):
         student = request.env["homeschool.student"].sudo().search([("user_id", "=", request.env.uid)], limit=1)
         if not student or request.env.user._is_internal():
             raise Forbidden()
-        exit_url = "/my/home" if request.env["portal.kit"]._pk_shell_active() else "/my/homeschool"
+        kit = request.env["portal.kit"]
+        in_app = kit._pk_shell_active() and kit._pk_current_app() == HS_APP
+        exit_url = "/my/home" if in_app else "/my/homeschool"
         html = request.env["ir.qweb"]._render("homeschool_practice.practice_app", {
             "student": student, "lang": (request.env.user.lang or "fr_CA").replace("_", "-"),
             "asset_version": asset_version(), "exit_url": exit_url,

@@ -11,7 +11,8 @@ Acceptance criteria
    It opens a quest named in the URL once.
 3. One installed app: the practice page links no manifest of its own and
    ``/my/homeschool/practice/manifest.webmanifest`` is gone; the app's manifest
-   (``/my/app.webmanifest``) has « Practice » as a shortcut.
+   (``/my/app/homeschool.webmanifest``, ``/my/app.webmanifest`` where homeschool is
+   the default app) has « Today » then « Practice » as shortcuts.
 4. A tutor's « Practice » is a read-only page per learner: the units unlocked by deck,
    the proficiency of each and when it was last practised. The learner's own login gets
    a 403 there; an unrelated student is a 404.
@@ -19,6 +20,8 @@ Acceptance criteria
    payload (« Today », the game page, the home payload).
 6. A login that is both a learner and a tutor gets both « Practice » entries: the game
    for himself, the progress page for the learner he follows.
+7. Practice's entries (nav, page, widget, shortcut) are the homeschool app's
+   (``homeschool``, kit 19.0.1.15.0); an upgrade over an older kit stops first.
 """
 import json
 
@@ -26,6 +29,7 @@ from odoo import Command
 from odoo.tests import tagged
 from odoo.tools.misc import mute_logger
 
+from odoo.addons.homeschool_portal.tests.test_portal_app_apps import assert_kit_guard
 from odoo.addons.homeschool_practice.controllers.api import FORBIDDEN_KEYS
 
 from .common import PracticeHttpCase
@@ -103,9 +107,14 @@ class TestPracticePortalApp(PracticeHttpCase):
         self.assertNotIn('rel="manifest"', html)
         self.assertNotIn("apple-touch-icon", html)
         self.assertEqual(self.get("/my/homeschool/practice/manifest.webmanifest").status_code, 404)
-        manifest = json.loads(self.get("/my/app.webmanifest").text)
-        self.assertEqual(manifest["start_url"], "/my/home")
-        self.assertIn("/my/homeschool/practice", [s["url"] for s in manifest.get("shortcuts", [])])
+        # The homeschool app's manifest (also /my/app.webmanifest where it is the
+        # database's default app, e.g. the homeschool instance).
+        self.env["ir.config_parameter"].sudo().set_param("bemade_portal_kit.default_app", "homeschool")
+        for url in ("/my/app/homeschool.webmanifest", "/my/app.webmanifest"):
+            manifest = json.loads(self.get(url).text)
+            self.assertEqual(manifest["start_url"], "/my/home", url)
+            urls = [s["url"] for s in manifest.get("shortcuts", [])]
+            self.assertEqual(urls, ["/my/home", "/my/homeschool/practice"], url)
 
     # 4 -------------------------------------------------------------------
     def test_tutor_progress_page(self):
@@ -167,3 +176,17 @@ class TestPracticePortalApp(PracticeHttpCase):
         self.assertEqual(self.get("/my/homeschool/%d/practice/progress" % self.other_student.id).status_code, 200)
         with mute_logger("odoo.http"):
             self.assertEqual(self.get("/my/homeschool/%d/practice/progress" % self.student.id).status_code, 403)
+
+    # 7 -------------------------------------------------------------------
+    def test_entries_are_the_homeschool_apps(self):
+        kit = self.env["portal.kit"]
+        entries = {e["key"]: e for e in kit.pk_nav_entries(app="homeschool")}
+        self.assertEqual((entries["hs_practice"]["app"], entries["hs_practice_progress"]["app"]),
+                         ("homeschool", "homeschool"))
+        self.assertEqual(kit.pk_pages(app="homeschool")["hs_practice_progress"].app, "homeschool")
+        widgets = {w["key"]: w for w in self.env["portal.kit.dashboard"]._pk_widgets()}
+        self.assertEqual(widgets["hs_quests"]["app"], "homeschool")
+
+    @mute_logger("odoo.addons.bemade_portal_kit.tools.version_guard")
+    def test_kit_version_guard(self):
+        assert_kit_guard(self, "homeschool_practice")

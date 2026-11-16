@@ -74,7 +74,8 @@ learner the game stays full screen (its own page, no app chrome) with a ✕ back
 to « Today »; the installed app is the kit's (this addon no longer serves a
 manifest of its own). For a tutor, « Practice » is a read-only page per learner:
 the units unlocked, the proficiency of each and when it was last practised —
-never shown to the learner.
+never shown to the learner. Every practice entry belongs to the homeschool app of
+the kit (19.0.1.15.0 or later).
 
 Multi-learner
 -------------
