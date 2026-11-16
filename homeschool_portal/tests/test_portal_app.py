@@ -21,8 +21,9 @@ Acceptance criteria
    errors.
 6. Internal users (the parents, homeschool managers) never get the shell: they read
    the pages on the stock portal.
-7. The installed app: ``/my/app.webmanifest`` starts on « Today » (``/my/home``,
-   also its id) and offers « Today » as a shortcut.
+7. The installed app: the homeschool app's manifest (``/my/app/homeschool.webmanifest``;
+   ``/my/app.webmanifest`` where it is the database's default app) starts on « Today »
+   (``/my/home``, also its id) and offers « Today » as a shortcut.
 8. The brand name is the company's, never a hard-coded name.
 9. Switch off: every route answers the stock portal pages, without error.
 10. French for a fr_CA user: « Today » (its widgets), the nav and the role in the user
@@ -39,6 +40,7 @@ from .common import HomeschoolPortalCase
 
 SHELL = 'data-pk-app-shell="1"'
 SWITCH = "bemade_portal_kit.enabled"
+DEFAULT_APP = "bemade_portal_kit.default_app"
 
 
 @tagged("post_install", "-at_install")
@@ -278,6 +280,13 @@ class TestPortalApp(HomeschoolPortalCase):
 
     # 7 -------------------------------------------------------------------
     def test_installable_app(self):
+        # The homeschool app's own manifest, whatever the database's default app.
+        manifest = json.loads(self.get("/my/app/homeschool.webmanifest").text)
+        self.assertEqual((manifest["start_url"], manifest["id"]), ("/my/home", "/my/home"))
+        self.assertIn({"name": "Today", "url": "/my/home"}, manifest.get("shortcuts", []))
+        # The homeschool instance: the only (default) app answers /my/app.webmanifest,
+        # the URL an installed app keeps.
+        self.env["ir.config_parameter"].sudo().set_param(DEFAULT_APP, "homeschool")
         res = self.get("/my/app.webmanifest")
         self.assertEqual(res.status_code, 200)
         manifest = json.loads(res.text)

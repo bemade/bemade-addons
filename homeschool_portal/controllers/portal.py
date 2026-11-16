@@ -11,9 +11,12 @@ the files of a trace or a material all come back through the core's own portal a
 (``homeschool`` 19.0.5.0.0 and later — a file follows the record it is linked to).
 
 The app (19.0.3.0.0): while the Bemade portal kit's switch is on (Settings › Portal App)
-and the user holds a homeschool role (``learner`` / ``tutor``, ``models/portal_kit.py``),
-every page is drawn in the kit's shell (``homeschool_portal.hs_app_layout``) and
-``/my/home`` is « Today », the kit's dashboard of the learner's day. Otherwise the same
+and the user is in the kit app ``homeschool`` (a ``learner`` / ``tutor`` role,
+``models/portal_kit.py``), every page is drawn in the kit's shell
+(``homeschool_portal.hs_app_layout``) and ``/my/home`` is « Today », the kit's dashboard
+of the learner's day (the app's ``home_render``, ``_hs_dash_render``). The kit hooks here
+answer for the homeschool app only (``super()`` for any other app of the database).
+Otherwise the same
 templates are drawn on the stock portal layout: the routes, the URLs, the data and the
 permissions are the same either way (``_hs_render``).
 
@@ -37,7 +40,7 @@ from odoo.addons.bemade_portal_kit_dashboard.controllers.pk_dashboard import Por
 from odoo.addons.homeschool.models.day import iso_week_label
 from odoo.addons.portal.controllers.portal import pager as portal_pager
 
-from ..models.portal_kit import HS_HOME_URL, HS_LAYOUT, HS_LEARNER, HS_TUTOR, hs_user_roles
+from ..models.portal_kit import HS_APP, HS_HOME_URL, HS_LAYOUT, HS_LEARNER, HS_TUTOR, hs_user_roles
 
 MAX_FILES = 10
 MAX_TOTAL_MB = 25
@@ -133,9 +136,14 @@ class HomeschoolPortal(PortalKitDashboard):
     # ------------------------------------------------------------------
     # the app (Bemade portal kit): shell or stock portal, the learner switcher
     # ------------------------------------------------------------------
+    @staticmethod
+    def _hs_in_app():
+        """Is the current request served in the homeschool app (``HS_APP``)?"""
+        return request.env["portal.kit"]._pk_current_app() == HS_APP
+
     def _hs_shell_on(self):
-        """The kit's switch is on and the user holds a homeschool role."""
-        return bool(self._pk_shell_active() and hs_user_roles(request.env.user))
+        """The kit's switch is on and the user is in the homeschool app."""
+        return bool(self._pk_shell_active() and self._hs_in_app())
 
     def _hs_current_student(self, students=None):
         """The learner the user is looking at, for the pages whose URL names none
@@ -198,6 +206,8 @@ class HomeschoolPortal(PortalKitDashboard):
                 "id": s.id, "name": s.name or "", "url": self._hs_switch_url(s), "active": s == student,
             } for s in students]
         extra = {
+            # Every lookup of a homeschool page in the homeschool app.
+            "pk_app_key": HS_APP,
             "pk_user_role": self._hs_role_label(hs_user_roles(user)),
             "pk_home_url": HS_HOME_URL,
             "hs_switcher": switcher,
@@ -206,11 +216,11 @@ class HomeschoolPortal(PortalKitDashboard):
         return self._pk_shell_values(values, page, extra)
 
     def _pk_app_values(self, values, page=None):
-        """The kit's own pages (settings, More, account…) for a homeschool user carry
-        the homeschool values too."""
-        if hs_user_roles(request.env.user):
-            return self._hs_shell_values(values, page)
-        return super()._pk_app_values(values, page)
+        """The kit's own pages (settings, More, account…) in the homeschool app carry
+        the homeschool values too; any other app's are its own."""
+        if not self._hs_in_app():
+            return super()._pk_app_values(values, page)
+        return self._hs_shell_values(values, page)
 
     def _hs_render(self, template, values, page_key, title=None, active_nav=None):
         """A homeschool page: in the kit's shell when it is on for the user (the page's
@@ -237,23 +247,10 @@ class HomeschoolPortal(PortalKitDashboard):
     # ------------------------------------------------------------------
     # « Today »: the kit's dashboard (bemade_portal_kit_dashboard)
     # ------------------------------------------------------------------
-    @http.route()
-    def home(self, **kw):
-        """« Today » for a homeschool user, drawn here rather than through the kit's
-        ``_pk_dash_render`` alone: a database may hold another kit app whose own
-        ``_pk_dash_render`` does not hand over to the next consumer."""
-        if kw.get("classic") or not self._hs_shell_on():
-            return super().home(**kw)
-        values = self._prepare_portal_layout_values()
-        values.update(self._pk_dash_values())
-        return self._hs_dash_render(values)
-
-    def _pk_dash_render(self, values):
-        if not hs_user_roles(request.env.user):
-            return super()._pk_dash_render(values)
-        return self._hs_dash_render(values)
-
     def _hs_dash_render(self, values):
+        """« Today »: the homeschool app's home (``home_render`` of its registration,
+        ``models/portal_kit.py``), called by the kit's ``/my/home`` for a user of the
+        homeschool app."""
         if not values.get("hs_student"):
             today = fields.Date.context_today(request.env.user)
             values.update({
@@ -278,13 +275,13 @@ class HomeschoolPortal(PortalKitDashboard):
 
     @http.route()
     def pk_dash_configure(self, **kw):
-        if self._hs_learner_only():
+        if self._hs_in_app() and self._hs_learner_only():
             return request.redirect(HS_HOME_URL)
         return super().pk_dash_configure(**kw)
 
     def _pk_dash_context(self, Dash, viewer):
         ctx = super()._pk_dash_context(Dash, viewer)
-        if not hs_user_roles(request.env.user):
+        if viewer.get("app") != HS_APP:
             return ctx
         student = self._hs_current_student()
         today = fields.Date.context_today(request.env.user)
@@ -298,7 +295,7 @@ class HomeschoolPortal(PortalKitDashboard):
 
     def _pk_dash_page_values(self, values, ctx):
         values = super()._pk_dash_page_values(values, ctx)
-        if ctx.get("hs_student") is not None:
+        if ctx["viewer"].get("app") == HS_APP and ctx.get("hs_student") is not None:
             values.update({
                 "hs_student": ctx["hs_student"],
                 "hs_today": ctx["hs_today"],

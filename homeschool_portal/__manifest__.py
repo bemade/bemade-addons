@@ -73,7 +73,13 @@ own login (role ``learner``) or attached to a student as a resource user (role
 * Roles come from the students (``res.users._pk_extra_roles``), never from groups; a
   user may hold both. Internal users (the parents) keep the stock portal.
 * The brand name is the company's; the installed app opens on Today
-  (``/my/app.webmanifest``).
+  (``/my/app.webmanifest`` where it is the database's default app — the homeschool
+  instance — else ``/my/app/homeschool.webmanifest``).
+* It is the kit app ``homeschool`` (kit 19.0.1.15.0 or later): its roles, menu, pages,
+  widgets, layout, home and installable app are registered for that app only, so
+  another kit app installed in the same database never mixes with it. An upgrade over
+  an older kit stops before anything is written: upgrade the kit in the same run
+  (``-u bemade_portal_kit,bemade_portal_kit_pwa,bemade_portal_kit_dashboard,homeschool_portal``).
 
 Switch off (or a user without a homeschool role): every route answers the same pages
 on the stock portal layout. Routes, URLs, data and record rules are the same in both.
