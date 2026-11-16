@@ -5,3 +5,4 @@ from . import test_portal_traces
 from . import test_portal_reading
 from . import test_portal_i18n
 from . import test_portal_app
+from . import test_portal_app_apps
