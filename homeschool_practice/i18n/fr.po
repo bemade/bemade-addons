@@ -126,12 +126,16 @@ msgid "A keypad answer is digits only (%(key)s)."
 msgstr "Une réponse au pavé numérique ne contient que des chiffres (%(key)s)."
 
 #. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__quest_daily
+msgid "A quest every day until mastered"
+msgstr "Une quête chaque jour jusqu’à la maîtrise"
+
+#. module: homeschool_practice
 #: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_quest_one_per_template_day
-msgid ""
-"A quest template is drawn at most once a day (per unit for session quests)."
+msgid "A quest template is drawn at most once a day per deck and unit."
 msgstr ""
-"Un modèle de quête est tiré au plus une fois par jour (par unité pour les "
-"quêtes de séance)."
+"Un modèle de quête est tiré au plus une fois par jour par paquet et par "
+"unité."
 
 #. module: homeschool_practice
 #: model:homeschool.practice.quest.template,name:homeschool_practice.quest_review_session
@@ -154,7 +158,6 @@ msgid "A session on {unit}"
 msgstr "Une séance : {unit}"
 
 #. module: homeschool_practice
-#: model:homeschool.practice.quest.template,name:homeschool_practice.quest_perfect
 #: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_quest_template__kind__perfect
 msgid "A session without a miss"
 msgstr "Une séance sans erreur"
@@ -254,6 +257,11 @@ msgstr "Mode de réponse"
 #: model:homeschool.practice.quest.template,name:homeschool_practice.quest_answers
 msgid "Answer {target} questions"
 msgstr "Réponds à {target} questions"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
+msgid "Answers"
+msgstr "Réponses"
 
 #. module: homeschool_practice
 #: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_quest_template__kind__answers
@@ -674,22 +682,6 @@ msgid "Due On"
 msgstr "À revoir le"
 
 #. module: homeschool_practice
-#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__quest_daily
-msgid "A quest every day"
-msgstr "Une quête chaque jour"
-
-#. module: homeschool_practice
-#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__quest_daily
-msgid ""
-"Every practice day, the learner gets a session quest on the unit of this "
-"deck that needs it most (when a unit is unlocked), before the other quests "
-"are drawn."
-msgstr ""
-"Chaque jour de pratique, l'élève reçoit une quête de séance sur l'unité de "
-"ce paquet qui en a le plus besoin (si une unité est débloquée), avant le "
-"tirage des autres quêtes."
-
-#. module: homeschool_practice
 #: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__subject_id
 msgid ""
 "Each subject with unlocked units gets its own session quest every practice "
@@ -731,6 +723,19 @@ msgid "Erase"
 msgstr "Effacer"
 
 #. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__quest_daily
+msgid ""
+"Every practice day, the learner gets a session quest on this deck (when a "
+"unit is unlocked) until he has mastered it: every item automatic. Then the "
+"deck joins the rotation of the other decks. Backend only: the learner is "
+"never told about mastery."
+msgstr ""
+"Chaque jour de pratique, l’élève reçoit une quête de séances sur ce paquet "
+"(quand une unité est débloquée) jusqu’à ce qu’il le maîtrise : tous les "
+"éléments automatiques. Le paquet rejoint alors la rotation des autres "
+"paquets. Côté adultes seulement : l’élève ne voit jamais la maîtrise."
+
+#. module: homeschool_practice
 #: model:ir.model.fields,field_description:homeschool_practice.field_res_company__practice_xp_correct
 msgid "Extra XP per correct answer"
 msgstr "XP de plus par bonne réponse"
@@ -744,6 +749,11 @@ msgstr "Terminer une séance de révision"
 #: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_quest_template__kind__unit_session
 msgid "Finish a session on the unit that needs it most"
 msgstr "Terminer une séance sur l’unité qui en a le plus besoin"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_quest_template__kind__deck_session
+msgid "Finish sessions in a deck"
+msgstr "Terminer des séances d’un paquet"
 
 #. module: homeschool_practice
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__first_served
@@ -765,6 +775,11 @@ msgstr "Premier toucher (ms)"
 msgid ""
 "For the adults who follow the learner: the learner never sees this page."
 msgstr "Pour les adultes qui suivent l’élève : l’élève ne voit jamais cette page."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_quest_template__target
+msgid "For « no hint » and « answers »: the count for one session's worth."
+msgstr "Pour « sans indice » et « réponses » : le nombre qui vaut une séance."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -865,6 +880,11 @@ msgid ""
 msgstr ""
 "Nombre de questions d’une unité (dans l’ordre des étapes) présentées au "
 "déverrouillage."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_quest__sessions
+msgid "How many sessions the quest asks for (the day asks for 3 to 5)."
+msgstr "Combien de séances la quête demande (la journée en demande de 3 à 5)."
 
 #. module: homeschool_practice
 #: model:homeschool.practice.badge.template,name:homeschool_practice.badge_xp_day_100
@@ -1122,6 +1142,11 @@ msgid ""
 msgstr ""
 "Le niveau n demande base × (n − 1) × n / 2 XP au total : niveau 2 à 50, 3 à "
 "150, 4 à 300…"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_list
+msgid "Load English practice set"
+msgstr "Charger la série de pratique en anglais"
 
 #. module: homeschool_practice
 #: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_list
@@ -1775,6 +1800,11 @@ msgid "Submit (ms)"
 msgstr "Validation (ms)"
 
 #. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_quest_template__kind__surprise
+msgid "Surprise lessons (a unit the app picks)"
+msgstr "Leçons surprises (une unité choisie par l’application)"
+
+#. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
 msgid "Table of %(n)s"
@@ -2049,8 +2079,12 @@ msgstr "Ce que rapportent les objectifs"
 
 #. module: homeschool_practice
 #: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_quest_template__name
-msgid "What the learner reads. May use {unit} and {target}."
-msgstr "Ce que l’élève lit. Peut contenir {unit} et {target}."
+msgid ""
+"What the learner reads. May use {unit}, {deck}, {target} and {s} (plural "
+"mark)."
+msgstr ""
+"Ce que l’élève lit. Peut contenir {unit}, {deck}, {target} et {s} (marque du"
+" pluriel)."
 
 #. module: homeschool_practice
 #: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_form
@@ -2141,6 +2175,16 @@ msgid "{target} correct answers without a hint"
 msgstr "{target} bonnes réponses sans indice"
 
 #. module: homeschool_practice
-#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
-msgid "Answers"
-msgstr "Réponses"
+#: model:homeschool.practice.quest.template,name:homeschool_practice.quest_perfect
+msgid "{target} perfect session{s}"
+msgstr "{target} séance{s} parfaite{s}"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.quest.template,name:homeschool_practice.quest_deck_session
+msgid "{target} session{s}: {deck}"
+msgstr "{target} séance{s} : {deck}"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.quest.template,name:homeschool_practice.quest_surprise
+msgid "{target} surprise lesson{s}"
+msgstr "{target} leçon{s} surprise{s}"

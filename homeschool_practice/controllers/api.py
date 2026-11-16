@@ -133,7 +133,11 @@ class PracticeApi(http.Controller):
         if quest and (not quest.exists() or quest.student_id != student):
             raise NotFound()
         decks = self._decks(student)
-        deck = quest.deck_id if quest else request.env["homeschool.practice.deck"].sudo().browse(int(deck_id or 0))
+        surprise = quest._surprise_unit() if quest and quest.kind == "surprise" else None
+        if surprise is not None and not surprise:
+            raise NotFound()
+        deck = (surprise.deck_id if surprise else quest.deck_id) if quest else \
+            request.env["homeschool.practice.deck"].sudo().browse(int(deck_id or 0))
         if deck not in decks:
             raise NotFound()
         units = None
@@ -143,6 +147,8 @@ class PracticeApi(http.Controller):
             if len(units) != len(set(unit_ids)) or units - self._units(student, deck):
                 raise NotFound()
             kind, unit = "free", None
+        elif surprise:
+            kind, unit = "unit", surprise  # the server picks the unit: the learner does not choose
         elif quest and quest.kind == "review_session":
             kind, unit = "review", None
         elif quest:

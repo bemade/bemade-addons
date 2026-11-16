@@ -62,7 +62,7 @@ class TestPortalApi(PracticeHttpCase):
     def test_full_session(self):
         self.authenticate("hs_learner", "hs_learner")
         home = self.call("/home")
-        quest = [q for q in home["quests"] if q["kind"] == "unit_session"][0]
+        quest = [q for q in home["quests"] if q["kind"] == "deck_session"][0]
         res = self.call("/session/start", quest_id=quest["id"], input_type="touch", device="iPad")
         self.assert_clean(res)
         item = res["item"]

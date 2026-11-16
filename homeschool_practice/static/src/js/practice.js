@@ -100,7 +100,7 @@
         var quests = d.quests.map(function (q) {
             var prog = q.target > 1 ? '<span class="hp-q-prog">' + q.progress + " / " + q.target + "</span>" : "";
             return '<button class="hp-quest' + (q.done ? " is-done" : "") + '" data-quest="' + q.id + '"' + (q.done ? " disabled" : "") + ">" +
-                '<span class="hp-q-icon">' + (q.done ? "✅" : "🎯") + "</span>" +
+                '<span class="hp-q-icon">' + (q.done ? "✅" : (q.kind === "surprise" ? "🎁" : "🎯")) + "</span>" +
                 '<span class="hp-q-label">' + esc(q.label) + "</span>" + prog + bar(q.progress, q.target) + "</button>";
         }).join("");
         if (d.rest_day) { quests = '<p class="hp-rest">🌤️ ' + esc(L.rest_day) + "</p>"; }

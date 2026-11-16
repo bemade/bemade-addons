@@ -41,9 +41,10 @@ class PracticeDeck(models.Model):
         help="When a unit reaches this proficiency, the next unit unlocks on its own (0 = a parent "
              "unlocks every unit). For units that need no new teaching, e.g. times tables.")
     quest_daily = fields.Boolean(
-        "A quest every day",
-        help="Every practice day, the learner gets a session quest on the unit of this deck that needs it "
-             "most (when a unit is unlocked), before the other quests are drawn.")
+        "A quest every day until mastered",
+        help="Every practice day, the learner gets a session quest on this deck (when a unit is unlocked) "
+             "until he has mastered it: every item automatic. Then the deck joins the rotation of the other "
+             "decks. Backend only: the learner is never told about mastery.")
     active = fields.Boolean(default=True)
 
     _session_size_positive = models.Constraint("check(session_size > 0)", "A session needs at least one item.")
@@ -53,6 +54,17 @@ class PracticeDeck(models.Model):
         for deck in self:
             if not re.fullmatch(r"\s*\d+(\s*,\s*\d+){4}\s*", deck.box_intervals or ""):
                 raise ValidationError(self.env._("Box intervals are five whole numbers of days, e.g. 0,1,3,7,14."))
+
+    def _mastered_by(self, student):
+        """The learner's mastery verdict on the whole deck: every active item is ``automatic``
+        for him. Educators and the quest draw only, never shown to the learner."""
+        self.ensure_one()
+        items = self.item_ids
+        if not items:
+            return False
+        automatic = self.env["homeschool.practice.mastery"].sudo().search_count([
+            ("student_id", "=", student.id), ("item_id", "in", items.ids), ("state", "=", "automatic")])
+        return automatic == len(items)
 
     def _intervals(self):
         self.ensure_one()
@@ -150,16 +162,28 @@ class PracticeDeck(models.Model):
         return True
 
     @api.model
+    def action_load_english(self):
+        """Load the English grammar practice set (« English grammar », subject ANG) in the
+        current company. Idempotent, like the other decks: what exists is kept."""
+        if not self.env.su and not self.env.user.has_group("homeschool.group_homeschool_manager"):
+            raise AccessError(self.env._("Only a parent (homeschool manager) loads practice decks."))
+        self._load_choice_csv("homeschool_practice/data/english_grammar_units.csv",
+                              "homeschool_practice/data/english_grammar_cards.csv")
+        return True
+
+    @api.model
     def _flag_daily_decks(self):
-        """Flag the decks that get a quest every day on databases loaded before the flag
-        existed: the times-tables decks (items keyed « 7x8 ») and the « Grammaire » starter deck."""
-        decks = self.with_context(active_test=False).search([("quest_daily", "=", False)])
+        """Set the « quest every day until mastered » flag on databases loaded before it meant
+        that: on for the times-tables decks (items keyed « 7x8 »), off for the « Grammaire »
+        starter deck (it joins the rotation). Idempotent. Returns the tables decks."""
+        decks = self.with_context(active_test=False).search([])
         tables = decks.filtered(lambda d: any(
             re.fullmatch(r"\d+x\d+", k or "") for k in d.with_context(active_test=False).item_ids.mapped("key")))
         langs = [code for code, _name in self.env["res.lang"].get_installed()]
         grammar = decks.filtered(lambda d: any(d.with_context(lang=lang).name == "Grammaire" for lang in langs))
-        (tables | grammar).quest_daily = True
-        return tables | grammar
+        (tables - grammar).filtered(lambda d: not d.quest_daily).quest_daily = True
+        (grammar - tables).filtered("quest_daily").quest_daily = False
+        return tables
 
     @api.model
     def _load_choice_csv(self, units_path, cards_path):

@@ -116,11 +116,11 @@ class TestRewards(PracticeCase):
     def test_session_flow_pays(self):
         self.t7.action_unlock(self.student)
         Template = self.env["homeschool.practice.quest.template"]
-        Template.search([]).write({"active": False})
-        Template.create({"name": "Answer {target}", "kind": "answers", "target": 1})
-        Template.create({"name": "{target} right", "kind": "no_hint", "target": 1})
         self.student.practice_weekdays = "1234567"
-        self.Quest._draw(self.student)
+        today = self.Quest._today(self.student)
+        for t in (Template.create({"name": "Answer {target}", "kind": "answers", "target": 1}),
+                  Template.create({"name": "{target} right", "kind": "no_hint", "target": 1})):
+            self.Quest.create({"student_id": self.student.id, "template_id": t.id, "day": today, "target": 1})
         s = self.Session._start(self.student, self.deck, kind="unit", unit=self.t7)
         item = s._current_item()
         _a, ev = s._answer(item, item.answer)

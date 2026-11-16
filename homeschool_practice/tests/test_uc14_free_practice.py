@@ -16,7 +16,8 @@ Acceptance criteria
    deck.
 4. Quests: a free session on a single unit counts for that unit's « session » quest;
    on several units it counts for none of the unit or review quests. Answers, hints,
-   perfect sessions, XP, goals and badges count as for any session.
+   perfect sessions, XP, goals and badges count as for any session; any session counts
+   for its deck's quest (UC-23).
 5. Without a choice (old clients, a ``deck_id`` alone) the API keeps choosing for him.
 6. Back office: the session shows its chosen units.
 """
@@ -68,13 +69,18 @@ class TestFreePractice(PracticeCase):
 
     def test_quests(self):
         self.student.practice_weekdays = "1234567"
-        quests = self.Quest._draw(self.student)
-        unit_q = quests.filtered(lambda q: q.kind == "unit_session")
+        today = self.Quest._today(self.student)
+        unit_t = self.env.ref("homeschool_practice.quest_unit_session")
+        unit_q = self.Quest.create({"student_id": self.student.id, "template_id": unit_t.id, "day": today,
+                                    "deck_id": self.deck.id, "unit_id": self.t7.id})
+        deck_q = self.Quest.create({"student_id": self.student.id, "day": today, "deck_id": self.deck.id,
+                                    "template_id": self.env.ref("homeschool_practice.quest_deck_session").id})
         other = (self.t3 | self.t5 | self.t7) - unit_q.unit_id
         both = self.Session._start(self.student, self.deck, kind="free", units=unit_q.unit_id | other[0])
         self.answer_all(both)
         both._finish()
         self.assertFalse(unit_q.done)
+        self.assertTrue(deck_q.done, "any session of the deck counts for its deck quest")
         single = self.Session._start(self.student, self.deck, kind="free", units=unit_q.unit_id)
         self.answer_all(single)
         single._finish()

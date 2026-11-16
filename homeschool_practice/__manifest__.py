@@ -4,7 +4,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     "name": "Homeschool Practice",
-    "version": "19.0.1.5.0",
+    "version": "19.0.1.6.0",
     "category": "Education",
     "summary": "Short, frequent retrieval practice with game mechanics and family-defined rewards, "
     "touch-first (iPad).",
@@ -34,11 +34,13 @@ Front ends (the portal lesson screen now, other games later) only display items
 and return answers, so learner history and progress are shared across them.
 
 Starter decks a parent loads from the deck list: French grammar (homophones,
-grammar, word classes, agreement, conjugation, syntax) and math (« Les
+grammar, word classes, agreement, conjugation, syntax), math (« Les
 fractions »: reading, comparing, fraction of a whole number, equivalent and
 reduced fractions, ordering, fraction / decimal / percentage; « Les
-conversions »: length, mass, capacity and time units), linked to the Québec
-PDA curriculum items they practise.
+conversions »: length, mass, capacity and time units) and English (« English
+grammar »: irregular plurals, the possessive 's, past tense spelling and
+irregular verbs, capitals and end marks, one idea per sentence; hints in
+English), linked to the Québec PDA curriculum items they practise.
 
 Each item has an answer mode: a **keypad** (the learner produces the answer —
 e.g. multiplication facts) or **choices** (the learner picks — e.g. infinitive
@@ -52,10 +54,14 @@ and the portal API never returns it.
 Game mechanics
 --------------
 * XP and levels for effort and progress. XP is never earned for speed.
-* Daily quests drawn from what needs practice that day; the learner chooses
-  the order. A deck may get a quest every day (« Une quête chaque jour »: times
-  tables, grammar); the other slots go to the units that need it most. A daily cap rewards spaced practice over cramming. Practice days
-  are configured per learner.
+* Daily quests (3 a day, together 3 to 5 sessions, varied); the learner
+  chooses the order. A deck may get a quest every day until the learner has
+  mastered it (« Une quête chaque jour jusqu'à la maîtrise »: the times tables);
+  the other slots rotate among the unlocked decks, least recently quested first,
+  never a deck twice a day. About one day in three, « surprise lessons » open a
+  unit the app picks among those not practised for a while. Mastery stays a
+  backend notion: the learner never sees it. A daily cap rewards spaced practice
+  over cramming. Practice days are configured per learner.
 * Badges for accomplishments (XP reached, XP in a day, perfect sessions, unit
   proficiency levels…), never for speed or time of day.
 * Daily, weekly and monthly goals built from completed quests. No streaks.
