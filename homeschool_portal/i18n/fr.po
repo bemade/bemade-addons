@@ -6,11 +6,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 20:07+0000\n"
-"PO-Revision-Date: 2026-09-28 20:07+0000\n"
+"POT-Creation-Date: 2026-11-15 12:59+0000\n"
+"PO-Revision-Date: 2026-11-15 12:59+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
-"Language: fr_CA\n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
@@ -33,8 +33,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_trace
 msgid "<i class=\"fa fa-arrow-left me-1\" role=\"img\" aria-label=\"Back\"/>All traces"
 msgstr ""
-"<i class=\"fa fa-arrow-left me-1\" role=\"img\" "
-"aria-label=\"Retour\"/>Toutes les traces"
+"<i class=\"fa fa-arrow-left me-1\" role=\"img\" aria-"
+"label=\"Retour\"/>Toutes les traces"
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
@@ -51,9 +51,7 @@ msgstr ""
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_week
 msgid "<i class=\"fa fa-chevron-left\" role=\"img\" aria-label=\"Previous week\"/>"
-msgstr ""
-"<i class=\"fa fa-chevron-left\" role=\"img\" aria-label=\"Semaine "
-"précédente\"/>"
+msgstr "<i class=\"fa fa-chevron-left\" role=\"img\" aria-label=\"Semaine précédente\"/>"
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
@@ -65,9 +63,7 @@ msgstr ""
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_week
 msgid "<i class=\"fa fa-chevron-right\" role=\"img\" aria-label=\"Next week\"/>"
-msgstr ""
-"<i class=\"fa fa-chevron-right\" role=\"img\" aria-label=\"Semaine "
-"suivante\"/>"
+msgstr "<i class=\"fa fa-chevron-right\" role=\"img\" aria-label=\"Semaine suivante\"/>"
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
@@ -75,8 +71,8 @@ msgid ""
 "<i class=\"fa fa-file-pdf-o me-1\" role=\"img\" aria-label=\"PDF\"/>Download"
 " the PDF"
 msgstr ""
-"<i class=\"fa fa-file-pdf-o me-1\" role=\"img\" "
-"aria-label=\"PDF\"/>Télécharger le PDF"
+"<i class=\"fa fa-file-pdf-o me-1\" role=\"img\" aria-"
+"label=\"PDF\"/>Télécharger le PDF"
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_file_list
@@ -91,9 +87,7 @@ msgstr "<i class=\"fa fa-print\" role=\"img\" aria-label=\"Imprimer\"/>"
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_book
 msgid "<i class=\"fa fa-save me-1\" role=\"img\" aria-label=\"Save\"/>Save"
-msgstr ""
-"<i class=\"fa fa-save me-1\" role=\"img\" "
-"aria-label=\"Enregistrer\"/>Enregistrer"
+msgstr "<i class=\"fa fa-save me-1\" role=\"img\" aria-label=\"Enregistrer\"/>Enregistrer"
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
@@ -170,6 +164,11 @@ msgid "<span class=\"text-muted\">Validated on</span>"
 msgstr "<span class=\"text-muted\">Validée le</span>"
 
 #. module: homeschool_portal
+#: model_terms:ir.ui.view,arch_db:homeschool_portal.hs_app_layout
+msgid "<span>More</span>"
+msgstr "<span>Plus</span>"
+
+#. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
 msgid "<strong>Day off</strong>"
 msgstr "<strong>Jour de congé</strong>"
@@ -183,7 +182,8 @@ msgstr "Une question sur ta lecture d'aujourd'hui"
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_submit
 msgid ""
 "A trace handed in from here stays internal until the parent validates it."
-msgstr "Une trace déposée ici reste interne jusqu'à ce que le parent la valide."
+msgstr ""
+"Une trace déposée ici reste interne jusqu'à ce que le parent la valide."
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_reading
@@ -196,6 +196,7 @@ msgid "Blocks"
 msgstr "Blocs"
 
 #. module: homeschool_portal
+#: model_terms:ir.ui.view,arch_db:homeschool_portal.hs_dash_list
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
 msgid "Bonus"
 msgstr "Bonus"
@@ -211,6 +212,11 @@ msgid "Cancel"
 msgstr "Annuler"
 
 #. module: homeschool_portal
+#: model_terms:ir.ui.view,arch_db:homeschool_portal.hs_app_layout
+msgid "Change learner"
+msgstr "Changer d'élève"
+
+#. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_traces
 msgid "Code"
 msgstr "Code"
@@ -221,11 +227,29 @@ msgid "Comments"
 msgstr "Commentaires"
 
 #. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/models/portal_kit.py:0
+msgid "Configure the dashboard"
+msgstr "Configurer le tableau de bord"
+
+#. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_book
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_submit
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_traces
 msgid "Date"
 msgstr "Date"
+
+#. module: homeschool_portal
+#: model_terms:ir.ui.view,arch_db:homeschool_portal.hs_dash_blocks
+msgid "Day off"
+msgstr "Jour de congé"
+
+#. module: homeschool_portal
+#: model:ir.model.fields,field_description:homeschool_portal.field_portal_kit__display_name
+#: model:ir.model.fields,field_description:homeschool_portal.field_portal_kit_dashboard__display_name
+#: model:ir.model.fields,field_description:homeschool_portal.field_res_users__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
@@ -242,6 +266,16 @@ msgstr "Modifier"
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_reading
 msgid "Entries"
 msgstr "Entrées"
+
+#. module: homeschool_portal
+#: model_terms:ir.ui.view,arch_db:homeschool_portal.hs_dash_reading
+msgid "Entry to write"
+msgstr "Entrée à écrire"
+
+#. module: homeschool_portal
+#: model_terms:ir.ui.view,arch_db:homeschool_portal.hs_dash_reading
+msgid "Entry written"
+msgstr "Entrée écrite"
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_submit
@@ -261,9 +295,19 @@ msgid "Give your trace a title."
 msgstr "Il manque un titre à la trace."
 
 #. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/controllers/portal.py:0
+#: code:addons/homeschool_portal/models/portal_kit.py:0
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_submit
 msgid "Hand in a trace"
 msgstr "Déposer une trace"
+
+#. module: homeschool_portal
+#: model:ir.model.fields,field_description:homeschool_portal.field_portal_kit__id
+#: model:ir.model.fields,field_description:homeschool_portal.field_portal_kit_dashboard__id
+#: model:ir.model.fields,field_description:homeschool_portal.field_res_users__id
+msgid "ID"
+msgstr "Identifiant"
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_reading
@@ -292,6 +336,19 @@ msgid "Internal"
 msgstr "Interne"
 
 #. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/controllers/portal.py:0
+msgid "Learner"
+msgstr "Élève"
+
+#. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/controllers/portal.py:0
+#: code:addons/homeschool_portal/models/portal_kit.py:0
+msgid "Learners"
+msgstr "Élèves"
+
+#. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
 msgid "Liste du jour"
 msgstr "Liste du jour"
@@ -300,6 +357,12 @@ msgstr "Liste du jour"
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
 msgid "Material of the day"
 msgstr "Matériel du jour"
+
+#. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/models/portal_kit.py:0
+msgid "More"
+msgstr "Plus"
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_breadcrumbs_homeschool
@@ -331,9 +394,15 @@ msgid "No block"
 msgstr "Aucun bloc"
 
 #. module: homeschool_portal
+#: model_terms:ir.ui.view,arch_db:homeschool_portal.hs_dash_blocks
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
 msgid "No block on this day."
 msgstr "Aucun bloc ce jour-là."
+
+#. module: homeschool_portal
+#: model_terms:ir.ui.view,arch_db:homeschool_portal.hs_dash_reading
+msgid "No book in progress."
+msgstr "Aucun livre en cours."
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_reading
@@ -371,6 +440,11 @@ msgid "No trace to show yet."
 msgstr "Aucune trace à afficher pour l'instant."
 
 #. module: homeschool_portal
+#: model_terms:ir.ui.view,arch_db:homeschool_portal.hs_dash_list
+msgid "Nothing on the list today."
+msgstr "Rien sur la liste aujourd'hui."
+
+#. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
 msgid "Nothing to hand over today."
 msgstr "Rien à remettre aujourd'hui."
@@ -399,7 +473,18 @@ msgstr "En attente de validation"
 #. odoo-python
 #: code:addons/homeschool_portal/controllers/portal.py:0
 msgid "Photos, PDF, audio… %(files)s files and %(mb)s MB in all at most."
-msgstr "Photos, PDF, audio… %(files)s fichiers et %(mb)s Mo en tout au maximum."
+msgstr ""
+"Photos, PDF, audio… %(files)s fichiers et %(mb)s Mo en tout au maximum."
+
+#. module: homeschool_portal
+#: model:ir.model,name:homeschool_portal.model_portal_kit
+msgid "Portal Kit Registries"
+msgstr "Registres de la trousse portail"
+
+#. module: homeschool_portal
+#: model:ir.model,name:homeschool_portal.model_portal_kit_dashboard
+msgid "Portal kit: configurable dashboard"
+msgstr "Trousse portail : tableau de bord configurable"
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
@@ -417,6 +502,14 @@ msgid "Print"
 msgstr "Imprimer"
 
 #. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/models/portal_kit.py:0
+msgid "Reading"
+msgstr "Lecture"
+
+#. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/controllers/portal.py:0
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_home
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_reading
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_student_nav
@@ -458,7 +551,8 @@ msgstr "La date n'est pas valide."
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_my_home_homeschool
 msgid "The days, traces and reading log of the students you follow"
-msgstr "Les journées, les traces et le carnet de lecture des élèves que vous suivez"
+msgstr ""
+"Les journées, les traces et le carnet de lecture des élèves que vous suivez"
 
 #. module: homeschool_portal
 #. odoo-python
@@ -473,9 +567,16 @@ msgid "This week"
 msgstr "Cette semaine"
 
 #. module: homeschool_portal
+#: model_terms:ir.ui.view,arch_db:homeschool_portal.hs_dash_list
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
 msgid "Tick"
 msgstr "Cocher"
+
+#. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/controllers/portal.py:0
+msgid "Ticked off."
+msgstr "Coché."
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_submit
@@ -489,6 +590,10 @@ msgid "To do"
 msgstr "À faire"
 
 #. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/controllers/portal.py:0
+#: code:addons/homeschool_portal/models/portal_kit.py:0
+#: model_terms:ir.ui.view,arch_db:homeschool_portal.hs_app_layout
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_home
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_student_nav
@@ -496,11 +601,32 @@ msgid "Today"
 msgstr "Aujourd'hui"
 
 #. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/models/portal_kit_dashboard.py:0
+msgid "Today's blocks"
+msgstr "Blocs du jour"
+
+#. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_book
 msgid "Today's entry"
 msgstr "L'entrée du jour"
 
 #. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/models/portal_kit_dashboard.py:0
+msgid "Today's list"
+msgstr "Liste du jour"
+
+#. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/models/portal_kit_dashboard.py:0
+msgid "Today's reading"
+msgstr "Lecture du jour"
+
+#. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/controllers/portal.py:0
+#: code:addons/homeschool_portal/models/portal_kit.py:0
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_home
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_student_nav
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_traces
@@ -508,16 +634,42 @@ msgid "Traces"
 msgstr "Traces"
 
 #. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/controllers/portal.py:0
+msgid "Tutor"
+msgstr "Tuteur"
+
+#. module: homeschool_portal
+#: model_terms:ir.ui.view,arch_db:homeschool_portal.hs_dash_list
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
 msgid "Untick"
 msgstr "Décocher"
 
 #. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/controllers/portal.py:0
+msgid "Unticked."
+msgstr "Décoché."
+
+#. module: homeschool_portal
+#: model:ir.model,name:homeschool_portal.model_res_users
+msgid "User"
+msgstr "Utilisateur"
+
+#. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/models/portal_kit.py:0
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_day
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_student_nav
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_week
 msgid "Week"
 msgstr "Semaine"
+
+#. module: homeschool_portal
+#. odoo-python
+#: code:addons/homeschool_portal/controllers/portal.py:0
+msgid "Week %(week)s"
+msgstr "Semaine %(week)s"
 
 #. module: homeschool_portal
 #: model_terms:ir.ui.view,arch_db:homeschool_portal.portal_submit

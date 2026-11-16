@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 15:20+0000\n"
-"PO-Revision-Date: 2026-11-10 15:20+0000\n"
+"POT-Creation-Date: 2026-11-15 12:59+0000\n"
+"PO-Revision-Date: 2026-11-15 12:59+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -98,6 +98,12 @@ msgstr ""
 "(%(key)s)."
 
 #. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/session.py:0
+msgid "A free practice session needs at least one unit."
+msgstr "Une séance de pratique libre demande au moins une unité."
+
+#. module: homeschool_practice
 #: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_goal_achievement_one_per_period
 msgid "A goal is reached once per period."
 msgstr "Un objectif est atteint une seule fois par période."
@@ -121,7 +127,8 @@ msgstr "Une réponse au pavé numérique ne contient que des chiffres (%(key)s).
 
 #. module: homeschool_practice
 #: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_quest_one_per_template_day
-msgid "A quest template is drawn at most once a day (per unit for session quests)."
+msgid ""
+"A quest template is drawn at most once a day (per unit for session quests)."
 msgstr ""
 "Un modèle de quête est tiré au plus une fois par jour (par unité pour les "
 "quêtes de séance)."
@@ -200,6 +207,12 @@ msgstr "Ajustement"
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/controllers/api.py:0
+msgid "All"
+msgstr "Tout"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
 msgid "Almost!"
 msgstr "Presque !"
 
@@ -272,6 +285,11 @@ msgstr ""
 "ignorées pour la maîtrise."
 
 #. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__auto_unlock_at
+msgid "Auto-unlock at (%)"
+msgstr "Déverrouillage automatique à (%)"
+
+#. module: homeschool_practice
 #: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_mastery__state__automatic
 #: model_terms:ir.ui.view,arch_db:homeschool_practice.view_mastery_search
 msgid "Automatic"
@@ -302,6 +320,12 @@ msgstr "Seuil d’automatisation imposé (ms)"
 #: code:addons/homeschool_practice/controllers/api.py:0
 msgid "Back"
 msgstr "Retour"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Back to today"
+msgstr "Retour à aujourd’hui"
 
 #. module: homeschool_practice
 #: model:ir.model,name:homeschool_practice.model_homeschool_practice_badge_template
@@ -376,6 +400,17 @@ msgstr "Valider"
 #: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_item__answer_mode__choices
 msgid "Choices"
 msgstr "Choix"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Choose what to practice"
+msgstr "Choisis ce que tu veux pratiquer"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__unit_ids
+msgid "Chosen units"
+msgstr "Unités choisies"
 
 #. module: homeschool_practice
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__client_uuid
@@ -604,6 +639,8 @@ msgstr "Appareil"
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__display_name
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__display_name
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_portal_kit__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_portal_kit_dashboard__display_name
 #: model:ir.model.fields,field_description:homeschool_practice.field_res_company__display_name
 msgid "Display Name"
 msgstr "Nom affiché"
@@ -622,6 +659,7 @@ msgstr "Terminée le"
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/controllers/api.py:0
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.hs_dash_quests
 msgid "Done!"
 msgstr "Terminé !"
 
@@ -634,6 +672,15 @@ msgstr "Fréquence de tirage."
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__due_on
 msgid "Due On"
 msgstr "À revoir le"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__subject_id
+msgid ""
+"Each subject with unlocked units gets its own session quest every practice "
+"day."
+msgstr ""
+"Chaque matière dont des unités sont déverrouillées reçoit sa propre quête de"
+" séance chaque jour de pratique."
 
 #. module: homeschool_practice
 #: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_reward_ledger__kind__earned
@@ -698,11 +745,23 @@ msgid "First touch (ms)"
 msgstr "Premier toucher (ms)"
 
 #. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
+msgid ""
+"For the adults who follow the learner: the learner never sees this page."
+msgstr "Pour les adultes qui suivent l’élève : l’élève ne voit jamais cette page."
+
+#. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/controllers/api.py:0
 #: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_session__kind__free
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.hs_dash_quests
 msgid "Free practice"
 msgstr "Pratique libre"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_session__unit_ids
+msgid "Free practice: the units the learner picked."
+msgstr "Pratique libre : les unités choisies par l’élève."
 
 #. module: homeschool_practice
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__from_state
@@ -821,6 +880,8 @@ msgstr "Énorme journée : 100 XP"
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__id
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__id
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_portal_kit__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_portal_kit_dashboard__id
 #: model:ir.model.fields,field_description:homeschool_practice.field_res_company__id
 msgid "ID"
 msgstr "ID"
@@ -978,6 +1039,11 @@ msgid "Last Updated on"
 msgstr "Dernière mise à jour le"
 
 #. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
+msgid "Last practised"
+msgstr "Dernière pratique"
+
+#. module: homeschool_practice
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__access_ids
 msgid "Learner access"
 msgstr "Accès de l’élève"
@@ -1040,6 +1106,11 @@ msgid ""
 msgstr ""
 "Le niveau n demande base × (n − 1) × n / 2 XP au total : niveau 2 à 50, 3 à "
 "150, 4 à 300…"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_list
+msgid "Load French grammar decks"
+msgstr "Charger les paquets de grammaire"
 
 #. module: homeschool_practice
 #: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice
@@ -1142,6 +1213,27 @@ msgid "New level!"
 msgstr "Nouveau niveau !"
 
 #. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "New unit!"
+msgstr "Nouvelle unité !"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.hs_dash_quests
+msgid "No quest today."
+msgstr "Aucune quête aujourd’hui."
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
+msgid "No unit is unlocked yet."
+msgstr "Aucune unité n’est encore déverrouillée."
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
+msgid "Not yet"
+msgstr "Pas encore"
+
+#. module: homeschool_practice
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__note
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_redeem_wizard__note
 msgid "Note"
@@ -1173,6 +1265,12 @@ msgstr "Un groupe de %(a)s, c’est %(a)s."
 #: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_mastery_student_item_unique
 msgid "One mastery row per learner and item."
 msgstr "Une ligne de maîtrise par élève et par question."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Only a parent (homeschool manager) loads practice decks."
+msgstr "Seul un parent (gestionnaire) charge des paquets de pratique."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -1223,6 +1321,16 @@ msgid "Planned item ids (engine state)."
 msgstr "Questions prévues (état du moteur)."
 
 #. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_portal_kit
+msgid "Portal Kit Registries"
+msgstr "Registres de la trousse portail"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_portal_kit_dashboard
+msgid "Portal kit: configurable dashboard"
+msgstr "Trousse portail : tableau de bord configurable"
+
+#. module: homeschool_practice
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__position
 msgid "Position"
 msgstr "Position"
@@ -1230,6 +1338,8 @@ msgstr "Position"
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/controllers/api.py:0
+#: code:addons/homeschool_practice/controllers/portal_kit.py:0
+#: code:addons/homeschool_practice/models/portal_kit.py:0
 #: model:ir.ui.menu,name:homeschool_practice.menu_practice
 #: model:ir.ui.menu,name:homeschool_practice.menu_practice_config
 #: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_home_practice
@@ -1299,6 +1409,11 @@ msgid "Practice item"
 msgstr "Question de pratique"
 
 #. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
+msgid "Practice progress"
+msgstr "Progrès en pratique"
+
+#. module: homeschool_practice
 #: model:ir.model,name:homeschool_practice.model_homeschool_practice_session
 msgid "Practice session"
 msgstr "Séance de pratique"
@@ -1315,10 +1430,21 @@ msgid "Practice unit"
 msgstr "Unité de pratique"
 
 #. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
+msgid "Proficiency"
+msgstr "Maîtrise"
+
+#. module: homeschool_practice
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__progress
 #: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice
 msgid "Progress"
 msgstr "Progrès"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/portal_kit.py:0
+msgid "Progress per learner"
+msgstr "Progrès par élève"
 
 #. module: homeschool_practice
 #: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_item__step
@@ -1401,6 +1527,11 @@ msgstr "Enregistré par"
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__repeatable
 msgid "Repeatable"
 msgstr "Répétable"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.hs_dash_quests
+msgid "Rest day! No quests today."
+msgstr "Jour de repos ! Pas de quêtes aujourd’hui."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -1522,6 +1653,7 @@ msgstr "Séance terminée !"
 
 #. module: homeschool_practice
 #: model:ir.ui.menu,name:homeschool_practice.menu_practice_sessions
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
 msgid "Sessions"
 msgstr "Séances"
 
@@ -1570,6 +1702,7 @@ msgstr "Identifiant stable dans le paquet, p. ex. 7x8."
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/controllers/api.py:0
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.hs_dash_quests
 msgid "Start"
 msgstr "Commencer"
 
@@ -1609,6 +1742,11 @@ msgstr "Étape"
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__student_id
 msgid "Student"
 msgstr "Élève"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__subject_id
+msgid "Subject"
+msgstr "Matière"
 
 #. module: homeschool_practice
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__submit_ms
@@ -1758,6 +1896,7 @@ msgstr "Aujourd’hui"
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/controllers/api.py:0
+#: code:addons/homeschool_practice/models/portal_kit.py:0
 msgid "Today's quests"
 msgstr "Les quêtes du jour"
 
@@ -1781,6 +1920,7 @@ msgstr "Tactile"
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__unit_id
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__unit
 #: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_session__kind__unit
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
 #: model_terms:ir.ui.view,arch_db:homeschool_practice.view_mastery_search
 msgid "Unit"
 msgstr "Unité"
@@ -1833,6 +1973,11 @@ msgstr "Déverrouillée par"
 #. module: homeschool_practice
 #: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__unlocked_on
 msgid "Unlocked On"
+msgstr "Déverrouillée le"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
+msgid "Unlocked on"
 msgstr "Déverrouillée le"
 
 #. module: homeschool_practice
@@ -1890,6 +2035,18 @@ msgstr "Ce que l’élève lit. Peut contenir {unit} et {target}."
 #: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_form
 msgid "What this deck practices"
 msgstr "Ce que ce paquet fait pratiquer"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__auto_unlock_at
+msgid ""
+"When a unit reaches this proficiency, the next unit unlocks on its own (0 = "
+"a parent unlocks every unit). For units that need no new teaching, e.g. "
+"times tables."
+msgstr ""
+"Quand une unité atteint cette maîtrise, l'unité suivante se déverrouille "
+"d'elle-même (0 = un parent déverrouille chaque unité). Pour les unités qui "
+"ne demandent pas de nouvel enseignement, p. ex. les tables de "
+"multiplication."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -1963,76 +2120,6 @@ msgid "{target} correct answers without a hint"
 msgstr "{target} bonnes réponses sans indice"
 
 #. module: homeschool_practice
-#. odoo-python
-#: code:addons/homeschool_practice/controllers/api.py:0
-msgid "Choose what to practice"
-msgstr "Choisis ce que tu veux pratiquer"
-
-#. module: homeschool_practice
-#. odoo-python
-#: code:addons/homeschool_practice/controllers/api.py:0
-msgid "All"
-msgstr "Tout"
-
-#. module: homeschool_practice
-#. odoo-python
-#: code:addons/homeschool_practice/models/session.py:0
-msgid "A free practice session needs at least one unit."
-msgstr "Une séance de pratique libre demande au moins une unité."
-
-#. module: homeschool_practice
-#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__unit_ids
-msgid "Chosen units"
-msgstr "Unités choisies"
-
-#. module: homeschool_practice
-#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_session__unit_ids
-msgid "Free practice: the units the learner picked."
-msgstr "Pratique libre : les unités choisies par l’élève."
-
-#. module: homeschool_practice
-#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_list
-msgid "Load French grammar decks"
-msgstr "Charger les paquets de grammaire"
-
-#. module: homeschool_practice
-#. odoo-python
-#: code:addons/homeschool_practice/models/deck.py:0
-msgid "Only a parent (homeschool manager) loads practice decks."
-msgstr "Seul un parent (gestionnaire) charge des paquets de pratique."
-
-#. module: homeschool_practice
-#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__subject_id
-msgid "Subject"
-msgstr "Matière"
-
-#. module: homeschool_practice
-#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__subject_id
-msgid ""
-"Each subject with unlocked units gets its own session quest every practice "
-"day."
-msgstr ""
-"Chaque matière dont des unités sont déverrouillées reçoit sa propre quête de "
-"séance chaque jour de pratique."
-
-#. module: homeschool_practice
-#. odoo-python
-#: code:addons/homeschool_practice/controllers/api.py:0
-msgid "New unit!"
-msgstr "Nouvelle unité !"
-
-#. module: homeschool_practice
-#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__auto_unlock_at
-msgid "Auto-unlock at (%)"
-msgstr "Déverrouillage automatique à (%)"
-
-#. module: homeschool_practice
-#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__auto_unlock_at
-msgid ""
-"When a unit reaches this proficiency, the next unit unlocks on its own (0 = "
-"a parent unlocks every unit). For units that need no new teaching, e.g. "
-"times tables."
-msgstr ""
-"Quand une unité atteint cette maîtrise, l'unité suivante se déverrouille "
-"d'elle-même (0 = un parent déverrouille chaque unité). Pour les unités qui "
-"ne demandent pas de nouvel enseignement, p. ex. les tables de multiplication."
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
+msgid "Answers"
+msgstr "Réponses"

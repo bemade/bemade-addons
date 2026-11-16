@@ -4,7 +4,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     "name": "Homeschool Practice",
-    "version": "19.0.1.3.0",
+    "version": "19.0.1.4.0",
     "category": "Education",
     "summary": "Short, frequent retrieval practice with game mechanics and family-defined rewards, "
     "touch-first (iPad).",
@@ -65,6 +65,18 @@ Learner preferences
 Handedness (right / left) per learner: the touch layout puts the keypad and the
 choices on the side of the learner's dominant hand.
 
+In the portal app
+-----------------
+With the homeschool portal on the Bemade portal kit (``homeschool_portal``
+19.0.3.0.0, the kit's switch on), practice is part of the app: a « Practice »
+nav entry and the day's quests on « Today » (each with « Start »). For the
+learner the game stays full screen (its own page, no app chrome) with a ✕ back
+to « Today »; the installed app is the kit's (this addon no longer serves a
+manifest of its own). For a tutor, « Practice » is a read-only page per learner:
+the units unlocked, the proficiency of each and when it was last practised —
+never shown to the learner. Every practice entry belongs to the homeschool app of
+the kit (19.0.1.15.0 or later).
+
 Multi-learner
 -------------
 Every record belongs to a learner (``homeschool.student``) and to the
@@ -75,13 +87,14 @@ attached to the learner) only.
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
-    "depends": ["homeschool", "homeschool_portal"],
+    "depends": ["homeschool", "homeschool_portal", "bemade_portal_kit_dashboard"],
     "data": [
         "security/ir.model.access.csv",
         "security/practice_rules.xml",
         "data/practice_data.xml",
         "views/practice_views.xml",
         "views/portal_templates.xml",
+        "views/practice_app.xml",
     ],
     "installable": True,
     "application": False,
