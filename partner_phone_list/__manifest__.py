@@ -2,7 +2,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).
 {
     "name": "Contact Phone Numbers List",
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.0.2",
     "category": "Contacts",
     "summary": "A typed, ordered list of phone numbers per contact; "
     "Phone = the top number, Mobile = the first mobile number.",
