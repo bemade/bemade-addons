@@ -154,6 +154,9 @@ class Task(models.Model):
         # that visits created together get consecutive numbers.
         next_numbers = {}
         for rec, template_id in zip(res, template_ids):
+            # Before the template expands: its subtasks then find the dates here.
+            if not rec.planned_date_begin and not rec.date_deadline:
+                rec._fill_dates_from_scheduled_ancestor()
             if template_id:
                 rec._apply_template_to_self(
                     self.env["project.task.template"].browse(template_id)
@@ -213,10 +216,45 @@ class Task(models.Model):
             next_numbers[order.id] += 1
         return order.name.replace("SO", "SVR", 1) + f"-{seq}"
 
+    def _get_scheduled_ancestor(self):
+        """Return the nearest ancestor with both a start date and a deadline."""
+        self.ensure_one()
+        ancestor = self.parent_id
+        while ancestor:
+            if ancestor.planned_date_begin and ancestor.date_deadline:
+                return ancestor
+            ancestor = ancestor.parent_id
+        return self.browse()
+
+    def _fill_dates_from_scheduled_ancestor(self):
+        """Give the dateless FSM tasks of ``self`` the dates of their nearest
+        scheduled ancestor, so they show in Planning with their visit.
+
+        Only tasks with neither a start date nor a deadline are filled. The
+        write is done task by task (a multi-record write on dateless tasks
+        makes project_enterprise re-plan the dates on the working calendar)
+        and does not cascade to subtasks, so their own dates are kept.
+        """
+        for task in self:
+            if not task.is_fsm or task.planned_date_begin or task.date_deadline:
+                continue
+            ancestor = task._get_scheduled_ancestor()
+            if ancestor:
+                task.with_context(bemade_fsm_no_date_propagation=True).write(
+                    {
+                        "planned_date_begin": ancestor.planned_date_begin,
+                        "date_deadline": ancestor.date_deadline,
+                    }
+                )
+
     def write(self, vals):
         res = super().write(vals)
         if not self:  # End recursion on empty RecordSet
             return res
+        if vals.get("parent_id"):
+            # Attached under (or moved to) another task: fill the dateless
+            # tasks of the moved subtrees, parents first.
+            (self | self._get_all_subtasks())._fill_dates_from_scheduled_ancestor()
         if vals.get("template_id"):
             # template_id was set on one or more existing rows — apply it to
             # each. Read the id from vals (non-stored field, dropped from cache).
@@ -251,7 +289,9 @@ class Task(models.Model):
                     rec.child_ids.write(child_vals)
         date_keys = ["planned_date_begin", "date_deadline"]
         keys_to_propagate = [k for k in date_keys if k in vals]
-        if keys_to_propagate:
+        if keys_to_propagate and not self.env.context.get(
+            "bemade_fsm_no_date_propagation"
+        ):
             for rec in self.filtered("is_fsm"):
                 date_vals = {k: getattr(rec, k) for k in keys_to_propagate}
                 all_children = rec._get_all_subtasks()
