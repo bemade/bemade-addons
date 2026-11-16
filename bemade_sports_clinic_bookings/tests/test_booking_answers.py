@@ -22,10 +22,19 @@ Acceptance criteria:
 """
 from datetime import timedelta
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.tests import tagged
 
 from .common import BookingsShellCommon
+
+
+def _next_utc(weekday, hour, minute=0):
+    """The first ``weekday`` (Monday = 0) ``hour:minute`` UTC after the real
+    clock (naive UTC, like ``fields.Datetime.now()``)."""
+    now = fields.Datetime.now()
+    at = (now + timedelta(days=(weekday - now.weekday()) % 7)).replace(
+        hour=hour, minute=minute, second=0, microsecond=0)
+    return at if at > now else at + timedelta(days=7)
 
 
 class _BookingAnswersCommon(BookingsShellCommon):
@@ -185,4 +194,21 @@ class TestBookingAnswersTourPhone(_BookingAnswersCommon):
 
     def test_answers_tour(self):
         self._switch(True)
-        self.start_tour('/my/bookings', 'sc_1732_booking_answers', login='bk.tp@example.com')
+        # Task 1760: the tour opens the calendar at the booking's week (browser in UTC).
+        self.start_tour('/my/bookings#pk_date=%s' % self.booking_soon.start.date().isoformat(),
+                        'sc_1732_booking_answers', login='bk.tp@example.com')
+
+
+@tagged('post_install', '-at_install')
+class TestBookingAnswersTourPhoneSundayNight(TestBookingAnswersTourPhone):
+    """Task 1760: « now » pinned to a Sunday 23:00 UTC — ``booking_soon``
+    (now + 2 h) falls on the Monday, in the week AFTER the one the phone
+    calendar (listWeek, Monday first) opens on. The tour must still find it."""
+
+    @classmethod
+    def _fixture_now(cls):
+        return _next_utc(6, 23)
+
+    def test_answers_tour_sunday_night(self):
+        # Odoo runs only the methods a class defines itself.
+        self.test_answers_tour()
