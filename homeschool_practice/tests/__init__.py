@@ -18,3 +18,5 @@ from . import test_uc16_subject_quests
 from . import test_uc17_auto_unlock
 from . import test_uc18_grammar_5_6
 from . import test_uc19_portal_app
+from . import test_uc20_math_decks
+from . import test_uc21_daily_deck_quests

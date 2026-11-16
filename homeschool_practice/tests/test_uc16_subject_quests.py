@@ -34,6 +34,7 @@ class TestSubjectQuests(PracticeCase):
         self.Deck.action_load_grammar_fr()
         self.grammar = self.Deck.search([("name", "=", "Grammaire")])
         self.homophones = self.Deck.search([("name", "=", "Homophones")])
+        self.grammar.quest_daily = False  # this UC is the draw without daily decks (see UC-21)
         self.t7.action_unlock(self.student)
         self.t3.action_unlock(self.student)
         (self.grammar | self.homophones).unit_ids.action_unlock(self.student)
