@@ -2,7 +2,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).
 {
     "name": "Contact Phone Numbers List",
-    "version": "19.0.1.0.2",
+    "version": "19.0.1.1.0",
     "category": "Contacts",
     "summary": "A typed, ordered list of phone numbers per contact; "
     "Phone = the top number, Mobile = the first mobile number.",
@@ -15,8 +15,9 @@ Odoo 19.0 keeps a single ``phone`` field on contacts (``mobile`` was removed in
 extension, a toll-free number, a fax. This module gives every contact a short,
 **typed and ordered list of phone numbers**.
 
-On the contact form and in the child-contact popup, Phone and Mobile show as
-plain text (click to call). A small phonebook icon next to them opens a
+On the contact form, in the child-contact popup and in the simplified contact
+form (the contact pop-up of the mail composer, followers, calendar attendees
+and "send" wizards), Phone and Mobile show as plain text (click to call). A small phonebook icon next to them opens a
 dialog with the editable list of numbers. The dialog edits the contact being
 shown, so it works on a new contact and inside the child-contact popup too:
 "Save" saves an existing contact; on a new contact or a child contact "Done"

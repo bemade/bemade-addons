@@ -172,6 +172,7 @@ msgstr "Autre"
 #: code:addons/partner_phone_list/static/src/partner_phone_list_field.xml:0
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_partner__phone
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_users__phone
+#: model_terms:ir.ui.view,arch_db:partner_phone_list.view_partner_simple_form_phone_list
 msgid "Phone"
 msgstr "Téléphone"
 
