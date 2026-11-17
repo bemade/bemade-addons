@@ -1206,3 +1206,28 @@ msgstr "Cette note s'affiche en bannière sur chaque intervention de service à"
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
 msgid "until someone clears it."
 msgstr "jusqu'à ce que quelqu'un l'efface."
+
+#. module: bemade_fsm
+#. odoo-python
+#: code:addons/bemade_fsm/models/task.py:0
+msgid "Apply template %s?"
+msgstr "Appliquer le modèle %s ?"
+
+#. module: bemade_fsm
+#. odoo-python
+#: code:addons/bemade_fsm/models/task.py:0
+msgid ""
+"Applying this template on save replaces this task's name, description, "
+"assignees, tags, allocated hours, customer and equipment, and adds the "
+"template's subtasks. Clear the field (or Discard) to cancel."
+msgstr ""
+"À l'enregistrement, ce modèle remplace le nom, la description, les "
+"assignés, les étiquettes, les heures allouées, le client et l'équipement de "
+"cette tâche, et ajoute les sous-tâches du modèle. Videz le champ (ou "
+"cliquez sur Abandonner) pour annuler."
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_project_task__template_id
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.view_task_form2_inherit
+msgid "From Template"
+msgstr "Depuis le modèle"

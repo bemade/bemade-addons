@@ -121,7 +121,14 @@
                 <field name="description" string="Description/Comments" />
                 <field name="template_id" string="From Template" optional="show" />
             </xpath>
+            <!-- « From Template » on the task itself (task 3611): new and saved
+                 tasks; on a saved task the onchange warns what it replaces. -->
             <field name="user_ids" position="after">
+                <field
+          name="template_id"
+          string="From Template"
+          options="{'no_create': True}"
+        />
                 <field name="propagate_assignment" />
             </field>
         </field>
