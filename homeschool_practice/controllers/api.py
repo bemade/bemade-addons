@@ -32,6 +32,7 @@ def learner_labels(env):
         "home": _("Back"), "exit": _("Back to today"), "offline": _("Connection lost: your answer is saved, retrying…"),
         "nothing": _("Nothing to practice here yet."), "new_unit": _("Something new!"), "got_it": _("Got it!"),
         "well_done": _("Well done for practicing!"), "pick": _("Choose what to practice"), "all": _("All"),
+        "figure": _("The figure"),
     }
 
 
@@ -62,6 +63,7 @@ class PracticeApi(http.Controller):
         return {
             "item_id": item.id, "prompt": item.prompt, "answer_mode": item.answer_mode, "answer": item.answer,
             "choices": item._display_choices(),
+            "figure": item._figure_data_uri(),
             "hint": item.hint or "", "unit": item.unit_id.name,
             "intro": (item.unit_id.intro or "") if first_time else "", "first_time": first_time,
             "index": session.position + 1, "total": len(session._queue()),

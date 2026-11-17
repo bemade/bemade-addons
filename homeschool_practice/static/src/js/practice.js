@@ -20,6 +20,7 @@
     var L = {};
     // Misses in a row inside one choices unit before its trick shows on the card by itself.
     var TRICK_AFTER = 2;
+    var FIGURE = /^data:image\/svg\+xml;base64,[A-Za-z0-9+\/=]+$/;
     var state = { home: null, session: null, item: null, typed: "", shownAt: 0, firstTouch: null, hintUsed: false, busy: false };
 
     // ------------------------------------------------------------------ utils
@@ -29,14 +30,21 @@
         });
     }
     function h(html) { app.innerHTML = html; fit(); }
-    // A card never scrolls: when the page is taller than the screen, the prompt, the
-    // choices and the intro text step down in size until everything fits (UC-24).
+    // A card never scrolls: when the page is taller than the screen, the figure, the prompt,
+    // the choices and the intro text step down in size until everything fits (UC-24, UC-25).
     var FIT = [[".hp-prompt", 84, 24], [".hp-choice", 40, 20], [".hp-intro-card p", 28, 17], [".hp-trick", 26, 17]];
+    var FIGURE_MIN = 110;
     function overflows() { return document.documentElement.scrollHeight > window.innerHeight + 1; }
     function fit() {
         FIT.forEach(function (f) { app.querySelectorAll(f[0]).forEach(function (el) { el.style.fontSize = ""; el.style.minHeight = ""; }); });
+        var figure = app.querySelector(".hp-figure");
+        if (figure) { figure.style.height = ""; }
         for (var step = 0; step < 40 && overflows(); step++) {
             var shrunk = false;
+            if (figure) {
+                var tall = figure.getBoundingClientRect().height;
+                if (tall > FIGURE_MIN) { figure.style.height = Math.max(FIGURE_MIN, Math.round(tall * 0.9)) + "px"; shrunk = true; }
+            }
             FIT.forEach(function (f) {
                 app.querySelectorAll(f[0]).forEach(function (el) {
                     var now = parseFloat(getComputedStyle(el).fontSize);
@@ -235,6 +243,10 @@
         // row in this unit, the trick is on the card before he answers (recorded as hint used).
         var trick = item.answer_mode === "choices" && item.hint && (state.misses[item.unit] || 0) >= TRICK_AFTER;
         if (trick) { state.hintUsed = true; }
+        // A drawn figure (UC-25) is shown as an image, and only when it is a data URI of an SVG:
+        // never as markup, so a figure cannot run anything.
+        var figure = FIGURE.test(item.figure || "") ?
+            '<img class="hp-figure" src="' + item.figure + '" alt="' + esc(L.figure || "") + '" draggable="false">' : "";
         var pad;
         if (item.answer_mode === "choices") {
             pad = '<div class="hp-choices' + (trick ? " is-waiting" : "") + '">' + item.choices.map(function (c) {
@@ -251,13 +263,16 @@
         h('<div class="hp-lesson">' +
             '<header class="hp-top"><button class="hp-close" id="hp-quit" aria-label="' + esc(L.home) + '">✕</button><div class="hp-dots">' + dots + "</div></header>" +
             '<div class="hp-stage">' +
-                '<div class="hp-question"><div class="hp-prompt">' + esc(item.prompt) + "</div>" +
+                '<div class="hp-question' + (figure ? " has-figure" : "") + '">' + figure +
+                    '<div class="hp-prompt">' + esc(item.prompt) + "</div>" +
                     (item.answer_mode === "keypad" ? '<div class="hp-typed" id="hp-typed">&nbsp;</div>' : "") +
                     (trick ? '<div class="hp-trick">💡 ' + esc(item.hint) + "</div>" :
                         item.hint ? '<button class="hp-hint" id="hp-hint">💡 ' + esc(L.hint) + "</button>" : "") +
                     '<div class="hp-hint-text" id="hp-hint-text"></div>' +
                 "</div>" + '<div class="hp-input">' + pad + "</div>" +
             "</div>" + '<div class="hp-feedback" id="hp-feedback"></div></div>');
+        var drawn = app.querySelector(".hp-figure");
+        if (drawn && !drawn.complete) { drawn.addEventListener("load", fit); }
         var input = app.querySelector(".hp-input");
         input.addEventListener("pointerdown", function () {
             if (state.firstTouch === null && state.shownAt) { state.firstTouch = Math.round(performance.now() - state.shownAt); }
