@@ -15,6 +15,7 @@ Acceptance criteria:
 
 from odoo.fields import Command
 from odoo.tests import Form, TransactionCase, new_test_user, tagged
+from odoo.tools.misc import mute_logger
 
 from ..hooks import WARNING_FIELDS
 
@@ -72,7 +73,11 @@ class TestTranslatedWarnings(TransactionCase):
         )
 
     def _sale_banner(self, user):
-        with Form(self._env(user)["sale.order"]) as order_form:
+        # The product's onchange warning is what is under test: Form logs it.
+        with (
+            mute_logger("odoo.tests.form.onchange"),
+            Form(self._env(user)["sale.order"]) as order_form,
+        ):
             order_form.partner_id = self.partner
             with order_form.order_line.new() as line:
                 line.product_id = self.product

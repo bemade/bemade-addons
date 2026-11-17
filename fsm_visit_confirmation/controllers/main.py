@@ -25,10 +25,8 @@ class CustomerPortalExtended(CustomerPortal):
         base route was singular ``/my/task/<id>``.)"""
         try:
             task = request.env["project.task"].browse(task_id)
-            task.check_access_rights("read")
-            task.check_access_rights("write")
-            task.check_access_rule("read")
-            task.check_access_rule("write")
+            task.check_access("read")
+            task.check_access("write")
         except AccessError:
             task = None
         values = self._get_portal_values(task, access_token=access_token, **kw)

@@ -68,7 +68,10 @@ class CronAlertCase(common.TransactionCase):
         icp.set_param(PARAM_USERS, ",".join(str(i) for i in user.ids) if user else False)
         icp.set_param(PARAM_CHANNEL, channel and self.channel.id or False)
 
-    def _run_cron(self, cron=None):
+    def _run_cron(self, cron=None, quiet=True):
+        """Run the job once. Its failure is on purpose, so the module's own
+        warning about it is muted unless ``quiet`` is False (a test that
+        checks that warning with ``assertLogs``)."""
         cron = cron or self.cron
         cron._trigger()
         self.env.flush_all()
@@ -81,6 +84,7 @@ class CronAlertCase(common.TransactionCase):
         with (
             self.enter_registry_test_mode(),
             mute_logger("odoo.addons.base.models.ir_cron"),
+            mute_logger(*(["odoo.addons.bemade_cron_failure_alert.models.ir_cron"] if quiet else [])),
             self.registry.cursor() as cr,
         ):
             self.registry["ir.cron"]._process_job(cr, job)

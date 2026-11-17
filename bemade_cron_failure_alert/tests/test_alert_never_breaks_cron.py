@@ -35,7 +35,7 @@ class TestAlertNeverBreaksCron(CronAlertCase):
         with self.assertLogs(
             "odoo.addons.bemade_cron_failure_alert.models.ir_cron", "WARNING"
         ) as logs:
-            self._run_cron()
+            self._run_cron(quiet=False)
         self.assertIn(self.cron.name, "\n".join(logs.output))
         self.assertEqual(self.cron.failure_count, 1)
         self.assertFalse(self._all_alert_activities())

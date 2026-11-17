@@ -3,6 +3,7 @@
 
 from odoo.tests import common, Form
 from odoo.exceptions import AccessError
+from odoo.tools.misc import mute_logger
 
 
 class TestMailFromAddress(common.TransactionCase):
@@ -47,7 +48,7 @@ class TestMailFromAddress(common.TransactionCase):
         })
         self.assertEqual(from_addr2.email, 'support@company1.com')
         # Same email same company should fail
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception), mute_logger('odoo.sql_db'):
             self.MailFromAddress.create({
                 'name': 'Support 3',
                 'email': 'support@company1.com',
