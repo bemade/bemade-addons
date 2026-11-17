@@ -3,6 +3,7 @@ from unittest.mock import patch
 from odoo.addons.mail.models.mail_thread import MailThread as CoreMailThread
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
+from odoo.tools.misc import mute_logger
 
 
 @tagged("post_install", "-at_install")
@@ -116,6 +117,7 @@ class TestHelpdeskOneTicketPerEmail(TransactionCase):
         forwarded_routes = mock_super.call_args.args[2]
         self.assertEqual(forwarded_routes, [ticket_route, reply_route, lead_route])
 
+    @mute_logger("odoo.addons.bemade_helpdesk_one_ticket_per_email.models.mail_thread")
     def test_exception_wrapped_in_user_error(self):
         """Any error raised by the super call is wrapped into a UserError."""
         routes = [self._route("helpdesk.ticket")]
