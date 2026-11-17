@@ -7,12 +7,14 @@ Acceptance criteria
    equipment (the visit's and its subtasks'). « Save & close » creates one
    ``fsm.carried.todo`` per non-empty line for the visit's site; « Skip »
    creates none. The site note behaves as before.
-2. When the site has an open top-level FSM visit other than the closing one,
-   the earliest one (planned start ascending, unplanned last) gets each to-do
-   as a subtask « From last visit: <text> » (with the equipment) and the
-   to-do is « scheduled ».
-3. With no open visit at the site the to-do stays « pending »; the next
-   top-level FSM task created at the site gets it.
+2. When the site has an open top-level FSM visit other than the closing one
+   planned from today on, the earliest one gets each to-do as a subtask
+   « From last visit: <text> » (with the equipment) and the to-do is
+   « scheduled ». Open visits planned in the past (never closed) are skipped;
+   an unplanned visit counts only if created after the to-do, or once it is
+   planned.
+3. With no such visit the to-do stays « pending »; the next top-level FSM
+   task created (or planned) at the site gets it.
 4. Subtask done -> to-do done. Subtask cancelled -> the to-do goes to the
    following visit (pending if none). Subtask deleted -> pending again, then
    attached to the next visit.
@@ -137,9 +139,34 @@ class TestFsmCarriedTodo(BemadeFSMBaseTest):
         # The closing visit itself (now done) never gets them.
         self.assertFalse(self._carried_subtasks(self.closing))
 
-    def test_unplanned_visit_used_when_no_planned_one(self):
+    def test_past_open_visit_skipped(self):
+        """An old visit never closed is not the next visit."""
+        stale = self._visit("Stale visit", self.site, days=-3650)
+        todos = self._close_with_todos([("Check the drain", None)])
+        self.assertEqual(todos.state, "pending")
+        self.assertFalse(self._carried_subtasks(stale))
+
+    def test_unplanned_visit_created_before_waits_for_planning(self):
         unplanned = self._visit("Unplanned visit", self.site)
         todos = self._close_with_todos([("Check the drain", None)])
+        self.assertEqual(todos.state, "pending")
+        start = datetime(2030, 2, 1, 8)
+        unplanned.write(
+            {"planned_date_begin": start, "date_deadline": start + timedelta(hours=2)}
+        )
+        self.assertEqual(todos.state, "scheduled")
+        self.assertEqual(todos.target_task_id.parent_id, unplanned)
+
+    def test_unplanned_visit_created_after_gets_it(self):
+        todos = self._close_with_todos([("Check the drain", None)])
+        # Records of one test transaction share a create_date: age the to-do.
+        self.env.cr.execute(
+            "UPDATE fsm_carried_todo SET create_date = create_date - interval '1 hour'"
+            " WHERE id = %s",
+            [todos.id],
+        )
+        todos.invalidate_recordset(["create_date"])
+        unplanned = self._visit("New unplanned visit", self.site)
         self.assertEqual(todos.target_task_id.parent_id, unplanned)
 
     def test_no_duplicates_on_rerun(self):

@@ -358,7 +358,13 @@ class Task(models.Model):
                     [("target_task_id", "in", self.ids)]
                 )
                 todos._on_target_state_change()
-            if {"state", "partner_id", "project_id", "parent_id"} & set(vals):
+            if {
+                "state",
+                "partner_id",
+                "project_id",
+                "parent_id",
+                "planned_date_begin",
+            } & set(vals):
                 self.env["fsm.carried.todo"]._attach_pending_for_sites(
                     self._fsm_carried_todo_sites()
                 )

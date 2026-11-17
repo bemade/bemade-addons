@@ -9,10 +9,10 @@ class FsmCarriedTodo(models.Model):
 
     It is carried to the next visit at the same site (the visit's customer /
     service address) as a subtask « From last visit: ... ». The next visit is
-    the earliest open top-level FSM task at the site, by planned start (unplanned
-    last), other than the visits it was already carried to. With no such visit,
-    the to-do waits (« pending ») until a top-level FSM task is created at the
-    site.
+    the earliest open top-level FSM task at the site planned from today on
+    (else an unplanned one created after the to-do), other than the visits it
+    was already carried to. With no such visit, the to-do waits (« pending »)
+    until a visit is created or planned at the site.
     """
 
     _name = "fsm.carried.todo"
@@ -83,15 +83,36 @@ class FsmCarriedTodo(models.Model):
         ]
 
     def _find_next_visit(self):
+        """The visit this to-do goes to, or an empty recordset.
+
+        Open visits planned in the past are skipped: sites often keep old visits
+        that were never closed, and those are not the next visit. The earliest
+        visit planned from today on wins; failing that, an unplanned visit
+        created after the to-do (a new visit not scheduled yet). An unplanned
+        visit that existed before the to-do gets it once it is planned.
+        """
         self.ensure_one()
-        excluded = self.visit_ids | self.source_task_id
-        visits = self.env["project.task"].sudo().search(
-            self._next_visit_domain(self.partner_id)
-            + [("id", "not in", excluded.ids)],
-            order="planned_date_begin asc nulls last, id asc",
+        Task = self.env["project.task"].sudo()
+        domain = self._next_visit_domain(self.partner_id) + [
+            ("id", "not in", (self.visit_ids | self.source_task_id).ids)
+        ]
+        today = fields.Datetime.to_datetime(fields.Date.context_today(self))
+        visit = Task.search(
+            domain + [("planned_date_begin", ">=", today)],
+            order="planned_date_begin asc, id asc",
             limit=1,
         )
-        return visits
+        if not visit:
+            visit = Task.search(
+                domain
+                + [
+                    ("planned_date_begin", "=", False),
+                    ("create_date", ">", self.create_date),
+                ],
+                order="id asc",
+                limit=1,
+            )
+        return visit
 
     def _subtask_name(self):
         self.ensure_one()
