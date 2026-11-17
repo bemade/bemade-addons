@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import csv
 import io
+import random
 import re
 
 from odoo import api, fields, models
@@ -290,6 +291,21 @@ class PracticeItem(models.Model):
                 if len(item.choice_ids) < 2 or len(item.choice_ids.filtered("correct")) != 1:
                     raise ValidationError(self.env._(
                         "A choices item needs at least two choices and exactly one correct (%(key)s).", key=item.key))
+
+    def _display_choices(self, rng=None):
+        """The labels in the order the screen shows them (UC-24): a fresh random order each
+        time, so the right answer's position can't be learned — except in a unit whose cards
+        all offer the same set of options (« a » ou « à », avoir / être), where the position
+        says nothing and the written order is easier to read."""
+        self.ensure_one()
+        if self.answer_mode != "choices":
+            return []
+        labels = self.choice_ids.sorted(lambda c: (c.sequence, c.id)).mapped("label")
+        sets = {frozenset(i.choice_ids.mapped("label"))
+                for i in self.unit_id.item_ids if i.answer_mode == "choices"}
+        if len(sets) > 1:
+            (rng or random).shuffle(labels)
+        return labels
 
     def _is_correct(self, given):
         self.ensure_one()

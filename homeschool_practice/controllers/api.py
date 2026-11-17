@@ -61,7 +61,7 @@ class PracticeApi(http.Controller):
             access.first_served = True
         return {
             "item_id": item.id, "prompt": item.prompt, "answer_mode": item.answer_mode, "answer": item.answer,
-            "choices": item.choice_ids.sorted(lambda c: (c.sequence, c.id)).mapped("label") if item.answer_mode == "choices" else [],
+            "choices": item._display_choices(),
             "hint": item.hint or "", "unit": item.unit_id.name,
             "intro": (item.unit_id.intro or "") if first_time else "", "first_time": first_time,
             "index": session.position + 1, "total": len(session._queue()),

@@ -20,7 +20,7 @@ only (a manager, a resource user or another learner gets an access error):
    earned, quests and badges completed. **Never** which items are « known ».
 5. **Forbidden in every payload** (checked recursively): latencies, thresholds,
    timers, time limits, mastery ``state``, ``box``, ``due_on``.
-6. Item payload: ``item_id``, ``prompt``, ``answer_mode``, ``choices`` (ordered),
+6. Item payload: ``item_id``, ``prompt``, ``answer_mode``, ``choices`` (in display order, UC-24),
    ``answer``, ``intro`` and ``first_time``. The answer travels with the item so the screen
    shows right or wrong the instant he answers, without waiting for the network (owner,
    2026-11-13); the server still judges and records every answer.

@@ -28,7 +28,26 @@
             return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
         });
     }
-    function h(html) { app.innerHTML = html; }
+    function h(html) { app.innerHTML = html; fit(); }
+    // A card never scrolls: when the page is taller than the screen, the prompt, the
+    // choices and the intro text step down in size until everything fits (UC-24).
+    var FIT = [[".hp-prompt", 84, 24], [".hp-choice", 40, 20], [".hp-intro-card p", 28, 17], [".hp-trick", 26, 17]];
+    function overflows() { return document.documentElement.scrollHeight > window.innerHeight + 1; }
+    function fit() {
+        FIT.forEach(function (f) { app.querySelectorAll(f[0]).forEach(function (el) { el.style.fontSize = ""; el.style.minHeight = ""; }); });
+        for (var step = 0; step < 40 && overflows(); step++) {
+            var shrunk = false;
+            FIT.forEach(function (f) {
+                app.querySelectorAll(f[0]).forEach(function (el) {
+                    var now = parseFloat(getComputedStyle(el).fontSize);
+                    if (now > f[2]) { el.style.fontSize = Math.max(f[2], Math.round(now * 0.9)) + "px"; shrunk = true; }
+                    if (f[0] === ".hp-choice") { el.style.minHeight = Math.max(56, Math.round(el.offsetHeight * 0.9)) + "px"; }
+                });
+            });
+            if (!shrunk) { break; }
+        }
+    }
+    window.addEventListener("resize", function () { fit(); });
     function uuid() {
         if (window.crypto && crypto.randomUUID) { return crypto.randomUUID(); }
         return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -272,7 +291,7 @@
         if (hb) {
             hb.addEventListener("click", function () {
                 state.hintUsed = true; hb.disabled = true;
-                document.getElementById("hp-hint-text").textContent = item.hint;
+                document.getElementById("hp-hint-text").textContent = item.hint; fit();
             });
         }
         document.getElementById("hp-quit").addEventListener("click", quit);
