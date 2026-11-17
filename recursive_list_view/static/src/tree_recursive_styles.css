@@ -3,8 +3,10 @@
 }
 
 .o_expand_button {
-    border-color: transparent;
-    background-color: transparent;
+    /* No native button border: its outset corner showed as a stray dot next to the caret (dark theme). */
+    border: 0;
+    padding: 0 4px;
+    background: none;
 }
 
 button.o_expand_button[data-depth="1"] {
