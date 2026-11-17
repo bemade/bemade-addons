@@ -77,6 +77,11 @@ body[data-handedness="left"] .hp-stage { direction: rtl; } body[data-handedness=
 .hp-question { display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
 .hp-prompt { font-size: 84px; font-weight: 800; letter-spacing: 1px; line-height: 1.1; }
 .hp-prompt:not(:only-child) { word-break: break-word; }
+/* a drawn figure (UC-25): above the prompt, sized to the screen height, shrunk by fit() */
+.hp-figure { display: block; flex: 0 0 auto; height: 38vh; height: 38dvh; width: auto; max-width: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
+@media (orientation: portrait) { .hp-figure { height: 26vh; height: 26dvh; } }
+.hp-question.has-figure { gap: 12px; }
+.hp-question.has-figure .hp-prompt { font-size: 48px; }
 .hp-typed { min-width: 220px; min-height: 96px; padding: 6px 24px; border-radius: var(--r); background: var(--panel); border: 3px solid var(--accent); font-size: 72px; font-weight: 800; }
 .hp-hint { min-height: 56px; padding: 0 22px; border-radius: 28px; background: var(--panel); color: var(--muted); }
 .hp-hint:disabled { opacity: .5; } .hp-hint-text { min-height: 28px; color: var(--accent); font-size: 22px; }

@@ -2188,3 +2188,41 @@ msgstr "{target} séance{s} : {deck}"
 #: model:homeschool.practice.quest.template,name:homeschool_practice.quest_surprise
 msgid "{target} surprise lesson{s}"
 msgstr "{target} leçon{s} surprise{s}"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__figure_spec
+msgid "Figure spec"
+msgstr "Spécification de la figure"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__figure
+msgid "Figure"
+msgstr "Figure"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_item__figure_spec
+msgid "The figure drawn on the card, as a spec (e.g. « tri kind=isosceles rot=20 »): the figure is drawn again from it when it changes."
+msgstr "La figure dessinée sur la carte, décrite par une spécification (p. ex. « tri kind=isosceles rot=20 ») : la figure est redessinée quand elle change."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_item__figure
+msgid "The drawing shown on the card (an SVG document, shown as an image)."
+msgstr "Le dessin affiché sur la carte (un document SVG, affiché comme une image)."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "This figure can't be drawn (%(key)s): %(spec)s"
+msgstr "Impossible de dessiner cette figure (%(key)s) : %(spec)s"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "A figure is a plain SVG drawing: no script, link or event handler (%(key)s)."
+msgstr "Une figure est un simple dessin SVG : ni script, ni lien, ni gestionnaire d'événement (%(key)s)."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "The figure"
+msgstr "La figure"

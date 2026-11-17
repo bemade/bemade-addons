@@ -4,7 +4,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     "name": "Homeschool Practice",
-    "version": "19.0.1.6.1",
+    "version": "19.0.1.7.0",
     "category": "Education",
     "summary": "Short, frequent retrieval practice with game mechanics and family-defined rewards, "
     "touch-first (iPad).",
@@ -37,10 +37,19 @@ Starter decks a parent loads from the deck list: French grammar (homophones,
 grammar, word classes, agreement, conjugation, syntax), math (« Les
 fractions »: reading, comparing, fraction of a whole number, equivalent and
 reduced fractions, ordering, fraction / decimal / percentage; « Les
-conversions »: length, mass, capacity and time units) and English (« English
+conversions »: length, mass, capacity and time units; « La géométrie »: plane
+figures and polygons, triangles, quadrilaterals, the circle, angles and lines,
+solids) and English (« English
 grammar »: irregular plurals, the possessive 's, past tense spelling and
 irregular verbs, capitals and end marks, one idea per sentence; hints in
 English), linked to the Québec PDA curriculum items they practise.
+
+A card can show a drawn figure (the geometry set): the deck's data gives a short
+figure spec (« tri kind=isosceles rot=20 ») and the module draws it as an SVG
+image, with the usual marks computed from the drawn geometry (tick marks on equal
+sides, right-angle squares, parallel arrows, dashed hidden edges). The lesson
+screen shows it as an image, never as markup, and shrinks it with the text so a
+card never scrolls.
 
 Each item has an answer mode: a **keypad** (the learner produces the answer —
 e.g. multiplication facts) or **choices** (the learner picks — e.g. infinitive

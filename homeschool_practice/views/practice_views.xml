@@ -66,7 +66,7 @@
                 <sheet>
                     <group>
                         <group><field name="unit_id"/><field name="key"/><field name="step"/><field name="calibration"/></group>
-                        <group><field name="prompt"/><field name="answer_mode"/><field name="answer"/><field name="hint"/></group>
+                        <group><field name="prompt"/><field name="answer_mode"/><field name="answer"/><field name="hint"/><field name="figure_spec"/></group>
                     </group>
                     <field name="choice_ids" invisible="answer_mode != 'choices'"><list editable="bottom"><field name="sequence" widget="handle"/><field name="label"/><field name="correct"/></list></field>
                 </sheet>

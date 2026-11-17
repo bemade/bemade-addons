@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import base64
 import csv
 import io
 import random
@@ -7,6 +8,8 @@ import re
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tools.misc import file_open
+
+from . import figures
 
 
 class PracticeDeck(models.Model):
@@ -119,16 +122,19 @@ class PracticeDeck(models.Model):
         return env._("You know %(a)s × %(c)s = %(p)s… add one more %(a)s.", a=a, c=b - 1, p=a * (b - 1))
 
     def _generate_choice_cards(self, unit, cards):
-        """``cards``: list of ``(key, prompt, options, hint)``; ``options`` is a list of
-        ``(label, correct)`` (a choices card; options keep their order) or the answer itself, a
-        string of digits (a keypad card)."""
+        """``cards``: list of ``(key, prompt, options, hint)`` or ``(key, prompt, options, hint,
+        figure)``; ``options`` is a list of ``(label, correct)`` (a choices card; options keep
+        their order) or the answer itself, a string of digits (a keypad card); ``figure``
+        (optional) is a figure spec (``figures.render``), drawn on the card (UC-25)."""
         self.ensure_one()
         Item = self.env["homeschool.practice.item"]
         existing = set(self.item_ids.with_context(active_test=False).mapped("key"))
-        for step, (key, prompt, options, hint) in enumerate(cards):
+        for step, (key, prompt, options, hint, *figure) in enumerate(cards):
             if key in existing:
                 continue
             vals = {"unit_id": unit.id, "key": key, "step": step, "prompt": prompt, "hint": hint}
+            if figure and figure[0]:
+                vals["figure_spec"] = figure[0]
             if isinstance(options, str):
                 vals.update(answer_mode="keypad", answer=options)
             else:
@@ -152,14 +158,16 @@ class PracticeDeck(models.Model):
 
     @api.model
     def action_load_math(self):
-        """Load the math practice decks (« Les fractions », « Les conversions ») in the current
-        company. Idempotent, like the grammar decks: what exists is kept."""
+        """Load the math practice decks (« Les fractions », « Les conversions », « La géométrie »)
+        in the current company. Idempotent, like the grammar decks: what exists is kept."""
         if not self.env.su and not self.env.user.has_group("homeschool.group_homeschool_manager"):
             raise AccessError(self.env._("Only a parent (homeschool manager) loads practice decks."))
         self._load_choice_csv("homeschool_practice/data/math_fractions_units.csv",
                               "homeschool_practice/data/math_fractions_cards.csv")
         self._load_choice_csv("homeschool_practice/data/math_conversions_units.csv",
                               "homeschool_practice/data/math_conversions_cards.csv")
+        self._load_choice_csv("homeschool_practice/data/math_geometry_units.csv",
+                              "homeschool_practice/data/math_geometry_cards.csv")
         return True
 
     @api.model
@@ -196,8 +204,9 @@ class PracticeDeck(models.Model):
         ``homeschool.item`` records (codes not found are skipped). ``cards_path``:
         unit;key;prompt;options;hint, options separated by « | », the right one starred
         (``*à``). An empty card hint takes the unit's. Optional columns: ``quest_daily`` on units
-        (« 1 »: the deck, when created, gets a quest every day) and ``answer`` on cards (digits
-        with empty ``options``: a keypad card)."""
+        (« 1 »: the deck, when created, gets a quest every day), ``answer`` on cards (digits
+        with empty ``options``: a keypad card) and ``figure`` on cards (a figure spec: the card
+        shows that drawing, UC-25)."""
         Unit = self.env["homeschool.practice.unit"]
         units, hints = {}, {}
         with io.TextIOWrapper(file_open(units_path, "rb"), encoding="utf-8") as f:
@@ -230,7 +239,8 @@ class PracticeDeck(models.Model):
                 else:
                     options = [(_nbsp(o.lstrip("*")), o.startswith("*")) for o in row["options"].split("|")]
                 cards.setdefault(row["unit"], []).append(
-                    (row["key"], _nbsp(row["prompt"]), options, row["hint"] or hints[row["unit"]]))
+                    (row["key"], _nbsp(row["prompt"]), options, row["hint"] or hints[row["unit"]],
+                     (row.get("figure") or "").strip()))
         for name, unit_cards in cards.items():
             units[name].deck_id._generate_choice_cards(units[name], unit_cards)
         return True
@@ -278,6 +288,14 @@ class PracticeItem(models.Model):
     choice_ids = fields.One2many("homeschool.practice.choice", "item_id", string="Choices")
     hint = fields.Char(translate=True, help="The strategy shown after a miss.")
     calibration = fields.Boolean(help="Needs no recall (× 0, × 1, × 10): used for the learner's timing baseline.")
+    figure_spec = fields.Char(
+        "Figure spec",
+        help="The figure drawn on the card, as a spec (e.g. « tri kind=isosceles rot=20 »): the figure is "
+             "drawn again from it when it changes.")
+    figure = fields.Text(
+        "Figure",
+        compute="_compute_figure", store=True, readonly=False,
+        help="The drawing shown on the card (an SVG document, shown as an image).")
     active = fields.Boolean(default=True)
 
     _key_unique = models.Constraint("unique(deck_id, key)", "An item key is unique inside its deck.")
@@ -291,6 +309,29 @@ class PracticeItem(models.Model):
                 if len(item.choice_ids) < 2 or len(item.choice_ids.filtered("correct")) != 1:
                     raise ValidationError(self.env._(
                         "A choices item needs at least two choices and exactly one correct (%(key)s).", key=item.key))
+
+    @api.depends("figure_spec")
+    def _compute_figure(self):
+        for item in self:
+            try:
+                item.figure = figures.render(item.figure_spec) if item.figure_spec else False
+            except (ValueError, KeyError, IndexError) as e:
+                raise ValidationError(self.env._("This figure can't be drawn (%(key)s): %(spec)s",
+                                                 key=item.key, spec=item.figure_spec)) from e
+
+    @api.constrains("figure")
+    def _check_figure(self):
+        for item in self:
+            if item.figure and not figures.is_safe(item.figure):
+                raise ValidationError(self.env._(
+                    "A figure is a plain SVG drawing: no script, link or event handler (%(key)s).", key=item.key))
+
+    def _figure_data_uri(self):
+        """The figure as an image URI for the lesson screen (data only, never markup)."""
+        self.ensure_one()
+        if not self.figure:
+            return ""
+        return "data:image/svg+xml;base64," + base64.b64encode(self.figure.encode()).decode()
 
     def _display_choices(self, rng=None):
         """The labels in the order the screen shows them (UC-24): a fresh random order each
