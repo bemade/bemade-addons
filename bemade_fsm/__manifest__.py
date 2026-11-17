@@ -12,7 +12,7 @@
 ########################################################################################
 {
     "name": "Improved Field Service Management",
-    "version": "19.0.0.8.0",
+    "version": "19.0.0.9.0",
     "summary": (
         "Adds functionality necessary for managing field service operations at Durpro."
     ),
@@ -38,10 +38,12 @@
         "data/fsm_data.xml",
         "views/task_template_views.xml",
         "security/ir.model.access.csv",
+        "security/fsm_carried_todo_security.xml",
         "views/product_views.xml",
         "views/res_partner.xml",
         "views/menus.xml",
         "views/task_views.xml",
+        "views/fsm_carried_todo_views.xml",
         "views/fsm_visit_views.xml",
         "views/sale_order_views.xml",
         "reports/worksheet_custom_report_templates.xml",

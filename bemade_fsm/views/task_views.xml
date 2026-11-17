@@ -77,6 +77,20 @@
             />
                     </div>
                 </div>
+                <div
+          role="alert"
+          class="alert alert-info d-flex gap-2 mb-0 o_fsm_carried_todo_banner"
+          invisible="not is_fsm or parent_id or not fsm_carried_todo_count"
+        >
+                    <i class="fa fa-list-ul fa-lg mt-1" role="img" title="From last visit" />
+                    <div class="flex-grow-1">
+                        <field name="fsm_carried_todo_count" class="fw-bold" />
+                        <span class="fw-bold">
+                            à faire de la dernière visite / to-do(s) from last visit
+                        </span>
+                        <span class="text-muted"> (Sous-tâches / Sub-tasks)</span>
+                    </div>
+                </div>
             </xpath>
         </field>
     </record>

@@ -22,6 +22,25 @@
           class="w-100"
           placeholder="E.g.: gate code changed, bring the tall ladder"
         />
+                <field name="task_equipment_ids" invisible="1" />
+                <div class="fw-bold mt-3">To do on the next visit</div>
+                <p class="text-muted small mb-1">
+                    Each line becomes a « From last visit » subtask on the next
+                    visit at this site.
+                </p>
+                <field name="todo_line_ids" nolabel="1">
+                    <list editable="bottom">
+                        <field
+              name="name"
+              placeholder="E.g.: replace the gasket on the softener"
+            />
+                        <field
+              name="equipment_id"
+              domain="[('id', 'in', parent.task_equipment_ids)]"
+              options="{'no_create': True, 'no_open': True}"
+            />
+                    </list>
+                </field>
                 <footer>
                     <button
             class="btn-primary"
