@@ -8,6 +8,8 @@ from odoo.tests import TransactionCase
 # Synthetic data only: this repository is public.
 SIGNATURE = Markup("<p>Sam Signer<br>Example Widgets Inc.</p>")
 SIGNATURE_TEXT = "Example Widgets Inc."
+OTHER_SIGNATURE = Markup("<p>Olive Other</p><p>Other Widgets Ltd.</p>")
+OTHER_SIGNATURE_TEXT = "Other Widgets Ltd."
 
 
 class SignatureCommon(TransactionCase):

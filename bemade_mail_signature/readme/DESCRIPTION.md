@@ -16,11 +16,16 @@ users know what goes out and never type their signature a second time.
   the signature exactly once; the chatter shows it folded under « … ».
   Every message gets it, replies included.
 - **Full composer with a template** (e.g. « Send by Email » on a document, in
-  single-record comment mode): the sender's signature is appended at the end of the
-  rendered template text, where it stays editable. Nothing else is added at send.
-  When the rendered text already ends with the sender's signature (templates that
-  print the responsible user's signature, when that user is the sender), nothing
-  is appended. Mass mailing mode is unchanged.
+  single-record comment mode): exactly one signature, always the sender's (the
+  user who sends, even when the template's sender address is another user's).
+  Many templates print a user's signature themselves (salesperson, buyer, current
+  user...): every such signature is removed from the rendered text, i.e. the
+  signature of the current user and of any user in a stored many2one field of the
+  record (``user_id``, ``invoice_user_id``...), with or without the ``--``
+  separator. Then the sender's signature block is appended, where it stays
+  editable. Nothing else is added at send. A user whose signature is only their
+  name (Odoo's default) is removed only after ``--``: a bare name in the text is
+  not a signature. Mass mailing mode is unchanged.
 
 ## Opt-outs respected
 
@@ -38,6 +43,10 @@ Nothing is added when:
   Discuss channel;
 - the body already contains the sender's signature block.
 
+When the signature is turned off for a template flow (e.g. a report email that
+carries its own fixed team signature), the rendered text is left exactly as the
+template produced it.
+
 ## Other signature previews
 
 If another addon already shows a client-side signature preview in the chatter
@@ -50,5 +59,6 @@ with ``email_add_signature=False`` and the server adds nothing.
 ## Scope
 
 Depends on ``mail`` only. Invoice sending goes through the Accounting send
-wizard (``account.move.send.wizard``), not through ``mail.compose.message``, and
-is not covered.
+wizard (``account.move.send.wizard``), not through ``mail.compose.message``: it is
+covered by the bridge ``bemade_mail_signature_account`` (auto-installed with
+Invoicing).

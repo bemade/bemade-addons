@@ -6,6 +6,8 @@ from markupsafe import Markup, escape
 from odoo import models
 from odoo.tools.mail import is_html_empty
 
+from ..tools import strip_printed_signatures
+
 SIGNATURE_CLASS = "o_bemade_mail_signature"
 # Classes of the signature blocks that core's full composer and this module put
 # in a body: when one is present the body is already signed.
@@ -68,6 +70,42 @@ class MailThread(models.AbstractModel):
             SIGNATURE_CLASS,
             signature,
         )
+
+    def _mail_signature_template_users(self, author):
+        """Users whose signature a template rendered on this record may print:
+        the users of the record's stored many2one fields to ``res.users``
+        (salesperson, buyer, invoice user, responsible, ...), the current user
+        and the author's user."""
+        self.ensure_one()
+        users = self.env.user | author.sudo().main_user_id
+        record = self.sudo()
+        for name, field in record._fields.items():
+            if field.type == "many2one" and field.comodel_name == "res.users" and field.store:
+                users |= record[name]
+        return users.sudo()
+
+    def _mail_signature_apply_to_template_body(self, body, author):
+        """One signature, the sender's, at the end of a rendered template body.
+
+        Remove every user signature the template printed (see
+        ``_mail_signature_template_users``), then append ``author``'s signature
+        block. Unchanged when the sender gets no signature on this record (the
+        rendering hook turned it off, no signature, ...) or when the body is
+        already signed by this module.
+        """
+        self.ensure_one()
+        if is_html_empty(body) or SIGNATURE_CLASS in str(body):
+            return body
+        block = self._mail_signature_get_block(author)
+        if not block:
+            return body
+        signatures = [
+            (user.signature, user.name)
+            for user in self._mail_signature_template_users(author)
+            if not is_html_empty(user.signature)
+        ]
+        body = strip_printed_signatures(Markup(body), signatures)
+        return Markup(body) + block
 
     def _mail_signature_in_body(self, body, author):
         """Whether ``body`` already holds ``author``'s signature block."""

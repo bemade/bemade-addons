@@ -5,8 +5,15 @@ Acceptance criteria
 * Comment mode with a template, one record: the composer body is the rendered
   template followed by the sender's signature block (editable); sending gives one
   email with the signature exactly once, and the logged message keeps it.
-* The rendered template already ends with the sender's signature: nothing is
-  appended, still one signature in the email.
+* Exactly one signature, always the sender's: every user signature the template
+  printed (current user, or a user of the record such as the salesperson, with
+  or without the ``--`` separator) is removed, then the sender's block is
+  appended.
+  - template prints the salesperson's signature, sender = salesperson: one;
+  - sender is not the salesperson: only the sender's;
+  - template prints the sender's own signature: one (the folded block).
+* A bare user name in the template text is not a signature and is kept; Odoo's
+  default name-only signature is removed only after ``--``.
 * The user deletes the signature from the body before sending: no signature
   leaves (no path adds one that was not in the body).
 * No template (signature added by default): exactly one signature in the email.
@@ -16,7 +23,7 @@ Acceptance criteria
 * Mass mailing mode: body unchanged.
 * A module turning the signature off through the rendering hook (e.g. for a
   report flow with its own fixed signature) is honoured: nothing appended,
-  nothing sent.
+  nothing sent, and the rendered body is left as is.
 """
 
 from unittest.mock import patch
@@ -24,9 +31,16 @@ from unittest.mock import patch
 from markupsafe import Markup
 
 from odoo.addons.mail.models.mail_thread import MailThread
+from odoo.addons.mail.tests.common import mail_new_test_user
 from odoo.tests import Form, tagged
 
-from .common import SIGNATURE, SIGNATURE_TEXT, SignatureCommon
+from .common import (
+    OTHER_SIGNATURE,
+    OTHER_SIGNATURE_TEXT,
+    SIGNATURE,
+    SIGNATURE_TEXT,
+    SignatureCommon,
+)
 
 
 @tagged("post_install", "-at_install")
@@ -49,6 +63,25 @@ class TestComposerSignature(SignatureCommon):
                 "name": "Sig test template (prints the user signature)",
                 "body_html": '<p>Dear customer.</p><div>--<br/><t t-out="user.signature"/></div>',
             }
+        )
+        # Like many real templates: the record's responsible user's signature,
+        # no "--" separator, wrapped in inline markup.
+        cls.template_salesperson = cls.template.copy(
+            {
+                "name": "Sig test template (prints the salesperson signature)",
+                "body_html": (
+                    '<div><p>Your order is confirmed.<br/><br/></p>'
+                    '<p><strong><t t-out="object.user_id.signature"/></strong><br/></p></div>'
+                ),
+            }
+        )
+        cls.other_user = mail_new_test_user(
+            cls.env,
+            login="sig_other",
+            name="Olive Other",
+            email="olive.other@example.com",
+            groups="base.group_user,base.group_partner_manager",
+            signature=OTHER_SIGNATURE,
         )
 
     def _composer(self, **ctx):
@@ -83,13 +116,53 @@ class TestComposerSignature(SignatureCommon):
         _mails, message = composer._action_send_mail()
         self.assertSignedOnce(message)
 
-    def test_template_already_signed(self):
+    def test_template_printing_sender_signature(self):
+        """The template's printed copy is replaced by the folded block."""
         form = self._composer(default_template_id=self.template_signed.id)
         self.assertEqual(str(form.body).count(SIGNATURE_TEXT), 1)
+        self.assertIn("o_bemade_mail_signature", form.body)
+        self.assertIn("Dear customer.", form.body)
         message = self._send(form)
-        self.assertEqual(message.body.count(SIGNATURE_TEXT), 1)
+        self.assertSignedOnce(message)
+
+    def test_salesperson_is_sender_one_signature(self):
+        self.record.user_id = self.sender
+        form = self._composer(default_template_id=self.template_salesperson.id)
+        self.assertEqual(str(form.body).count(SIGNATURE_TEXT), 1, form.body)
+        self.assertIn("o_bemade_mail_signature", form.body)
+        self.assertIn("Your order is confirmed.", form.body)
+        message = self._send(form)
+        self.assertSignedOnce(message)
+
+    def test_salesperson_not_sender_only_sender_signature(self):
+        self.record.user_id = self.other_user
+        form = self._composer(default_template_id=self.template_salesperson.id)
+        self.assertNotIn(OTHER_SIGNATURE_TEXT, form.body)
+        self.assertEqual(str(form.body).count(SIGNATURE_TEXT), 1, form.body)
+        message = self._send(form)
+        self.assertSignedOnce(message)
+        self.assertNotIn(OTHER_SIGNATURE_TEXT, message.body)
         for mail in self._mails_for(message):
-            self.assertEqual(self._visible(mail.body_html).count(SIGNATURE_TEXT), 1)
+            self.assertNotIn(OTHER_SIGNATURE_TEXT, mail.body_html)
+
+    def test_default_name_signature_kept_unless_after_dashes(self):
+        """A bare name is not a signature; "--" + name is."""
+        self.other_user.signature = False  # recomputed to Odoo's default <div>name</div>
+        self.other_user.invalidate_recordset(["signature"])
+        self.other_user._compute_signature()
+        self.record.user_id = self.other_user
+        template = self.template.copy(
+            {
+                "body_html": (
+                    '<p>Your contact: <span t-out="object.user_id.name"/></p>'
+                    '<div>--<br/><t t-out="object.user_id.signature"/></div>'
+                ),
+            }
+        )
+        form = self._composer(default_template_id=template.id)
+        self.assertIn("Your contact: <span>Olive Other</span>", form.body)
+        self.assertEqual(str(form.body).count("Olive Other"), 1, form.body)
+        self.assertEqual(str(form.body).count(SIGNATURE_TEXT), 1, form.body)
 
     def test_signature_removed_by_user(self):
         form = self._composer(default_template_id=self.template.id)
@@ -158,4 +231,12 @@ class TestComposerSignature(SignatureCommon):
             )
             self.assertNotIn(SIGNATURE_TEXT, form.body)
             message = self._send(form)
-        self.assertNotSigned(message)
+            self.assertNotSigned(message)
+            # A report flow with its own fixed signature: body left as rendered.
+            self.record.user_id = self.other_user
+            form = self._composer(
+                default_template_id=self.template_salesperson.id,
+                test_suppress_signature=True,
+            )
+            self.assertIn(OTHER_SIGNATURE_TEXT, form.body)
+            self.assertNotIn("o_bemade_mail_signature", form.body)

@@ -19,8 +19,9 @@ class MailComposeMessage(models.TransientModel):
         )
 
     def _compute_body(self):
-        """Append the sender's signature to the rendered template text, where it
-        stays editable. Nothing is added at send any more: with a template the
+        """One signature, the sender's, at the end of the rendered template text,
+        where it stays editable: the user signatures the template printed are
+        removed first. Nothing is added at send any more: with a template the
         composer's ``email_add_signature`` is False (core), and the post does not
         sign a message posted with it False."""
         res = super()._compute_body()
@@ -31,8 +32,10 @@ class MailComposeMessage(models.TransientModel):
             if not res_ids:
                 continue
             record = composer.env[composer.model].browse(res_ids[0])
-            author = composer.author_id or composer.env.user.partner_id
-            block = record._mail_signature_get_block(author)
-            if block and not record._mail_signature_in_body(composer.body, author):
-                composer.body = composer.body + block
+            # The sender is the user who sends, even when the template's
+            # email_from makes another user (e.g. the salesperson) the author.
+            sender = composer.env.user.partner_id
+            body = record._mail_signature_apply_to_template_body(composer.body, sender)
+            if body != composer.body:
+                composer.body = body
         return res
