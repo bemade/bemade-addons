@@ -17,3 +17,4 @@ from . import test_fsm_menu_actions
 from . import test_visit_numbering
 from . import test_fsm_site_note
 from . import test_subtask_dates
+from . import test_fsm_task_subtask_tree_tour
