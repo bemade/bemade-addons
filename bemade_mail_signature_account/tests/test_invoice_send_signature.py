@@ -1,19 +1,20 @@
-"""Use case: an invoice sent through the send wizard carries one signature, the
-sender's, shown in the wizard before sending.
+"""Use case: an invoice sent from the invoice send window carries no personal
+signature; the template's own signature only.
 
 Acceptance criteria
 -------------------
-* The invoice's salesperson is another user: the wizard body has the sender's
-  signature block once and not the salesperson's signature; the sent email and
-  the logged message carry the sender's signature exactly once.
-* The salesperson is the sender: one signature (the folded block).
-* A credit note follows the same rule.
-* The sender removes the signature from the wizard body: no signature leaves.
+* Salesperson = sender, salesperson ≠ sender, credit note: the send window's
+  body is the template exactly as rendered (built-in signature kept, nothing
+  appended or removed), and neither the sent email nor the logged message
+  contains the sender's or the salesperson's personal signature.
+* A message written in the invoice's chatter is still signed (normal
+  ``bemade_mail_signature`` behaviour).
 """
 
 from markupsafe import Markup
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+from odoo.addons.bemade_mail_signature.tools import text_key
 from odoo.addons.mail.tests.common import mail_new_test_user
 from odoo.tests import tagged
 
@@ -21,6 +22,7 @@ SENDER_SIGNATURE = Markup("<p>Sam Signer</p><p>Example Widgets Inc.</p>")
 SENDER_TEXT = "Example Widgets Inc."
 OTHER_SIGNATURE = Markup("<p>Olive Other</p><p>Other Widgets Ltd.</p>")
 OTHER_TEXT = "Other Widgets Ltd."
+TEAM_SIGNATURE = "Example Billing Team"
 
 
 @tagged("post_install", "-at_install")
@@ -47,8 +49,8 @@ class TestInvoiceSendSignature(AccountTestInvoicingCommon):
                 "model_id": cls.env["ir.model"]._get_id("account.move"),
                 "subject": "Invoice {{ object.name }}",
                 "body_html": (
-                    '<p>Here is your invoice <t t-out="object.name"/>.</p>'
-                    '<div>--<br/><t t-out="object.invoice_user_id.signature"/></div>'
+                    '<p>Here is your invoice <t t-out="object.name"/>.<br/><br/>'
+                    "%s<br/>billing@example.com</p>" % TEAM_SIGNATURE
                 ),
                 "partner_to": "{{ object.partner_id.id }}",
                 "use_default_to": False,
@@ -62,57 +64,55 @@ class TestInvoiceSendSignature(AccountTestInvoicingCommon):
             .create({"template_id": self.template.id, "sending_methods": ["email"]})
         )
 
-    def _send(self, wizard):
-        wizard.action_send_and_print()
-        message = self.env["mail.message"].search(
-            [("model", "=", "account.move"), ("res_id", "=", wizard.move_id.id),
+    def _last_comment(self, move):
+        return self.env["mail.message"].search(
+            [("model", "=", "account.move"), ("res_id", "=", move.id),
              ("message_type", "=", "comment")],
             order="id desc",
             limit=1,
         )
+
+    def _check_no_personal_signature(self, move):
+        wizard = self._wizard(move)
+        rendered = wizard._get_default_mail_body(move, self.template, wizard.lang)
+        self.assertEqual(text_key(wizard.body), text_key(rendered), "template text unchanged")
+        self.assertIn(TEAM_SIGNATURE, wizard.body)
+        self.assertNotIn(SENDER_TEXT, wizard.body)
+        self.assertNotIn("o_bemade_mail_signature", wizard.body)
+        wizard.action_send_and_print()
+        message = self._last_comment(move)
         self.assertTrue(message)
-        return message
-
-    def _mails(self, message):
-        return self.env["mail.mail"].sudo().search([("mail_message_id", "=", message.id)])
-
-    def _check_sent_once(self, message):
-        self.assertEqual(message.body.count(SENDER_TEXT), 1, message.body)
-        self.assertNotIn(OTHER_TEXT, message.body)
-        mails = self._mails(message)
+        self.assertIn(TEAM_SIGNATURE, message.body)
+        mails = self.env["mail.mail"].sudo().search([("mail_message_id", "=", message.id)])
         self.assertTrue(mails)
+        for body in [message.body] + mails.mapped("body_html"):
+            self.assertNotIn(SENDER_TEXT, body)
+            self.assertNotIn(OTHER_TEXT, body)
         for mail in mails:
-            self.assertEqual(mail.body_html.count(SENDER_TEXT), 1, mail.body_html)
-            self.assertNotIn(OTHER_TEXT, mail.body_html)
-
-    def test_salesperson_not_sender(self):
-        invoice = self.init_invoice("out_invoice", amounts=[100], post=True)
-        invoice.invoice_user_id = self.other_user
-        wizard = self._wizard(invoice)
-        self.assertNotIn(OTHER_TEXT, wizard.body)
-        self.assertEqual(str(wizard.body).count(SENDER_TEXT), 1, wizard.body)
-        self.assertIn("o_bemade_mail_signature", wizard.body)
-        self._check_sent_once(self._send(wizard))
+            self.assertIn(TEAM_SIGNATURE, mail.body_html)
 
     def test_salesperson_is_sender(self):
         invoice = self.init_invoice("out_invoice", amounts=[100], post=True)
         invoice.invoice_user_id = self.env.user
-        wizard = self._wizard(invoice)
-        self.assertEqual(str(wizard.body).count(SENDER_TEXT), 1, wizard.body)
-        self._check_sent_once(self._send(wizard))
+        self._check_no_personal_signature(invoice)
+
+    def test_salesperson_not_sender(self):
+        invoice = self.init_invoice("out_invoice", amounts=[100], post=True)
+        invoice.invoice_user_id = self.other_user
+        self._check_no_personal_signature(invoice)
 
     def test_credit_note(self):
         refund = self.init_invoice("out_refund", amounts=[100], post=True)
         refund.invoice_user_id = self.other_user
-        wizard = self._wizard(refund)
-        self.assertNotIn(OTHER_TEXT, wizard.body)
-        self._check_sent_once(self._send(wizard))
+        self._check_no_personal_signature(refund)
 
-    def test_signature_removed_by_sender(self):
+    def test_chatter_message_still_signed(self):
         invoice = self.init_invoice("out_invoice", amounts=[100], post=True)
-        wizard = self._wizard(invoice)
-        wizard.body = Markup("<p>Here is your invoice.</p>")
-        message = self._send(wizard)
-        self.assertNotIn(SENDER_TEXT, message.body)
-        for mail in self._mails(message):
-            self.assertNotIn(SENDER_TEXT, mail.body_html)
+        message = invoice.message_post(
+            body=Markup("<p>A question about your invoice</p>"),
+            message_type="comment",
+            subtype_xmlid="mail.mt_comment",
+            partner_ids=invoice.partner_id.ids,
+        )
+        self.assertIn("o_bemade_mail_signature", message.body)
+        self.assertEqual(message.body.count(SENDER_TEXT), 1)

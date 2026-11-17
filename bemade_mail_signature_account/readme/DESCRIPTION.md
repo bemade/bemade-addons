@@ -1,17 +1,18 @@
-Bridge between `bemade_mail_signature` and Invoicing, installed automatically
-when both are present.
+Invoicing opt-out for `bemade_mail_signature`, installed automatically when both
+are present.
 
-Customer invoices and credit notes are sent through the invoice send wizard
-(`account.move.send.wizard`), not through the mail composer. This module applies
-the same rule there: the email carries exactly one signature, the sender's,
-shown at the end of the text in the wizard, where it can be edited before
-sending.
+Invoice templates usually carry their own signature (e.g. the billing team's).
+Customer invoices and credit notes sent from the invoice send window
+(`account.move.send.wizard`, the « Send » button, and batch sending through the
+same model) therefore carry **no personal signature**:
 
-- The user signatures the template printed (the invoice's salesperson, the
-  current user) are removed from the rendered text, then the sender's signature
-  block is appended. In the chatter it is folded under « … ».
-- Nothing else is added at send: the email shows the signature exactly once.
-- Any module that turns the author signature off for a flow through
-  `_notify_by_email_prepare_rendering_context` is honoured: the rendered text is
-  then left as it is.
-- Invoices sent in batch (without the wizard) are unchanged.
+- the text of the template, built-in signature included, is shown in the send
+  window and sent exactly as rendered: nothing is appended and nothing is
+  removed;
+- Odoo's own author signature (added by the notification layout, invisible in
+  the send window) is turned off on that path, as is the responsible user's
+  signature of the invoice layout;
+- `bemade_mail_signature` adds nothing either.
+
+Messages written in the invoice's chatter (« Send message ») keep the normal
+`bemade_mail_signature` behaviour.

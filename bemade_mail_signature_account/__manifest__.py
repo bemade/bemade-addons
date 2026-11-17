@@ -2,8 +2,8 @@
     "name": "Mail Signature: Shown as Sent (Invoicing)",
     "version": "19.0.1.0.0",
     "category": "Accounting/Accounting",
-    "summary": "Invoice and credit note sending: one signature, the sender's, "
-    "shown and editable in the send wizard.",
+    "summary": "Invoices and credit notes sent from the invoice send window "
+    "carry no personal signature: the template's own signature only.",
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
