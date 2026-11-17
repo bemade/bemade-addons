@@ -36,7 +36,8 @@ class TestCompanyScope(ProductCostSourceCommon):
         resolution = self._resolve(company=self.company)
         self.assertEqual(len(resolution.sources), 1)
         self.assertAlmostEqual(resolution.unit_cost, 20.0)
-        self.assertIsNone(resolution.sources[0].priced_on)
+        # Dated by its own (old) entry, not by the other company's newer price.
+        self.assertEqual(resolution.sources[0].basis, "entered")
         self.assertTrue(own)
 
     def test_other_variant_price_is_not_the_fallback(self):

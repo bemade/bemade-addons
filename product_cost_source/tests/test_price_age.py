@@ -14,8 +14,9 @@ ACCEPTANCE CRITERIA
    price entries; other sources plug in (see test_extension_point).
 4. write_date is NEVER the authority. A catalogue imported in bulk has one
    write_date for thousands of prices, which says when the import ran, not
-   when anything was priced. A price whose age cannot be established is
-   Estimated, not Firm -- unknown age is not evidence of freshness.
+   when anything was priced; any edit of another field moves it too. Without
+   a start date or a tracked price change, a supplier price is as old as the
+   line itself (its creation).
 5. Boundary is inclusive: a price exactly at the timeout is still Firm.
 
 These use lapsed agreements, which is the core module's only way to have a
@@ -56,13 +57,25 @@ class TestPriceAge(ProductCostSourceCommon):
         self.assertEqual(self._resolve().confidence, "firm")
 
     def test_unknown_age_is_estimated_not_firm(self):
-        # An undated price is the shape a bulk catalogue import leaves behind.
-        # Its write_date would look recent; that must not make it Firm.
+        # An old line touched today (write_date) for something other than its
+        # price is still an old price.
         seller = self._supplier_price(75.0)
+        seller.write({"min_qty": 1, "product_code": "X-1"})
         self.assertFalse(seller.date_start)
         resolution = self._resolve()
-        self.assertIsNone(resolution.sources[0].priced_on)
+        self.assertEqual(resolution.sources[0].basis, "entered")
+        self.assertEqual(resolution.sources[0].priced_on, self._months_ago(36))
         self.assertEqual(resolution.confidence, "estimated")
+
+    def test_recently_entered_price_is_firm(self):
+        entered = self._months_ago(1)
+        self._supplier_price(75.0, entered=entered)
+        resolution = self._resolve()
+        self.assertEqual(resolution.confidence, "firm")
+        self.assertEqual(
+            resolution.evidence,
+            [f"Firm. {self._money(75.0)}, vendor price entered on {self._fmt(entered)}."],
+        )
 
     def test_price_exactly_at_the_timeout_is_firm(self):
         self._lapsed_price(75.0, 6)

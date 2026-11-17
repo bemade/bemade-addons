@@ -2,7 +2,7 @@
 # License LGPL-3 - See https://www.gnu.org/licenses/lgpl-3.0.html
 {
     "name": "Sale Cost Source",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "summary": "Show on each quotation line how reliable its cost is (firm, "
     "indicative, estimated, unknown) and why.",
     "description": """Sale Cost Source
@@ -17,9 +17,12 @@ On each line
 
 * A **badge** -- Firm, Indicative, Estimated or Unknown -- in an optional
   column after the subtotal, and in the line form.
-* A **one-line reason** naming the evidence, e.g. *Firm. Vendor price list
-  valid to 11/30/2026.* or *Estimated. Last known price 01/03/2025, over 6
-  months old. No contract in force.* When the vendor price expires before the
+* A **one-line reason** naming the evidence, e.g. *Firm. $ 75.00, vendor
+  price list valid to 11/30/2026.*, *Firm. 160.00 CAD (≈ 114.11 USD),
+  purchased on 03/26/2026 (P00031).* or *Estimated. $ 75.00, vendor price
+  changed on 01/03/2025, over 6 months ago. No contract in force.* A price in
+  another currency than the order's shows its own figure first, the
+  conversion in brackets. When the vendor price expires before the
   line's delivery date (the order's commitment date, else its expected date),
   the reason ends with a warning.
 * A **tooltip on the unit price** listing the evidence, warnings and notes

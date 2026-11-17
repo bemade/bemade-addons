@@ -2,7 +2,7 @@
 # License LGPL-3 - See https://www.gnu.org/licenses/lgpl-3.0.html
 {
     "name": "Product Cost Source",
-    "version": "19.0.1.1.2",
+    "version": "19.0.1.2.0",
     "summary": "Resolve a product's unit cost, name where it came from, "
     "and say how far it can be trusted.",
     "description": """Product Cost Source
@@ -24,8 +24,9 @@ Given a product, a quantity, how much of that quantity stock can cover, a
 currency and a date, it returns a resolved unit cost together with the evidence
 behind it:
 
-* **Vendor pricelist** -- the applicable supplier price, converted to the target
-  currency at the given date.
+* **Vendor pricelist** -- the applicable supplier price (its discounted price,
+  per unit of the product), converted to the target currency at the given
+  date.
 * **Stock valuation** -- the cost of the quantity already on hand. Stock
   valued at zero is not a cost: it reads as Unknown, with a warning, and any
   other evidence is cited as the likely cost.
@@ -35,10 +36,11 @@ behind it:
 Alongside the cost, each contributing source is described in terms a person
 quoting can act on, verdict first:
 
-* *Firm. Vendor price list valid to 11/30/2026.*
+* *Firm. $ 75.00, vendor price list valid to 11/30/2026.*
+* *Firm. 160.00 CAD (≈ 114.11 USD), vendor price changed on 10/09/2026.*
 * *Firm. 40 of 60 covered from stock at $10.00; balance at vendor price.*
-* *Estimated. Last known price 01/03/2022, over 6 months old. No contract in
-  force.*
+* *Estimated. $ 75.00, vendor price entered on 01/03/2022, over 6 months ago.
+  No contract in force.*
 * *Unknown. No vendor price and no purchase history.*
 * *Warning. Vendor price expires 11/30/2026, before this line's delivery date
   of 12/15/2026.*
@@ -62,9 +64,26 @@ Outside such an agreement there is no contract to lean on, so the age of the
 last **known** price is measured against a configurable timeout, and anything
 older is reported as an estimate. A purchase is itself a repricing event, so
 the last known price is the most recent of a confirmed purchase order line or a
-supplier price entry -- not whenever the catalogue record happened to be
-written, which on an imported catalogue says more about the import than about
+supplier price entry.
+
+A supplier price is as fresh as the most recent of:
+
+* its start date, when it has one;
+* the last change of its price or discount in its tracked history, when
+  supplier prices are tracked in the chatter (e.g. by
+  ``product_supplierinfo_tracking``) -- read straight from the tracking
+  tables, no dependency needed;
+* otherwise the day the line was created;
+* any other dated confirmation a module adds through
+  ``_cost_source_seller_dates()`` (and words in ``_cost_source_basis_text()``).
+
+Never whenever the record happened to be written: ``write_date`` moves with
+any edit and, on an imported catalogue, says more about the import than about
 the price.
+
+A price stated in another currency shows its own figure first and the
+conversion in brackets, both with their currency code, so two dollars never
+read alike.
 
 How often a part is bought does not enter into it. A part bought once every
 five years, on a two-year-old price, has an out-of-date price in exactly the

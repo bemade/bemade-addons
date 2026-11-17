@@ -23,6 +23,12 @@ msgid " Covers %(qty)s of %(total)s."
 msgstr " Couvre %(qty)s sur %(total)s."
 
 #. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "%(price)s (≈ %(converted)s)"
+msgstr "%(price)s (≈ %(converted)s)"
+
+#. module: product_cost_source
 #: model_terms:ir.ui.view,arch_db:product_cost_source.res_config_settings_view_form
 msgid "<span class=\"ms-2\">months</span>"
 msgstr "<span class=\"ms-2\">mois</span>"
@@ -47,21 +53,40 @@ msgstr "Nom d'affichage"
 #. odoo-python
 #: code:addons/product_cost_source/models/product_product.py:0
 msgid ""
-"Estimated. Last known price %(date)s, over %(months)s months old. No "
-"contract in force."
+"Estimated. %(price)s, %(basis)s, over %(months)s months ago. No contract in "
+"force."
 msgstr ""
-"Estimation. Dernier prix connu le %(date)s, il y a plus de %(months)s mois. "
-"Aucun contrat en vigueur."
+"Estimation. %(price)s, %(basis)s, il y a plus de %(months)s mois. Aucun "
+"contrat en vigueur."
 
 #. module: product_cost_source
 #. odoo-python
 #: code:addons/product_cost_source/models/product_product.py:0
 msgid ""
-"Estimated. The vendor price on file is undated, so its age cannot be "
-"established."
+"Estimated. %(price)s, the vendor price on file is undated, so its age cannot"
+" be established."
 msgstr ""
-"Estimation. Le prix fournisseur au dossier n'est pas daté : impossible d'en "
-"établir l'âge."
+"Estimation. %(price)s, le prix fournisseur au dossier n'est pas daté : "
+"impossible d'en établir l'âge."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Firm. %(price)s, %(basis)s."
+msgstr "Ferme. %(price)s, %(basis)s."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Firm. %(price)s, vendor agreement in force."
+msgstr "Ferme. %(price)s, entente fournisseur en vigueur."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Firm. %(price)s, vendor price list valid to %(until)s."
+msgstr ""
+"Ferme. %(price)s, liste de prix fournisseur valide jusqu'au %(until)s."
 
 #. module: product_cost_source
 #. odoo-python
@@ -88,25 +113,6 @@ msgstr ""
 #: code:addons/product_cost_source/models/product_product.py:0
 msgid "Firm. Covered from stock at %(price)s."
 msgstr "Ferme. Couvert par le stock à %(price)s."
-
-#. module: product_cost_source
-#. odoo-python
-#: code:addons/product_cost_source/models/product_product.py:0
-msgid "Firm. Last known price %(date)s, within the last %(months)s months."
-msgstr ""
-"Ferme. Dernier prix connu le %(date)s, dans les %(months)s derniers mois."
-
-#. module: product_cost_source
-#. odoo-python
-#: code:addons/product_cost_source/models/product_product.py:0
-msgid "Firm. Vendor agreement in force."
-msgstr "Ferme. Entente fournisseur en vigueur."
-
-#. module: product_cost_source
-#. odoo-python
-#: code:addons/product_cost_source/models/product_product.py:0
-msgid "Firm. Vendor price list valid to %(until)s."
-msgstr "Ferme. Liste de prix fournisseur valide jusqu'au %(until)s."
 
 #. module: product_cost_source
 #: model_terms:ir.ui.view,arch_db:product_cost_source.res_config_settings_view_form
@@ -138,13 +144,19 @@ msgstr ""
 #: model:ir.model.fields,field_description:product_cost_source.field_product_product__id
 #: model:ir.model.fields,field_description:product_cost_source.field_res_config_settings__id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. module: product_cost_source
 #. odoo-python
 #: code:addons/product_cost_source/models/product_product.py:0
 msgid "Indicative. Quoted %(price)s, not yet confirmed."
 msgstr "Indicatif. Coté à %(price)s, pas encore confirmé."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Likely cost %(price)s, from: %(evidence)s"
+msgstr "Coût probable %(price)s, d'après : %(evidence)s"
 
 #. module: product_cost_source
 #: model:ir.model.fields,field_description:product_cost_source.field_res_config_settings__price_age_months
@@ -170,6 +182,18 @@ msgstr "L'âge du prix doit être un nombre entier de mois supérieur à zéro."
 #. module: product_cost_source
 #. odoo-python
 #: code:addons/product_cost_source/models/product_product.py:0
+msgid "Unknown. %(qty)s of %(total)s covered from stock with no cost value."
+msgstr "Inconnu. %(qty)s sur %(total)s couverts par du stock sans valeur."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Unknown. Covered from stock with no cost value."
+msgstr "Inconnu. Couvert par du stock sans valeur."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
 msgid "Unknown. No vendor price and no purchase history."
 msgstr "Inconnu. Aucun prix fournisseur et aucun historique d'achat."
 
@@ -178,6 +202,20 @@ msgstr "Inconnu. Aucun prix fournisseur et aucun historique d'achat."
 #: code:addons/product_cost_source/models/product_product.py:0
 msgid "Unknown. No vendor price for the other %(qty)s."
 msgstr "Inconnu. Aucun prix fournisseur pour les %(qty)s autres."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Vendor price at %(price)s, from: %(evidence)s"
+msgstr "Coût fournisseur à %(price)s, d'après : %(evidence)s"
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid ""
+"Warning. Stock has no cost value: the cost of %(price)s is not reliable."
+msgstr ""
+"Avertissement. Stock sans valeur : le coût de %(price)s n'est pas fiable."
 
 #. module: product_cost_source
 #. odoo-python
@@ -192,30 +230,23 @@ msgstr ""
 #. module: product_cost_source
 #. odoo-python
 #: code:addons/product_cost_source/models/product_product.py:0
-msgid "Unknown. Covered from stock with no cost value."
-msgstr "Inconnu. Couvert par du stock sans valeur."
+msgid "last known price %(date)s"
+msgstr "dernier prix connu le %(date)s"
 
 #. module: product_cost_source
 #. odoo-python
 #: code:addons/product_cost_source/models/product_product.py:0
-msgid "Unknown. %(qty)s of %(total)s covered from stock with no cost value."
-msgstr "Inconnu. %(qty)s sur %(total)s couverts par du stock sans valeur."
+msgid "vendor price changed on %(date)s"
+msgstr "prix fournisseur modifié le %(date)s"
 
 #. module: product_cost_source
 #. odoo-python
 #: code:addons/product_cost_source/models/product_product.py:0
-msgid "Likely cost %(price)s, from: %(evidence)s"
-msgstr "Coût probable %(price)s, d'après : %(evidence)s"
+msgid "vendor price entered on %(date)s"
+msgstr "prix fournisseur saisi le %(date)s"
 
 #. module: product_cost_source
 #. odoo-python
 #: code:addons/product_cost_source/models/product_product.py:0
-msgid "Vendor price at %(price)s, from: %(evidence)s"
-msgstr "Coût fournisseur à %(price)s, d'après : %(evidence)s"
-
-#. module: product_cost_source
-#. odoo-python
-#: code:addons/product_cost_source/models/product_product.py:0
-msgid "Warning. Stock has no cost value: the cost of %(price)s is not reliable."
-msgstr ""
-"Avertissement. Stock sans valeur : le coût de %(price)s n'est pas fiable."
+msgid "vendor price valid from %(date)s"
+msgstr "prix fournisseur valide depuis le %(date)s"

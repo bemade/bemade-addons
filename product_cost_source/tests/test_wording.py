@@ -8,17 +8,17 @@ that justifies it.
 
 ACCEPTANCE CRITERIA
 1. A vendor price list in force with an end date reads
-   "Firm. Vendor price list valid to {date}."
+   "Firm. {price}, vendor price list valid to {date}."
 2. Partial stock coverage reads
    "Firm. {n} of {m} covered from stock at {price}; balance at vendor price."
    and full coverage "Firm. Covered from stock at {price}."
 3. A last known price past the age window reads
-   "Estimated. Last known price {date}, over {n} months old. No contract in
-   force."
+   "Estimated. {price}, {what dated it}, over {n} months ago. No contract in
+   force." -- what dated it being e.g. "vendor price valid from {date}".
 4. A dated last known price within the window reads
-   "Firm. Last known price {date}, within the last {n} months."
-5. An undated vendor price reads as an Estimated sentence that says its date
-   is unknown.
+   "Firm. {price}, {what dated it}."
+5. A vendor price with no date on or before the day asked about reads as an
+   Estimated sentence that says its date is unknown.
 6. Nothing known reads "Unknown. No vendor price and no purchase history."
 7. A price expiring before delivery warns
    "Warning. Vendor price expires {date}, before this line's delivery date of
@@ -47,7 +47,10 @@ class TestWording(ProductCostSourceCommon):
         self._supplier_price(75.0, date_start=self._months_ago(1), date_end=end)
         self.assertEqual(
             self._resolve().evidence,
-            [f"Firm. Vendor price list valid to {self._fmt(end)}."],
+            [
+                f"Firm. {self._money(75.0)}, vendor price list valid to "
+                f"{self._fmt(end)}."
+            ],
         )
 
     def test_partial_stock_coverage(self):
@@ -60,7 +63,11 @@ class TestWording(ProductCostSourceCommon):
             f"Firm. 40 of 60 covered from stock at {self._money(10.0)}; "
             "balance at vendor price.",
         )
-        self.assertTrue(evidence[1].startswith("Firm. Vendor price list valid to"))
+        self.assertEqual(
+            evidence[1],
+            f"Firm. {self._money(15.0)}, vendor price list valid to {self._fmt(end)}. "
+            "Covers 20 of 60.",
+        )
 
     def test_full_stock_coverage(self):
         self._set_stock_value(10.0)
@@ -75,8 +82,8 @@ class TestWording(ProductCostSourceCommon):
         self.assertEqual(
             self._resolve().evidence,
             [
-                f"Estimated. Last known price {self._fmt(agreed)}, over 6 months "
-                "old. No contract in force."
+                f"Estimated. {self._money(75.0)}, vendor price valid from "
+                f"{self._fmt(agreed)}, over 6 months ago. No contract in force."
             ],
         )
 
@@ -85,12 +92,13 @@ class TestWording(ProductCostSourceCommon):
         self._supplier_price(75.0, date_start=agreed)
         self.assertEqual(
             self._resolve().evidence,
-            [f"Firm. Last known price {self._fmt(agreed)}, within the last 6 months."],
+            [f"Firm. {self._money(75.0)}, vendor price valid from {self._fmt(agreed)}."],
         )
 
     def test_undated_price(self):
         self._supplier_price(75.0)
-        sentence = self._resolve().evidence[0]
+        # Asked about a day before the line existed: nothing dates it then.
+        sentence = self._resolve(date=self._months_ago(48)).evidence[0]
         self.assertTrue(sentence.startswith("Estimated. "))
         self.assertIn("undated", sentence)
 

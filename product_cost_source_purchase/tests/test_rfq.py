@@ -5,7 +5,7 @@
 ACCEPTANCE CRITERIA
 1. An open RFQ (draft or sent) with a unit price, and nothing else, resolves
    as Indicative and reads
-   "Indicative. Quoted {price} on RFQ {name}, not yet confirmed."
+   "Indicative. Quoted {price} on {name}, not yet confirmed."
 2. An RFQ line priced at zero is not evidence.
 3. With a Firm price on file, the Firm price wins; a newer RFQ is reported as
    a note, an older one is not.
@@ -28,7 +28,7 @@ class TestRfq(PurchaseCostSourceCommon):
         self.assertEqual(
             resolution.evidence,
             [
-                f"Indicative. Quoted {self._money(12.5)} on RFQ {rfq.name}, "
+                f"Indicative. Quoted {self._money(12.5)} on {rfq.name}, "
                 "not yet confirmed."
             ],
         )
