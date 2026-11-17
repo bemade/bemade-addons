@@ -6,6 +6,7 @@ from unittest.mock import patch
 from odoo import http
 from odoo.tests import tagged
 from odoo.tests.common import HttpCase
+from odoo.tools.misc import mute_logger
 
 _logger = logging.getLogger(__name__)
 
@@ -503,6 +504,7 @@ class TestFSMVisitConfirmationController(HttpCase):
                     "bogus", access_token=self.token
                 )
 
+    @mute_logger("odoo.addons.fsm_visit_confirmation.controllers.main")
     def test_action_approve_exception_renders_error(self):
         """If message_post raises during approve, the except branch renders an
         error page (lines 101-103)."""
@@ -535,6 +537,7 @@ class TestFSMVisitConfirmationController(HttpCase):
             )
         self.assertTrue(hasattr(response, "status_code"))
 
+    @mute_logger("odoo.addons.fsm_visit_confirmation.controllers.main")
     def test_submit_change_exception_renders_error(self):
         """If message_post raises during submit_change, the except branch renders
         an error page (lines 163-165)."""
