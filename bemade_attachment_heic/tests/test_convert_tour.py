@@ -11,6 +11,7 @@ This only smoke-tests the button; the look of the card is reviewed by hand.
 """
 
 from odoo.tests import HttpCase, tagged
+from odoo.tools.misc import mute_logger
 
 from .common import CORRUPT_HEIC, make_heic
 
@@ -29,6 +30,9 @@ class TestConvertTour(HttpCase):
         cls.partner.message_post(body="Bad photo", attachment_ids=bad.ids)
         cls.good = good
 
+    # The corrupt HEIC fails on purpose (criterion 2): the module logs it and
+    # the RPC layer logs the UserError shown to the user.
+    @mute_logger("odoo.addons.bemade_attachment_heic.models.ir_attachment", "odoo.http")
     def test_convert_tour(self):
         self.start_tour(
             "/odoo/res.partner/%s" % self.partner.id,
