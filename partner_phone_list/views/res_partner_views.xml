@@ -52,6 +52,34 @@
         </field>
     </record>
 
+    <!-- Simplified contact form: the contact pop-up of the mail composer,
+         followers, calendar attendees, invitation and "send" wizards... -->
+    <record id="view_partner_simple_form_phone_list" model="ir.ui.view">
+        <field name="name">res.partner.simplified.form.phone.list</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_simple_form" />
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <field name="phone" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </field>
+            <field name="phone" position="after">
+                <field name="mobile" invisible="1" />
+                <field name="phone_sms_available" invisible="1" />
+                <field name="phone_ids" string="Phone" widget="partner_phone_list" class="o_partner_phone_list w-100">
+                    <list editable="bottom">
+                        <field name="sequence" widget="handle" />
+                        <field name="type" width="110px" />
+                        <field name="number" widget="partner_phone_number" />
+                        <field name="extension" string="Ext." width="70px" />
+                        <field name="label" optional="show" />
+                        <field name="sms_available" column_invisible="1" />
+                    </list>
+                </field>
+            </field>
+        </field>
+    </record>
+
     <record id="view_partner_tree_phone_list" model="ir.ui.view">
         <field name="name">res.partner.list.phone.list</field>
         <field name="model">res.partner</field>

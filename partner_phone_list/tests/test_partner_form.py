@@ -46,6 +46,37 @@ class TestPartnerForm(PhoneListCase):
             column = list_tree.xpath("//field[@name='%s']" % name)[0]
             self.assertEqual(column.get("widget"), "partner_phone_list_char")
 
+    def test_simple_form_arch(self):
+        """The simplified contact form (contact pop-ups opened from the mail
+        composer, followers, calendar attendees, invitation wizards...) shows
+        the phonebook widget instead of the plain Phone field."""
+        view = self.env.ref("base.view_partner_simple_form")
+        arch = self.Partner.get_view(view.id, "form")["arch"]
+        tree = etree.fromstring(arch)
+        fields = tree.xpath("//field[@name='phone_ids']")
+        self.assertEqual(len(fields), 1)
+        self.assertEqual(fields[0].get("widget"), "partner_phone_list")
+        cols = [f.get("name") for f in fields[0].xpath("./list/field")]
+        for col in ("sequence", "type", "number", "extension", "label"):
+            self.assertIn(col, cols)
+        phone = tree.xpath("//field[@name='phone']")
+        self.assertEqual(len(phone), 1)
+        self.assertEqual(phone[0].get("invisible"), "1")
+        for name in ("mobile", "phone_sms_available"):
+            self.assertTrue(tree.xpath("//field[@name='%s']" % name), name)
+
+    def test_simple_form_create_with_lines(self):
+        with Form(self.Partner, view="base.view_partner_simple_form") as form:
+            form.name = "Sample Simple Person"
+            form.email = "simple.person@example.com"
+            with form.phone_ids.new() as line:
+                line.type = "mobile"
+                line.number = "+1 514 555 0171"
+        partner = form.record
+        self.assertEqual(partner.phone_ids.type, "mobile")
+        self.assertEqual(partner.phone, "+1 514-555-0171")
+        self.assertEqual(partner.mobile, partner.phone)
+
     def test_form_create_with_lines(self):
         with Form(self.Partner, view="base.view_partner_form") as form:
             form.name = "Sample Form Person"
