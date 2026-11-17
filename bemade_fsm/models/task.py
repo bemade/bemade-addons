@@ -139,6 +139,23 @@ class Task(models.Model):
         if template.subtasks:
             template.subtasks.create_task_from_self(project, parent_id=self.id)
 
+    @api.onchange("template_id")
+    def _onchange_template_id_warning(self):
+        """Warn before a template is applied on a task that is already saved:
+        applying it on save replaces the task's own values and adds subtasks."""
+        if self.template_id and self._origin.id:
+            return {
+                "warning": {
+                    "title": self.env._("Apply template %s?", self.template_id.name),
+                    "message": self.env._(
+                        "Applying this template on save replaces this task's name, "
+                        "description, assignees, tags, allocated hours, customer and "
+                        "equipment, and adds the template's subtasks. Clear the field "
+                        "(or Discard) to cancel."
+                    ),
+                }
+            }
+
     def _compute_is_closed(self):
         for rec in self:
             rec.is_closed = rec.state in CLOSED_STATES
