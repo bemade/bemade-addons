@@ -51,13 +51,13 @@ class MailFromAddress(models.Model):
     @api.model
     def _get_allowed_addresses(self, user=None):
         """Return the list of From addresses the user is allowed to use.
-        
+
         If no user is provided, use the current user.
         Addresses with no user_ids restriction are available to all users.
         """
         if user is None:
             user = self.env.user
-        
+
         # Get addresses either with no user restriction or with the user in the list
         domain = [
             ("active", "=", True),
