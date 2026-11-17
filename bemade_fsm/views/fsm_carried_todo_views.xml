@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="fsm_carried_todo_view_list" model="ir.ui.view">
+        <field name="name">fsm.carried.todo.list</field>
+        <field name="model">fsm.carried.todo</field>
+        <field name="arch" type="xml">
+            <list
+        create="false"
+        decoration-muted="state in ('done', 'cancelled')"
+        decoration-warning="state == 'pending'"
+      >
+                <field name="create_date" string="Noted on" widget="date" />
+                <field name="name" />
+                <field name="equipment_id" optional="show" />
+                <field name="partner_id" optional="hide" />
+                <field name="source_task_id" />
+                <field name="target_visit_id" />
+                <field name="state" widget="badge" />
+                <field name="company_id" column_invisible="True" />
+                <button
+          name="action_cancel"
+          type="object"
+          string="Cancel"
+          icon="fa-times"
+          invisible="state in ('done', 'cancelled')"
+        />
+                <button
+          name="action_reset"
+          type="object"
+          string="Carry again"
+          icon="fa-undo"
+          invisible="state != 'cancelled'"
+        />
+            </list>
+        </field>
+    </record>
+    <record id="fsm_carried_todo_view_form" model="ir.ui.view">
+        <field name="name">fsm.carried.todo.form</field>
+        <field name="model">fsm.carried.todo</field>
+        <field name="arch" type="xml">
+            <form create="false">
+                <header>
+                    <button
+            name="action_cancel"
+            type="object"
+            string="Cancel"
+            invisible="state in ('done', 'cancelled')"
+          />
+                    <button
+            name="action_reset"
+            type="object"
+            string="Carry again"
+            invisible="state != 'cancelled'"
+          />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <group>
+                        <field name="name" />
+                        <field name="partner_id" readonly="1" />
+                        <field
+              name="equipment_id"
+              domain="[('partner_id', '=', partner_id)]"
+            />
+                        <field name="source_task_id" readonly="1" />
+                        <field name="target_task_id" />
+                        <field name="target_visit_id" />
+                        <field name="visit_ids" widget="many2many_tags" />
+                        <field name="company_id" groups="base.group_multi_company" readonly="1" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="fsm_carried_todo_view_search" model="ir.ui.view">
+        <field name="name">fsm.carried.todo.search</field>
+        <field name="model">fsm.carried.todo</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="partner_id" />
+                <field name="equipment_id" />
+                <filter
+          name="open"
+          string="To do"
+          domain="[('state', 'in', ('pending', 'scheduled'))]"
+        />
+                <filter
+          name="pending"
+          string="Waiting for a visit"
+          domain="[('state', '=', 'pending')]"
+        />
+                <separator />
+                <filter name="group_state" string="Status" context="{'group_by': 'state'}" />
+                <filter name="group_partner" string="Site" context="{'group_by': 'partner_id'}" />
+            </search>
+        </field>
+    </record>
+    <record id="fsm_carried_todo_action" model="ir.actions.act_window">
+        <field name="name">Carried to-dos</field>
+        <field name="res_model">fsm.carried.todo</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="fsm_carried_todo_view_search" />
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No to-do for the next visit</p>
+            <p>
+                When a visit is marked as done, the close-out window lets you note
+                what to do on the next visit at the site.
+            </p>
+        </field>
+    </record>
+</odoo>

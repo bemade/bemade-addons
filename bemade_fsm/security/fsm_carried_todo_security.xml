@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="fsm_carried_todo_rule_company" model="ir.rule">
+        <field name="name">Carried to-dos: allowed companies</field>
+        <field name="model_id" ref="model_fsm_carried_todo" />
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>
