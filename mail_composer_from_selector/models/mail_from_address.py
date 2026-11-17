@@ -12,7 +12,8 @@ class MailFromAddress(models.Model):
 
     name = fields.Char(
         required=True,
-        string="Display Name",
+        # Not "Display Name": that is the label of the display_name field.
+        string="Sender Name",
         help="Display name for this From address (e.g., 'Customer Service')",
     )
     email = fields.Char(
