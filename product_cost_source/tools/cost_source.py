@@ -41,6 +41,16 @@ class CostSource:
         about what the goods cost, so it is never better than unknown.
     :param likely: for unvalued stock, the best other evidence of what the
         goods cost (a vendor price, a purchase), cited but not used.
+    :param basis: what established ``priced_on`` ('changed', 'entered',
+        'start', 'purchase', or a key a plugin adds). Worded by
+        ``product.product._cost_source_basis_text``; never shown as is.
+    :param source_price: the unit price as the evidence states it, in
+        ``source_currency``, before any conversion. Shown first when the
+        evidence is in another currency than the one requested.
+    :param source_currency: the currency the evidence is stated in.
+    :param pending: not a price at all, but a fact worth reporting beside the
+        price (a request for quotation still waiting for its answer). Never
+        ranked, never priced: attached as a note to the evidence that wins.
     """
 
     key: str
@@ -54,6 +64,10 @@ class CostSource:
     notes: list = field(default_factory=list)
     unvalued: bool = False
     likely: object = None
+    basis: str = ""
+    source_price: object = None
+    source_currency: object = None
+    pending: bool = False
 
     @property
     def subtotal(self):

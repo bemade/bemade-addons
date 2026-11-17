@@ -2,15 +2,15 @@
 # License LGPL-3 - See https://www.gnu.org/licenses/lgpl-3.0.html
 {
     "name": "Product Cost Source - Purchase History",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "summary": "Use confirmed purchase orders and open requests for quotation "
     "as evidence of what a product costs.",
     "description": """Product Cost Source - Purchase History
 ======================================
 
 *Product Cost Source* judges a price by when it was last established. Supplier
-price entries are rarely dated, so on their own they mostly read "Estimated,
-undated". A confirmed purchase is the most reliable repricing event there is:
+price entries are rarely dated, and many were last touched years ago. A
+confirmed purchase is the most reliable repricing event there is:
 we paid that price, on that day. This module feeds that evidence to the engine.
 
 Confirmed purchases
@@ -20,9 +20,9 @@ The latest confirmed purchase order line for the product variant, in the
 company the cost is resolved for, is a dated price:
 
 * within the price-age setting (6 months by default) it reads
-  *Firm. Last purchased 10/02/2026.*
-* past it, *Estimated. Last purchased 01/15/2025, over 6 months ago. No
-  contract in force.*
+  *Firm. $ 40.00, purchased on 10/02/2026 (P00031).*
+* past it, *Estimated. $ 40.00, purchased on 01/15/2025 (P00012), over 6
+  months ago. No contract in force.*
 
 The engine keeps whichever is more recent of this purchase and a dated supplier
 price; a vendor price list in force (with an end date) still outranks both.
@@ -33,9 +33,16 @@ other companies and other variants are ignored, as are lines priced at zero.
 Open requests for quotation
 ---------------------------
 
-A request for quotation (draft or sent) with a unit price is a price a vendor
-quoted that nobody confirmed yet. It is reported at the **Indicative** level:
-*Indicative. Quoted $12.50 on RFQ P00042, not yet confirmed.*
+A request for quotation (draft or sent) whose unit price was typed in is a
+price a vendor quoted that nobody confirmed yet. It is reported at the
+**Indicative** level: *Indicative. Quoted $12.50 on P00042, not yet
+confirmed.*
+
+Odoo pre-fills an RFQ line with the price on file (the vendor's price,
+converted to the RFQ's currency and unit, or the product cost when the vendor
+has none). A line still at that figure -- or at zero -- carries no answer: the
+confidence comes from the other evidence and a note says *Price requested on
+P00042 (11/03/2026), no answer yet.*
 
 It is used only when no firm evidence exists. When a firm price exists and the
 RFQ is newer, the RFQ is shown as a note beside the firm price. An RFQ dated

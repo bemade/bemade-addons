@@ -31,7 +31,10 @@ class TestLineIndicator(SaleCostSourceCommon):
         self._seller(date_end=end)
         level, reason = self._read(self._line())
         self.assertEqual(level, "firm")
-        self.assertEqual(reason, f"Firm. Vendor price list valid to {self._fmt(end)}.")
+        self.assertEqual(
+            reason,
+            f"Firm. {self._money(15.0)}, vendor price list valid to {self._fmt(end)}.",
+        )
 
     def test_old_start_only_price_is_estimated(self):
         start = self._ago(9)
@@ -112,7 +115,10 @@ class TestLineIndicator(SaleCostSourceCommon):
         payload = line.cost_source_explanation
         self.assertEqual(payload["level"], "firm")
         self.assertEqual(payload["level_label"], "Firm")
-        self.assertEqual(payload["evidence"], [f"Firm. Vendor price list valid to {self._fmt(end)}."])
+        self.assertEqual(
+            payload["evidence"],
+            [f"Firm. {self._money(15.0)}, vendor price list valid to {self._fmt(end)}."],
+        )
         self.assertEqual(payload["warnings"], [])
         self.assertEqual(payload["notes"], [])
         self.assertIn("15.00", payload["unit_cost"])

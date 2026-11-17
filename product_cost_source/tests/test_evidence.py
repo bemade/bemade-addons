@@ -48,7 +48,7 @@ class TestEvidence(ProductCostSourceCommon):
             date_end=fields.Date.today() - relativedelta(days=1),
         )
         sentence = self._resolve().evidence[0]
-        self.assertIn("6 months old", sentence)
+        self.assertIn("over 6 months ago", sentence)
         self.assertIn(self._fmt(agreed), sentence)
 
     def test_stock_coverage_is_stated(self):

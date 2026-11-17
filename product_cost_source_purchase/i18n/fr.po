@@ -22,35 +22,29 @@ msgid "Display Name"
 msgstr "Nom d'affichage"
 
 #. module: product_cost_source_purchase
-#. odoo-python
-#: code:addons/product_cost_source_purchase/models/product_product.py:0
-msgid ""
-"Estimated. Last purchased %(date)s, over %(months)s months ago. No contract "
-"in force."
-msgstr ""
-"Estimation. Dernier achat le %(date)s, il y a plus de %(months)s mois. Aucun"
-" contrat en vigueur."
-
-#. module: product_cost_source_purchase
-#. odoo-python
-#: code:addons/product_cost_source_purchase/models/product_product.py:0
-msgid "Firm. Last purchased %(date)s."
-msgstr "Ferme. Dernier achat le %(date)s."
-
-#. module: product_cost_source_purchase
 #: model:ir.model.fields,field_description:product_cost_source_purchase.field_product_product__id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. module: product_cost_source_purchase
 #. odoo-python
 #: code:addons/product_cost_source_purchase/models/product_product.py:0
-msgid "Indicative. Quoted %(price)s on RFQ %(name)s, not yet confirmed."
-msgstr ""
-"Indicatif. Coté à %(price)s sur la demande de prix %(name)s, pas encore "
-"confirmé."
+msgid "Indicative. Quoted %(price)s on %(name)s, not yet confirmed."
+msgstr "Indicatif. Coté à %(price)s sur %(name)s, pas encore confirmé."
+
+#. module: product_cost_source_purchase
+#. odoo-python
+#: code:addons/product_cost_source_purchase/models/product_product.py:0
+msgid "Price requested on %(name)s (%(date)s), no answer yet."
+msgstr "Prix demandé sur %(name)s (%(date)s), pas encore de réponse."
 
 #. module: product_cost_source_purchase
 #: model:ir.model,name:product_cost_source_purchase.model_product_product
 msgid "Product Variant"
 msgstr "Variante de produit"
+
+#. module: product_cost_source_purchase
+#. odoo-python
+#: code:addons/product_cost_source_purchase/models/product_product.py:0
+msgid "purchased on %(date)s (%(name)s)"
+msgstr "acheté le %(date)s (%(name)s)"

@@ -4,7 +4,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models
 from odoo.tools.float_utils import float_compare, float_is_zero
-from odoo.tools.misc import format_amount, format_date
+from odoo.tools.misc import NON_BREAKING_SPACE, format_amount, format_date, formatLang
 
 from ..tools.cost_source import CONFIDENCE_ORDER, CostResolution, CostSource
 
@@ -41,6 +41,8 @@ class ProductProduct(models.Model):
                     unit_price=self._cost_source_convert(
                         self.standard_price, company.currency_id, currency, company, date
                     ),
+                    source_price=self.standard_price,
+                    source_currency=company.currency_id,
                     # Stock was bought at a price we actually paid, so its age
                     # is not in question: we own the goods at that cost --
                     # unless it carries no value at all, which proves nothing.
@@ -77,7 +79,11 @@ class ProductProduct(models.Model):
         quoted something else last week" is worth knowing.
         """
         self.ensure_one()
-        candidates = self._cost_source_price_candidates(qty, date, currency, company)
+        everything = self._cost_source_price_candidates(qty, date, currency, company)
+        # A pending candidate (a price asked for, not given) is not a price:
+        # it never competes, it is only reported beside the winner.
+        pending = [source for source in everything if source.pending]
+        candidates = [source for source in everything if not source.pending]
         if not candidates:
             return None
         cutoff = self._cost_source_cutoff(date)
@@ -91,6 +97,7 @@ class ProductProduct(models.Model):
                 and other.priced_on
                 and (best.priced_on is None or other.priced_on > best.priced_on)
             ]
+        best.notes = best.notes + pending
         return best
 
     def _cost_source_cutoff(self, date):
@@ -182,20 +189,107 @@ class ProductProduct(models.Model):
     def _cost_source_from_seller(self, seller, qty, currency, company, date, in_force=None):
         if in_force is None:
             in_force = self._cost_source_seller_in_force(seller, date)
+        priced_on, basis = self._cost_source_seller_date(seller, date)
+        # The discounted price, already per unit of the product: what we
+        # would pay.
+        price = seller.price_discounted
         return CostSource(
             key="vendor",
             qty=qty,
             unit_price=self._cost_source_convert(
-                seller.price, seller.currency_id, currency, company, date
+                price, seller.currency_id, currency, company, date
             ),
-            # date_start is when this price was agreed. write_date is when the
-            # row was last touched, which on an imported catalogue is the date
-            # of the import -- it says nothing about the price, so it is never
-            # consulted. No date means unknown, and unknown is never fresh.
-            priced_on=seller.date_start or None,
+            priced_on=priced_on,
+            basis=basis or "",
+            source_price=price,
+            source_currency=seller.currency_id,
             in_force_until=seller.date_end or None,
             in_force=in_force,
         )
+
+    # -- freshness of a supplier price --------------------------------------
+
+    #: Supplier price fields whose tracked change means the price was reset.
+    _cost_source_seller_price_fields = ("price", "discount")
+
+    def _cost_source_seller_date(self, seller, date):
+        """``(date, basis)``: when this supplier price was last established.
+
+        The most recent of the dated evidence that :meth:`_cost_source_seller_dates`
+        offers, ignoring anything after ``date``. ``(None, None)`` when there
+        is none -- unknown is never fresh.
+        """
+        dated = [
+            (on, basis)
+            for on, basis in self._cost_source_seller_dates(seller)
+            if on and on <= date
+        ]
+        if not dated:
+            return None, None
+        return max(dated, key=lambda item: item[0])
+
+    def _cost_source_seller_dates(self, seller):
+        """Every dated piece of evidence that this supplier price was (re)set.
+
+        Extension point: a module that knows another way a price gets
+        confirmed (a dated note, a vendor portal...) overrides this, calls
+        super() and appends ``(date, basis)`` pairs, then words its ``basis``
+        in :meth:`_cost_source_basis_text`.
+
+        Built in:
+
+        * ``start``: the start date of the price, when it has one;
+        * ``changed``: the last change of its price or discount in the record's
+          tracked history (when the supplier price is tracked in the chatter);
+        * ``entered``: the day the line was created -- with no change since,
+          that is when its price was set (any tracked change is later, so it
+          wins when there is one).
+
+        ``write_date`` is never used: any edit, or a bulk import, touches it,
+        and it says nothing about the price.
+        """
+        dates = []
+        if seller.date_start:
+            dates.append((seller.date_start, "start"))
+        changed = self._cost_source_seller_tracked_change(seller)
+        if changed:
+            dates.append((changed, "changed"))
+        if seller.create_date:
+            dates.append((self._cost_source_local_date(seller.create_date), "entered"))
+        return dates
+
+    def _cost_source_local_date(self, moment):
+        return fields.Datetime.context_timestamp(self, moment).date()
+
+    def _cost_source_seller_tracked_change(self, seller):
+        """Date of the last tracked change of the seller's price or discount.
+
+        Read straight from the tracking tables, so it works whichever module
+        puts supplier prices in the chatter, and costs one query.
+        """
+        if not seller.id or "mail.tracking.value" not in self.env:
+            return None
+        field_ids = [
+            field.id
+            for name in self._cost_source_seller_price_fields
+            for field in [self.env["ir.model.fields"]._get("product.supplierinfo", name)]
+            if field
+        ]
+        if not field_ids:
+            return None
+        self.env.cr.execute(
+            """
+            SELECT max(message.date)
+              FROM mail_tracking_value tracking
+              JOIN mail_message message ON message.id = tracking.mail_message_id
+             WHERE message.model = 'product.supplierinfo'
+               AND message.res_id = %s
+               AND tracking.field_id = ANY(%s)
+            """,
+            [seller.id, field_ids],
+        )
+        moment = self.env.cr.fetchone()[0]
+        return self._cost_source_local_date(moment) if moment else None
 
     def _cost_source_convert(self, amount, from_currency, to_currency, company, date):
         if not from_currency or not to_currency or from_currency == to_currency:
@@ -314,8 +408,8 @@ class ProductProduct(models.Model):
                     evidence.append(
                         self.env._(
                             "Likely cost %(price)s, from: %(evidence)s",
-                            price=format_amount(
-                                self.env, source.likely.unit_price, currency
+                            price=self._cost_source_price_text(
+                                source.likely, currency
                             ),
                             evidence=self._cost_source_describe(
                                 source.likely, date, currency
@@ -341,7 +435,7 @@ class ProductProduct(models.Model):
         return evidence
 
     def _cost_source_describe_stock(self, source, qty, currency, blended):
-        price = format_amount(self.env, source.unit_price, currency)
+        price = self._cost_source_price_text(source, currency)
         if source.unvalued:
             if float_compare(source.qty, qty, precision_rounding=self.uom_id.rounding) >= 0:
                 return self.env._("Unknown. Covered from stock with no cost value.")
@@ -373,37 +467,79 @@ class ProductProduct(models.Model):
 
         Extension point: a module contributing its own kind of evidence
         (``source.key``) overrides this to word it, and calls super() for the
-        rest.
+        rest. The basis of a dated price is worded separately, in
+        :meth:`_cost_source_basis_text`.
         """
         months = self.env["res.config.settings"]._price_age_months()
+        price = self._cost_source_price_text(source, currency)
         if source.in_force and source.in_force_until:
             return self.env._(
-                "Firm. Vendor price list valid to %(until)s.",
+                "Firm. %(price)s, vendor price list valid to %(until)s.",
+                price=price,
                 until=format_date(self.env, source.in_force_until),
             )
         if source.in_force:
-            return self.env._("Firm. Vendor agreement in force.")
+            return self.env._("Firm. %(price)s, vendor agreement in force.", price=price)
         if source.indicative:
             return self.env._(
-                "Indicative. Quoted %(price)s, not yet confirmed.",
-                price=format_amount(self.env, source.unit_price, currency),
+                "Indicative. Quoted %(price)s, not yet confirmed.", price=price
             )
         if source.priced_on is None:
             return self.env._(
-                "Estimated. The vendor price on file is undated, so its age "
-                "cannot be established."
+                "Estimated. %(price)s, the vendor price on file is undated, so "
+                "its age cannot be established.",
+                price=price,
             )
+        basis = self._cost_source_basis_text(source)
         if source.priced_on < self._cost_source_cutoff(date):
             return self.env._(
-                "Estimated. Last known price %(date)s, over %(months)s months "
-                "old. No contract in force.",
-                date=format_date(self.env, source.priced_on),
+                "Estimated. %(price)s, %(basis)s, over %(months)s months ago. "
+                "No contract in force.",
+                price=price,
+                basis=basis,
                 months=months,
             )
-        return self.env._(
-            "Firm. Last known price %(date)s, within the last %(months)s months.",
-            date=format_date(self.env, source.priced_on),
-            months=months,
+        return self.env._("Firm. %(price)s, %(basis)s.", price=price, basis=basis)
+
+    def _cost_source_basis_text(self, source):
+        """What established ``source.priced_on``, as a clause ("vendor price
+        changed on {date}").
+
+        Extension point: a module adding a ``basis`` (see
+        :meth:`_cost_source_seller_dates`) words it here and calls super().
+        """
+        on = format_date(self.env, source.priced_on)
+        if source.basis == "changed":
+            return self.env._("vendor price changed on %(date)s", date=on)
+        if source.basis == "entered":
+            return self.env._("vendor price entered on %(date)s", date=on)
+        if source.basis == "start":
+            return self.env._("vendor price valid from %(date)s", date=on)
+        return self.env._("last known price %(date)s", date=on)
+
+    def _cost_source_price_text(self, source, currency):
+        """The price as the evidence states it, then in ``currency``.
+
+        In one currency, the usual amount ("$ 75.00"). When the evidence is in
+        another currency, its own figure comes first and the conversion
+        follows in brackets, both with their ISO code so two dollars never
+        read alike: "160.00 CAD (≈ 114.11 USD)".
+        """
+        other = source.source_currency
+        if other and currency and other != currency and source.source_price is not None:
+            return self.env._(
+                "%(price)s (≈ %(converted)s)",
+                price=self._cost_source_format_code(source.source_price, other),
+                converted=self._cost_source_format_code(source.unit_price, currency),
+            )
+        return format_amount(self.env, source.unit_price, currency)
+
+    def _cost_source_format_code(self, amount, currency):
+        """``amount`` with the currency's ISO code: "160.00 CAD"."""
+        return "%s%s%s" % (
+            formatLang(self.env, amount, digits=currency.decimal_places),
+            NON_BREAKING_SPACE,
+            currency.name,
         )
 
     def _cost_source_warnings(self, sources, delivery_date, date=None, currency=None):
