@@ -72,16 +72,12 @@ class Task(models.Model):
         copy=False,
     )
 
-    # Work order (SVR) report: dot colour = the state's native screen colour,
-    # label = 3-way grouping (done / waiting / not done).
-    _REPORT_STATE_COLOURS = {
-        "01_in_progress": "#6c757d",
-        "02_changes_requested": "#f0ad4e",
-        "03_approved": "#28a745",
-        "04_waiting_normal": "#17a2b8",
-        "1_done": "#28a745",
-        "1_canceled": "#dc3545",
-    }
+    # Work order (SVR) report: the Status column groups the states in three
+    # labels (done / waiting / not done), and each label has ONE dot colour so
+    # the colour always matches the label: done green, waiting blue, not done grey.
+    _REPORT_STATE_DONE_COLOUR = "#28a745"
+    _REPORT_STATE_WAITING_COLOUR = "#17a2b8"
+    _REPORT_STATE_NOT_DONE_COLOUR = "#6c757d"
 
     def _get_report_state_indicator(self, lang=None):
         """Return ``(label, hex colour)`` for the work order report Status column.
@@ -92,12 +88,10 @@ class Task(models.Model):
         self.ensure_one()
         env = self.with_context(lang=lang).env if lang else self.env
         if self.state == "1_done":
-            label = env._("Done")
-        elif self.state in ("03_approved", "04_waiting_normal"):
-            label = env._("Waiting")
-        else:
-            label = env._("Not done")
-        return label, self._REPORT_STATE_COLOURS.get(self.state, "#6c757d")
+            return env._("Done"), self._REPORT_STATE_DONE_COLOUR
+        if self.state in ("03_approved", "04_waiting_normal"):
+            return env._("Waiting"), self._REPORT_STATE_WAITING_COLOUR
+        return env._("Not done"), self._REPORT_STATE_NOT_DONE_COLOUR
 
     def _apply_template_to_self(self, template=None):
         """Apply a task template to this task record.
