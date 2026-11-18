@@ -693,6 +693,91 @@ class TestLegacyAlldayRepair(TransactionCase):
 
 
 @tagged("post_install", "-at_install")
+class TestRecurrenceChangesIgnoreMovedBase(TransactionCase):
+    """A series whose first occurrence was moved by hand in Odoo
+    (follow_recurrence=False) must not look changed when the server sends the
+    same rule back: writing that difference made Odoo rewrite the whole series
+    (case "Clôture mensuel et facturation", 2026-11)."""
+
+    def test_moved_base_with_same_rule_is_not_a_change(self):
+        user = self.env.user
+        event = (
+            self.env["calendar.event"]
+            .with_context(caldav_no_sync=True)
+            .create(
+                {
+                    "name": "Clôture mensuel",
+                    "start": datetime(2026, 10, 29, 7, 0),
+                    "stop": datetime(2026, 10, 29, 8, 30),
+                    "user_id": user.id,
+                    "partner_ids": [Command.set([user.partner_id.id])],
+                    "recurrency": True,
+                    "rrule_type": "weekly",
+                    "thu": True,
+                    "end_type": "end_date",
+                    "until": datetime(2027, 1, 9).date(),
+                }
+            )
+        )
+        self.assertTrue(event.recurrence_id, "the series must be created")
+        base = event.recurrence_id.base_event_id
+        base.with_context(caldav_no_sync=True).write(
+            {"start": base.start - timedelta(hours=1), "stop": base.stop - timedelta(hours=1)}
+        )
+        self.assertFalse(base.follow_recurrence)
+        server_vals = {
+            "recurrency": True,
+            "follow_recurrence": True,
+            "recurrence_update": "future_events",
+            "rrule_type": base.rrule_type,
+            "count": False,
+            "interval": base.interval,
+            "until": datetime(2027, 1, 9, 22, 59, 59),
+            "end_type": "end_date",
+            "thu": True,
+        }
+        self.assertEqual(base._get_recurrence_changes(server_vals), {})
+
+    def test_series_wins_over_detached_event_with_same_uid(self):
+        """An occurrence detached from a series keeps its UID. The server's
+        master must still be matched to the series, not to that event: making
+        it a second series with the same UID crashed the whole poll."""
+        user = self.env.user
+        Event = self.env["calendar.event"].with_context(
+            caldav_no_sync=True, caldav_keep_ids=True
+        )
+        uid = "series-with-detached-event"
+        series = Event.create(
+            {
+                "name": "Clôture mensuel",
+                "start": datetime(2026, 10, 29, 7, 0),
+                "stop": datetime(2026, 10, 29, 8, 30),
+                "caldav_uid": uid,
+                "user_id": user.id,
+                "partner_ids": [Command.set([user.partner_id.id])],
+                "recurrency": True,
+                "rrule_type": "weekly",
+                "thu": True,
+                "end_type": "count",
+                "count": 3,
+            }
+        )
+        base = series.recurrence_id.base_event_id
+        self.assertEqual(base.caldav_uid, uid)
+        Event.create(
+            {
+                "name": "Clôture mensuel",
+                "start": datetime(2027, 1, 29, 7, 0),
+                "stop": datetime(2027, 1, 29, 8, 30),
+                "caldav_uid": uid,
+                "user_id": user.id,
+                "partner_ids": [Command.set([user.partner_id.id])],
+            }
+        )
+        self.assertEqual(self.env["calendar.event"]._get_existing_instance(uid, None), base)
+
+
+@tagged("post_install", "-at_install")
 class TestSyncWriteToCaldav(TransactionCase, CaldavTestCommon):
     """Tests for _sync_write_to_caldav method."""
 

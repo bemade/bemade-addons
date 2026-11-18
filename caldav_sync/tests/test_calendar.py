@@ -208,6 +208,8 @@ class TestCalendarEvent(TransactionCase, CaldavTestCommon):
             self.env.invalidate_all()
             occurrences = base.recurrence_id.calendar_event_ids
             self.assertEqual(len(occurrences), 3)
+            # It was on the server (only then is "missing there" a deletion).
+            occurrences._mark_caldav_on_server()
             (occurrences - base)[0].with_context(caldav_no_sync=True).write(
                 {"location": "somewhere else"}
             )
@@ -220,7 +222,11 @@ class TestCalendarEvent(TransactionCase, CaldavTestCommon):
             self.env["calendar.event"].poll_caldav_server()
 
         self.assertFalse(
-            occurrences.exists(), "the vanished series should be cleared from Odoo"
+            occurrences.exists().filtered("active"),
+            "the vanished series should be cleared from the Odoo calendar",
+        )
+        self.assertEqual(
+            len(occurrences.exists()), 3, "archived, not deleted: recoverable"
         )
 
     def test_recurring_from_server_create(self):
