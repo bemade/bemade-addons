@@ -511,9 +511,10 @@ END:VCALENDAR"""
     def test_event_without_dtstart_is_skipped(self):
         """A VEVENT without DTSTART is ignored instead of raising."""
         vevent = self._vevent_from_ics(["SUMMARY:No start"])
-        values = self.env["calendar.event"]._get_values_from_ical_component(
-            vevent, self.user_1
-        )
+        with self.assertLogs("odoo.addons.caldav_sync.models.calendar_event", "WARNING"):
+            values = self.env["calendar.event"]._get_values_from_ical_component(
+                vevent, self.user_1
+            )
         self.assertEqual(values, {})
 
     def test_allday_recurring_until_date(self):
@@ -548,9 +549,10 @@ END:VCALENDAR"""
     def test_monthly_bysetpos_unsupported_combination_kept_as_core(self):
         """Several weekdays with BYSETPOS are not mapped to a monthly rule, so
         core's result is kept instead of a silently wrong single weekday."""
-        data = self.env["calendar.recurrence"]._rrule_parse(
-            "RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1", datetime(2027, 1, 1)
-        )
+        with self.assertLogs("odoo.addons.caldav_sync.models.calendar_recurrence", "WARNING"):
+            data = self.env["calendar.recurrence"]._rrule_parse(
+                "RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1", datetime(2027, 1, 1)
+            )
         self.assertEqual(data["rrule_type"], "weekly")
         self.assertNotIn("weekday", data)
 
@@ -583,7 +585,8 @@ END:VCALENDAR"""
             ]
         )
         calendar = icalendar.Calendar.from_ical(ics)
-        events = self.env["calendar.event"]._sync_event_from_ical(calendar, self.user_1)
+        with self.assertLogs("odoo.addons.caldav_sync.models.calendar_event", "WARNING"):
+            events = self.env["calendar.event"]._sync_event_from_ical(calendar, self.user_1)
         self.assertEqual(len(events), 1)
         self.assertFalse(events.recurrency)
         self.assertFalse(events.recurrence_id)
