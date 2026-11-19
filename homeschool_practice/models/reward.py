@@ -35,6 +35,14 @@ class RewardRule(models.Model):
 
     _amount_positive = models.Constraint("check(amount > 0)", "A reward amount is positive.")
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        # in force from the learner's today (the field default only knows the caller's time zone)
+        for vals in vals_list:
+            if "date_from" not in vals and vals.get("student_id"):
+                vals["date_from"] = self.env["homeschool.student"].browse(vals["student_id"])._practice_today()
+        return super().create(vals_list)
+
     @api.model
     def _in_force(self, student, period, day):
         """One rule per reward type: the latest whose ``date_from`` is on or before ``day``."""

@@ -91,7 +91,7 @@ class HomeschoolPracticeShell(HomeschoolPortal):
                     "answers": len(attempts),
                     "proficiency": unit._proficiency(student),
                     "unlocked_on": format_date(env, row.unlocked_on) if row.unlocked_on else "",
-                    "last_practised": format_date(env, last) if last else "",
+                    "last_practised": format_date(env, student._practice_local_date(last)) if last else "",
                 })
             decks.append({"deck": deck, "units": units})
         values = self._homeschool_values(student, "homeschool_practice_progress")

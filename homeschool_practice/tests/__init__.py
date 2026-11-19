@@ -25,3 +25,4 @@ from . import test_uc23_quest_rotation
 from . import test_uc24_choice_order
 from . import test_uc25_geometry_deck
 from . import test_uc26_add_sub_deck
+from . import test_uc27_learner_today

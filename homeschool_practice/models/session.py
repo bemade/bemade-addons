@@ -80,7 +80,7 @@ class PracticeSession(models.Model):
         Free practice draws from the chosen units only, with no review from the others."""
         self.ensure_one()
         deck, size = self.deck_id, self.deck_id.session_size
-        today = fields.Date.context_today(self)
+        today = self.student_id._practice_today()
         unlocked = deck.unit_ids._unlocked_for(self.student_id)
         Item = self.env["homeschool.practice.item"]
 

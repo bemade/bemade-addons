@@ -2,6 +2,7 @@
 from odoo import fields, models
 
 WEEKDAYS = "1234567"
+DEFAULT_TZ = "America/Toronto"
 
 
 class Student(models.Model):
@@ -14,6 +15,29 @@ class Student(models.Model):
         default="12345", help="Practice days (ISO weekdays, 1 = Monday): quests are drawn on these days only.")
     practice_quests_per_day = fields.Integer(default=3)
     practice_unit_access_ids = fields.One2many("homeschool.practice.unit.access", "student_id", string="Units")
+
+    # ------------------------------------------------------------------
+    # the learner's today: every practice date is the learner's, whoever runs the code
+    # (the learner through the portal, a parent, a script or a cron with no tz)
+    # ------------------------------------------------------------------
+    def _practice_tz(self):
+        """The learner's time zone: his login's, else his partner's, else the family's (the
+        company partner's), else Québec time."""
+        self.ensure_one()
+        me = self.sudo()
+        return me.user_id.tz or me.partner_id.tz or me.company_id.partner_id.tz or DEFAULT_TZ
+
+    def _practice_today(self):
+        """Today for the learner (a ``date``)."""
+        self.ensure_one()
+        return fields.Date.context_today(self.with_context(tz=self._practice_tz()))
+
+    def _practice_local_date(self, moment):
+        """The learner's local date of a UTC ``Datetime`` (False when empty)."""
+        self.ensure_one()
+        if not moment:
+            return False
+        return fields.Date.context_today(self.with_context(tz=self._practice_tz()), fields.Datetime.to_datetime(moment))
 
     def _practice_is_practice_day(self, day):
         return str(day.isoweekday()) in (self.sudo().practice_weekdays or "")
