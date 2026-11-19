@@ -80,10 +80,8 @@ class FsmSiteNoteWizard(models.TransientModel):
 
     def action_save(self):
         self.ensure_one()
-        note = (self.note or "").strip() or False
-        partner = self.task_id.partner_id
-        if partner and note != (partner.fsm_site_note or False):
-            partner.fsm_site_note = note
+        if self.task_id.partner_id:
+            self.task_id._fsm_update_site_note(self.note)
         self._create_carried_todos()
         return self._validate_task()
 

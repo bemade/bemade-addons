@@ -40,6 +40,24 @@
                     <div class="text-muted small">
                         Shown as a banner on every service task at this address until cleared.
                     </div>
+                    <div
+            class="mt-2 o_fsm_site_note_history"
+            invisible="not fsm_site_note_history_ids"
+          >
+                        <div class="fw-bold small">History</div>
+                        <field
+              name="fsm_site_note_history_ids"
+              readonly="1"
+              nolabel="1"
+            >
+                            <list create="0" delete="0" limit="10">
+                                <field name="note_datetime" />
+                                <field name="author_id" widget="many2one_avatar_user" />
+                                <field name="content" />
+                                <field name="task_id" optional="show" />
+                            </list>
+                        </field>
+                    </div>
                 </div>
             </xpath>
             <page name="equipment" position="attributes">

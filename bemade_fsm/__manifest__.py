@@ -12,7 +12,7 @@
 ########################################################################################
 {
     "name": "Improved Field Service Management",
-    "version": "19.0.0.9.0",
+    "version": "19.0.0.10.0",
     "summary": (
         "Adds functionality necessary for managing field service operations at Durpro."
     ),
@@ -50,6 +50,7 @@
         "reports/worksheet_custom_reports.xml",
         "wizard/new_task_from_template.xml",
         "wizard/fsm_site_note_wizard.xml",
+        "wizard/fsm_site_note_edit_wizard.xml",
         "wizard/res_config_settings.xml",
     ],
     "assets": {

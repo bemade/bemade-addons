@@ -8,3 +8,4 @@ from . import fsm_visit
 from . import res_company
 from . import project
 from . import fsm_carried_todo
+from . import fsm_site_note_history

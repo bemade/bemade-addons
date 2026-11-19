@@ -1,4 +1,7 @@
+from markupsafe import Markup, escape
+
 from odoo import fields, models, api, Command
+from odoo.exceptions import AccessError, UserError
 from odoo.addons.project.models.project_task import CLOSED_STATES
 import re
 
@@ -443,6 +446,73 @@ class Task(models.Model):
             "target": "new",
             "context": {"fsm_site_note_prompt": False},
         }
+
+    def action_open_fsm_site_note_edit(self):
+        """« Update site note » on a visit: open the small window on the
+        current note of the task's site (all field service users)."""
+        self.ensure_one()
+        wizard = self.env["fsm.site.note.edit.wizard"].create(
+            {"task_id": self.id, "note": self.partner_id.fsm_site_note}
+        )
+        return {
+            "name": self.env._("Update site note"),
+            "type": "ir.actions.act_window",
+            "res_model": "fsm.site.note.edit.wizard",
+            "res_id": wizard.id,
+            "view_mode": "form",
+            "views": [
+                [self.env.ref("bemade_fsm.fsm_site_note_edit_wizard_view_form").id, "form"]
+            ],
+            "target": "new",
+        }
+
+    def _fsm_update_site_note(self, note):
+        """Write ``note`` as the site note of this visit's site.
+
+        Shared by the « Update site note » window and the close-out wizard so
+        both log identically: one history row (author, date, this visit) via
+        the res.partner write hook and a bilingual note on the visit.
+
+        The partner is written with sudo so that technicians who cannot edit
+        contacts can still update the note -- limited to this single field,
+        to field service users, and to an FSM task the user can read.
+        Returns True when the note changed."""
+        self.ensure_one()
+        if not self.env.su and not self.env.user.has_group(
+            "industry_fsm.group_fsm_user"
+        ):
+            raise AccessError(
+                self.env._("Only field service users can update the site note.")
+            )
+        self.check_access("read")
+        if not self.is_fsm:
+            raise UserError(
+                self.env._("The site note can only be updated from a field service task.")
+            )
+        partner = self.partner_id
+        if not partner:
+            raise UserError(self.env._("This task has no customer / site."))
+        note = (note or "").strip() or False
+        if note == ((partner.sudo().fsm_site_note or "").strip() or False):
+            return False
+        partner.sudo().with_context(fsm_site_note_task_id=self.id).write(
+            {"fsm_site_note": note}
+        )
+        if note:
+            body = Markup(
+                "<p>Note du site mise à jour / Site note updated:</p><p>%s</p>"
+            ) % Markup("<br/>").join(escape(line) for line in note.splitlines())
+        else:
+            body = Markup("<p>Note du site effacée / Site note cleared</p>")
+        # sudo: a technician may read a visit without being allowed to post on
+        # it; the note is still credited to them.
+        self.sudo().message_post(
+            body=body,
+            message_type="comment",
+            subtype_xmlid="mail.mt_note",
+            author_id=self.env.user.partner_id.id,
+        )
+        return True
 
     def _get_full_hierarchy(self):
         if self.child_ids:

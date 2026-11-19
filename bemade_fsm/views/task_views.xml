@@ -76,6 +76,27 @@
               class="o_fsm_site_note_text"
             />
                     </div>
+                    <button
+            name="action_open_fsm_site_note_edit"
+            type="object"
+            string="Update site note"
+            icon="fa-pencil"
+            class="btn btn-sm btn-secondary align-self-start o_fsm_site_note_edit"
+            groups="industry_fsm.group_fsm_user"
+          />
+                </div>
+                <div
+          class="d-flex justify-content-end mb-0 o_fsm_site_note_add"
+          invisible="not is_fsm or fsm_site_note"
+          groups="industry_fsm.group_fsm_user"
+        >
+                    <button
+            name="action_open_fsm_site_note_edit"
+            type="object"
+            string="Update site note"
+            icon="fa-thumb-tack"
+            class="btn btn-sm btn-link"
+          />
                 </div>
                 <div
           role="alert"
