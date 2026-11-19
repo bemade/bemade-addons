@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_fsm_service_tool_user,fsm.service.tool user,model_fsm_service_tool,industry_fsm.group_fsm_user,1,0,0,0
+access_fsm_service_tool_manager,fsm.service.tool manager,model_fsm_service_tool,industry_fsm.group_fsm_manager,1,1,1,1
+access_fsm_service_tool_project_user,fsm.service.tool project user,model_fsm_service_tool,project.group_project_user,1,0,0,0
+access_fsm_prep_line_user,fsm.prep.line user,model_fsm_prep_line,industry_fsm.group_fsm_user,1,1,1,1
+access_fsm_prep_template_line_project_user,fsm.prep.template.line project user,model_fsm_prep_template_line,project.group_project_user,1,1,1,1
+access_fsm_prep_template_line_fsm_user,fsm.prep.template.line fsm user,model_fsm_prep_template_line,industry_fsm.group_fsm_user,1,0,0,0
