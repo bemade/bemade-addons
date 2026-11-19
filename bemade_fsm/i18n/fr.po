@@ -1596,3 +1596,8 @@ msgstr "Assistant"
 #: model:ir.model,name:bemade_fsm.model_product_template
 msgid "Product"
 msgstr "Produit"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.partner_equipment_location_view_form
+msgid "Service Sites"
+msgstr "Sites de service"

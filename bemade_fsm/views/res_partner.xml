@@ -60,7 +60,7 @@
           />
                 </page>
                 <field name="is_service_site" invisible="True" />
-                <page name="Service Sites" invisible="is_service_site">
+                <page name="Service Sites" string="Service Sites" invisible="is_service_site">
                     <group>
                         <field name="site_ids">
                             <list editable="bottom">
