@@ -36,7 +36,7 @@ class TestGuidePublicView1685(HttpCase):
             return
         # The update-time sync builds the header view; a test DB where
         # website_knowledge was installed AFTER this module needs it run.
-        env['portal.kit.help']._sc_sync_knowledge_public_view()
+        env['portal.kit']._sc_sync_knowledge_public_view()
         Users = env['res.users'].with_context(no_reset_password=True)
         cls.portal = Users.create({
             'name': 'Guide Portal 1685', 'login': 'guide.portal.1685', 'password': 'guide.portal.1685',
