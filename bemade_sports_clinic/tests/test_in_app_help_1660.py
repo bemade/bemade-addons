@@ -113,7 +113,7 @@ class TestInAppHelp1660(Help1660Common):
         self._login_tp()
         link = self._help(self._tree('/my/players'))
         if installed:
-            self.assertEqual(link.get('href'), '/knowledge/article/1')
+            self.assertEqual(link.get('href'), '/my/guide/1')  # task 1720: opened through the app
         else:
             self.assertIsNone(link)
 
