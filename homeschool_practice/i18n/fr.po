@@ -2226,3 +2226,230 @@ msgstr "Une figure est un simple dessin SVG : ni script, ni lien, ni gestionnair
 #: code:addons/homeschool_practice/controllers/api.py:0
 msgid "The figure"
 msgstr "La figure"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Additions and subtractions"
+msgstr "Additions et soustractions"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Addition and subtraction facts up to 20, complements to 10 and to 100, mental calculation with 2-digit numbers."
+msgstr "Les faits d'addition et de soustraction jusqu'à 20, les compléments à 10 et à 100, le calcul mental avec des nombres à 2 chiffres."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Additions up to 20"
+msgstr "Additions jusqu'à 20"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "To add, start from the larger number. To go past 10, make 10 first: 8 + 5 = 8 + 2 + 3 = 13. The doubles help too: 6 + 6 = 12, so 6 + 7 = 13."
+msgstr "Pour additionner, pars du plus grand nombre. Pour dépasser 10, fais d'abord 10 : 8 + 5 = 8 + 2 + 3 = 13. Les doubles aident aussi : 6 + 6 = 12, donc 6 + 7 = 13."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Subtractions up to 20"
+msgstr "Soustractions jusqu'à 20"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "A subtraction is an addition with a missing number: 14 − 6 = ? is 6 + ? = 14. Count up from 6 to 14: 6 + 4 = 10, 10 + 4 = 14, so 14 − 6 = 8. Or go down to 10 first: 14 − 4 = 10, then 10 − 2 = 8."
+msgstr "Une soustraction, c'est une addition où il manque un nombre : 14 − 6 = ?, c'est 6 + ? = 14. Compte de 6 jusqu'à 14 : 6 + 4 = 10, 10 + 4 = 14, donc 14 − 6 = 8. Ou descends d'abord à 10 : 14 − 4 = 10, puis 10 − 2 = 8."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Complements to 10 and to 100"
+msgstr "Compléments à 10 et à 100"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Find the number missing to make 10 or 100. The pairs that make 10: 1 + 9, 2 + 8, 3 + 7, 4 + 6, 5 + 5. In tens they make 100: 6 + 4 = 10, so 60 + 40 = 100. For 65: 65 + 5 = 70, then 70 + 30 = 100, so 65 + 35 = 100."
+msgstr "Trouve le nombre qui manque pour faire 10 ou 100. Les paires qui font 10 : 1 + 9, 2 + 8, 3 + 7, 4 + 6, 5 + 5. Avec des dizaines, elles font 100 : 6 + 4 = 10, donc 60 + 40 = 100. Pour 65 : 65 + 5 = 70, puis 70 + 30 = 100, donc 65 + 35 = 100."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "2-digit number ± 1 digit"
+msgstr "Nombre à 2 chiffres ± 1 chiffre"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Only the units change, unless you pass a ten. 43 + 5 = 48 (3 + 5 = 8). 47 + 8: go to the ten first, 47 + 3 = 50, then 50 + 5 = 55. 53 − 6: go down to the ten, 53 − 3 = 50, then 50 − 3 = 47."
+msgstr "Seules les unités changent, sauf si tu passes une dizaine. 43 + 5 = 48 (3 + 5 = 8). 47 + 8 : va d'abord à la dizaine, 47 + 3 = 50, puis 50 + 5 = 55. 53 − 6 : descends à la dizaine, 53 − 3 = 50, puis 50 − 3 = 47."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Whole tens (± 10, 20…)"
+msgstr "Dizaines entières (± 10, 20…)"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Adding or taking away whole tens changes only the tens digit. 47 + 30: 4 tens + 3 tens = 7 tens, so 77. 86 − 40: 8 tens − 4 tens = 4 tens, so 46."
+msgstr "Ajouter ou enlever des dizaines entières ne change que le chiffre des dizaines. 47 + 30 : 4 dizaines + 3 dizaines = 7 dizaines, donc 77. 86 − 40 : 8 dizaines − 4 dizaines = 4 dizaines, donc 46."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "2-digit number ± 2 digits"
+msgstr "Nombre à 2 chiffres ± 2 chiffres"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Add the tens, then the units. 38 + 47: 38 + 40 = 78, then 78 + 7 = 85. Take away the same way. 72 − 35: 72 − 30 = 42, then 42 − 5 = 37."
+msgstr "Ajoute les dizaines, puis les unités. 38 + 47 : 38 + 40 = 78, puis 78 + 7 = 85. Pour enlever, c'est pareil. 72 − 35 : 72 − 30 = 42, puis 42 − 5 = 37."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "A double: %(a)s + %(a)s is two times %(a)s."
+msgstr "Un double : %(a)s + %(a)s, c'est deux fois %(a)s."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "10 + %(u)s: one ten, and %(u)s more."
+msgstr "10 + %(u)s : une dizaine, et encore %(u)s."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Make 10: %(big)s + %(small)s = %(big)s + %(fill)s + %(rest)s."
+msgstr "Fais 10 : %(big)s + %(small)s = %(big)s + %(fill)s + %(rest)s."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Start from the larger number, %(big)s, and count %(small)s more."
+msgstr "Pars du plus grand nombre, %(big)s, et compte %(small)s de plus."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Go down to 10 first: %(s)s − %(u)s = 10, then take away %(rest)s more."
+msgstr "Descends d'abord à 10 : %(s)s − %(u)s = 10, puis enlève encore %(rest)s."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Take away the ten: the units are left."
+msgstr "Enlève la dizaine : il reste les unités."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Count up from %(a)s to %(s)s."
+msgstr "Compte à partir de %(a)s jusqu'à %(s)s."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "The pairs that make 10: 1 + 9, 2 + 8, 3 + 7, 4 + 6, 5 + 5."
+msgstr "Les paires qui font 10 : 1 + 9, 2 + 8, 3 + 7, 4 + 6, 5 + 5."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "%(t)s + ? = 10, so %(a)s + ? = 100: count in tens."
+msgstr "%(t)s + ? = 10, donc %(a)s + ? = 100 : compte par dizaines."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "First to the next ten: %(a)s + %(u)s = %(next)s, then %(next)s + ? = 100."
+msgstr "D'abord jusqu'à la dizaine suivante : %(a)s + %(u)s = %(next)s, puis %(next)s + ? = 100."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Add the units: %(u)s + %(b)s. The tens don't change."
+msgstr "Ajoute les unités : %(u)s + %(b)s. Les dizaines ne changent pas."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "%(u)s + %(b)s = 10: you reach the next ten."
+msgstr "%(u)s + %(b)s = 10 : tu arrives à la dizaine suivante."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Go to the next ten: %(a)s + %(fill)s = %(next)s, then add %(rest)s more."
+msgstr "Va jusqu'à la dizaine : %(a)s + %(fill)s = %(next)s, puis ajoute encore %(rest)s."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Take away from the units: %(u)s − %(b)s. The tens don't change."
+msgstr "Enlève aux unités : %(u)s − %(b)s. Les dizaines ne changent pas."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "One ten less, and 10 − %(b)s = %(c)s."
+msgstr "Une dizaine de moins, et 10 − %(b)s = %(c)s."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Go down to the ten: %(a)s − %(u)s = %(ten)s, then take away %(rest)s more."
+msgstr "Descends à la dizaine : %(a)s − %(u)s = %(ten)s, puis enlève encore %(rest)s."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Only the tens change: count by tens from %(a)s, %(n)s times."
+msgstr "Seules les dizaines changent : compte par dizaines à partir de %(a)s, %(n)s fois."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Only the tens change: count back by tens from %(a)s, %(n)s times."
+msgstr "Seules les dizaines changent : recule par dizaines à partir de %(a)s, %(n)s fois."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Add the tens, then the units: %(a)s + %(t)s = %(m)s, then %(m)s + %(u)s."
+msgstr "Ajoute les dizaines, puis les unités : %(a)s + %(t)s = %(m)s, puis %(m)s + %(u)s."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Take away the tens, then the units: %(a)s − %(t)s = %(m)s, then %(m)s − %(u)s."
+msgstr "Enlève les dizaines, puis les unités : %(a)s − %(t)s = %(m)s, puis %(m)s − %(u)s."
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_list
+msgid "Load additions and subtractions"
+msgstr "Charger les additions et soustractions"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Count back %(a)s from %(s)s."
+msgstr "Recule de %(a)s à partir de %(s)s."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Only the tens change: one ten more."
+msgstr "Seules les dizaines changent : une dizaine de plus."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Only the tens change: one ten less."
+msgstr "Seules les dizaines changent : une dizaine de moins."

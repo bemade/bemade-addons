@@ -39,6 +39,16 @@
         FIT.forEach(function (f) { app.querySelectorAll(f[0]).forEach(function (el) { el.style.fontSize = ""; el.style.minHeight = ""; }); });
         var figure = app.querySelector(".hp-figure");
         if (figure) { figure.style.height = ""; }
+        // An expression (« 65 + ___ = 100 », non-breaking spaces only) stays on one line: when it
+        // is wider than the card, it gets smaller instead of breaking inside a number (UC-26).
+        app.querySelectorAll(".hp-prompt").forEach(function (el) {
+            if (/[ \t\n]/.test(el.textContent)) { return; }
+            for (var i = 0; i < 20; i++) {
+                var size = parseFloat(getComputedStyle(el).fontSize);
+                if (el.offsetHeight <= size * 1.6 || size <= FIT[0][2]) { break; }
+                el.style.fontSize = Math.max(FIT[0][2], Math.round(size * 0.9)) + "px";
+            }
+        });
         for (var step = 0; step < 40 && overflows(); step++) {
             var shrunk = false;
             if (figure) {

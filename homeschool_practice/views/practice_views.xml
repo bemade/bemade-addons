@@ -13,6 +13,8 @@
                             groups="homeschool.group_homeschool_manager"/>
                     <button name="action_load_english" type="object" string="Load English practice set" display="always"
                             groups="homeschool.group_homeschool_manager"/>
+                    <button name="action_load_add_sub" type="object" string="Load additions and subtractions" display="always"
+                            groups="homeschool.group_homeschool_manager"/>
                 </header>
                 <field name="sequence" widget="handle"/><field name="name"/><field name="subject_id"/><field name="quest_daily"/><field name="session_size"/><field name="company_id" groups="base.group_multi_company"/></list>
         </field>
