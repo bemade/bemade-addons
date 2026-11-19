@@ -18,8 +18,6 @@ Acceptance criteria
 """
 from datetime import date, timedelta
 
-from odoo import fields
-
 from .common import PracticeCase
 
 MONDAY = date(2026, 11, 16)
@@ -70,10 +68,10 @@ class TestGoals(PracticeCase):
         self.assertEqual(month.period_start, date(2026, 11, 1))
 
     def test_change_from_next_period(self):
-        week_goal = self.Goal._for(self.student, "week", fields.Date.today())
+        week_goal = self.Goal._for(self.student, "week", self.student._practice_today())
         week_goal.action_change_target(5)
-        self.assertEqual(self.Goal._for(self.student, "week", fields.Date.today()).target, 3)
-        self.assertEqual(self.Goal._for(self.student, "week", fields.Date.today() + timedelta(days=7)).target, 5)
+        self.assertEqual(self.Goal._for(self.student, "week", self.student._practice_today()).target, 3)
+        self.assertEqual(self.Goal._for(self.student, "week", self.student._practice_today() + timedelta(days=7)).target, 5)
 
     def test_no_streak_anywhere(self):
         for model in ("homeschool.practice.goal", "homeschool.practice.goal.achievement", "homeschool.practice.quest",

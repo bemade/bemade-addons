@@ -42,10 +42,10 @@ class PracticeXp(models.Model):
     date = fields.Datetime(default=fields.Datetime.now, required=True, index=True)
     day = fields.Date(compute="_compute_day", store=True, index=True)
 
-    @api.depends("date")
+    @api.depends("date", "student_id")
     def _compute_day(self):
         for x in self:
-            x.day = fields.Date.context_today(x, x.date) if x.date else False
+            x.day = x.student_id._practice_local_date(x.date) if x.student_id and x.date else False
 
     @api.model
     def _award(self, student, amount, reason, source=None):
@@ -82,7 +82,7 @@ class Student(models.Model):
         return level
 
     def _practice_xp_today(self):
-        today = fields.Date.context_today(self)
+        today = self._practice_today()
         return sum(self.env["homeschool.practice.xp"].sudo().search(
             [("student_id", "=", self.id), ("day", "=", today)]).mapped("amount"))
 

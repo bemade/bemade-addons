@@ -40,7 +40,7 @@ class TestMastery(PracticeCase):
         s = self.Session._start(self.student, self.deck, kind="unit", unit=self.t7, input_type=input_type)
         s.queue = "[%d]" % item.id
         if due:
-            self.mastery(item).due_on = fields.Date.today()
+            self.mastery(item).due_on = self.student._practice_today()
         ts = fields.Datetime.now() - timedelta(days=days_ago)
         return s._answer(item, given, first_touch_ms=ft, submit_ms=ft + 300, hint_used=hint, client_ts=ts)
 
@@ -50,7 +50,7 @@ class TestMastery(PracticeCase):
         self.assertEqual((m.state, m.box), ("new", 1))
         self._serve(item, "14")
         self.assertEqual((m.state, m.box), ("derived", 2))
-        self.assertEqual(m.due_on, fields.Date.today() + timedelta(days=1))
+        self.assertEqual(m.due_on, self.student._practice_today() + timedelta(days=1))
         self._serve(item, "15")
         self.assertEqual((m.state, m.box, m.miss_count), ("derived", 1, 1))
         self._serve(item, "14", hint=True)

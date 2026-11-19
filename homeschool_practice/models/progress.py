@@ -52,7 +52,7 @@ class PracticeUnit(models.Model):
             if row.state != "unlocked":
                 row.write({
                     "state": "unlocked",
-                    "unlocked_on": row.unlocked_on or fields.Date.context_today(self),
+                    "unlocked_on": row.unlocked_on or student._practice_today(),
                     "unlocked_by": row.unlocked_by.id or self.env.user.id,
                 })
             unit.sudo()._introduce(student, unit.deck_id.intro_size)
@@ -74,7 +74,7 @@ class PracticeUnit(models.Model):
         Mastery = self.env["homeschool.practice.mastery"].sudo()
         known = Mastery.search([("student_id", "=", student.id), ("unit_id", "=", self.id)]).item_id
         todo = (self.item_ids - known).sorted(lambda i: (i.step, i.id))[:max(count, 0)]
-        today = fields.Date.context_today(self)
+        today = student._practice_today()
         Mastery.create([{"student_id": student.id, "item_id": i.id, "due_on": today} for i in todo])
         return todo
 
@@ -144,18 +144,26 @@ class PracticeMastery(models.Model):
 
     _student_item_unique = models.Constraint("unique(student_id, item_id)", "One mastery row per learner and item.")
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        # due today for the learner (the field default only knows the caller's time zone)
+        for vals in vals_list:
+            if "due_on" not in vals and vals.get("student_id"):
+                vals["due_on"] = self.env["homeschool.student"].browse(vals["student_id"])._practice_today()
+        return super().create(vals_list)
+
     def _set_state(self, state):
         for row in self:
             if row.state != state:
                 self.env["homeschool.practice.mastery.history"].create({
                     "mastery_id": row.id, "from_state": row.state, "to_state": state})
-                row.write({"state": state, "automatic_since": fields.Date.context_today(self) if state == "automatic" else False})
+                row.write({"state": state, "automatic_since": row.student_id._practice_today() if state == "automatic" else False})
 
     def _apply(self, attempt):
         """Update the box, due date and state from one attempt. Returns True when the item has
         just become automatic."""
         self.ensure_one()
-        today = fields.Date.context_today(self)
+        today = self.student_id._practice_today()
         intervals = self.item_id.deck_id._intervals()
         vals = {"last_seen": fields.Datetime.now()}
         good = attempt.correct and not attempt.hint_used
@@ -195,7 +203,7 @@ class PracticeMastery(models.Model):
             order="client_ts desc, id desc", limit=3)
         if len(last) < 3:
             return False
-        if len({fields.Date.context_today(self, a.client_ts) for a in last}) < 2:
+        if len({self.student_id._practice_local_date(a.client_ts) for a in last}) < 2:
             return False  # on at least two different days
         threshold = self.student_id._practice_threshold_ms(self.item_id.deck_id, "touch")
         return all(a.correct and not a.hint_used and not a.outlier and a.input_type == "touch"

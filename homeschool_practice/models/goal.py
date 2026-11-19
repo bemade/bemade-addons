@@ -57,7 +57,7 @@ class PracticeGoal(models.Model):
     def action_change_target(self, target):
         """Change the target from the next period on."""
         self.ensure_one()
-        today = fields.Date.context_today(self)
+        today = self.student_id._practice_today()
         nxt = period_end(self.period, today) + timedelta(days=1)
         return self.create({"student_id": self.student_id.id, "period": self.period, "target": target, "date_from": nxt})
 

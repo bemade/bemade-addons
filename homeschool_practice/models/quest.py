@@ -77,8 +77,7 @@ class PracticeQuest(models.Model):
     # ------------------------------------------------------------------
     @api.model
     def _today(self, student):
-        tz_user = self.env.user if not student.user_id else student.user_id
-        return fields.Date.context_today(self.with_context(tz=tz_user.tz or self.env.context.get("tz")))
+        return student._practice_today()
 
     @api.model
     def _draw(self, student, day=None, rng=None):
@@ -286,7 +285,7 @@ class Student(models.Model):
         rows = []
         for unit, count, _seen in self._practice_needs(day):
             when = last.get(unit.id)
-            stale = when is None or (day - when.date()).days >= STALE_DAYS
+            stale = when is None or (day - self._practice_local_date(when)).days >= STALE_DAYS
             rows.append(((when or datetime.min, -count, unit.deck_id.sequence, unit.sequence, unit.id), unit, stale))
         rows.sort(key=lambda r: r[0])
         return [(unit, stale) for _key, unit, stale in rows]
