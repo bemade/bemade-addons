@@ -121,6 +121,61 @@ class PracticeDeck(models.Model):
             return env._("One group of %(a)s is %(a)s.", a=a)
         return env._("You know %(a)s × %(c)s = %(p)s… add one more %(a)s.", a=a, c=b - 1, p=a * (b - 1))
 
+    def _generate_add_sub(self):
+        """« Additions et soustractions » (UC-26): six units of generated keypad cards, from the
+        facts up to 20 to mental calculation with 2-digit numbers (``_add_sub_units``). Units
+        are matched by sequence, cards by key: idempotent, what exists is kept. Each unit links
+        its PDA curriculum items (codes absent from the database are skipped)."""
+        self.ensure_one()
+        Unit = self.env["homeschool.practice.unit"]
+        Item = self.env["homeschool.practice.item"]
+        existing = set(self.item_ids.with_context(active_test=False).mapped("key"))
+        units = self.unit_ids.with_context(active_test=False)
+        for sequence, (texts, codes, cards) in enumerate(_add_sub_units(), start=1):
+            unit = units.filtered(lambda u, s=sequence: u.sequence == s)[:1]
+            if not unit:
+                unit = Unit.create({"deck_id": self.id, "sequence": sequence, "name": "%s" % sequence})
+                self._translate_all(unit, texts)
+            self._link_curriculum(unit, codes)
+            for step, (key, prompt, answer, hint) in enumerate(cards):
+                if key in existing:
+                    continue
+                item = Item.create({"unit_id": unit.id, "key": key, "step": step, "prompt": prompt,
+                                    "answer": str(answer), "answer_mode": "keypad"})
+                self._translate_all(item, lambda env, hint=hint: {"hint": hint(env)})
+        self._link_curriculum(self, ["MATH-OPE-A.2", "MATH-OPE-A.3"])
+        return True
+
+    def _link_curriculum(self, record, codes):
+        """Link the ``homeschool.item`` records of these PDA codes to ``record`` (a deck or a
+        unit), keeping what is linked; codes not found are skipped."""
+        found = self.env["homeschool.item"].with_context(active_test=False).search([("code", "in", codes)])
+        missing = found - record.curriculum_item_ids
+        if missing:
+            record.curriculum_item_ids = [fields.Command.link(i.id) for i in missing]
+
+    @api.model
+    def action_load_add_sub(self):
+        """Load « Additions et soustractions » (generated keypad cards, UC-26) in the current
+        company, and nothing else. Idempotent: the deck is found again by its cards' keys."""
+        if not self.env.su and not self.env.user.has_group("homeschool.group_homeschool_manager"):
+            raise AccessError(self.env._("Only a parent (homeschool manager) loads practice decks."))
+        deck = self.env["homeschool.practice.item"].with_context(active_test=False).search(
+            [("key", "=like", "as1:%"), ("company_id", "=", self.env.company.id)], limit=1).deck_id
+        if not deck:
+            subject = self.env.ref("homeschool.subject_math", raise_if_not_found=False)
+            deck = self.create({"name": "Additions and subtractions", "sequence": 10,
+                                "intro_size": 6, "max_new_per_session": 4,
+                                "subject_id": subject.id if subject else False,
+                                "company_id": self.env.company.id})
+            self._translate_all(deck, lambda env: {
+                "name": env._("Additions and subtractions"),
+                "description": env._("Addition and subtraction facts up to 20, complements to 10 and to 100, "
+                                     "mental calculation with 2-digit numbers."),
+            })
+        deck._generate_add_sub()
+        return True
+
     def _generate_choice_cards(self, unit, cards):
         """``cards``: list of ``(key, prompt, options, hint)`` or ``(key, prompt, options, hint,
         figure)``; ``options`` is a list of ``(label, correct)`` (a choices card; options keep
@@ -252,6 +307,223 @@ def _nbsp(text):
     line on the iPad), nor inside a number (« 3 000 »)."""
     text = re.sub(r"(?<=\d) (?=\d{3}(?!\d))", "\u00a0", text)
     return re.sub(r"« ", "«\u00a0", re.sub(r" ([»?!:%])", "\u00a0\\1", text))
+
+
+MINUS = "−"
+
+
+def _expr(*tokens):
+    """A keypad prompt: the tokens joined by non-breaking spaces (never broken across lines)."""
+    return " ".join(str(t) for t in tokens)
+
+
+def _add_sub_units():
+    """The six units of « Additions et soustractions » (UC-26), in teaching order: a list of
+    ``(texts, codes, cards)`` — ``texts(env)`` the unit's name and intro, ``codes`` its PDA
+    curriculum items, ``cards`` a list of ``(key, prompt, answer, hint)`` easiest first, with
+    ``hint(env)``. The samples are seeded: every family gets the same cards."""
+    facts = ["MATH-OPE-A.2", "MATH-OPE-A.2.a", "MATH-OPE-A.2.b", "MATH-OPE-A.2.c"]
+    mental = ["MATH-OPE-A.3", "MATH-OPE-A.3.a"]
+    return [
+        (lambda env: {
+            "name": env._("Additions up to 20"),
+            "intro": env._("To add, start from the larger number. To go past 10, make 10 first: "
+                           "8 + 5 = 8 + 2 + 3 = 13. The doubles help too: 6 + 6 = 12, so 6 + 7 = 13."),
+        }, facts, _add_facts()),
+        (lambda env: {
+            "name": env._("Subtractions up to 20"),
+            "intro": env._("A subtraction is an addition with a missing number: 14 − 6 = ? is 6 + ? = 14. "
+                           "Count up from 6 to 14: 6 + 4 = 10, 10 + 4 = 14, so 14 − 6 = 8. Or go down to 10 "
+                           "first: 14 − 4 = 10, then 10 − 2 = 8."),
+        }, facts, _sub_facts()),
+        (lambda env: {
+            "name": env._("Complements to 10 and to 100"),
+            "intro": env._("Find the number missing to make 10 or 100. The pairs that make 10: 1 + 9, 2 + 8, "
+                           "3 + 7, 4 + 6, 5 + 5. In tens they make 100: 6 + 4 = 10, so 60 + 40 = 100. For 65: "
+                           "65 + 5 = 70, then 70 + 30 = 100, so 65 + 35 = 100."),
+        }, ["MATH-OPE-A.2.b", "MATH-OPE-A.2.c", "MATH-OPE-A.5"] + mental, _complements()),
+        (lambda env: {
+            "name": env._("2-digit number ± 1 digit"),
+            "intro": env._("Only the units change, unless you pass a ten. 43 + 5 = 48 (3 + 5 = 8). 47 + 8: "
+                           "go to the ten first, 47 + 3 = 50, then 50 + 5 = 55. 53 − 6: go down to the ten, "
+                           "53 − 3 = 50, then 50 − 3 = 47."),
+        }, mental, _two_digits_one_digit()),
+        (lambda env: {
+            "name": env._("Whole tens (± 10, 20…)"),
+            "intro": env._("Adding or taking away whole tens changes only the tens digit. 47 + 30: 4 tens + "
+                           "3 tens = 7 tens, so 77. 86 − 40: 8 tens − 4 tens = 4 tens, so 46."),
+        }, mental, _whole_tens()),
+        (lambda env: {
+            "name": env._("2-digit number ± 2 digits"),
+            "intro": env._("Add the tens, then the units. 38 + 47: 38 + 40 = 78, then 78 + 7 = 85. Take away "
+                           "the same way. 72 − 35: 72 − 30 = 42, then 42 − 5 = 37."),
+        }, mental, _two_digits_two_digits()),
+    ]
+
+
+def _add_facts():
+    """Every a + b with a, b in 1–10, each pair once (55 cards; the order shown is seeded,
+    so both « 3 + 8 » and « 9 + 2 » shapes appear). Without crossing ten first: + 1, + 2…,
+    then making 10."""
+    rng = random.Random("homeschool_practice/add-sub/1")
+    cards = []
+    for small in range(1, 11):
+        for big in range(small, 11):
+            shown = (big, small) if small == big or rng.random() < 0.5 else (small, big)
+            cross = small + big > 10 and big < 10
+            if small == big:
+                hint = lambda env, a=small: env._("A double: %(a)s + %(a)s is two times %(a)s.", a=a)
+            elif big == 10:
+                hint = lambda env, u=small: env._("10 + %(u)s: one ten, and %(u)s more.", u=u)
+            elif cross:
+                hint = lambda env, b=big, s=small: env._(
+                    "Make 10: %(big)s + %(small)s = %(big)s + %(fill)s + %(rest)s.",
+                    big=b, small=s, fill=10 - b, rest=s - (10 - b))
+            else:
+                hint = lambda env, b=big, s=small: env._(
+                    "Start from the larger number, %(big)s, and count %(small)s more.", big=b, small=s)
+            cards.append(((cross, small, small + big),
+                          ("as1:%s+%s" % (small, big), _expr(shown[0], "+", shown[1]), small + big, hint)))
+    return [card for _order, card in sorted(cards, key=lambda c: c[0])]
+
+
+def _sub_facts():
+    """Every difference matching unit 1: s − a with s = a + b, a and b in 1–10 (100 cards).
+    Without crossing ten first."""
+    cards = []
+    for a in range(1, 11):
+        for b in range(1, 11):
+            s = a + b
+            cross = s > 10 and a < 10 and b < 10
+            if cross:
+                hint = lambda env, s=s, a=a: env._(
+                    "Go down to 10 first: %(s)s − %(u)s = 10, then take away %(rest)s more.",
+                    s=s, u=s - 10, rest=a - (s - 10))
+            elif a == 10:
+                hint = lambda env: env._("Take away the ten: the units are left.")
+            elif a <= 3:
+                hint = lambda env, s=s, a=a: env._("Count back %(a)s from %(s)s.", a=a, s=s)
+            else:
+                hint = lambda env, s=s, a=a: env._("Count up from %(a)s to %(s)s.", a=a, s=s)
+            cards.append(((cross, s > 10, a, s), ("as2:%s-%s" % (s, a), _expr(s, MINUS, a), b, hint)))
+    return [card for _order, card in sorted(cards, key=lambda c: c[0])]
+
+
+def _complements():
+    """« a + ___ = 10 » for a in 1–9, then « a + ___ = 100 »: the tens, the other multiples of
+    5 and a seeded sample of 12 other numbers (40 cards)."""
+    rng = random.Random("homeschool_practice/add-sub/3")
+    others = sorted(rng.sample([a for a in range(11, 90) if a % 5], 12))
+    cards = []
+    for a in range(1, 10):
+        cards.append(("as3:%s+?=10" % a, _expr(a, "+", "___", "=", 10), 10 - a,
+                      lambda env: env._("The pairs that make 10: 1 + 9, 2 + 8, 3 + 7, 4 + 6, 5 + 5.")))
+    for a in list(range(10, 100, 10)) + list(range(5, 100, 10)) + others:
+        if a % 10 == 0:
+            hint = lambda env, a=a: env._("%(t)s + ? = 10, so %(a)s + ? = 100: count in tens.", t=a // 10, a=a)
+        elif a > 90:
+            hint = lambda env, a=a: env._("Count up from %(a)s to %(s)s.", a=a, s=100)
+        else:
+            nxt = (a // 10 + 1) * 10
+            hint = lambda env, a=a, nxt=nxt: env._(
+                "First to the next ten: %(a)s + %(u)s = %(next)s, then %(next)s + ? = 100.",
+                a=a, u=nxt - a, next=nxt)
+        cards.append(("as3:%s+?=100" % a, _expr(a, "+", "___", "=", 100), 100 - a, hint))
+    return cards
+
+
+def _add_sub_hint(a, op, b):
+    """The strategy for a 2-digit number ± a 1-digit number (unit 4)."""
+    u = a % 10
+    if op == "+":
+        if u + b < 10:
+            return lambda env: env._("Add the units: %(u)s + %(b)s. The tens don't change.", u=u, b=b)
+        if u + b == 10:
+            return lambda env: env._("%(u)s + %(b)s = 10: you reach the next ten.", u=u, b=b)
+        nxt = a - u + 10
+        return lambda env: env._("Go to the next ten: %(a)s + %(fill)s = %(next)s, then add %(rest)s more.",
+                                 a=a, fill=nxt - a, next=nxt, rest=b - (nxt - a))
+    if u >= b:
+        return lambda env: env._("Take away from the units: %(u)s − %(b)s. The tens don't change.", u=u, b=b)
+    if u == 0:
+        return lambda env: env._("One ten less, and 10 − %(b)s = %(c)s.", b=b, c=10 - b)
+    return lambda env: env._("Go down to the ten: %(a)s − %(u)s = %(ten)s, then take away %(rest)s more.",
+                             a=a, u=u, ten=a - u, rest=b - u)
+
+
+def _two_digits_one_digit():
+    """12 cards each: additions without carry, subtractions without regrouping, then with
+    (half the cards cross a ten). Results stay under 100. Seeded sample (48 cards)."""
+    rng = random.Random("homeschool_practice/add-sub/4")
+    pools = [
+        ("+", [(a, b) for a in range(11, 90) if a % 10 for b in range(2, 10) if a % 10 + b < 10]),
+        (MINUS, [(a, b) for a in range(12, 100) if a % 10 for b in range(2, 10) if a % 10 >= b]),
+        ("+", [(a, b) for a in range(11, 90) if a % 10 for b in range(2, 10) if a % 10 + b >= 10]),
+        (MINUS, [(a, b) for a in range(21, 100) for b in range(2, 10) if a % 10 < b]),
+    ]
+    return _sampled_cards(rng, "as4", pools, 12, _add_sub_hint)
+
+
+def _whole_tens():
+    """± 10 first (4 each way), then ± 20 to 80 (16 each way): 40 cards, results 1–99."""
+    rng = random.Random("homeschool_practice/add-sub/5")
+    cards = []
+    for op in ("+", MINUS):
+        if op == "+":
+            pool = [(a, k) for a in range(11, 90) for k in range(10, 90, 10) if a + k <= 99]
+        else:
+            pool = [(a, k) for a in range(21, 100) for k in range(10, 90, 10) if a - k >= 1]
+        tens = sorted(rng.sample([p for p in pool if p[1] == 10], 4))
+        more = rng.sample([p for p in pool if p[1] > 10], 16)
+        for a, k in tens + more:
+            if k == 10 and op == "+":
+                hint = lambda env: env._("Only the tens change: one ten more.")
+            elif k == 10:
+                hint = lambda env: env._("Only the tens change: one ten less.")
+            elif op == "+":
+                hint = lambda env, a=a, n=k // 10: env._(
+                    "Only the tens change: count by tens from %(a)s, %(n)s times.", a=a, n=n)
+            else:
+                hint = lambda env, a=a, n=k // 10: env._(
+                    "Only the tens change: count back by tens from %(a)s, %(n)s times.", a=a, n=n)
+            key = "as5:%s%s%s" % (a, "+" if op == "+" else "-", k)
+            cards.append(((k, op != "+", a), (key, _expr(a, op, k), a + k if op == "+" else a - k, hint)))
+    return [card for _order, card in sorted(cards, key=lambda c: c[0])]
+
+
+def _tens_then_units_hint(a, op, b):
+    """The strategy for a 2-digit number ± a 2-digit number (unit 6)."""
+    tens, units = b - b % 10, b % 10
+    if op == "+":
+        return lambda env: env._("Add the tens, then the units: %(a)s + %(t)s = %(m)s, then %(m)s + %(u)s.",
+                                 a=a, t=tens, m=a + tens, u=units)
+    return lambda env: env._("Take away the tens, then the units: %(a)s − %(t)s = %(m)s, then %(m)s − %(u)s.",
+                             a=a, t=tens, m=a - tens, u=units)
+
+
+def _two_digits_two_digits():
+    """12 cards each: additions without carry, subtractions without regrouping, then with
+    (half the cards cross a ten). No whole tens as the second number (that's unit 5); results
+    from 1 to 99. Seeded sample (48 cards)."""
+    rng = random.Random("homeschool_practice/add-sub/6")
+    seconds = [b for b in range(11, 90) if b % 10]
+    pools = [
+        ("+", [(a, b) for a in range(11, 89) if a % 10 for b in seconds if a + b <= 99 and a % 10 + b % 10 < 10]),
+        (MINUS, [(a, b) for a in range(22, 100) for b in seconds if b < a and a % 10 >= b % 10]),
+        ("+", [(a, b) for a in range(11, 89) if a % 10 for b in seconds if a + b <= 99 and a % 10 + b % 10 >= 10]),
+        (MINUS, [(a, b) for a in range(21, 100) for b in seconds if b < a and a % 10 < b % 10]),
+    ]
+    return _sampled_cards(rng, "as6", pools, 12, _tens_then_units_hint)
+
+
+def _sampled_cards(rng, prefix, pools, size, hint):
+    """``size`` seeded cards from each ``(op, [(a, b)…])`` pool, the pools in order."""
+    cards = []
+    for op, pool in pools:
+        for a, b in sorted(rng.sample(pool, size), key=lambda p: (p[1], p[0])):
+            key = "%s:%s%s%s" % (prefix, a, "+" if op == "+" else "-", b)
+            cards.append((key, _expr(a, op, b), a + b if op == "+" else a - b, hint(a, op, b)))
+    return cards
 
 
 class PracticeUnit(models.Model):

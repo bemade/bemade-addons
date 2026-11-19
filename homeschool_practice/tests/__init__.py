@@ -24,3 +24,4 @@ from . import test_uc22_english_deck
 from . import test_uc23_quest_rotation
 from . import test_uc24_choice_order
 from . import test_uc25_geometry_deck
+from . import test_uc26_add_sub_deck

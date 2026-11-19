@@ -4,7 +4,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     "name": "Homeschool Practice",
-    "version": "19.0.1.7.0",
+    "version": "19.0.1.8.0",
     "category": "Education",
     "summary": "Short, frequent retrieval practice with game mechanics and family-defined rewards, "
     "touch-first (iPad).",
@@ -42,7 +42,11 @@ figures and polygons, triangles, quadrilaterals, the circle, angles and lines,
 solids) and English (« English
 grammar »: irregular plurals, the possessive 's, past tense spelling and
 irregular verbs, capitals and end marks, one idea per sentence; hints in
-English), linked to the Québec PDA curriculum items they practise.
+English), linked to the Québec PDA curriculum items they practise. « Additions
+et soustractions » is loaded on its own (« Load additions and subtractions »):
+generated keypad cards, the addition and subtraction facts up to 20, the
+complements to 10 and to 100, then mental calculation with 2-digit numbers
+(± 1 digit, ± whole tens, ± 2 digits), half of them crossing a ten.
 
 A card can show a drawn figure (the geometry set): the deck's data gives a short
 figure spec (« tri kind=isosceles rot=20 ») and the module draws it as an SVG
