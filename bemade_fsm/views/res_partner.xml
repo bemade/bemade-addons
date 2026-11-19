@@ -25,12 +25,13 @@
                     <field name="fsm_carried_todo_ids" invisible="1" />
                 </button>
             </div>
-            <xpath expr="//sheet/notebook" position="before">
-                <div
-          name="fsm_site_note_block"
-          class="mb-3"
+            <xpath expr="//sheet/notebook" position="inside">
+                <page
+          name="fsm_site_notes"
+          string="Site Notes"
           groups="industry_fsm.group_fsm_user"
         >
+                <div name="fsm_site_note_block" class="mb-3">
                     <label for="fsm_site_note" class="fw-bold" />
                     <field
             name="fsm_site_note"
@@ -59,6 +60,7 @@
                         </field>
                     </div>
                 </div>
+                </page>
             </xpath>
             <page name="equipment" position="attributes">
                 <attribute name="invisible">site_ids</attribute>
