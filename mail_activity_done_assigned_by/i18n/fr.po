@@ -58,7 +58,7 @@ msgstr "Nom affiché"
 #: model:ir.model.fields,field_description:mail_activity_done_assigned_by.field_res_company__id
 #: model:ir.model.fields,field_description:mail_activity_done_assigned_by.field_res_config_settings__id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. module: mail_activity_done_assigned_by
 #: model:ir.model.fields,field_description:mail_activity_done_assigned_by.field_res_company__activity_done_lang

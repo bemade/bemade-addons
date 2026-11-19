@@ -10,7 +10,7 @@
 #
 {
     "name": "Stock Quant Valuation",
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.0.2",
     "summary": """
     Adds valuation to stock quant for better inventory adjustment management'
     """,

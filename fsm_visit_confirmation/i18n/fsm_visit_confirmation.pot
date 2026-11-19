@@ -4,16 +4,324 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 17.0+e\n"
+"Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-27 00:31+0000\n"
-"PO-Revision-Date: 2025-02-27 00:31+0000\n"
+"POT-Creation-Date: 2026-11-19 18:51+0000\n"
+"PO-Revision-Date: 2026-11-19 18:51+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid ""
+"<i class=\"fa fa-check-circle me-2\"/>\n"
+"                <strong>Success!</strong> Thank you for approving this service visit."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid ""
+"<i class=\"fa fa-exclamation-triangle me-2\"/>\n"
+"                            Request Changes to Service Visit"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid ""
+"<i class=\"fa fa-info-circle me-2\"/>\n"
+"                <strong>Thank you!</strong> Your change request has been submitted. Our team will review it shortly."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__active
+msgid "Active"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_fsm_task_client_requirement__description
+msgid ""
+"Additional information shown to the client when this requirement applies."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.fsm_task_client_requirement_form
+msgid ""
+"Additional information shown to the client when this requirement applies..."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.view_task_form_inherit_fsm_visit_confirmation
+msgid "Additional notes about requirements (duration, timing, etc.)"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_project_task__client_requirements_notes
+msgid ""
+"Additional notes about requirements (e.g., duration, timing, specific "
+"instructions)."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task_type__approval_template_id
+msgid "Approval Template"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.fsm_task_client_requirement_form
+msgid "Archived"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+msgid "Changes requested by customer: %s"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.fsm_task_client_requirement_form
+msgid "Client Requirement"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.actions.act_window,name:fsm_visit_confirmation.fsm_task_client_requirement_action
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task__client_requirement_ids
+#: model:ir.ui.menu,name:fsm_visit_confirmation.fsm_task_client_requirement_menu
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.fsm_task_client_requirement_tree
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.view_task_form_inherit_fsm_visit_confirmation
+msgid "Client Requirements"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.actions.act_window,help:fsm_visit_confirmation.fsm_task_client_requirement_action
+msgid ""
+"Client requirements are shown in visit confirmation emails.\n"
+"                Create requirements like \"Water Shutdown Required\" here."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__color
+msgid "Color Index"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_fsm_task_client_requirement__color
+msgid "Color for kanban/tags display."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model,website_form_label:fsm_visit_confirmation.model_project_task
+msgid "Create a Task"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__description
+msgid "Description"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__display_name
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task__display_name
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task_type__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+msgid "Error approving task: %s"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+msgid "Error submitting change request: %s"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model,name:fsm_visit_confirmation.model_fsm_task_client_requirement
+msgid "FSM Task Client Requirement"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__id
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task__id
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task_type__id
+msgid "ID"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+msgid "Invalid action"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.actions.act_window,help:fsm_visit_confirmation.fsm_task_client_requirement_action
+msgid "No client requirements defined yet."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+msgid "No feedback provided. Please try again!"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid "Please explain what changes you need..."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid ""
+"Please provide details about the changes you would like to make to this "
+"service visit:"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__name
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.fsm_task_client_requirement_form
+msgid "Requirement Name"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.constraint,message:fsm_visit_confirmation.constraint_fsm_task_client_requirement_name_unique
+msgid "Requirement name must be unique."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task__client_requirements_notes
+msgid "Requirements Notes"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.view_task_form_inherit_fsm_visit_confirmation
+msgid "Select client requirements..."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_project_task__client_requirement_ids
+msgid ""
+"Select client-facing requirements for this visit. These will be communicated"
+" in the confirmation email."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task_type__approved_stage_id
+msgid "Stage after customer approval"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid "Submit Request"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model,name:fsm_visit_confirmation.model_project_task
+msgid "Task"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model,name:fsm_visit_confirmation.model_project_task_type
+msgid "Task Stage"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+msgid "Task not found or invalid token"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_project_task_type__approval_template_id
+msgid "Template to use for approval emails when a task reaches this stage."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_fsm_task_client_requirement__name
+msgid "The name displayed to the client (e.g., 'Water Shutdown Required')."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/models/project_task_type.py:0
+msgid ""
+"The stage after customer approval of \"%(stage)s\" must be another stage of "
+"the same project."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_project_task__display_name
+msgid ""
+"Use these keywords in the title to set new tasks:\n"
+"\n"
+"        30h Allocate 30 hours to the task\n"
+"        #tags Set tags on the task\n"
+"        @user Assign the task to a user\n"
+"        ! Set the task a medium priority\n"
+"        !! Set the task a high priority\n"
+"        !!! Set the task a urgent priority\n"
+"\n"
+"        Make sure to use the right format and order e.g. Improve the configuration screen 5h #feature #v16 @Mitchell !"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.view_task_form_inherit_fsm_visit_confirmation
+msgid "Visit Requirements"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+msgid "Visit approved by customer"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:fsm.task.client.requirement,name:fsm_visit_confirmation.client_requirement_water_shutdown
+msgid "Water Shutdown Required"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_project_task_type__approved_stage_id
+msgid ""
+"When the customer approves the visit from the confirmation email while the "
+"task is still in this stage, the task moves to the selected stage. Leave "
+"empty to keep the task where it is."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid "Your Comments:"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.fsm_task_client_requirement_form
+msgid "e.g., Water Shutdown Required"
+msgstr ""
 
 #. module: fsm_visit_confirmation
 #: model:mail.template,body_html:fsm_visit_confirmation.fsm_visit_confirmation_email_template
@@ -100,78 +408,8 @@ msgid ""
 msgstr ""
 
 #. module: fsm_visit_confirmation
-#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
-msgid ""
-"<i class=\"fa fa-check-circle me-2\"/>\n"
-"                <strong>Success!</strong> Thank you for approving this service visit."
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
-msgid ""
-"<i class=\"fa fa-exclamation-triangle me-2\"/>\n"
-"                            Request Changes to Service Visit"
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
-msgid ""
-"<i class=\"fa fa-info-circle me-2\"/>\n"
-"                <strong>Thank you!</strong> Your change request has been submitted. Our team will review it shortly."
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#. odoo-python
-#: code:addons/fsm_visit_confirmation/controllers/main.py:0
-#, python-format
-msgid "Changes requested by customer: %s"
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#. odoo-python
-#: code:addons/fsm_visit_confirmation/controllers/main.py:0
-#: code:addons/fsm_visit_confirmation/controllers/main.py:0
-#, python-format
-msgid "Error approving task: %s"
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#. odoo-python
-#: code:addons/fsm_visit_confirmation/controllers/main.py:0
-#: code:addons/fsm_visit_confirmation/controllers/main.py:0
-#, python-format
-msgid "Error submitting change request: %s"
-msgstr ""
-
-#. module: fsm_visit_confirmation
 #: model:mail.template,name:fsm_visit_confirmation.fsm_visit_confirmation_email_template
 msgid "FSM Visit Confirmation"
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#. odoo-python
-#: code:addons/fsm_visit_confirmation/controllers/main.py:0
-#, python-format
-msgid "Invalid action"
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#. odoo-python
-#: code:addons/fsm_visit_confirmation/controllers/main.py:0
-#, python-format
-msgid "No feedback provided. Please try again!"
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
-msgid "Please explain what changes you need..."
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
-msgid ""
-"Please provide details about the changes you would like to make to this "
-"service visit:"
 msgstr ""
 
 #. module: fsm_visit_confirmation
@@ -182,44 +420,4 @@ msgstr ""
 #. module: fsm_visit_confirmation
 #: model:mail.template,subject:fsm_visit_confirmation.fsm_visit_confirmation_email_template
 msgid "Service Visit Confirmation: {{ object.name }}"
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
-msgid "Submit Request"
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#. odoo-python
-#: code:addons/fsm_visit_confirmation/controllers/main.py:0
-#: code:addons/fsm_visit_confirmation/controllers/main.py:0
-#: code:addons/fsm_visit_confirmation/controllers/main.py:0
-#, python-format
-msgid "Task not found or invalid token"
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
-msgid "Your Comments:"
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#. odoo-python
-#: code:addons/fsm_visit_confirmation/models/project_task_type.py:0
-msgid ""
-"The stage after customer approval of \"%(stage)s\" must be another stage of "
-"the same project."
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task_type__approved_stage_id
-msgid "Stage after customer approval"
-msgstr ""
-
-#. module: fsm_visit_confirmation
-#: model:ir.model.fields,help:fsm_visit_confirmation.field_project_task_type__approved_stage_id
-msgid ""
-"When the customer approves the visit from the confirmation email while the "
-"task is still in this stage, the task moves to the selected stage. Leave "
-"empty to keep the task where it is."
 msgstr ""

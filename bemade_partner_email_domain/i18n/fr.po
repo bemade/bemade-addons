@@ -112,7 +112,7 @@ msgstr "Paramètres de configuration"
 #: model:ir.model,name:bemade_partner_email_domain.model_res_partner
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__partner_id
 msgid "Contact"
-msgstr ""
+msgstr "Contact"
 
 #. module: bemade_partner_email_domain
 #: model:ir.model.fields.selection,name:bemade_partner_email_domain.selection__partner_parent_suggestion__source__create
@@ -168,7 +168,7 @@ msgstr "Nom d'affichage"
 #. module: bemade_partner_email_domain
 #: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_email_domain_form
 msgid "Division"
-msgstr ""
+msgstr "Division"
 
 #. module: bemade_partner_email_domain
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__partner_email
@@ -233,7 +233,7 @@ msgstr "A un message"
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_config_settings__id
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_partner__id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. module: bemade_partner_email_domain
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__activity_exception_icon
@@ -284,7 +284,7 @@ msgstr "Erreur d'envoi du message"
 #. module: bemade_partner_email_domain
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__message_ids
 msgid "Messages"
-msgstr ""
+msgstr "Messages"
 
 #. module: bemade_partner_email_domain
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__my_activity_date_deadline
@@ -371,7 +371,7 @@ msgstr "Utilisateur responsable"
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__source
 #: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_parent_suggestion_view_search
 msgid "Source"
-msgstr ""
+msgstr "Source"
 
 #. module: bemade_partner_email_domain
 #: model:ir.model.fields,help:bemade_partner_email_domain.field_partner_parent_suggestion__activity_state
@@ -390,7 +390,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_partner__is_subdivision
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_users__is_subdivision
 msgid "Subdivision"
-msgstr ""
+msgstr "Sous-division"
 
 #. module: bemade_partner_email_domain
 #: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.res_config_settings_view_form
@@ -507,3 +507,13 @@ msgid "this is a public mailbox provider, it cannot identify a company"
 msgstr ""
 "c'est un fournisseur de messagerie public, il ne peut pas identifier une "
 "entreprise"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr "Activité suivante de l'événement du calendrier"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__rating_ids
+msgid "Ratings"
+msgstr "Évaluations"

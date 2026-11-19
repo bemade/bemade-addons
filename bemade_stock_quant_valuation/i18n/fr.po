@@ -1,0 +1,61 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_stock_quant_valuation
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 18:33+0000\n"
+"PO-Revision-Date: 2026-11-19 18:33+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: bemade_stock_quant_valuation
+#: model:ir.model.fields,field_description:bemade_stock_quant_valuation.field_stock_quant__value_unit
+msgid "Cost"
+msgstr "Coût"
+
+#. module: bemade_stock_quant_valuation
+#: model:ir.model.fields,field_description:bemade_stock_quant_valuation.field_stock_quant__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: bemade_stock_quant_valuation
+#: model:ir.model.fields,field_description:bemade_stock_quant_valuation.field_stock_quant__id
+msgid "ID"
+msgstr "ID"
+
+#. module: bemade_stock_quant_valuation
+#: model:ir.model,name:bemade_stock_quant_valuation.model_stock_quant
+msgid "Quants"
+msgstr "Quantités"
+
+#. module: bemade_stock_quant_valuation
+#: model:ir.model.fields,help:bemade_stock_quant_valuation.field_stock_quant__value_difference
+msgid ""
+"The value of the difference between the quantity on hand and the counted "
+"quantity."
+msgstr ""
+"La valeur de l'écart entre la quantité en stock et la quantité comptée."
+
+#. module: bemade_stock_quant_valuation
+#: model:ir.model.fields,field_description:bemade_stock_quant_valuation.field_stock_quant__value_difference
+msgid "Value Difference"
+msgstr "Écart de valeur"
+
+#. module: bemade_stock_quant_valuation
+#: model:ir.model.fields,help:bemade_stock_quant_valuation.field_stock_quant__value_unit
+msgid ""
+"Value of the product (automatically computed in AVCO).\n"
+"        Used to value the product when the purchase cost is not known (e.g. inventory adjustment).\n"
+"        Used to compute margins on sale orders."
+msgstr ""
+"Valeur du produit (calculée automatiquement en AVCO).\n"
+"        Utilisée pour estimer le produit quand le coût d'achat n'est pas connu (par ex. ajustement d'inventaire).\n"
+"        Utilisée pour calculer les marges sur les commandes clients."

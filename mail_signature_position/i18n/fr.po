@@ -48,7 +48,7 @@ msgstr "Nom d'affichage"
 #: model:ir.model.fields,field_description:mail_signature_position.field_res_config_settings__id
 #: model:ir.model.fields,field_description:mail_signature_position.field_res_users__id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. module: mail_signature_position
 #: model:ir.model.fields,field_description:mail_signature_position.field_res_company__mail_signature_position

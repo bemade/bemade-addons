@@ -2,7 +2,7 @@
 
 {
     "name": "Product Supplierinfo Tracking",
-    "version": "19.0.3.1.0",
+    "version": "19.0.3.1.1",
     "license": "LGPL-3",
     "author": "Bemade Inc.",
     "category": "Tools",
