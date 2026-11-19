@@ -8,6 +8,8 @@ Acceptance criteria:
 - A line created already checked records the creator and the time.
 - Choosing a tool fills the line's description with the tool name (still
   editable); a free-text line without a tool is allowed.
+- Flipping the toggle shows the stamp at once (the visit's onchange writes a
+  preview stamp, nothing is saved); unticking clears it.
 - The checked label reads « Checked by <user> on <date> ».
 - Nothing on the list reaches the sale order: confirming an order whose product
   carries a template with « to bring » lines adds no sale order line.
@@ -50,6 +52,36 @@ class TestPrepCheck(FsmPrepCommon):
         self.assertFalse(line.checked_at)
         line.write({"checked": True, "checked_by_id": other.id})
         self.assertEqual(line.checked_by_id, self.env.user)
+
+    def test_parent_onchange_untick_clears_label(self):
+        visit = self._visit("Visit A", lines=[(self.tool, 1)])
+        line = visit.fsm_prep_line_ids
+        line.checked = True
+        spec = {"fsm_prep_line_ids": {"fields": {"checked": {}, "checked_label": {}}}}
+        res = visit.onchange(
+            {"fsm_prep_line_ids": [Command.update(line.id, {"checked": False})]},
+            ["fsm_prep_line_ids"],
+            spec,
+        )
+        cmds = res["value"]["fsm_prep_line_ids"]
+        update = next(c[2] for c in cmds if c[0] == Command.UPDATE)
+        self.assertFalse(update["checked_label"])
+        self.assertTrue(line.checked_by_id, "an onchange must not save the untick")
+
+    def test_parent_onchange_refreshes_label(self):
+        """The web client path: toggle on a list row not open for editing."""
+        visit = self._visit("Visit A", lines=[(self.tool, 1)])
+        line = visit.fsm_prep_line_ids
+        spec = {"fsm_prep_line_ids": {"fields": {"checked": {}, "checked_label": {}}}}
+        res = visit.onchange(
+            {"fsm_prep_line_ids": [Command.update(line.id, {"checked": True})]},
+            ["fsm_prep_line_ids"],
+            spec,
+        )
+        cmds = res["value"]["fsm_prep_line_ids"]
+        label = next(c[2]["checked_label"] for c in cmds if c[0] == Command.UPDATE)
+        self.assertIn(self.env.user.name, label)
+        self.assertFalse(line.checked, "an onchange must not save the tick")
 
     def test_create_checked_records_creator(self):
         visit = self._visit("Visit A")

@@ -23,6 +23,31 @@ class ProjectTask(models.Model):
         groups="industry_fsm.group_fsm_user",
     )
 
+    @api.onchange("fsm_prep_line_ids")
+    def _onchange_fsm_prep_lines_preview_stamp(self):
+        """Show « Checked by … on … » as soon as a line's toggle flips.
+
+        Flipping a toggle on a list row sends the visit's onchange, and Odoo
+        does not report a line compute that follows that same line's change.
+        Writing the preview stamp here makes the label recompute and reach the
+        client. Display only: the stamp fields are readonly, the client never
+        saves them, and fsm.prep.line create/write set the real stamp. A line
+        already ticked when loaded keeps its first stamp, as on save.
+        """
+        for line in self.fsm_prep_line_ids:
+            origin = line._origin
+            if line.checked and origin.checked:
+                if line.checked_by_id != origin.checked_by_id:
+                    line.checked_by_id = origin.checked_by_id
+                    line.checked_at = origin.checked_at
+            elif line.checked:
+                if not line.checked_by_id:
+                    line.checked_by_id = self.env.user
+                    line.checked_at = fields.Datetime.now()
+            elif line.checked_by_id:
+                line.checked_by_id = False
+                line.checked_at = False
+
     def _fsm_prep_visit(self):
         """The visit of this task: its top-level ancestor (itself when it has
         no parent). Template « to bring » lines are copied there."""

@@ -44,9 +44,15 @@
                             <field name="checked_label" class="text-muted" />
                             <field name="overbooking_note" class="text-danger" />
                             <field name="overbooked" column_invisible="True" />
+                            <!-- kept client-side so a re-tick before save brings the
+                                 stamp back; the server ignores client stamp values -->
+                            <field name="checked_by_id" column_invisible="True" force_save="1" />
+                            <field name="checked_at" column_invisible="True" force_save="1" />
                         </list>
                         <kanban>
                             <field name="overbooked" />
+                            <field name="checked_by_id" force_save="1" />
+                            <field name="checked_at" force_save="1" />
                             <templates>
                                 <t t-name="card" class="flex-row align-items-center">
                                     <field

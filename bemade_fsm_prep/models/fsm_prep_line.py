@@ -58,6 +58,8 @@ class FsmPrepLine(models.Model):
 
     @api.depends("checked_by_id", "checked_at")
     def _compute_checked_label(self):
+        # Follows the stamp only: the visit's onchange writes a preview stamp
+        # when a toggle flips (see project.task), which refreshes this label.
         for line in self:
             if line.checked_by_id and line.checked_at:
                 line.checked_label = self.env._(
