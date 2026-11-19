@@ -2,7 +2,7 @@
 # License LGPL-3 - See https://www.gnu.org/licenses/lgpl-3.0.html
 {
     "name": "Stock Package Format",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "summary": "Stock bulk products in real packages of fixed formats (bag, drum, "
     "bulk bag...), one lot per package, never split by accident.",
     "description": """Stock Package Format

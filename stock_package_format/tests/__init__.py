@@ -6,3 +6,4 @@ from . import test_reservation
 from . import test_sale_buy
 from . import test_breakdown
 from . import test_sale_qty_raise
+from . import test_sale_popover_lines
