@@ -137,3 +137,8 @@ class TestCompanySignatureUI(HttpCase):
         body = mails.body_html
         self.assertEqual(body.count('class="o-signature-container"'), 1)
         self.assertIn(PHONE, body.split('class="o-signature-container"')[1])
+
+    def test_copy_signature_html(self):
+        """My Preferences: « Copy signature HTML » puts the rendered HTML in the clipboard."""
+        self.assertIn(PHONE, self.user.signature)
+        self.start_tour("/odoo", "mail_company_signature_copy_html", login="sig_tour")
