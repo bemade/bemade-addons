@@ -1,6 +1,5 @@
 import operator as _op
 from collections import defaultdict
-from datetime import date
 
 from odoo import fields, models, api, _
 
@@ -35,6 +34,13 @@ class Partner(models.Model):
         compute_sudo=True,
         search="_search_on_hold",
     )
+    hold_postponed_until = fields.Date(
+        string="Hold Postponed Until",
+        help="The partner should be on credit hold, but the hold is postponed "
+        "until this date (its own postponement or its company's).",
+        compute="_compute_on_hold",
+        compute_sudo=True,
+    )
     # Upstream account_followup defines total_due as a non-stored Monetary
     # without a search method, which makes modern Odoo's view validator reject
     # the "Overdue Invoices" filter (domain=[('total_due','>',0)]) in
@@ -57,7 +63,7 @@ class Partner(models.Model):
             raise NotImplementedError(
                 _("Unsupported operator %r for on_hold search.") % operator
             )
-        today = date.today()
+        today = self._credit_hold_today()
         # Partners whose own hold_bg is on with no active postpone.
         held_directly = self.with_context(active_test=False).search([
             ("hold_bg", "=", True),
@@ -113,29 +119,58 @@ class Partner(models.Model):
             return [("id", "not in", list(explicit_partners - explicit_match))]
         return [("id", "in", list(explicit_match))]
 
-    @api.depends("postpone_hold_until", "hold_bg", "commercial_partner_id.hold_bg")
-    def _compute_on_hold(self):
-        for rec in self:
-            # If the parent company is on hold, so are all its sub-contacts and subsidiaries
-            if rec.commercial_partner_id != rec and rec.commercial_partner_id.hold_bg:
-                if not (
-                    rec.commercial_partner_id.postpone_hold_until
-                    and rec.commercial_partner_id.postpone_hold_until > date.today()
-                ):
-                    rec.on_hold = True
-                    continue
+    def _credit_hold_today(self):
+        """Today's date in the user's timezone, not the server's (UTC).
 
-            # If there is no parent company or the parent is not on hold, we compute for ourselves
-            if rec.hold_bg and not (
-                rec.postpone_hold_until and rec.postpone_hold_until > date.today()
-            ):
-                rec.on_hold = True
-            else:
-                rec.on_hold = False
+        A postponement "until the 20th" must end at local midnight, not at
+        19:00 or 20:00 the evening before. Falls back to the company's
+        timezone (cron and system users usually have none), then to UTC.
+        """
+        tz = (
+            self.env.context.get("tz")
+            or self.env.user.tz
+            or self.env.company.partner_id.tz
+        )
+        return fields.Date.context_today(self.with_context(tz=tz))
+
+    @api.depends(
+        "postpone_hold_until",
+        "hold_bg",
+        "commercial_partner_id.hold_bg",
+        "commercial_partner_id.postpone_hold_until",
+    )
+    @api.depends_context("tz", "uid")
+    def _compute_on_hold(self):
+        today = self._credit_hold_today()
+
+        def postponed(partner):
+            return partner.postpone_hold_until and partner.postpone_hold_until > today
+
+        for rec in self:
+            commercial = rec.commercial_partner_id
+            # The commercial entity's hold covers all its contacts; each level
+            # can be postponed on its own.
+            held = [p for p in (commercial, rec) if p and p.hold_bg]
+            if commercial == rec:
+                held = held[:1]
+            active = [p for p in held if not postponed(p)]
+            rec.on_hold = bool(active)
+            # Postponed but not on hold: the hold comes back on the earliest
+            # postponement end.
+            rec.hold_postponed_until = (
+                not active
+                and held
+                and min(p.postpone_hold_until for p in held)
+            ) or False
 
     @api.autovacuum
     def _cleanup_expired_hold_postponements(self):
-        expired_holds = self.search([("postpone_hold_until", "<=", date.today())])
+        # Strictly before UTC today: whatever the user's timezone (all within
+        # a day of UTC), such a postponement has ended. Clearing one that ends
+        # today could cut it short by a few hours west of Greenwich.
+        expired_holds = self.search(
+            [("postpone_hold_until", "<", fields.Date.today())]
+        )
         expired_holds.write({"postpone_hold_until": False})
 
     def action_credit_hold(self):
