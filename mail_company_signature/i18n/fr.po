@@ -231,6 +231,11 @@ msgstr ""
 "inclus; il est ensuite retiré automatiquement."
 
 #. module: mail_company_signature
+#: model_terms:ir.ui.view,arch_db:mail_company_signature.view_users_form_simple_modif
+msgid "Copy signature HTML"
+msgstr "Copier le HTML de la signature"
+
+#. module: mail_company_signature
 #: model_terms:ir.ui.view,arch_db:mail_company_signature.view_users_form
 #: model_terms:ir.ui.view,arch_db:mail_company_signature.view_users_form_simple_modif
 msgid ""

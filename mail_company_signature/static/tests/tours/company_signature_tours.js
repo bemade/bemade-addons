@@ -119,3 +119,40 @@ registry.category("web_tour.tours").add("mail_company_signature_full_composer", 
     {content: "Dialog closed", trigger: "body:not(:has(.modal))"},
   ],
 });
+
+registry.category("web_tour.tours").add("mail_company_signature_copy_html", {
+  steps: () => [
+    {content: "Open the user menu", trigger: ".o_user_menu button", run: "click"},
+    {
+      content: "Open My Preferences",
+      trigger: "[data-menu='preferences']",
+      run: "click",
+    },
+    {
+      content: "The rendered signature is shown",
+      trigger: ".modal [name='signature']:contains('Intégrateur')",
+      run() {
+        // Headless Chrome may refuse clipboard access: record what is copied.
+        window.__copiedSignature = null;
+        navigator.clipboard.writeText = async (value) => {
+          window.__copiedSignature = String(value);
+        };
+      },
+    },
+    {
+      content: "Click « Copy signature HTML »",
+      trigger: ".modal .o_company_signature_copy button",
+      run: "click",
+    },
+    {
+      content: "The signature HTML is in the clipboard",
+      trigger: ".modal .o_company_signature_copy",
+      run() {
+        const copied = window.__copiedSignature || "";
+        if (!copied.includes("<p") || !copied.includes("514-555-0100")) {
+          throw new Error(`Unexpected clipboard content: ${copied}`);
+        }
+      },
+    },
+  ],
+});
