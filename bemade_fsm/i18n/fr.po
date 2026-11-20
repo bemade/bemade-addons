@@ -585,6 +585,7 @@ msgstr "Pièce jointe principale"
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.bemade_fsm_project_task_form_inherit
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.project_task_view_kanban_fsm_site_note
 msgid "Mark as Delivered"
 msgstr "Marquer comme livré"
 

@@ -123,6 +123,27 @@
         <field name="arch" type="xml">
             <xpath expr="//kanban/field[@name='stage_id']" position="after">
                 <field name="fsm_site_note" />
+                <field name="parent_id" />
+                <field name="partner_id" />
+                <field name="display_mark_as_done_primary" />
+                <field name="display_mark_as_done_secondary" />
+                <field name="has_template_ancestor" />
+                <field name="has_project_template" />
+            </xpath>
+            <!-- Task #1727 round 4: « Mark as Delivered » on the card opens the
+                 same close-out window (site note, to-dos for the next visit) as
+                 the form button. Same audience (managers) and same tasks
+                 (open, top-level, with a customer) as the form. -->
+            <xpath expr="//t[@t-name='card']//footer" position="inside">
+                <button
+          name="action_fsm_validate"
+          type="object"
+          string="Mark as Delivered"
+          class="btn btn-sm btn-secondary ms-auto o_fsm_kanban_mark_delivered"
+          context="{'fsm_site_note_prompt': True}"
+          groups="industry_fsm.group_fsm_manager"
+          invisible="not (display_mark_as_done_primary or display_mark_as_done_secondary) or has_template_ancestor or has_project_template or parent_id or not partner_id"
+        />
             </xpath>
             <xpath
         expr="//t[@t-name='card']//footer//field[@name='priority']"
