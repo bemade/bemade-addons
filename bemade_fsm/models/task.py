@@ -72,18 +72,6 @@ class Task(models.Model):
         copy=False,
     )
 
-    fsm_carried_todo_ids = fields.One2many(
-        "fsm.carried.todo",
-        "target_task_id",
-        string="Carried to-dos",
-        help="The « to do on the next visit » this subtask was created for.",
-    )
-    fsm_carried_todo_count = fields.Integer(
-        string="To-dos from last visit",
-        compute="_compute_fsm_carried_todo_count",
-        help="Carried to-dos still to do on this visit's subtasks.",
-    )
-
     # Work order (SVR) report: dot colour = the state's native screen colour,
     # label = 3-way grouping (done / waiting / not done).
     _REPORT_STATE_COLOURS = {
@@ -171,28 +159,6 @@ class Task(models.Model):
                 }
             }
 
-    def _compute_fsm_carried_todo_count(self):
-        counts = {}
-        if self.ids:
-            groups = self.env["fsm.carried.todo"].sudo()._read_group(
-                [("target_visit_id", "in", self.ids), ("state", "=", "scheduled")],
-                ["target_visit_id"],
-                ["__count"],
-            )
-            counts = {visit.id: count for visit, count in groups}
-        for task in self:
-            task.fsm_carried_todo_count = counts.get(task.id, 0)
-
-    def _fsm_carried_todo_sites(self):
-        """Sites of the open top-level FSM tasks of ``self``."""
-        return self.filtered(
-            lambda t: t.is_fsm
-            and not t.parent_id
-            and t.partner_id
-            and not t.is_template
-            and t.state not in CLOSED_STATES
-        ).partner_id
-
     def _compute_is_closed(self):
         for rec in self:
             rec.is_closed = rec.state in CLOSED_STATES
@@ -237,10 +203,6 @@ class Task(models.Model):
                     and rec.sale_order_id.site_contacts
                 ):
                     rec.site_contacts = rec.sale_order_id.site_contacts
-        if not self.env.context.get("fsm_carried_todo_skip"):
-            self.env["fsm.carried.todo"]._attach_pending_for_sites(
-                res._fsm_carried_todo_sites()
-            )
         return res
 
     def _next_work_order_number(self, next_numbers):
@@ -355,30 +317,6 @@ class Task(models.Model):
                 all_children = rec._get_all_subtasks()
                 if all_children:
                     all_children.write(date_vals)
-        if not self.env.context.get("fsm_carried_todo_skip"):
-            if "state" in vals:
-                todos = self.env["fsm.carried.todo"].sudo().search(
-                    [("target_task_id", "in", self.ids)]
-                )
-                todos._on_target_state_change()
-            if {
-                "state",
-                "partner_id",
-                "project_id",
-                "parent_id",
-                "planned_date_begin",
-            } & set(vals):
-                self.env["fsm.carried.todo"]._attach_pending_for_sites(
-                    self._fsm_carried_todo_sites()
-                )
-        return res
-
-    def unlink(self):
-        todos = self.env["fsm.carried.todo"].sudo().search(
-            [("target_task_id", "in", (self | self._get_all_subtasks()).ids)]
-        )
-        res = super().unlink()
-        todos.exists()._on_target_deleted()
         return res
 
     @api.depends("sale_order_id")

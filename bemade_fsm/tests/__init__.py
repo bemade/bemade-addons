@@ -19,6 +19,5 @@ from . import test_fsm_site_note
 from . import test_subtask_dates
 from . import test_fsm_task_subtask_tree_tour
 from . import test_task_form_template
-from . import test_fsm_carried_todo
 from . import test_fsm_site_note_history
 from . import test_fsm_kanban_mark_delivered

@@ -8,23 +8,6 @@
       ref="fsm_equipment.partner_equipment_location_view_form"
     />
         <field name="arch" type="xml">
-            <div name="button_box" position="inside">
-                <button
-          name="action_view_fsm_carried_todos"
-          type="object"
-          class="oe_stat_button"
-          icon="fa-list-ul"
-          groups="industry_fsm.group_fsm_user"
-          invisible="not fsm_carried_todo_ids"
-        >
-                    <field
-            name="fsm_carried_todo_count"
-            widget="statinfo"
-            string="Next-visit to-dos"
-          />
-                    <field name="fsm_carried_todo_ids" invisible="1" />
-                </button>
-            </div>
             <xpath expr="//sheet/notebook" position="inside">
                 <page
           name="fsm_site_notes"
