@@ -303,11 +303,11 @@ msgstr "Colis libres"
 #. module: stock_package_format
 #: model:ir.model.fields,help:stock_package_format.field_sale_order_line__package_format_free_stock
 msgid ""
-"Free stock of the product in the warehouse: unreserved whole packages per "
-"format, opened packages and loose stock."
+"Free stock of the product in the warehouse, one format per line: unreserved "
+"whole packages per format, opened packages and loose stock."
 msgstr ""
-"Stock libre du produit dans l'entrepôt : colis entiers non réservés par "
-"format, colis ouverts et vrac."
+"Stock libre du produit dans l'entrepôt, un format par ligne : colis entiers "
+"non réservés par format, colis ouverts et vrac."
 
 #. module: stock_package_format
 #: model:ir.model.fields,help:stock_package_format.field_stock_package_format_golive_wizard__loose_quantity
@@ -554,8 +554,8 @@ msgstr "Ouvrir"
 #. module: stock_package_format
 #. odoo-python
 #: code:addons/stock_package_format/models/sale_order_line.py:0
-msgid "Open %(packages)s to cover this line"
-msgstr "Ouvrir %(packages)s pour couvrir cette ligne"
+msgid "Open to cover this line:"
+msgstr "Ouvrir pour couvrir cette ligne :"
 
 #. module: stock_package_format
 #: model:res.groups,comment:stock_package_format.group_package_open
@@ -578,6 +578,15 @@ msgstr "Ouvrir des colis"
 #: model_terms:ir.ui.view,arch_db:stock_package_format.view_picking_form_package_format
 msgid "Open the proposed package(s)"
 msgstr "Ouvrir le(s) colis proposé(s)"
+
+#. module: stock_package_format
+#: model:ir.model.fields,help:stock_package_format.field_sale_order_line__package_format_proposal
+msgid ""
+"Packages to open to cover this line: a heading, then one package format per "
+"line."
+msgstr ""
+"Colis à ouvrir pour couvrir cette ligne : un titre, puis un format de colis "
+"par ligne."
 
 #. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_sale_order_line__package_format_proposal

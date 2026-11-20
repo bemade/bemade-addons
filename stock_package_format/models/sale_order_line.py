@@ -22,14 +22,17 @@ class SaleOrderLine(models.Model):
     package_format_availability = fields.Char(
         "Package availability", compute="_compute_package_format_availability"
     )
-    package_format_proposal = fields.Char(
-        "Open to cover", compute="_compute_package_format_availability"
+    package_format_proposal = fields.Text(
+        "Open to cover",
+        compute="_compute_package_format_availability",
+        help="Packages to open to cover this line: a heading, then one package "
+        "format per line.",
     )
-    package_format_free_stock = fields.Char(
+    package_format_free_stock = fields.Text(
         "Free stock per format",
         compute="_compute_package_format_availability",
-        help="Free stock of the product in the warehouse: unreserved whole "
-        "packages per format, opened packages and loose stock.",
+        help="Free stock of the product in the warehouse, one format per line: "
+        "unreserved whole packages per format, opened packages and loose stock.",
     )
 
     def _package_format_uom(self):
@@ -59,9 +62,11 @@ class SaleOrderLine(models.Model):
             if not product.uses_package_rule or not location or line.display_type:
                 continue
             if (product, location) not in free_stock:
-                free_stock[product, location] = product._package_format_summary(
-                    product._package_format_breakdown(location=location, free=True)
-                )
+                free_stock[product, location] = "\n".join(
+                    product._package_format_summary_lines(
+                        product._package_format_breakdown(location=location, free=True)
+                    )
+                ) or self.env._("No packages in stock")
             line.package_format_free_stock = free_stock[product, location]
             fmt = line._package_format_uom()
             if fmt:
@@ -100,9 +105,8 @@ class SaleOrderLine(models.Model):
                     lambda m: m.state not in ("done", "cancel")
                 ).package_format_proposal_ids
                 if proposal:
-                    line.package_format_proposal = self.env._(
-                        "Open %(packages)s to cover this line",
-                        packages=product._package_format_describe_packages(proposal),
+                    line.package_format_proposal = line._package_format_proposal_text(
+                        proposal
                     )
             elif line.state in ("draft", "sent"):
                 need = line.product_uom_id._compute_quantity(
@@ -111,10 +115,17 @@ class SaleOrderLine(models.Model):
                 if product.uom_id.compare(need, 0) > 0:
                     packages = product._package_format_propose_open(need, location)
                     if packages:
-                        line.package_format_proposal = self.env._(
-                            "Open %(packages)s to cover this line",
-                            packages=product._package_format_describe_packages(packages),
+                        line.package_format_proposal = line._package_format_proposal_text(
+                            packages
                         )
+
+    def _package_format_proposal_text(self, packages):
+        """« Open to cover this line: », then one package format per line."""
+        self.ensure_one()
+        return "\n".join(
+            [self.env._("Open to cover this line:")]
+            + self.product_id._package_format_describe_packages_lines(packages)
+        )
 
     def _package_format_buy_plan(self):
         """Packages to buy per line, computed before confirmation (free

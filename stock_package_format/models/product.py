@@ -286,7 +286,11 @@ class ProductProduct(models.Model):
         return taken if partial else None
 
     def _package_format_describe_packages(self, packages):
-        """« 1 × Drum 5 ft³ (5 ft³) » for a proposal."""
+        """« 1 × Drum 5 ft³ (5 ft³), 3 × Bag 1 ft³ (3 ft³) » for a proposal."""
+        return ", ".join(self._package_format_describe_packages_lines(packages))
+
+    def _package_format_describe_packages_lines(self, packages):
+        """One « 1 × Drum 5 ft³ (5 ft³) » per package type of a proposal."""
         self.ensure_one()
         parts = []
         for package_type, pkgs in packages.grouped("package_type_id").items():
@@ -302,7 +306,7 @@ class ProductProduct(models.Model):
                     self.uom_id.name,
                 )
             )
-        return ", ".join(parts)
+        return parts
 
     def _package_format_qty_str(self, qty):
         return ("%.4f" % qty).rstrip("0").rstrip(".")
@@ -374,6 +378,12 @@ class ProductProduct(models.Model):
     def _package_format_summary(self, breakdown=None):
         """« 12 × Bag · 3 × Drum · opened: 1 × Drum (1.8 ft³) · loose: 2 ft³ »
         (by default over the internal locations of the current companies)."""
+        lines = self._package_format_summary_lines(breakdown)
+        return " · ".join(lines) or self.env._("No packages in stock")
+
+    def _package_format_summary_lines(self, breakdown=None):
+        """The parts of :meth:`_package_format_summary`, one per format
+        (whole packages, then opened packages, then loose stock)."""
         if breakdown is None:
             breakdown = self._package_format_breakdown()
         lines = []
@@ -398,7 +408,7 @@ class ProductProduct(models.Model):
                     uom=uom_name,
                 )
             )
-        return " · ".join(lines) or self.env._("No packages in stock")
+        return lines
 
     @api.model
     def _package_format_count(self, breakdown):
