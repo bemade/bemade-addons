@@ -8,29 +8,13 @@
       ref="fsm_equipment.partner_equipment_location_view_form"
     />
         <field name="arch" type="xml">
-            <div name="button_box" position="inside">
-                <button
-          name="action_view_fsm_carried_todos"
-          type="object"
-          class="oe_stat_button"
-          icon="fa-list-ul"
-          groups="industry_fsm.group_fsm_user"
-          invisible="not fsm_carried_todo_ids"
-        >
-                    <field
-            name="fsm_carried_todo_count"
-            widget="statinfo"
-            string="Next-visit to-dos"
-          />
-                    <field name="fsm_carried_todo_ids" invisible="1" />
-                </button>
-            </div>
-            <xpath expr="//sheet/notebook" position="before">
-                <div
-          name="fsm_site_note_block"
-          class="mb-3"
+            <xpath expr="//sheet/notebook" position="inside">
+                <page
+          name="fsm_site_notes"
+          string="Site Notes"
           groups="industry_fsm.group_fsm_user"
         >
+                <div name="fsm_site_note_block" class="mb-3">
                     <label for="fsm_site_note" class="fw-bold" />
                     <field
             name="fsm_site_note"
@@ -40,7 +24,26 @@
                     <div class="text-muted small">
                         Shown as a banner on every service task at this address until cleared.
                     </div>
+                    <div
+            class="mt-2 o_fsm_site_note_history"
+            invisible="not fsm_site_note_history_ids"
+          >
+                        <div class="fw-bold small">History</div>
+                        <field
+              name="fsm_site_note_history_ids"
+              readonly="1"
+              nolabel="1"
+            >
+                            <list create="0" delete="0" limit="10">
+                                <field name="note_datetime" />
+                                <field name="author_id" widget="many2one_avatar_user" />
+                                <field name="content" />
+                                <field name="task_id" optional="show" />
+                            </list>
+                        </field>
+                    </div>
                 </div>
+                </page>
             </xpath>
             <page name="equipment" position="attributes">
                 <attribute name="invisible">site_ids</attribute>

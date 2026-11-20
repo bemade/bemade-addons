@@ -1,4 +1,7 @@
+from markupsafe import Markup, escape
+
 from odoo import fields, models, api, Command
+from odoo.exceptions import AccessError, UserError
 from odoo.addons.project.models.project_task import CLOSED_STATES
 import re
 
@@ -69,28 +72,12 @@ class Task(models.Model):
         copy=False,
     )
 
-    fsm_carried_todo_ids = fields.One2many(
-        "fsm.carried.todo",
-        "target_task_id",
-        string="Carried to-dos",
-        help="The « to do on the next visit » this subtask was created for.",
-    )
-    fsm_carried_todo_count = fields.Integer(
-        string="To-dos from last visit",
-        compute="_compute_fsm_carried_todo_count",
-        help="Carried to-dos still to do on this visit's subtasks.",
-    )
-
-    # Work order (SVR) report: dot colour = the state's native screen colour,
-    # label = 3-way grouping (done / waiting / not done).
-    _REPORT_STATE_COLOURS = {
-        "01_in_progress": "#6c757d",
-        "02_changes_requested": "#f0ad4e",
-        "03_approved": "#28a745",
-        "04_waiting_normal": "#17a2b8",
-        "1_done": "#28a745",
-        "1_canceled": "#dc3545",
-    }
+    # Work order (SVR) report: the Status column groups the states in three
+    # labels (done / waiting / not done), and each label has ONE dot colour so
+    # the colour always matches the label: done green, waiting blue, not done grey.
+    _REPORT_STATE_DONE_COLOUR = "#28a745"
+    _REPORT_STATE_WAITING_COLOUR = "#17a2b8"
+    _REPORT_STATE_NOT_DONE_COLOUR = "#6c757d"
 
     def _get_report_state_indicator(self, lang=None):
         """Return ``(label, hex colour)`` for the work order report Status column.
@@ -101,12 +88,10 @@ class Task(models.Model):
         self.ensure_one()
         env = self.with_context(lang=lang).env if lang else self.env
         if self.state == "1_done":
-            label = env._("Done")
-        elif self.state in ("03_approved", "04_waiting_normal"):
-            label = env._("Waiting")
-        else:
-            label = env._("Not done")
-        return label, self._REPORT_STATE_COLOURS.get(self.state, "#6c757d")
+            return env._("Done"), self._REPORT_STATE_DONE_COLOUR
+        if self.state in ("03_approved", "04_waiting_normal"):
+            return env._("Waiting"), self._REPORT_STATE_WAITING_COLOUR
+        return env._("Not done"), self._REPORT_STATE_NOT_DONE_COLOUR
 
     def _apply_template_to_self(self, template=None):
         """Apply a task template to this task record.
@@ -168,28 +153,6 @@ class Task(models.Model):
                 }
             }
 
-    def _compute_fsm_carried_todo_count(self):
-        counts = {}
-        if self.ids:
-            groups = self.env["fsm.carried.todo"].sudo()._read_group(
-                [("target_visit_id", "in", self.ids), ("state", "=", "scheduled")],
-                ["target_visit_id"],
-                ["__count"],
-            )
-            counts = {visit.id: count for visit, count in groups}
-        for task in self:
-            task.fsm_carried_todo_count = counts.get(task.id, 0)
-
-    def _fsm_carried_todo_sites(self):
-        """Sites of the open top-level FSM tasks of ``self``."""
-        return self.filtered(
-            lambda t: t.is_fsm
-            and not t.parent_id
-            and t.partner_id
-            and not t.is_template
-            and t.state not in CLOSED_STATES
-        ).partner_id
-
     def _compute_is_closed(self):
         for rec in self:
             rec.is_closed = rec.state in CLOSED_STATES
@@ -234,10 +197,6 @@ class Task(models.Model):
                     and rec.sale_order_id.site_contacts
                 ):
                     rec.site_contacts = rec.sale_order_id.site_contacts
-        if not self.env.context.get("fsm_carried_todo_skip"):
-            self.env["fsm.carried.todo"]._attach_pending_for_sites(
-                res._fsm_carried_todo_sites()
-            )
         return res
 
     def _next_work_order_number(self, next_numbers):
@@ -352,30 +311,6 @@ class Task(models.Model):
                 all_children = rec._get_all_subtasks()
                 if all_children:
                     all_children.write(date_vals)
-        if not self.env.context.get("fsm_carried_todo_skip"):
-            if "state" in vals:
-                todos = self.env["fsm.carried.todo"].sudo().search(
-                    [("target_task_id", "in", self.ids)]
-                )
-                todos._on_target_state_change()
-            if {
-                "state",
-                "partner_id",
-                "project_id",
-                "parent_id",
-                "planned_date_begin",
-            } & set(vals):
-                self.env["fsm.carried.todo"]._attach_pending_for_sites(
-                    self._fsm_carried_todo_sites()
-                )
-        return res
-
-    def unlink(self):
-        todos = self.env["fsm.carried.todo"].sudo().search(
-            [("target_task_id", "in", (self | self._get_all_subtasks()).ids)]
-        )
-        res = super().unlink()
-        todos.exists()._on_target_deleted()
         return res
 
     @api.depends("sale_order_id")
@@ -443,6 +378,73 @@ class Task(models.Model):
             "target": "new",
             "context": {"fsm_site_note_prompt": False},
         }
+
+    def action_open_fsm_site_note_edit(self):
+        """« Update site note » on a visit: open the small window on the
+        current note of the task's site (all field service users)."""
+        self.ensure_one()
+        wizard = self.env["fsm.site.note.edit.wizard"].create(
+            {"task_id": self.id, "note": self.partner_id.fsm_site_note}
+        )
+        return {
+            "name": self.env._("Update site note"),
+            "type": "ir.actions.act_window",
+            "res_model": "fsm.site.note.edit.wizard",
+            "res_id": wizard.id,
+            "view_mode": "form",
+            "views": [
+                [self.env.ref("bemade_fsm.fsm_site_note_edit_wizard_view_form").id, "form"]
+            ],
+            "target": "new",
+        }
+
+    def _fsm_update_site_note(self, note):
+        """Write ``note`` as the site note of this visit's site.
+
+        Shared by the « Update site note » window and the close-out wizard so
+        both log identically: one history row (author, date, this visit) via
+        the res.partner write hook and a bilingual note on the visit.
+
+        The partner is written with sudo so that technicians who cannot edit
+        contacts can still update the note -- limited to this single field,
+        to field service users, and to an FSM task the user can read.
+        Returns True when the note changed."""
+        self.ensure_one()
+        if not self.env.su and not self.env.user.has_group(
+            "industry_fsm.group_fsm_user"
+        ):
+            raise AccessError(
+                self.env._("Only field service users can update the site note.")
+            )
+        self.check_access("read")
+        if not self.is_fsm:
+            raise UserError(
+                self.env._("The site note can only be updated from a field service task.")
+            )
+        partner = self.partner_id
+        if not partner:
+            raise UserError(self.env._("This task has no customer / site."))
+        note = (note or "").strip() or False
+        if note == ((partner.sudo().fsm_site_note or "").strip() or False):
+            return False
+        partner.sudo().with_context(fsm_site_note_task_id=self.id).write(
+            {"fsm_site_note": note}
+        )
+        if note:
+            body = Markup(
+                "<p>Note du site mise à jour / Site note updated:</p><p>%s</p>"
+            ) % Markup("<br/>").join(escape(line) for line in note.splitlines())
+        else:
+            body = Markup("<p>Note du site effacée / Site note cleared</p>")
+        # sudo: a technician may read a visit without being allowed to post on
+        # it; the note is still credited to them.
+        self.sudo().message_post(
+            body=body,
+            message_type="comment",
+            subtype_xmlid="mail.mt_note",
+            author_id=self.env.user.partner_id.id,
+        )
+        return True
 
     def _get_full_hierarchy(self):
         if self.child_ids:

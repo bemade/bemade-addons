@@ -5,10 +5,10 @@ Acceptance criteria
 UC: the task table of the work order report shows, for each top-level task of an
 intervention, a coloured dot and a short label instead of the stage name.
 
-1. The dot colour is the state's native screen colour:
-   01_in_progress grey #6c757d, 02_changes_requested orange #f0ad4e,
-   03_approved green #28a745, 04_waiting_normal blue #17a2b8,
-   1_done green #28a745, 1_canceled red #dc3545.
+1. The dot colour follows the label, one colour per label:
+   Done green #28a745, Waiting blue #17a2b8, Not done grey #6c757d
+   (so 03_approved is blue like 04_waiting_normal, and 02_changes_requested
+   and 1_canceled are grey like 01_in_progress).
 2. The label groups the states in three: Done (1_done), Waiting (03_approved,
    04_waiting_normal), Not done (01_in_progress, 02_changes_requested, 1_canceled).
 3. The rendered report shows the dot (inline-styled, PDF-safe) and the label in the
@@ -29,11 +29,11 @@ from .test_bemade_fsm_common import BemadeFSMBaseTest
 class TestTaskReportStateDots(BemadeFSMBaseTest):
     EXPECTED = {
         "01_in_progress": ("Not done", "#6c757d"),
-        "02_changes_requested": ("Not done", "#f0ad4e"),
-        "03_approved": ("Waiting", "#28a745"),
+        "02_changes_requested": ("Not done", "#6c757d"),
+        "03_approved": ("Waiting", "#17a2b8"),
         "04_waiting_normal": ("Waiting", "#17a2b8"),
         "1_done": ("Done", "#28a745"),
-        "1_canceled": ("Not done", "#dc3545"),
+        "1_canceled": ("Not done", "#6c757d"),
     }
 
     def _make_work_order(self, lang=None):
@@ -61,6 +61,9 @@ class TestTaskReportStateDots(BemadeFSMBaseTest):
             ("Task Alpha", "1_done"),
             ("Task Bravo", "01_in_progress"),
             ("Task Charlie", "04_waiting_normal"),
+            ("Task Echo", "03_approved"),
+            ("Task Foxtrot", "1_canceled"),
+            ("Task Golf", "02_changes_requested"),
         ]
         for name, _state in states:
             tasks |= self.env["project.task"].create(
@@ -116,6 +119,9 @@ class TestTaskReportStateDots(BemadeFSMBaseTest):
             "Task Alpha": ("Done", "#28a745"),
             "Task Bravo": ("Not done", "#6c757d"),
             "Task Charlie": ("Waiting", "#17a2b8"),
+            "Task Echo": ("Waiting", "#17a2b8"),
+            "Task Foxtrot": ("Not done", "#6c757d"),
+            "Task Golf": ("Not done", "#6c757d"),
         }
         self.assertEqual(set(cells), set(expected))
         for name, (label, colour) in expected.items():

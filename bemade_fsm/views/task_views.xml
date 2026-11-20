@@ -76,20 +76,27 @@
               class="o_fsm_site_note_text"
             />
                     </div>
+                    <button
+            name="action_open_fsm_site_note_edit"
+            type="object"
+            string="Update site note"
+            icon="fa-pencil"
+            class="btn btn-sm btn-secondary align-self-start o_fsm_site_note_edit"
+            groups="industry_fsm.group_fsm_user"
+          />
                 </div>
                 <div
-          role="alert"
-          class="alert alert-info d-flex gap-2 mb-0 o_fsm_carried_todo_banner"
-          invisible="not is_fsm or parent_id or not fsm_carried_todo_count"
+          class="d-flex justify-content-end mb-0 o_fsm_site_note_add"
+          invisible="not is_fsm or fsm_site_note"
+          groups="industry_fsm.group_fsm_user"
         >
-                    <i class="fa fa-list-ul fa-lg mt-1" role="img" title="From last visit" />
-                    <div class="flex-grow-1">
-                        <field name="fsm_carried_todo_count" class="fw-bold" />
-                        <span class="fw-bold">
-                            à faire de la dernière visite / to-do(s) from last visit
-                        </span>
-                        <span class="text-muted"> (Sous-tâches / Sub-tasks)</span>
-                    </div>
+                    <button
+            name="action_open_fsm_site_note_edit"
+            type="object"
+            string="Update site note"
+            icon="fa-thumb-tack"
+            class="btn btn-sm btn-link"
+          />
                 </div>
             </xpath>
         </field>
@@ -102,6 +109,27 @@
         <field name="arch" type="xml">
             <xpath expr="//kanban/field[@name='stage_id']" position="after">
                 <field name="fsm_site_note" />
+                <field name="parent_id" />
+                <field name="partner_id" />
+                <field name="display_mark_as_done_primary" />
+                <field name="display_mark_as_done_secondary" />
+                <field name="has_template_ancestor" />
+                <field name="has_project_template" />
+            </xpath>
+            <!-- Task #1727 round 4: « Mark as Delivered » on the card opens the
+                 same close-out window (site note, to-dos for the next visit) as
+                 the form button. Same audience (managers) and same tasks
+                 (open, top-level, with a customer) as the form. -->
+            <xpath expr="//t[@t-name='card']//footer" position="inside">
+                <button
+          name="action_fsm_validate"
+          type="object"
+          string="Mark as Delivered"
+          class="btn btn-sm btn-secondary ms-auto o_fsm_kanban_mark_delivered"
+          context="{'fsm_site_note_prompt': True}"
+          groups="industry_fsm.group_fsm_manager"
+          invisible="not (display_mark_as_done_primary or display_mark_as_done_secondary) or has_template_ancestor or has_project_template or parent_id or not partner_id"
+        />
             </xpath>
             <xpath
         expr="//t[@t-name='card']//footer//field[@name='priority']"
