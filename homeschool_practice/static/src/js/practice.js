@@ -135,7 +135,9 @@
         var d = state.home;
         var into = d.xp - d.xp_level_start, span = d.xp_next_level - d.xp_level_start;
         var quests = d.quests.map(function (q) {
-            var prog = q.target > 1 ? '<span class="hp-q-prog">' + q.progress + " / " + q.target + "</span>" : "";
+            // the practice-time quest: the day's whole minutes, here only (never inside a session)
+            var prog = q.kind === "minutes" ? '<span class="hp-q-prog">' + Math.min(q.progress, q.target) + " / " + q.target + " " + esc(L.min || "min") + "</span>" :
+                (q.target > 1 ? '<span class="hp-q-prog">' + q.progress + " / " + q.target + "</span>" : "");
             return '<button class="hp-quest' + (q.done ? " is-done" : "") + '" data-quest="' + q.id + '"' + (q.done ? " disabled" : "") + ">" +
                 '<span class="hp-q-icon">' + (q.done ? "✅" : (q.kind === "surprise" ? "🎁" : "🎯")) + "</span>" +
                 '<span class="hp-q-label">' + esc(q.label) + "</span>" + prog + bar(q.progress, q.target) + "</button>";

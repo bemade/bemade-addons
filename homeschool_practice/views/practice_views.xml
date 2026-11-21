@@ -237,6 +237,14 @@
                             <field name="practice_handedness"/>
                             <field name="practice_weekdays"/>
                             <field name="practice_quests_per_day"/>
+                            <label for="practice_sessions_min" string="Sessions a day"/>
+                            <div class="o_row">
+                                <field name="practice_sessions_min" nolabel="1"/><span>to</span><field name="practice_sessions_max" nolabel="1"/>
+                            </div>
+                            <field name="practice_minutes_goal"/>
+                            <field name="practice_subject_quests"/>
+                            <field name="practice_ramp_weeks"/>
+                            <field name="practice_ramp_start" invisible="not practice_ramp_weeks" required="practice_ramp_weeks"/>
                             <field name="practice_threshold_override_ms"/>
                         </group>
                         <group string="Progress">
@@ -256,6 +264,9 @@
                         <field name="reward_balance_ids" nolabel="1" colspan="2"><list><field name="reward_type_id"/><field name="balance"/></list></field>
                     </group>
                     <button name="%(action_redeem_wizard)d" type="action" string="Record a reward used"/>
+                    <group string="Goals">
+                        <field name="practice_goal_ids" nolabel="1" colspan="2" context="{'default_student_id': id}"><list editable="bottom"><field name="period"/><field name="target"/><field name="target_all_quests" invisible="period != 'day'"/><field name="date_from"/></list></field>
+                    </group>
                     <group string="What goals pay">
                         <field name="reward_rule_ids" nolabel="1" colspan="2" context="{'default_student_id': id}"><list editable="bottom"><field name="goal_period"/><field name="reward_type_id"/><field name="amount"/><field name="date_from"/></list></field>
                     </group>

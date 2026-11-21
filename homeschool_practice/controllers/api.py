@@ -3,7 +3,8 @@
 
 Only the learner himself (``student.user_id``) may call it. Every payload is built by hand
 from an allowlist: no latency, threshold, timer, time limit or mastery verdict ever leaves
-the server (UC-11 §5). The item carries its answer so the screen shows right or wrong
+the server (UC-11 §5). The day's practice minutes travel only as the practice-time quest's
+progress on the home screen's quest card (UC-28): never in a lesson payload. The item carries its answer so the screen shows right or wrong
 without waiting for the network (UC-11 §6); the server still judges and records it."""
 from werkzeug.exceptions import Forbidden, NotFound
 
@@ -13,7 +14,8 @@ from odoo.http import request
 
 API = "/my/homeschool/practice/api"
 FORBIDDEN_KEYS = {"first_touch_ms", "submit_ms", "latency", "threshold", "timer", "time_limit", "state", "box",
-                  "due_on", "became_automatic", "outlier"}
+                  "due_on", "became_automatic", "outlier", "elapsed", "duration", "seconds", "clock", "countdown",
+                  "practice_seconds", "practice_minutes"}
 
 
 def learner_labels(env):
@@ -32,7 +34,7 @@ def learner_labels(env):
         "home": _("Back"), "exit": _("Back to today"), "offline": _("Connection lost: your answer is saved, retrying…"),
         "nothing": _("Nothing to practice here yet."), "new_unit": _("Something new!"), "got_it": _("Got it!"),
         "well_done": _("Well done for practicing!"), "pick": _("Choose what to practice"), "all": _("All"),
-        "figure": _("The figure"),
+        "figure": _("The figure"), "min": _("min"),
     }
 
 
@@ -79,7 +81,8 @@ class PracticeApi(http.Controller):
         out = {"xp": events.get("xp", 0)}
         if events.get("level_up"):
             out["level_up"] = {"from": events["level_up"]["from"], "to": events["level_up"]["to"]}
-        out["quests_done"] = [q.label for q in Quest.browse(events.get("quests_done", []))]
+        # the practice-time quest is celebrated on the home screen, never inside a session (UC-28)
+        out["quests_done"] = [q.label for q in Quest.browse(events.get("quests_done", [])) if q.kind != "minutes"]
         out["goals_reached"] = list(events.get("goals_reached", []))
         out["badges"] = [{"name": b.template_id.name, "icon": b.template_id.icon,
                           "unit": b.unit_id.name or ""} for b in Badge.browse(events.get("badges", []))]
@@ -138,7 +141,12 @@ class PracticeApi(http.Controller):
         surprise = quest._surprise_unit() if quest and quest.kind == "surprise" else None
         if surprise is not None and not surprise:
             raise NotFound()
-        deck = (surprise.deck_id if surprise else quest.deck_id) if quest else \
+        if quest and quest.kind == "subject_sessions":
+            deck = quest._subject_deck()
+        elif quest:
+            deck = surprise.deck_id if surprise else quest.deck_id
+        else:
+            deck = \
             request.env["homeschool.practice.deck"].sudo().browse(int(deck_id or 0))
         if deck not in decks:
             raise NotFound()

@@ -9,6 +9,8 @@ from odoo import api, fields, models
 
 QUEST_KINDS = [
     ("deck_session", "Finish sessions in a deck"),
+    ("subject_sessions", "Finish sessions in a subject (any of its decks)"),
+    ("minutes", "Practice time today (minutes)"),
     ("surprise", "Surprise lessons (a unit the app picks)"),
     ("unit_session", "Finish a session on the unit that needs it most"),
     ("review_session", "Finish a review session"),
@@ -16,9 +18,14 @@ QUEST_KINDS = [
     ("perfect", "A session without a miss"),
     ("answers", "Answers given"),
 ]
-# what the day asks for, in sessions (a no-hint quest of one template target ≈ one session)
+# what the day asks for, in sessions (a no-hint quest of one template target ≈ one session);
+# the defaults of the learner's practice_sessions_min / practice_sessions_max
 DAY_SESSIONS = (3, 5)
-MAX_SESSIONS = {"deck_session": 3, "surprise": 2, "perfect": 2, "no_hint": 2}
+MAX_SESSIONS = {"deck_session": 3, "subject_sessions": 4, "surprise": 2, "perfect": 2, "no_hint": 2}
+GROWABLE_KINDS = ("deck_session", "subject_sessions", "surprise")  # may ask for more when the day's range needs it
+GROW_CEILING = 12  # … up to this many sessions for one quest
+DAILY_SHARE = 1 / 3  # a bigger day: the daily decks (tables) get at most about a third of its sessions …
+DAILY_CEILING = 5    # … and at most this many
 CHALLENGE_KINDS = ("perfect", "no_hint")
 SURPRISE_ODDS = 1 / 3      # about one day in three, when a unit is stale
 CHALLENGE_ODDS = 1 / 4     # a perfect / no-hint quest takes a rotation slot
@@ -31,7 +38,7 @@ class PracticeQuestTemplate(models.Model):
     _order = "sequence, id"
 
     name = fields.Char(required=True, translate=True,
-                       help="What the learner reads. May use {unit}, {deck}, {target} and {s} (plural mark).")
+                       help="What the learner reads. May use {unit}, {deck}, {subject}, {target} and {s} (plural mark).")
     sequence = fields.Integer(default=10)
     kind = fields.Selection(QUEST_KINDS, required=True)
     target = fields.Integer(default=1, help="For « no hint » and « answers »: the count for one session's worth.")
@@ -54,23 +61,30 @@ class PracticeQuest(models.Model):
     sequence = fields.Integer(default=10)
     deck_id = fields.Many2one("homeschool.practice.deck", ondelete="cascade")
     unit_id = fields.Many2one("homeschool.practice.unit", ondelete="cascade")
-    target = fields.Integer(default=1)
-    sessions = fields.Integer(default=1, help="How many sessions the quest asks for (the day asks for 3 to 5).")
+    subject_id = fields.Many2one("homeschool.subject", ondelete="cascade", help="Subject quests: any deck of it counts.")
+    target = fields.Integer(default=1, help="Sessions, answers, or minutes for the practice-time quest.")
+    sessions = fields.Integer(default=1, help="How many sessions the quest asks for (the learner's day range; "
+                                              "0 for the practice-time quest).")
     progress = fields.Integer()
     done = fields.Boolean()
     done_at = fields.Datetime()
     label = fields.Char(compute="_compute_label")
 
     _one_per_template_day = models.Constraint(
-        "unique NULLS NOT DISTINCT (student_id, template_id, day, deck_id, unit_id)",
-        "A quest template is drawn at most once a day per deck and unit.")
+        "unique NULLS NOT DISTINCT (student_id, template_id, day, deck_id, unit_id, subject_id)",
+        "A quest template is drawn at most once a day per deck, unit and subject.")
 
-    @api.depends("template_id.name", "unit_id.name", "deck_id.name", "target")
+    @api.depends("template_id.name", "unit_id.name", "deck_id.name", "subject_id.name", "target")
+    @api.depends_context("lang")
     def _compute_label(self):
+        french = (self.env.lang or "").startswith("fr")
         for q in self:
+            subject = q.subject_id.name or ""
+            if french:
+                subject = subject.lower()  # « 3 séances de math » : lower case after « de »
             q.label = (q.template_id.name or "").replace("{unit}", q.unit_id.name or "").replace(
-                "{deck}", q.deck_id.name or "").replace("{target}", str(q.target)).replace(
-                "{s}", "s" if q.target > 1 else "")
+                "{deck}", q.deck_id.name or "").replace("{subject}", subject).replace(
+                "{target}", str(q.target)).replace("{s}", "s" if q.target > 1 else "")
 
     # ------------------------------------------------------------------
     # drawing
@@ -83,13 +97,26 @@ class PracticeQuest(models.Model):
     def _draw(self, student, day=None, rng=None):
         """The day's quests, drawn once (idempotent). None on a rest day or without an unlocked unit.
 
+        The learner's effective volume (``student._practice_volume(day)``: his settings, along
+        his ramp) sizes the day: so many quests (never ramped; the practice-time quest is one of
+        them), a range of sessions and the practice-time goal. A bigger day makes the quests
+        bigger, not more numerous: the deck and subject quests ask for more sessions each (up to
+        ``GROW_CEILING``), while the daily decks (tables) keep about a third of a bigger day
+        (``DAILY_SHARE``, at most ``DAILY_CEILING``).
+
         1. every unmastered « daily » deck (times tables) gets a deck session quest;
         2. about one day in three, when a unit is stale, a « surprise lessons » quest — else,
            sometimes, a perfect / no-hint quest — takes a slot;
         3. the other slots rotate among the unlocked decks: least recently quested first
-           (ties: most due or new cards), never a deck twice a day; with too few decks, the
-           remaining slots take a surprise or a challenge quest;
-        4. the targets make the day ask for 3 to 5 sessions.
+           (ties: most due or new cards), never a deck twice a day; with subject quests on, a
+           subject with two or more rotation decks takes one subject quest instead of a quest
+           per deck; with too few decks, the remaining slots take a surprise or a challenge;
+        4. the targets make the day ask for the learner's range of sessions (varied); the deck
+           and subject quests ask for more each when their usual sizes cannot reach it (with a
+           practice-time quest and a single rotation slot left, only the surprise lessons, about
+           one day in three, may take that slot; on a bigger day the tables ask for about a third
+           of the sessions);
+        5. with a practice-time goal, a « practise N minutes » quest (no session of its own).
         ``rng`` (a ``random.Random``) is injectable; by default it is seeded by learner and day."""
         day = day or self._today(student)
         Quest = self.sudo()
@@ -100,25 +127,30 @@ class PracticeQuest(models.Model):
         if not need:
             return existing
         rng = rng or random.Random("%s-%s" % (student.id, day))
-        count = student.sudo().practice_quests_per_day or 3
+        me = student.sudo()
+        volume = student._practice_volume(day)  # the learner's settings, along his ramp
+        count = volume["quests"]
         Template = self.env["homeschool.practice.quest.template"].sudo()
         pool = Template.search(["|", ("company_id", "=", False), ("company_id", "=", student.company_id.id)])
         deck_t = pool.filtered(lambda t: t.kind == "deck_session")[:1]
         surprise_t = pool.filtered(lambda t: t.kind == "surprise")[:1]
+        subject_t = pool.filtered(lambda t: t.kind == "subject_sessions")[:1] if me.practice_subject_quests else Template
+        minutes_t = pool.filtered(lambda t: t.kind == "minutes")[:1] if volume["minutes"] > 0 else Template
+        slots = count - (1 if minutes_t else 0)  # the quests that ask for sessions
         due = defaultdict(int)
         decks = []
         for unit, n, _seen in need:
             due[unit.deck_id] += n
             if unit.deck_id not in decks:
                 decks.append(unit.deck_id)
-        picks = []  # (template, deck)
+        picks = []  # (template, deck, subject)
 
         # 1. tables (daily decks) until mastered, those that need it most first
         if deck_t:
             for deck in sorted(decks, key=lambda d: -due[d]):
-                if len(picks) < count and deck.quest_daily and not deck._mastered_by(student):
-                    picks.append((deck_t, deck))
-        mandatory = [d for _t, d in picks]
+                if len(picks) < slots and deck.quest_daily and not deck._mastered_by(student):
+                    picks.append((deck_t, deck, None))
+        mandatory = [d for _t, d, _s in picks]
 
         # 2. a surprise or a challenge on some days
         stale = student._practice_stale_units(day)
@@ -128,7 +160,7 @@ class PracticeQuest(models.Model):
         challenges = pool.filtered(lambda t: t.kind in CHALLENGE_KINDS)
 
         def challenge():
-            used = {t.id for t, _d in picks}
+            used = {t.id for t, _d, _s in picks}
             rest = challenges.filtered(lambda t: t.id not in used)
             fresh = rest.filtered(lambda t: t.id not in yesterday) or rest
             if not fresh:
@@ -141,6 +173,10 @@ class PracticeQuest(models.Model):
             extra = surprise_t if stale else None
         elif roll < SURPRISE_ODDS + CHALLENGE_ODDS:
             extra = challenge()
+        if minutes_t and slots - len(mandatory) < 2:
+            # the practice-time quest took a slot: the one rotation slot left stays a deck / subject
+            # quest, or becomes the surprise lessons (about one day in three); never a challenge
+            extra = extra if extra == surprise_t else None
 
         # 3. the rotation: least recently quested first, ties to the most due
         last = {}
@@ -148,43 +184,117 @@ class PracticeQuest(models.Model):
             for q in Quest.search([("student_id", "=", student.id), ("day", "<", day), ("deck_id", "!=", False),
                                    ("kind", "=", "deck_session")], order="day asc"):
                 last[q.deck_id.id] = q.day
-        rotation = sorted((d for d in decks if d not in mandatory),
-                          key=lambda d: (last.get(d.id, date.min), -due[d], d.sequence, d.id))
+        rotation_decks = [d for d in decks if d not in mandatory]
+        by_subject = defaultdict(int)
+        if subject_t:
+            for d in rotation_decks:
+                if d.subject_id:
+                    by_subject[d.subject_id] += 1
+            for q in Quest.search([("student_id", "=", student.id), ("day", "<", day), ("subject_id", "!=", False),
+                                   ("kind", "=", "subject_sessions")], order="day asc"):
+                for d in rotation_decks:
+                    if d.subject_id == q.subject_id:
+                        last[d.id] = max(last.get(d.id, date.min), q.day)
+        rotation = sorted(rotation_decks, key=lambda d: (last.get(d.id, date.min), -due[d], d.sequence, d.id))
         if deck_t:
+            subjects = set()
             for deck in rotation:
-                if len(picks) >= count - (1 if extra else 0):
+                if len(picks) >= slots - (1 if extra else 0):
                     break
-                picks.append((deck_t, deck))
-        if extra and len(picks) < count:
-            picks.append((extra, None))
+                if by_subject.get(deck.subject_id, 0) >= 2:
+                    if deck.subject_id not in subjects:
+                        subjects.add(deck.subject_id)
+                        picks.append((subject_t, None, deck.subject_id))
+                    continue
+                picks.append((deck_t, deck, None))
+        if extra and len(picks) < slots:
+            picks.append((extra, None, None))
         # too few decks: fill with a surprise (when a unit is stale), then challenges
-        if len(picks) < count and surprise_t and stale and surprise_t not in [t for t, _d in picks]:
-            picks.append((surprise_t, None))
-        while len(picks) < count:
+        if len(picks) < slots and surprise_t and stale and surprise_t not in [t for t, _d, _s in picks]:
+            picks.append((surprise_t, None, None))
+        while len(picks) < slots:
             t = challenge()
             if not t:
                 break
-            picks.append((t, None))
+            picks.append((t, None, None))
 
-        # 4. targets: the day asks for 3 to 5 sessions (varied)
-        caps = [MAX_SESSIONS.get(t.kind, 1) for t, _d in picks]
-        lo, hi = max(DAY_SESSIONS[0], len(picks)), max(min(DAY_SESSIONS[1], sum(caps)), len(picks))
-        total = rng.choice(range(min(lo, hi), hi + 1))
+        # 4. targets: the day asks for the learner's range of sessions (varied)
+        lo_day, hi_day = volume["sessions_min"], volume["sessions_max"]
+        caps = [MAX_SESSIONS.get(t.kind, 1) for t, _d, _s in picks]
+        daily = [i for i, (t, d, _s) in enumerate(picks) if t.kind == "deck_session" and d in mandatory]
+        growable = [i for i, (t, _d, _s) in enumerate(picks) if t.kind in GROWABLE_KINDS]
+
+        def daily_limit(total):
+            """A day bigger than the defaults: the daily decks get about a third of it, at most
+            DAILY_CEILING each (the defaults keep their sizes)."""
+            if total <= DAY_SESSIONS[1]:
+                return None
+            return max(1, min(DAILY_CEILING, int(total * DAILY_SHARE + 0.5)))
+
+        def grow(target):
+            limit = daily_limit(target)
+            if limit is not None:
+                for i in daily:
+                    caps[i] = min(caps[i], limit) if caps[i] > limit else caps[i]
+            ceiling = {i: (limit if i in daily and limit is not None else GROW_CEILING) for i in growable}
+            while sum(caps) < target and any(caps[i] < ceiling[i] for i in growable):
+                for i in growable:
+                    if sum(caps) < target and caps[i] < ceiling[i]:
+                        caps[i] += 1
+
+        grow(hi_day)
         sessions = [1] * len(picks)
-        for _i in range(total - len(picks)):
-            room = [i for i in range(len(picks)) if sessions[i] < caps[i]]
-            if not room:
-                break
-            sessions[rng.choice(room)] += 1
+        if picks:
+            lo, hi = max(lo_day, len(picks)), max(min(hi_day, sum(caps)), len(picks))
+            total = rng.choice(range(min(lo, hi), hi + 1))
+            grow(total)  # the tables' third of the day actually drawn; the others take the rest
+            for _i in range(total - len(picks)):
+                room = [i for i in range(len(picks)) if sessions[i] < caps[i]]
+                if not room:
+                    break
+                sessions[rng.choice(room)] += 1
         start_deck = need[0][0].deck_id
         vals = []
-        for (t, deck), n in zip(picks, sessions):
+        for (t, deck, subject), n in zip(picks, sessions):
             target = n * max(t.target, 1) if t.kind in ("no_hint", "answers") else n
             if not deck and t.kind in CHALLENGE_KINDS:
                 deck = start_deck  # where « Start » opens a session
             vals.append(dict(student_id=student.id, template_id=t.id, day=day, sequence=len(vals), sessions=n,
-                             target=target, deck_id=deck.id if deck else False))
+                             target=target, deck_id=deck.id if deck else False,
+                             subject_id=subject.id if subject else False))
+
+        # 5. the practice-time quest: no session of its own; progress = today's minutes so far
+        if minutes_t:
+            goal = volume["minutes"]
+            done_min = min(student._practice_minutes(day), goal)
+            vals.append(dict(student_id=student.id, template_id=minutes_t.id, day=day, sequence=len(vals), sessions=0,
+                             target=goal, progress=done_min, done=done_min >= goal,
+                             done_at=fields.Datetime.now() if done_min >= goal else False, deck_id=start_deck.id))
         return Quest.create(vals)
+
+    def _subject_deck(self):
+        """The deck a subject quest's « Start » opens: an unlocked deck of the subject, one
+        without a deck quest of its own today when possible, the one practised least today
+        (then the one practised longest ago; then the deck order)."""
+        self.ensure_one()
+        student = self.student_id
+        decks = self.env["homeschool.practice.unit.access"].sudo().search(
+            [("student_id", "=", student.id), ("state", "=", "unlocked")]).deck_id.filtered(
+            lambda d: d.subject_id == self.subject_id)
+        own = self.search([("student_id", "=", student.id), ("day", "=", self.day),
+                           ("kind", "=", "deck_session")]).deck_id
+        candidates = (decks - own) or decks
+        Session = self.env["homeschool.practice.session"].sudo()
+        done = Session.search([("student_id", "=", student.id), ("state", "=", "done"), ("item_count", ">", 0),
+                               ("deck_id", "in", candidates.ids)])
+        today = defaultdict(int)
+        last = {}
+        for s in done:
+            if student._practice_local_date(s.started_at) == self.day:
+                today[s.deck_id.id] += 1
+            last[s.deck_id.id] = max(last.get(s.deck_id.id, s.started_at), s.started_at)
+        return min(candidates, key=lambda d: (today[d.id], last.get(d.id, datetime.min), d.sequence, d.id)) \
+            if candidates else candidates
 
     def _surprise_unit(self):
         """The unit a surprise session opens: the stale unlocked unit practised longest ago
@@ -207,6 +317,16 @@ class PracticeQuest(models.Model):
         done = self.browse()
         for q in self.filtered(lambda q: not q.done):
             q.progress = min(q.progress + amount, q.target)
+            if q.progress >= q.target:
+                q.write({"done": True, "done_at": fields.Datetime.now()})
+                done |= q
+        return done
+
+    def _refresh_minutes(self):
+        """Practice-time quests: progress = the learner's whole minutes of practice that day."""
+        done = self.browse()
+        for q in self.filtered(lambda q: q.kind == "minutes" and not q.done):
+            q.progress = min(q.student_id._practice_minutes(q.day), q.target)
             if q.progress >= q.target:
                 q.write({"done": True, "done_at": fields.Datetime.now()})
                 done |= q
@@ -238,6 +358,7 @@ class PracticeSession(models.Model):
         done = quests.filtered(lambda q: q.kind == "answers")._bump()
         if attempt.correct and not attempt.hint_used:
             done |= quests.filtered(lambda q: q.kind == "no_hint")._bump()
+        done |= quests.filtered(lambda q: q.kind == "minutes")._refresh_minutes()
         self._quests_done(events, done)
         return res
 
@@ -247,6 +368,9 @@ class PracticeSession(models.Model):
             return res
         quests = self._todays_quests().filtered(lambda q: not q.done)
         done = quests.filtered(lambda q: q.kind == "deck_session" and q.deck_id == self.deck_id)._bump()
+        if self.deck_id.subject_id:
+            done |= quests.filtered(
+                lambda q: q.kind == "subject_sessions" and q.subject_id == self.deck_id.subject_id)._bump()
         if self.quest_id.kind == "surprise":
             done |= (quests & self.quest_id.sudo())._bump()
         if self.kind == "unit":

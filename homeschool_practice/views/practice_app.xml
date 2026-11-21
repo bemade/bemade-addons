@@ -29,7 +29,7 @@
                 <span class="o_hs_dash_line_text">
                     <span class="o_pk_row_title" t-out="quest['label']"/>
                     <span t-if="quest['target'] &gt; 1" class="o_pk_row_subtitle">
-                        <t t-out="quest['progress']"/> / <t t-out="quest['target']"/>
+                        <t t-out="quest['progress']"/> / <t t-out="quest['target']"/><t t-if="quest.get('minutes')"> <span>min</span></t>
                     </span>
                 </span>
                 <span t-if="quest['done']" class="o_pk_chip o_pk_chip_green">Done!</span>

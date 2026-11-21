@@ -774,7 +774,8 @@ msgstr "Premier toucher (ms)"
 #: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
 msgid ""
 "For the adults who follow the learner: the learner never sees this page."
-msgstr "Pour les adultes qui suivent l’élève : l’élève ne voit jamais cette page."
+msgstr ""
+"Pour les adultes qui suivent l’élève : l’élève ne voit jamais cette page."
 
 #. module: homeschool_practice
 #: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_quest_template__target
@@ -883,8 +884,12 @@ msgstr ""
 
 #. module: homeschool_practice
 #: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_quest__sessions
-msgid "How many sessions the quest asks for (the day asks for 3 to 5)."
-msgstr "Combien de séances la quête demande (la journée en demande de 3 à 5)."
+msgid ""
+"How many sessions the quest asks for (the learner's day range; 0 for the "
+"practice-time quest)."
+msgstr ""
+"Combien de séances la quête demande (selon l’intervalle de la journée de "
+"l’élève ; 0 pour la quête de temps de pratique)."
 
 #. module: homeschool_practice
 #: model:homeschool.practice.badge.template,name:homeschool_practice.badge_xp_day_100
@@ -2080,11 +2085,11 @@ msgstr "Ce que rapportent les objectifs"
 #. module: homeschool_practice
 #: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_quest_template__name
 msgid ""
-"What the learner reads. May use {unit}, {deck}, {target} and {s} (plural "
-"mark)."
+"What the learner reads. May use {unit}, {deck}, {subject}, {target} and {s} "
+"(plural mark)."
 msgstr ""
-"Ce que l’élève lit. Peut contenir {unit}, {deck}, {target} et {s} (marque du"
-" pluriel)."
+"Ce que l’élève lit. Peut contenir {unit}, {deck}, {subject}, {target} et {s}"
+" (marque du pluriel)."
 
 #. module: homeschool_practice
 #: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_form
@@ -2201,13 +2206,18 @@ msgstr "Figure"
 
 #. module: homeschool_practice
 #: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_item__figure_spec
-msgid "The figure drawn on the card, as a spec (e.g. « tri kind=isosceles rot=20 »): the figure is drawn again from it when it changes."
-msgstr "La figure dessinée sur la carte, décrite par une spécification (p. ex. « tri kind=isosceles rot=20 ») : la figure est redessinée quand elle change."
+msgid ""
+"The figure drawn on the card, as a spec (e.g. « tri kind=isosceles rot=20 "
+"»): the figure is drawn again from it when it changes."
+msgstr ""
+"La figure dessinée sur la carte, décrite par une spécification (p. ex. « tri"
+" kind=isosceles rot=20 ») : la figure est redessinée quand elle change."
 
 #. module: homeschool_practice
 #: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_item__figure
 msgid "The drawing shown on the card (an SVG document, shown as an image)."
-msgstr "Le dessin affiché sur la carte (un document SVG, affiché comme une image)."
+msgstr ""
+"Le dessin affiché sur la carte (un document SVG, affiché comme une image)."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -2218,8 +2228,11 @@ msgstr "Impossible de dessiner cette figure (%(key)s) : %(spec)s"
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
-msgid "A figure is a plain SVG drawing: no script, link or event handler (%(key)s)."
-msgstr "Une figure est un simple dessin SVG : ni script, ni lien, ni gestionnaire d'événement (%(key)s)."
+msgid ""
+"A figure is a plain SVG drawing: no script, link or event handler (%(key)s)."
+msgstr ""
+"Une figure est un simple dessin SVG : ni script, ni lien, ni gestionnaire "
+"d'événement (%(key)s)."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -2236,8 +2249,12 @@ msgstr "Additions et soustractions"
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
-msgid "Addition and subtraction facts up to 20, complements to 10 and to 100, mental calculation with 2-digit numbers."
-msgstr "Les faits d'addition et de soustraction jusqu'à 20, les compléments à 10 et à 100, le calcul mental avec des nombres à 2 chiffres."
+msgid ""
+"Addition and subtraction facts up to 20, complements to 10 and to 100, "
+"mental calculation with 2-digit numbers."
+msgstr ""
+"Les faits d'addition et de soustraction jusqu'à 20, les compléments à 10 et "
+"à 100, le calcul mental avec des nombres à 2 chiffres."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -2248,8 +2265,13 @@ msgstr "Additions jusqu'à 20"
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
-msgid "To add, start from the larger number. To go past 10, make 10 first: 8 + 5 = 8 + 2 + 3 = 13. The doubles help too: 6 + 6 = 12, so 6 + 7 = 13."
-msgstr "Pour additionner, pars du plus grand nombre. Pour dépasser 10, fais d'abord 10 : 8 + 5 = 8 + 2 + 3 = 13. Les doubles aident aussi : 6 + 6 = 12, donc 6 + 7 = 13."
+msgid ""
+"To add, start from the larger number. To go past 10, make 10 first: 8 + 5 = "
+"8 + 2 + 3 = 13. The doubles help too: 6 + 6 = 12, so 6 + 7 = 13."
+msgstr ""
+"Pour additionner, pars du plus grand nombre. Pour dépasser 10, fais d'abord "
+"10 : 8 + 5 = 8 + 2 + 3 = 13. Les doubles aident aussi : 6 + 6 = 12, donc 6 +"
+" 7 = 13."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -2260,8 +2282,14 @@ msgstr "Soustractions jusqu'à 20"
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
-msgid "A subtraction is an addition with a missing number: 14 − 6 = ? is 6 + ? = 14. Count up from 6 to 14: 6 + 4 = 10, 10 + 4 = 14, so 14 − 6 = 8. Or go down to 10 first: 14 − 4 = 10, then 10 − 2 = 8."
-msgstr "Une soustraction, c'est une addition où il manque un nombre : 14 − 6 = ?, c'est 6 + ? = 14. Compte de 6 jusqu'à 14 : 6 + 4 = 10, 10 + 4 = 14, donc 14 − 6 = 8. Ou descends d'abord à 10 : 14 − 4 = 10, puis 10 − 2 = 8."
+msgid ""
+"A subtraction is an addition with a missing number: 14 − 6 = ? is 6 + ? = "
+"14. Count up from 6 to 14: 6 + 4 = 10, 10 + 4 = 14, so 14 − 6 = 8. Or go "
+"down to 10 first: 14 − 4 = 10, then 10 − 2 = 8."
+msgstr ""
+"Une soustraction, c'est une addition où il manque un nombre : 14 − 6 = ?, "
+"c'est 6 + ? = 14. Compte de 6 jusqu'à 14 : 6 + 4 = 10, 10 + 4 = 14, donc 14 "
+"− 6 = 8. Ou descends d'abord à 10 : 14 − 4 = 10, puis 10 − 2 = 8."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -2272,8 +2300,15 @@ msgstr "Compléments à 10 et à 100"
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
-msgid "Find the number missing to make 10 or 100. The pairs that make 10: 1 + 9, 2 + 8, 3 + 7, 4 + 6, 5 + 5. In tens they make 100: 6 + 4 = 10, so 60 + 40 = 100. For 65: 65 + 5 = 70, then 70 + 30 = 100, so 65 + 35 = 100."
-msgstr "Trouve le nombre qui manque pour faire 10 ou 100. Les paires qui font 10 : 1 + 9, 2 + 8, 3 + 7, 4 + 6, 5 + 5. Avec des dizaines, elles font 100 : 6 + 4 = 10, donc 60 + 40 = 100. Pour 65 : 65 + 5 = 70, puis 70 + 30 = 100, donc 65 + 35 = 100."
+msgid ""
+"Find the number missing to make 10 or 100. The pairs that make 10: 1 + 9, 2 "
+"+ 8, 3 + 7, 4 + 6, 5 + 5. In tens they make 100: 6 + 4 = 10, so 60 + 40 = "
+"100. For 65: 65 + 5 = 70, then 70 + 30 = 100, so 65 + 35 = 100."
+msgstr ""
+"Trouve le nombre qui manque pour faire 10 ou 100. Les paires qui font 10 : 1"
+" + 9, 2 + 8, 3 + 7, 4 + 6, 5 + 5. Avec des dizaines, elles font 100 : 6 + 4 "
+"= 10, donc 60 + 40 = 100. Pour 65 : 65 + 5 = 70, puis 70 + 30 = 100, donc 65"
+" + 35 = 100."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -2284,8 +2319,14 @@ msgstr "Nombre à 2 chiffres ± 1 chiffre"
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
-msgid "Only the units change, unless you pass a ten. 43 + 5 = 48 (3 + 5 = 8). 47 + 8: go to the ten first, 47 + 3 = 50, then 50 + 5 = 55. 53 − 6: go down to the ten, 53 − 3 = 50, then 50 − 3 = 47."
-msgstr "Seules les unités changent, sauf si tu passes une dizaine. 43 + 5 = 48 (3 + 5 = 8). 47 + 8 : va d'abord à la dizaine, 47 + 3 = 50, puis 50 + 5 = 55. 53 − 6 : descends à la dizaine, 53 − 3 = 50, puis 50 − 3 = 47."
+msgid ""
+"Only the units change, unless you pass a ten. 43 + 5 = 48 (3 + 5 = 8). 47 + "
+"8: go to the ten first, 47 + 3 = 50, then 50 + 5 = 55. 53 − 6: go down to "
+"the ten, 53 − 3 = 50, then 50 − 3 = 47."
+msgstr ""
+"Seules les unités changent, sauf si tu passes une dizaine. 43 + 5 = 48 (3 + "
+"5 = 8). 47 + 8 : va d'abord à la dizaine, 47 + 3 = 50, puis 50 + 5 = 55. 53 "
+"− 6 : descends à la dizaine, 53 − 3 = 50, puis 50 − 3 = 47."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -2296,8 +2337,13 @@ msgstr "Dizaines entières (± 10, 20…)"
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
-msgid "Adding or taking away whole tens changes only the tens digit. 47 + 30: 4 tens + 3 tens = 7 tens, so 77. 86 − 40: 8 tens − 4 tens = 4 tens, so 46."
-msgstr "Ajouter ou enlever des dizaines entières ne change que le chiffre des dizaines. 47 + 30 : 4 dizaines + 3 dizaines = 7 dizaines, donc 77. 86 − 40 : 8 dizaines − 4 dizaines = 4 dizaines, donc 46."
+msgid ""
+"Adding or taking away whole tens changes only the tens digit. 47 + 30: 4 "
+"tens + 3 tens = 7 tens, so 77. 86 − 40: 8 tens − 4 tens = 4 tens, so 46."
+msgstr ""
+"Ajouter ou enlever des dizaines entières ne change que le chiffre des "
+"dizaines. 47 + 30 : 4 dizaines + 3 dizaines = 7 dizaines, donc 77. 86 − 40 :"
+" 8 dizaines − 4 dizaines = 4 dizaines, donc 46."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -2308,8 +2354,12 @@ msgstr "Nombre à 2 chiffres ± 2 chiffres"
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
-msgid "Add the tens, then the units. 38 + 47: 38 + 40 = 78, then 78 + 7 = 85. Take away the same way. 72 − 35: 72 − 30 = 42, then 42 − 5 = 37."
-msgstr "Ajoute les dizaines, puis les unités. 38 + 47 : 38 + 40 = 78, puis 78 + 7 = 85. Pour enlever, c'est pareil. 72 − 35 : 72 − 30 = 42, puis 42 − 5 = 37."
+msgid ""
+"Add the tens, then the units. 38 + 47: 38 + 40 = 78, then 78 + 7 = 85. Take "
+"away the same way. 72 − 35: 72 − 30 = 42, then 42 − 5 = 37."
+msgstr ""
+"Ajoute les dizaines, puis les unités. 38 + 47 : 38 + 40 = 78, puis 78 + 7 = "
+"85. Pour enlever, c'est pareil. 72 − 35 : 72 − 30 = 42, puis 42 − 5 = 37."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -2339,7 +2389,8 @@ msgstr "Pars du plus grand nombre, %(big)s, et compte %(small)s de plus."
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
 msgid "Go down to 10 first: %(s)s − %(u)s = 10, then take away %(rest)s more."
-msgstr "Descends d'abord à 10 : %(s)s − %(u)s = 10, puis enlève encore %(rest)s."
+msgstr ""
+"Descends d'abord à 10 : %(s)s − %(u)s = 10, puis enlève encore %(rest)s."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -2368,8 +2419,11 @@ msgstr "%(t)s + ? = 10, donc %(a)s + ? = 100 : compte par dizaines."
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
-msgid "First to the next ten: %(a)s + %(u)s = %(next)s, then %(next)s + ? = 100."
-msgstr "D'abord jusqu'à la dizaine suivante : %(a)s + %(u)s = %(next)s, puis %(next)s + ? = 100."
+msgid ""
+"First to the next ten: %(a)s + %(u)s = %(next)s, then %(next)s + ? = 100."
+msgstr ""
+"D'abord jusqu'à la dizaine suivante : %(a)s + %(u)s = %(next)s, puis "
+"%(next)s + ? = 100."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -2386,8 +2440,11 @@ msgstr "%(u)s + %(b)s = 10 : tu arrives à la dizaine suivante."
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
-msgid "Go to the next ten: %(a)s + %(fill)s = %(next)s, then add %(rest)s more."
-msgstr "Va jusqu'à la dizaine : %(a)s + %(fill)s = %(next)s, puis ajoute encore %(rest)s."
+msgid ""
+"Go to the next ten: %(a)s + %(fill)s = %(next)s, then add %(rest)s more."
+msgstr ""
+"Va jusqu'à la dizaine : %(a)s + %(fill)s = %(next)s, puis ajoute encore "
+"%(rest)s."
 
 #. module: homeschool_practice
 #. odoo-python
@@ -2404,32 +2461,46 @@ msgstr "Une dizaine de moins, et 10 − %(b)s = %(c)s."
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
-msgid "Go down to the ten: %(a)s − %(u)s = %(ten)s, then take away %(rest)s more."
-msgstr "Descends à la dizaine : %(a)s − %(u)s = %(ten)s, puis enlève encore %(rest)s."
+msgid ""
+"Go down to the ten: %(a)s − %(u)s = %(ten)s, then take away %(rest)s more."
+msgstr ""
+"Descends à la dizaine : %(a)s − %(u)s = %(ten)s, puis enlève encore "
+"%(rest)s."
 
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
 msgid "Only the tens change: count by tens from %(a)s, %(n)s times."
-msgstr "Seules les dizaines changent : compte par dizaines à partir de %(a)s, %(n)s fois."
+msgstr ""
+"Seules les dizaines changent : compte par dizaines à partir de %(a)s, %(n)s "
+"fois."
 
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
 msgid "Only the tens change: count back by tens from %(a)s, %(n)s times."
-msgstr "Seules les dizaines changent : recule par dizaines à partir de %(a)s, %(n)s fois."
+msgstr ""
+"Seules les dizaines changent : recule par dizaines à partir de %(a)s, %(n)s "
+"fois."
 
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
-msgid "Add the tens, then the units: %(a)s + %(t)s = %(m)s, then %(m)s + %(u)s."
-msgstr "Ajoute les dizaines, puis les unités : %(a)s + %(t)s = %(m)s, puis %(m)s + %(u)s."
+msgid ""
+"Add the tens, then the units: %(a)s + %(t)s = %(m)s, then %(m)s + %(u)s."
+msgstr ""
+"Ajoute les dizaines, puis les unités : %(a)s + %(t)s = %(m)s, puis %(m)s + "
+"%(u)s."
 
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/models/deck.py:0
-msgid "Take away the tens, then the units: %(a)s − %(t)s = %(m)s, then %(m)s − %(u)s."
-msgstr "Enlève les dizaines, puis les unités : %(a)s − %(t)s = %(m)s, puis %(m)s − %(u)s."
+msgid ""
+"Take away the tens, then the units: %(a)s − %(t)s = %(m)s, then %(m)s − "
+"%(u)s."
+msgstr ""
+"Enlève les dizaines, puis les unités : %(a)s − %(t)s = %(m)s, puis %(m)s − "
+"%(u)s."
 
 #. module: homeschool_practice
 #: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_list
@@ -2453,3 +2524,178 @@ msgstr "Seules les dizaines changent : une dizaine de plus."
 #: code:addons/homeschool_practice/models/deck.py:0
 msgid "Only the tens change: one ten less."
 msgstr "Seules les dizaines changent : une dizaine de moins."
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.hs_dash_quests
+msgid "<span>min</span>"
+msgstr "<span>min</span>"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice
+msgid "<span>to</span>"
+msgstr "<span>à</span>"
+
+#. module: homeschool_practice
+#: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_quest_one_per_template_day
+msgid ""
+"A quest template is drawn at most once a day per deck, unit and subject."
+msgstr ""
+"Un modèle de quête est tiré au plus une fois par jour par paquet et par "
+"unité."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_student__practice_subject_quests
+msgid ""
+"A subject with two or more unlocked decks gets one quest « N sessions of "
+"<subject> » (any of its decks counts) instead of a quest per deck."
+msgstr ""
+"Une matière qui a deux paquets débloqués ou plus reçoit une seule quête « N "
+"séances de <matière> » (n’importe lequel de ses paquets compte) au lieu "
+"d’une quête par paquet."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal__target_all_quests
+msgid "All of today's quests"
+msgstr "Toutes les quêtes du jour"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_goal__target_all_quests
+msgid ""
+"Day goal: reached when every quest of the day is done, whatever their number"
+" (the target is then ignored)."
+msgstr ""
+"Objectif du jour : atteint quand toutes les quêtes du jour sont faites, quel"
+" que soit leur nombre (la cible est alors ignorée)."
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_quest_template__kind__subject_sessions
+msgid "Finish sessions in a subject (any of its decks)"
+msgstr "Finir des séances dans une matière (n’importe lequel de ses paquets)"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_student__practice_quests_per_day
+msgid ""
+"How many quests the day draws (the practice-time quest is one of them)."
+msgstr ""
+"Combien de quêtes la journée tire (la quête de temps de pratique en fait "
+"partie)."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_student__practice_minutes_goal
+msgid ""
+"Minutes of practice the day asks for (a quest of its own); 0: no practice-"
+"time quest. The learner sees the day's minutes on that quest only, never "
+"inside a session."
+msgstr ""
+"Minutes de pratique que la journée demande (une quête à part) ; 0 : pas de "
+"quête de temps de pratique. L’élève voit les minutes du jour sur cette quête"
+" seulement, jamais pendant une séance."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/student.py:0
+msgid ""
+"Practice settings: at least one quest and one session a day, the maximum of "
+"sessions not below the minimum, and no negative practice time or ramp."
+msgstr ""
+"Réglages de pratique : au moins une quête et une séance par jour, un maximum"
+" de séances pas plus bas que le minimum, et pas de temps de pratique ni de "
+"montée progressive négatifs."
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_quest_template__kind__minutes
+msgid "Practice time today (minutes)"
+msgstr "Temps de pratique du jour (minutes)"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.quest.template,name:homeschool_practice.quest_minutes
+msgid "Practice {target} minutes today"
+msgstr "Pratique {target} minutes aujourd'hui"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__practice_minutes_goal
+msgid "Practice-time quest (min)"
+msgstr "Quête de temps de pratique (min)"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice
+msgid "Sessions a day"
+msgstr "Séances par jour"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__practice_sessions_max
+msgid "Sessions a day (max)"
+msgstr "Séances par jour (max)"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__practice_sessions_min
+msgid "Sessions a day (min)"
+msgstr "Séances par jour (min)"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_quest__target
+msgid "Sessions, answers, or minutes for the practice-time quest."
+msgstr "Séances, réponses, ou minutes pour la quête de temps de pratique."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__practice_subject_quests
+msgid "Subject quests"
+msgstr "Quêtes par matière"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_quest__subject_id
+msgid "Subject quests: any deck of it counts."
+msgstr "Quêtes par matière : n’importe lequel de ses paquets compte."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_student__practice_sessions_min
+msgid "The day's session quests ask for this many sessions at least."
+msgstr ""
+"Les quêtes de séances du jour demandent au moins ce nombre de séances."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "min"
+msgstr "min"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.quest.template,name:homeschool_practice.quest_subject_sessions
+msgid "{target} session{s} of {subject}"
+msgstr "{target} séance{s} de {subject}"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_student__practice_sessions_max
+msgid "… and at most this many (drawn in the range, varied)."
+msgstr "… et au plus ce nombre (tiré dans l’intervalle, varié)."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_student__practice_ramp_weeks
+msgid ""
+"0: the settings apply at once. Else the day's sessions and practice time "
+"grow week by week, linearly, from the defaults in week 1 (3 to 5 sessions, "
+"no practice-time quest) to the settings, reached in the last week. The "
+"number of quests does not change: the quests get bigger."
+msgstr ""
+"0 : les réglages s’appliquent tout de suite. Sinon les séances et le temps "
+"de pratique de la journée grandissent semaine après semaine, linéairement, "
+"des valeurs par défaut en semaine 1 (3 à 5 séances, pas de quête de temps de "
+"pratique) jusqu’aux réglages, atteints la dernière semaine. Le nombre de "
+"quêtes ne change pas : les quêtes grossissent."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__practice_ramp_weeks
+msgid "Ramp (weeks)"
+msgstr "Montée progressive (semaines)"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__practice_ramp_start
+msgid "Ramp from"
+msgstr "Début de la montée progressive"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_student__practice_ramp_start
+msgid "With a ramp: the day the learner's bigger day starts growing (week 1)."
+msgstr ""
+"Avec une montée progressive : le jour où la journée de l’élève commence à grandir "
+"(semaine 1)."
