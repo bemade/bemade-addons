@@ -47,10 +47,13 @@ Acceptance criteria
    the settings (whole numbers, rounded half up; never a step backwards). Before the start:
    the defaults. The practice-time quest appears once its effective goal reaches 5 minutes.
    ``student._practice_volume(day)`` returns the effective numbers; the draw uses only it.
-9. **Bigger quests, not more**: with 3 quests and a large range, the deck and subject
-   quests each ask for more sessions (up to 9). When the practice-time quest is one of the
-   3 quests and only one rotation slot is left, that slot stays a deck / subject quest (no
-   surprise or challenge takes it).
+9. **Bigger quests, not more** (owner review round 2): with 3 quests and a large range, the
+   deck, subject and surprise quests each ask for more sessions (up to 12). On a day bigger
+   than the defaults the tables (daily decks) ask for about a third of the sessions:
+   ``round(total / 3)``, at least 1, at most 5; the other quest(s) take the rest. When the
+   practice-time quest is one of the 3 quests and only one rotation slot is left, that slot
+   is a deck / subject quest, or « N leçons surprises » about one day in three (sized like
+   the quest it replaces); never a challenge.
 """
 import json
 import random
@@ -399,13 +402,13 @@ class TestMinutesCard(PracticeHttpCase):
 
 @tagged("post_install", "-at_install")
 class TestRamp(BiggerDayCase):
-    """A Felix-like learner: 3 quests, 15–18 sessions and 12 minutes at full volume, 4-week ramp."""
+    """A Felix-like learner: 3 quests, 15–17 sessions and 12 minutes at full volume, 4-week ramp."""
 
-    FULL = {"quests": 3, "sessions_min": 15, "sessions_max": 18, "minutes": 12}
+    FULL = {"quests": 3, "sessions_min": 15, "sessions_max": 17, "minutes": 12}
 
     def setUp(self):
         super().setUp()
-        self.student.write(dict(practice_quests_per_day=3, practice_sessions_min=15, practice_sessions_max=18,
+        self.student.write(dict(practice_quests_per_day=3, practice_sessions_min=15, practice_sessions_max=17,
                                 practice_minutes_goal=12, practice_subject_quests=True,
                                 practice_ramp_start=MONDAY, practice_ramp_weeks=4))
 
@@ -418,7 +421,7 @@ class TestRamp(BiggerDayCase):
                          "before the start: the defaults")
         self.assertEqual(self.week(1), {"quests": 3, "sessions_min": 3, "sessions_max": 5, "minutes": 0})
         self.assertEqual(self.week(2), {"quests": 3, "sessions_min": 7, "sessions_max": 9, "minutes": 0})  # 4 < 5
-        self.assertEqual(self.week(3), {"quests": 3, "sessions_min": 11, "sessions_max": 14, "minutes": 8})
+        self.assertEqual(self.week(3), {"quests": 3, "sessions_min": 11, "sessions_max": 13, "minutes": 8})
         for w in (4, 5, 6):
             self.assertEqual(self.week(w), self.FULL)
         for prev, cur in zip(rows, rows[1:]):
@@ -442,19 +445,34 @@ class TestRamp(BiggerDayCase):
 
     def test_full_volume_bigger_quests(self):
         self.student.practice_ramp_weeks = 0
-        sizes = Counter()
-        for quests in self.simulate(20, seed=9):
+        surprise_days = 0
+        days = self.simulate(45, seed=9)
+        for quests in days:
             self.assertEqual(len(quests), 3)
             self.assertEqual(quests.filtered(lambda q: q.kind == "minutes").target, 12)
             session_quests = quests.filtered(lambda q: q.kind != "minutes")
-            self.assertEqual(set(session_quests.mapped("kind")) - {"deck_session", "subject_sessions"}, set(),
-                             "the one rotation slot stays a deck / subject quest")
-            self.assertIn(self.deck, session_quests.deck_id, "tables until mastered keep their slot")
-            self.assertTrue(15 <= session_total(quests) <= 18, quests.mapped("label"))
-            for q in session_quests:
-                self.assertTrue(q.sessions <= 9, q.label)
-                sizes[q.sessions] += 1
-        self.assertGreaterEqual(min(sizes), 6, sizes)
+            self.assertEqual(set(session_quests.mapped("kind")) - {"deck_session", "subject_sessions", "surprise"}, set(),
+                             "the one rotation slot: a deck / subject quest or surprise lessons, never a challenge")
+            total = session_total(quests)
+            self.assertTrue(15 <= total <= 17, quests.mapped("label"))
+            tables = session_quests.filtered(lambda q: q.deck_id == self.deck)
+            self.assertEqual(len(tables), 1, "tables until mastered keep their slot")
+            self.assertTrue(1 <= tables.sessions <= min(5, int(total / 3 + 0.5)), (tables.sessions, total))
+            other = session_quests - tables
+            self.assertEqual(other.sessions, total - tables.sessions, "the other quest takes the rest")
+            self.assertTrue(other.sessions <= 12, other.label)
+            if other.kind == "surprise":
+                surprise_days += 1
+                self.assertGreaterEqual(other.target, 10, "sized like the quest it replaces")
+        self.assertTrue(0.15 < surprise_days / len(days) < 0.5, surprise_days)
+
+    def test_ramp_weeks_tables_third(self):
+        for w in (2, 3):
+            day = MONDAY + timedelta(days=7 * (w - 1) + 1)
+            quests = self.Quest._draw(self.student, day, rng=random.Random(w))
+            total = session_total(quests)
+            tables = quests.filtered(lambda q: q.kind == "deck_session" and q.deck_id == self.deck)
+            self.assertTrue(tables.sessions <= max(1, int(total / 3 + 0.5)), (w, quests.mapped("label")))
 
     def test_tables_count_for_the_math_quest_too(self):
         self.student.practice_ramp_weeks = 0

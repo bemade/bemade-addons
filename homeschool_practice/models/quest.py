@@ -22,8 +22,10 @@ QUEST_KINDS = [
 # the defaults of the learner's practice_sessions_min / practice_sessions_max
 DAY_SESSIONS = (3, 5)
 MAX_SESSIONS = {"deck_session": 3, "subject_sessions": 4, "surprise": 2, "perfect": 2, "no_hint": 2}
-GROWABLE_KINDS = ("deck_session", "subject_sessions")  # may ask for more when the day's range needs it
-GROW_CEILING = 9  # … up to this many sessions for one quest
+GROWABLE_KINDS = ("deck_session", "subject_sessions", "surprise")  # may ask for more when the day's range needs it
+GROW_CEILING = 12  # … up to this many sessions for one quest
+DAILY_SHARE = 1 / 3  # a bigger day: the daily decks (tables) get at most about a third of its sessions …
+DAILY_CEILING = 5    # … and at most this many
 CHALLENGE_KINDS = ("perfect", "no_hint")
 SURPRISE_ODDS = 1 / 3      # about one day in three, when a unit is stale
 CHALLENGE_ODDS = 1 / 4     # a perfect / no-hint quest takes a rotation slot
@@ -99,7 +101,8 @@ class PracticeQuest(models.Model):
         his ramp) sizes the day: so many quests (never ramped; the practice-time quest is one of
         them), a range of sessions and the practice-time goal. A bigger day makes the quests
         bigger, not more numerous: the deck and subject quests ask for more sessions each (up to
-        ``GROW_CEILING``).
+        ``GROW_CEILING``), while the daily decks (tables) keep about a third of a bigger day
+        (``DAILY_SHARE``, at most ``DAILY_CEILING``).
 
         1. every unmastered « daily » deck (times tables) gets a deck session quest;
         2. about one day in three, when a unit is stale, a « surprise lessons » quest — else,
@@ -110,8 +113,9 @@ class PracticeQuest(models.Model):
            per deck; with too few decks, the remaining slots take a surprise or a challenge;
         4. the targets make the day ask for the learner's range of sessions (varied); the deck
            and subject quests ask for more each when their usual sizes cannot reach it (with a
-           practice-time quest and a single rotation slot left, no surprise / challenge takes
-           that slot);
+           practice-time quest and a single rotation slot left, only the surprise lessons, about
+           one day in three, may take that slot; on a bigger day the tables ask for about a third
+           of the sessions);
         5. with a practice-time goal, a « practise N minutes » quest (no session of its own).
         ``rng`` (a ``random.Random``) is injectable; by default it is seeded by learner and day."""
         day = day or self._today(student)
@@ -170,8 +174,9 @@ class PracticeQuest(models.Model):
         elif roll < SURPRISE_ODDS + CHALLENGE_ODDS:
             extra = challenge()
         if minutes_t and slots - len(mandatory) < 2:
-            # the practice-time quest took a slot: the one rotation slot left stays a deck / subject quest
-            extra = None
+            # the practice-time quest took a slot: the one rotation slot left stays a deck / subject
+            # quest, or becomes the surprise lessons (about one day in three); never a challenge
+            extra = extra if extra == surprise_t else None
 
         # 3. the rotation: least recently quested first, ties to the most due
         last = {}
@@ -216,15 +221,33 @@ class PracticeQuest(models.Model):
         # 4. targets: the day asks for the learner's range of sessions (varied)
         lo_day, hi_day = volume["sessions_min"], volume["sessions_max"]
         caps = [MAX_SESSIONS.get(t.kind, 1) for t, _d, _s in picks]
+        daily = [i for i, (t, d, _s) in enumerate(picks) if t.kind == "deck_session" and d in mandatory]
         growable = [i for i, (t, _d, _s) in enumerate(picks) if t.kind in GROWABLE_KINDS]
-        while sum(caps) < hi_day and any(caps[i] < GROW_CEILING for i in growable):
-            for i in growable:
-                if sum(caps) < hi_day and caps[i] < GROW_CEILING:
-                    caps[i] += 1
+
+        def daily_limit(total):
+            """A day bigger than the defaults: the daily decks get about a third of it, at most
+            DAILY_CEILING each (the defaults keep their sizes)."""
+            if total <= DAY_SESSIONS[1]:
+                return None
+            return max(1, min(DAILY_CEILING, int(total * DAILY_SHARE + 0.5)))
+
+        def grow(target):
+            limit = daily_limit(target)
+            if limit is not None:
+                for i in daily:
+                    caps[i] = min(caps[i], limit) if caps[i] > limit else caps[i]
+            ceiling = {i: (limit if i in daily and limit is not None else GROW_CEILING) for i in growable}
+            while sum(caps) < target and any(caps[i] < ceiling[i] for i in growable):
+                for i in growable:
+                    if sum(caps) < target and caps[i] < ceiling[i]:
+                        caps[i] += 1
+
+        grow(hi_day)
         sessions = [1] * len(picks)
         if picks:
             lo, hi = max(lo_day, len(picks)), max(min(hi_day, sum(caps)), len(picks))
             total = rng.choice(range(min(lo, hi), hi + 1))
+            grow(total)  # the tables' third of the day actually drawn; the others take the rest
             for _i in range(total - len(picks)):
                 room = [i for i in range(len(picks)) if sessions[i] < caps[i]]
                 if not room:
