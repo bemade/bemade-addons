@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="calendar_event_view_form" model="ir.ui.view">
+        <field name="name">calendar.event.form.caldav_sync</field>
+        <field name="model">calendar.event</field>
+        <field name="inherit_id" ref="calendar.view_calendar_event_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <field name="caldav_date_locked" invisible="1" />
+                <div
+                    class="alert alert-info mb-0"
+                    role="status"
+                    invisible="not caldav_date_locked"
+                >
+                    This meeting was created in the external calendar: its date and time cannot be changed in Odoo.
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='start_date']" position="attributes">
+                <attribute name="readonly">not user_can_edit or caldav_date_locked</attribute>
+            </xpath>
+            <xpath expr="//field[@name='start']" position="attributes">
+                <attribute name="readonly">not user_can_edit or caldav_date_locked</attribute>
+            </xpath>
+            <xpath expr="//field[@name='duration']" position="attributes">
+                <attribute name="readonly">(id and recurrency) or not user_can_edit or caldav_date_locked</attribute>
+            </xpath>
+            <xpath expr="//field[@name='allday']" position="attributes">
+                <attribute name="readonly">not user_can_edit or caldav_date_locked</attribute>
+            </xpath>
+            <xpath expr="//field[@name='recurrency']" position="attributes">
+                <attribute name="readonly">not user_can_edit or caldav_date_locked</attribute>
+            </xpath>
+            <xpath expr="//field[@name='rrule_type_ui']" position="attributes">
+                <attribute name="readonly">not user_can_edit or caldav_date_locked</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

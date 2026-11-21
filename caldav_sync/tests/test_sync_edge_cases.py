@@ -602,6 +602,182 @@ class TestExtractComponentText(TransactionCase):
 
 
 @tagged("post_install", "-at_install")
+class TestAlldayMixedDtend(TransactionCase):
+    """An all-day DTSTART (DATE) with a DATE-TIME DTEND must not crash the poll."""
+
+    def _values(self, dtend_line):
+        from icalendar import Calendar
+
+        ics = (
+            "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//test//test//EN\r\n"
+            "BEGIN:VEVENT\r\nUID:allday-mixed-dtend\r\nSUMMARY:Mixed\r\n"
+            "DTSTAMP:20261101T000000Z\r\nDTSTART;VALUE=DATE:20261120\r\n"
+            f"{dtend_line}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+        )
+        component = Calendar.from_ical(ics).walk("VEVENT")[0]
+        return self.env["calendar.event"]._get_values_from_ical_component(
+            component, self.env.user, for_creation=True
+        )
+
+    def test_datetime_dtend_midnight(self):
+        values = self._values("DTEND:20261121T000000Z")
+        self.assertTrue(values["allday"])
+        self.assertEqual(values["start"], datetime(2026, 11, 20, 8, 0))
+        self.assertEqual(values["stop"], datetime(2026, 11, 20, 18, 0))
+
+    def test_datetime_dtend_during_day(self):
+        values = self._values("DTEND:20261122T100000Z")
+        self.assertEqual(values["start"], datetime(2026, 11, 20, 8, 0))
+        self.assertEqual(values["stop"], datetime(2026, 11, 22, 18, 0))
+
+    def test_datetime_dtend_same_day(self):
+        values = self._values("DTEND:20261120T100000Z")
+        self.assertEqual(values["stop"], datetime(2026, 11, 20, 18, 0))
+
+
+@tagged("post_install", "-at_install")
+class TestLegacyAlldayRepair(TransactionCase):
+    """All-day events imported by the old code (24h from UTC midnight, not
+    allday) are fixed on the next poll, although Odoo's copy looks newer."""
+
+    def _create_event(self, uid, start):
+        user = self.env.user
+        return (
+            self.env["calendar.event"]
+            .with_context(caldav_no_sync=True, caldav_keep_ids=True)
+            .create(
+                {
+                    "name": "Tavannes",
+                    "start": start,
+                    "stop": start + timedelta(days=1),
+                    "caldav_uid": uid,
+                    "user_id": user.id,
+                    "partner_id": user.partner_id.id,
+                    "partner_ids": [Command.set([user.partner_id.id])],
+                }
+            )
+        )
+
+    def _poll(self, uid, dates):
+        from icalendar import Calendar
+
+        ics = (
+            "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//test//test//EN\r\n"
+            f"BEGIN:VEVENT\r\nUID:{uid}\r\nSUMMARY:Tavannes\r\n"
+            "DTSTAMP:20201001T000000Z\r\nLAST-MODIFIED:20201001T000000Z\r\n"
+            f"{dates}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+        )
+        self.env["calendar.event"].with_context(dont_notify=True)._sync_event_from_ical(
+            Calendar.from_ical(ics), self.env.user
+        )
+
+    def test_legacy_allday_is_repaired(self):
+        uid = "legacy-allday-repair"
+        event = self._create_event(uid, datetime(2026, 11, 10))
+        self._poll(uid, "DTSTART;VALUE=DATE:20261110\r\nDTEND;VALUE=DATE:20261111")
+        event.invalidate_recordset()
+        self.assertTrue(event.allday)
+        self.assertEqual(event.start, datetime(2026, 11, 10, 8, 0))
+        self.assertEqual(event.stop, datetime(2026, 11, 10, 18, 0))
+        self.assertEqual(
+            self.env["calendar.event"].search_count([("caldav_uid", "=", uid)]), 1
+        )
+
+    def test_outdated_timed_event_is_left_alone(self):
+        uid = "legacy-timed-untouched"
+        event = self._create_event(uid, datetime(2026, 11, 10))
+        self._poll(uid, "DTSTART:20261110T090000Z\r\nDTEND:20261110T100000Z")
+        event.invalidate_recordset()
+        self.assertFalse(event.allday)
+        self.assertEqual(event.start, datetime(2026, 11, 10))
+
+
+@tagged("post_install", "-at_install")
+class TestRecurrenceChangesIgnoreMovedBase(TransactionCase):
+    """A series whose first occurrence was moved by hand in Odoo
+    (follow_recurrence=False) must not look changed when the server sends the
+    same rule back: writing that difference made Odoo rewrite the whole series
+    (case "Clôture mensuel et facturation", 2026-11)."""
+
+    def test_moved_base_with_same_rule_is_not_a_change(self):
+        user = self.env.user
+        event = (
+            self.env["calendar.event"]
+            .with_context(caldav_no_sync=True)
+            .create(
+                {
+                    "name": "Clôture mensuel",
+                    "start": datetime(2026, 10, 29, 7, 0),
+                    "stop": datetime(2026, 10, 29, 8, 30),
+                    "user_id": user.id,
+                    "partner_ids": [Command.set([user.partner_id.id])],
+                    "recurrency": True,
+                    "rrule_type": "weekly",
+                    "thu": True,
+                    "end_type": "end_date",
+                    "until": datetime(2027, 1, 9).date(),
+                }
+            )
+        )
+        self.assertTrue(event.recurrence_id, "the series must be created")
+        base = event.recurrence_id.base_event_id
+        base.with_context(caldav_no_sync=True).write(
+            {"start": base.start - timedelta(hours=1), "stop": base.stop - timedelta(hours=1)}
+        )
+        self.assertFalse(base.follow_recurrence)
+        server_vals = {
+            "recurrency": True,
+            "follow_recurrence": True,
+            "recurrence_update": "future_events",
+            "rrule_type": base.rrule_type,
+            "count": False,
+            "interval": base.interval,
+            "until": datetime(2027, 1, 9, 22, 59, 59),
+            "end_type": "end_date",
+            "thu": True,
+        }
+        self.assertEqual(base._get_recurrence_changes(server_vals), {})
+
+    def test_series_wins_over_detached_event_with_same_uid(self):
+        """An occurrence detached from a series keeps its UID. The server's
+        master must still be matched to the series, not to that event: making
+        it a second series with the same UID crashed the whole poll."""
+        user = self.env.user
+        Event = self.env["calendar.event"].with_context(
+            caldav_no_sync=True, caldav_keep_ids=True
+        )
+        uid = "series-with-detached-event"
+        series = Event.create(
+            {
+                "name": "Clôture mensuel",
+                "start": datetime(2026, 10, 29, 7, 0),
+                "stop": datetime(2026, 10, 29, 8, 30),
+                "caldav_uid": uid,
+                "user_id": user.id,
+                "partner_ids": [Command.set([user.partner_id.id])],
+                "recurrency": True,
+                "rrule_type": "weekly",
+                "thu": True,
+                "end_type": "count",
+                "count": 3,
+            }
+        )
+        base = series.recurrence_id.base_event_id
+        self.assertEqual(base.caldav_uid, uid)
+        Event.create(
+            {
+                "name": "Clôture mensuel",
+                "start": datetime(2027, 1, 29, 7, 0),
+                "stop": datetime(2027, 1, 29, 8, 30),
+                "caldav_uid": uid,
+                "user_id": user.id,
+                "partner_ids": [Command.set([user.partner_id.id])],
+            }
+        )
+        self.assertEqual(self.env["calendar.event"]._get_existing_instance(uid, None), base)
+
+
+@tagged("post_install", "-at_install")
 class TestSyncWriteToCaldav(TransactionCase, CaldavTestCommon):
     """Tests for _sync_write_to_caldav method."""
 
@@ -787,6 +963,38 @@ class TestMatchesCaldavStart(TransactionCase, CaldavTestCommon):
 
         result = event._matches_caldav_start(mock_caldav_event)
         self.assertTrue(result)
+
+    def test_matches_caldav_start_allday_date(self):
+        """An all-day event has a DATE DTSTART: compare the days."""
+        from datetime import date
+
+        with patch("caldav.DAVClient"):
+            self.user_1._compute_is_caldav_enabled()
+            event = (
+                self.env["calendar.event"]
+                .with_context(caldav_no_sync=True)
+                .with_user(self.user_1)
+                .create(
+                    {
+                        "name": "All-day Event",
+                        "allday": True,
+                        "start_date": date(2025, 2, 1),
+                        "stop_date": date(2025, 2, 1),
+                        "partner_ids": [Command.set([self.user_1.partner_id.id])],
+                    }
+                )
+            )
+
+        mock_dtstart = MagicMock()
+        mock_component = MagicMock()
+        mock_component.get.return_value = mock_dtstart
+        mock_caldav_event = MagicMock()
+        mock_caldav_event.icalendar_component = mock_component
+
+        mock_dtstart.dt = date(2025, 2, 1)
+        self.assertTrue(event._matches_caldav_start(mock_caldav_event))
+        mock_dtstart.dt = date(2025, 2, 2)
+        self.assertFalse(event._matches_caldav_start(mock_caldav_event))
 
 
 @tagged("post_install", "-at_install")
