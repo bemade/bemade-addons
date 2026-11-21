@@ -81,7 +81,9 @@ Game mechanics
   (« Pratique 15 minutes aujourd'hui »). Practice time counts each answer's
   gap since the previous one, capped at a minute, so an idle screen does not
   count; the learner sees the day's minutes on that quest card only, never
-  inside a session.
+  inside a session. A bigger day makes the quests bigger, not more numerous,
+  and it can arrive gradually: a ramp grows the sessions and the practice
+  time week by week from the defaults to the learner's settings.
 * Badges for accomplishments (XP reached, XP in a day, perfect sessions, unit
   proficiency levels…), never for speed or time of day.
 * Daily, weekly and monthly goals built from completed quests (the day goal

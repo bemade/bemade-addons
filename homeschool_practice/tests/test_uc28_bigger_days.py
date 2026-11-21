@@ -38,14 +38,19 @@ Acceptance criteria
    The reward is paid once.
 7. Everything is per learner: a learner with the bigger day and a learner with the
    defaults are drawn independently.
-8. **Gradual ramp** (owner, 2026-11-20: « cook the frog »): ``practice_ramp_start`` (date)
-   and ``practice_ramp_weeks`` (0 = no ramp: the settings apply at once). During the ramp
-   the effective numbers grow linearly week by week from the defaults (3 quests, 3–5
-   sessions, no minutes) to the learner's settings: over 4 weeks, week 1 = +25 % of the
-   gap, week 4 = the settings (whole numbers, rounded half up; never a step backwards).
-   Before the start: the defaults. The practice-time quest appears once its effective
-   goal reaches 5 minutes. The week index uses the learner's today.
+8. **Gradual ramp** (owner, 2026-11-20: « cook the frog »; reworked after review):
+   ``practice_ramp_start`` (date) and ``practice_ramp_weeks`` (0 = no ramp: the settings
+   apply at once). The **number of quests never ramps** (a bigger day has bigger quests,
+   not more of them). The session range and the practice-time goal grow linearly week by
+   week: week 1 (the start day's week, learner's days) = the defaults (3–5 sessions, no
+   minutes), week ``w`` = ``(w - 1) / (weeks - 1)`` of the gap, week ``weeks`` and later =
+   the settings (whole numbers, rounded half up; never a step backwards). Before the start:
+   the defaults. The practice-time quest appears once its effective goal reaches 5 minutes.
    ``student._practice_volume(day)`` returns the effective numbers; the draw uses only it.
+9. **Bigger quests, not more**: with 3 quests and a large range, the deck and subject
+   quests each ask for more sessions (up to 9). When the practice-time quest is one of the
+   3 quests and only one rotation slot is left, that slot stays a deck / subject quest (no
+   surprise or challenge takes it).
 """
 import json
 import random
@@ -394,43 +399,84 @@ class TestMinutesCard(PracticeHttpCase):
 
 @tagged("post_install", "-at_install")
 class TestRamp(BiggerDayCase):
+    """A Felix-like learner: 3 quests, 15–18 sessions and 12 minutes at full volume, 4-week ramp."""
+
+    FULL = {"quests": 3, "sessions_min": 15, "sessions_max": 18, "minutes": 12}
 
     def setUp(self):
         super().setUp()
-        self.bigger(practice_minutes_goal=12, practice_ramp_start=MONDAY, practice_ramp_weeks=4)
+        self.student.write(dict(practice_quests_per_day=3, practice_sessions_min=15, practice_sessions_max=18,
+                                practice_minutes_goal=12, practice_subject_quests=True,
+                                practice_ramp_start=MONDAY, practice_ramp_weeks=4))
+
+    def week(self, w):
+        return self.student._practice_volume(MONDAY + timedelta(days=7 * (w - 1) + 2))
 
     def test_six_weeks(self):
         rows = [self.student._practice_volume(MONDAY + timedelta(days=d)) for d in range(-3, 42)]
         self.assertEqual(rows[0], {"quests": 3, "sessions_min": 3, "sessions_max": 5, "minutes": 0},
                          "before the start: the defaults")
-        week = lambda w: self.student._practice_volume(MONDAY + timedelta(days=7 * (w - 1) + 2))  # noqa: E731
-        self.assertEqual(week(1), {"quests": 4, "sessions_min": 4, "sessions_max": 7, "minutes": 0})  # 12 × 25 % = 3 < 5
-        self.assertEqual(week(2), {"quests": 4, "sessions_min": 6, "sessions_max": 9, "minutes": 6})
-        self.assertEqual(week(3), {"quests": 5, "sessions_min": 7, "sessions_max": 10, "minutes": 9})
+        self.assertEqual(self.week(1), {"quests": 3, "sessions_min": 3, "sessions_max": 5, "minutes": 0})
+        self.assertEqual(self.week(2), {"quests": 3, "sessions_min": 7, "sessions_max": 9, "minutes": 0})  # 4 < 5
+        self.assertEqual(self.week(3), {"quests": 3, "sessions_min": 11, "sessions_max": 14, "minutes": 8})
         for w in (4, 5, 6):
-            self.assertEqual(week(w), {"quests": 5, "sessions_min": 8, "sessions_max": 12, "minutes": 12})
+            self.assertEqual(self.week(w), self.FULL)
         for prev, cur in zip(rows, rows[1:]):
             for key in cur:
                 self.assertGreaterEqual(cur[key], prev[key], key)
 
+    def test_quest_count_never_ramps(self):
+        self.student.practice_quests_per_day = 5
+        for w in range(1, 7):
+            self.assertEqual(self.week(w)["quests"], 5)
+
     def test_draw_follows_the_ramp(self):
         for w in range(6):
-            day = MONDAY + timedelta(days=7 * w)
+            day = MONDAY + timedelta(days=7 * w + 1)
             vol = self.student._practice_volume(day)
             quests = self.Quest._draw(self.student, day, rng=random.Random(w))
-            self.assertEqual(len(quests), vol["quests"], (w, quests.mapped("label")))
-            self.assertTrue(vol["sessions_min"] <= session_total(quests) <= vol["sessions_max"], w)
+            self.assertEqual(len(quests), 3, (w, quests.mapped("label")))
+            self.assertTrue(vol["sessions_min"] <= session_total(quests) <= vol["sessions_max"], (w, quests.mapped("label")))
             minutes = quests.filtered(lambda q: q.kind == "minutes")
             self.assertEqual(minutes.target if minutes else 0, vol["minutes"])
 
+    def test_full_volume_bigger_quests(self):
+        self.student.practice_ramp_weeks = 0
+        sizes = Counter()
+        for quests in self.simulate(20, seed=9):
+            self.assertEqual(len(quests), 3)
+            self.assertEqual(quests.filtered(lambda q: q.kind == "minutes").target, 12)
+            session_quests = quests.filtered(lambda q: q.kind != "minutes")
+            self.assertEqual(set(session_quests.mapped("kind")) - {"deck_session", "subject_sessions"}, set(),
+                             "the one rotation slot stays a deck / subject quest")
+            self.assertIn(self.deck, session_quests.deck_id, "tables until mastered keep their slot")
+            self.assertTrue(15 <= session_total(quests) <= 18, quests.mapped("label"))
+            for q in session_quests:
+                self.assertTrue(q.sessions <= 9, q.label)
+                sizes[q.sessions] += 1
+        self.assertGreaterEqual(min(sizes), 6, sizes)
+
+    def test_tables_count_for_the_math_quest_too(self):
+        self.student.practice_ramp_weeks = 0
+        self.fractions.unit_ids.filtered(lambda u: u.sequence <= 3).action_unlock(self.student)
+        self.Deck.search([("name", "=", "La géométrie")]).unit_ids[:1].action_unlock(self.student)
+        quests = self.Quest._draw(self.student, rng=NoExtra(1))
+        maths = quests.filtered(lambda q: q.kind == "subject_sessions" and q.subject_id == self.math)
+        tables = quests.filtered(lambda q: q.kind == "deck_session" and q.deck_id == self.deck)
+        if not maths:
+            maths = self.Quest.create({"student_id": self.student.id, "day": tables.day, "target": 5,
+                                       "template_id": self.env.ref("homeschool_practice.quest_subject_sessions").id,
+                                       "subject_id": self.math.id})
+        before = maths.progress, tables.progress
+        self.finish_session(self.deck)
+        self.assertEqual((maths.progress, tables.progress), (before[0] + 1, before[1] + 1))
+
     def test_week_uses_the_learners_today(self):
-        self.assertEqual(self.student._practice_volume()["quests"],
-                         self.student._practice_volume(self.student._practice_today())["quests"])
+        self.assertEqual(self.student._practice_volume(), self.student._practice_volume(self.student._practice_today()))
 
     def test_no_ramp_applies_at_once(self):
         self.student.practice_ramp_weeks = 0
-        self.assertEqual(self.student._practice_volume(MONDAY - timedelta(days=30)),
-                         {"quests": 5, "sessions_min": 8, "sessions_max": 12, "minutes": 12})
+        self.assertEqual(self.student._practice_volume(MONDAY - timedelta(days=30)), self.FULL)
         default = self.env["homeschool.student"].create({"partner_id": self.env["res.partner"].create({"name": "D"}).id})
         self.assertEqual(default._practice_volume(MONDAY), {"quests": 3, "sessions_min": 3, "sessions_max": 5, "minutes": 0})
         self.assertEqual(default.practice_ramp_weeks, 0)

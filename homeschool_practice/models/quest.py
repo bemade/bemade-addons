@@ -23,6 +23,7 @@ QUEST_KINDS = [
 DAY_SESSIONS = (3, 5)
 MAX_SESSIONS = {"deck_session": 3, "subject_sessions": 4, "surprise": 2, "perfect": 2, "no_hint": 2}
 GROWABLE_KINDS = ("deck_session", "subject_sessions")  # may ask for more when the day's range needs it
+GROW_CEILING = 9  # … up to this many sessions for one quest
 CHALLENGE_KINDS = ("perfect", "no_hint")
 SURPRISE_ODDS = 1 / 3      # about one day in three, when a unit is stale
 CHALLENGE_ODDS = 1 / 4     # a perfect / no-hint quest takes a rotation slot
@@ -95,8 +96,10 @@ class PracticeQuest(models.Model):
         """The day's quests, drawn once (idempotent). None on a rest day or without an unlocked unit.
 
         The learner's effective volume (``student._practice_volume(day)``: his settings, along
-        his ramp) sizes the day: so many quests (the practice-time quest is one of them) and a
-        range of sessions.
+        his ramp) sizes the day: so many quests (never ramped; the practice-time quest is one of
+        them), a range of sessions and the practice-time goal. A bigger day makes the quests
+        bigger, not more numerous: the deck and subject quests ask for more sessions each (up to
+        ``GROW_CEILING``).
 
         1. every unmastered « daily » deck (times tables) gets a deck session quest;
         2. about one day in three, when a unit is stale, a « surprise lessons » quest — else,
@@ -106,7 +109,9 @@ class PracticeQuest(models.Model):
            subject with two or more rotation decks takes one subject quest instead of a quest
            per deck; with too few decks, the remaining slots take a surprise or a challenge;
         4. the targets make the day ask for the learner's range of sessions (varied); the deck
-           and subject quests ask for more each when their usual sizes cannot reach it;
+           and subject quests ask for more each when their usual sizes cannot reach it (with a
+           practice-time quest and a single rotation slot left, no surprise / challenge takes
+           that slot);
         5. with a practice-time goal, a « practise N minutes » quest (no session of its own).
         ``rng`` (a ``random.Random``) is injectable; by default it is seeded by learner and day."""
         day = day or self._today(student)
@@ -164,6 +169,9 @@ class PracticeQuest(models.Model):
             extra = surprise_t if stale else None
         elif roll < SURPRISE_ODDS + CHALLENGE_ODDS:
             extra = challenge()
+        if minutes_t and slots - len(mandatory) < 2:
+            # the practice-time quest took a slot: the one rotation slot left stays a deck / subject quest
+            extra = None
 
         # 3. the rotation: least recently quested first, ties to the most due
         last = {}
@@ -209,9 +217,9 @@ class PracticeQuest(models.Model):
         lo_day, hi_day = volume["sessions_min"], volume["sessions_max"]
         caps = [MAX_SESSIONS.get(t.kind, 1) for t, _d, _s in picks]
         growable = [i for i, (t, _d, _s) in enumerate(picks) if t.kind in GROWABLE_KINDS]
-        while growable and sum(caps) < hi_day:
+        while sum(caps) < hi_day and any(caps[i] < GROW_CEILING for i in growable):
             for i in growable:
-                if sum(caps) < hi_day:
+                if sum(caps) < hi_day and caps[i] < GROW_CEILING:
                     caps[i] += 1
         sessions = [1] * len(picks)
         if picks:
