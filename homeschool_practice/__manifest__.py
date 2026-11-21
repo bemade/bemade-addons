@@ -4,7 +4,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     "name": "Homeschool Practice",
-    "version": "19.0.1.8.1",
+    "version": "19.0.1.9.0",
     "category": "Education",
     "summary": "Short, frequent retrieval practice with game mechanics and family-defined rewards, "
     "touch-first (iPad).",
@@ -67,7 +67,7 @@ and the portal API never returns it.
 Game mechanics
 --------------
 * XP and levels for effort and progress. XP is never earned for speed.
-* Daily quests (3 a day, together 3 to 5 sessions, varied); the learner
+* Daily quests (by default 3 a day, together 3 to 5 sessions, varied); the learner
   chooses the order. A deck may get a quest every day until the learner has
   mastered it (« Une quête chaque jour jusqu'à la maîtrise »: the times tables);
   the other slots rotate among the unlocked decks, least recently quested first,
@@ -75,9 +75,17 @@ Game mechanics
   unit the app picks among those not practised for a while. Mastery stays a
   backend notion: the learner never sees it. A daily cap rewards spaced practice
   over cramming. Practice days are configured per learner.
+* The size of the day is set per learner: how many quests, the range of
+  sessions the day asks for, optional subject quests (« 3 séances de math »:
+  any deck of the subject counts) and an optional practice-time quest
+  (« Pratique 15 minutes aujourd'hui »). Practice time counts each answer's
+  gap since the previous one, capped at a minute, so an idle screen does not
+  count; the learner sees the day's minutes on that quest card only, never
+  inside a session.
 * Badges for accomplishments (XP reached, XP in a day, perfect sessions, unit
   proficiency levels…), never for speed or time of day.
-* Daily, weekly and monthly goals built from completed quests. No streaks.
+* Daily, weekly and monthly goals built from completed quests (the day goal
+  may be « all of today's quests »). No streaks.
 
 Family-defined rewards
 ----------------------

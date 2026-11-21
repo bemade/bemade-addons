@@ -38,6 +38,9 @@ class PracticeGoal(models.Model):
     student_id = fields.Many2one("homeschool.student", required=True, ondelete="cascade", index=True, check_company=True)
     period = fields.Selection(PERIODS, required=True)
     target = fields.Integer(required=True)
+    target_all_quests = fields.Boolean(
+        "All of today's quests", help="Day goal: reached when every quest of the day is done, whatever their number "
+                                      "(the target is then ignored).")
     date_from = fields.Date(required=True, default=lambda self: fields.Date.to_date("2000-01-01"))
     active = fields.Boolean(default=True)
 
@@ -81,6 +84,8 @@ class PracticeGoalAchievement(models.Model):
 class Student(models.Model):
     _inherit = "homeschool.student"
 
+    practice_goal_ids = fields.One2many("homeschool.practice.goal", "student_id", string="Goals")
+
     def _practice_measure(self, period, day):
         Quest = self.env["homeschool.practice.quest"].sudo()
         if period == "day":
@@ -88,6 +93,13 @@ class Student(models.Model):
         return self.env["homeschool.practice.goal.achievement"].sudo().search_count([
             ("student_id", "=", self.id), ("period", "=", "day"),
             ("period_start", ">=", period_start(period, day)), ("period_start", "<=", period_end(period, day))])
+
+    def _practice_day_target(self, goal, day):
+        """The day goal's target: its number, or the day's number of quests (« all of today's quests »)."""
+        if goal.target_all_quests:
+            return self.env["homeschool.practice.quest"].sudo().search_count(
+                [("student_id", "=", self.id), ("day", "=", day)])
+        return goal.target
 
     def _practice_check_goals(self, day):
         """Reach the day goal, then the week and month goals; idempotent. Returns new achievements."""
@@ -101,7 +113,8 @@ class Student(models.Model):
             start = period_start(period, day)
             if Ach.search_count([("student_id", "=", self.id), ("period", "=", period), ("period_start", "=", start)]):
                 continue
-            if self._practice_measure(period, day) >= goal.target:
+            target = self._practice_day_target(goal, day) if period == "day" else goal.target
+            if target and self._practice_measure(period, day) >= target:
                 new |= Ach.create({"student_id": self.id, "goal_id": goal.id, "period": period, "period_start": start})
         return new
 
@@ -112,7 +125,8 @@ class Student(models.Model):
             goal = Goal._for(self, period, day)
             reached = bool(self.env["homeschool.practice.goal.achievement"].sudo().search_count([
                 ("student_id", "=", self.id), ("period", "=", period), ("period_start", "=", period_start(period, day))]))
-            out[period] = {"value": self._practice_measure(period, day), "target": goal.target if goal else 0,
+            target = (self._practice_day_target(goal, day) if period == "day" else goal.target) if goal else 0
+            out[period] = {"value": self._practice_measure(period, day), "target": target,
                            "reached": reached}
         return out
 

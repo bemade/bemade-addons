@@ -6,6 +6,14 @@
             <field name="name">{target} session{s}: {deck}</field>
             <field name="kind">deck_session</field><field name="target">1</field><field name="xp">15</field><field name="sequence">0</field>
         </record>
+        <record id="quest_subject_sessions" model="homeschool.practice.quest.template">
+            <field name="name">{target} session{s} of {subject}</field>
+            <field name="kind">subject_sessions</field><field name="target">1</field><field name="xp">15</field><field name="sequence">0</field>
+        </record>
+        <record id="quest_minutes" model="homeschool.practice.quest.template">
+            <field name="name">Practice {target} minutes today</field>
+            <field name="kind">minutes</field><field name="target">1</field><field name="xp">15</field><field name="sequence">5</field>
+        </record>
         <record id="quest_surprise" model="homeschool.practice.quest.template">
             <field name="name">{target} surprise lesson{s}</field>
             <field name="kind">surprise</field><field name="target">1</field><field name="xp">15</field><field name="sequence">3</field>

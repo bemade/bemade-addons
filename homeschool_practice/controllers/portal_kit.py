@@ -42,7 +42,7 @@ class HomeschoolPracticeShell(HomeschoolPortal):
             "hs_rest_day": not student._practice_is_practice_day(today),
             "hs_quests": [{
                 "id": q.id, "label": q.label, "progress": min(q.progress, q.target), "target": q.target,
-                "done": q.done,
+                "done": q.done, "minutes": q.kind == "minutes",
                 "start_url": "%s?quest=%d" % (PRACTICE_URL, q.id) if learner and not q.done else False,
             } for q in quests],
             "hs_practice_url": PRACTICE_URL if learner else False,
