@@ -1351,14 +1351,6 @@ msgstr "Ex. : remplacer le joint de l'adoucisseur"
 msgid "Author"
 msgstr "Auteur"
 
-#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
-msgid ""
-"Each line becomes a « From last visit » subtask on the next\n"
-"                    visit at this site."
-msgstr ""
-"Chaque ligne devient une sous-tâche « De la dernière visite » à la prochaine"
-" visite à ce site."
-
 #. module: bemade_fsm
 #. odoo-python
 #: code:addons/bemade_fsm/models/fsm_carried_todo.py:0
@@ -1384,7 +1376,9 @@ msgstr "Historique"
 #. odoo-python
 #: code:addons/bemade_fsm/models/task.py:0
 msgid "Only field service users can update the site note."
-msgstr "Seuls les utilisateurs du service terrain peuvent mettre à jour la note du site."
+msgstr ""
+"Seuls les utilisateurs du service terrain peuvent mettre à jour la note du "
+"site."
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_edit_wizard_view_form
@@ -1401,25 +1395,23 @@ msgstr "Historique de la note du site"
 #. module: bemade_fsm
 #: model:ir.model.fields,help:bemade_fsm.field_fsm_site_note_history__task_id
 msgid "The field service task the note was updated from, if any."
-msgstr "La tâche de service terrain depuis laquelle la note a été mise à jour, le cas échéant."
+msgstr ""
+"La tâche de service terrain depuis laquelle la note a été mise à jour, le "
+"cas échéant."
 
 #. module: bemade_fsm
 #. odoo-python
 #: code:addons/bemade_fsm/models/task.py:0
 msgid "The site note can only be updated from a field service task."
-msgstr "La note du site ne peut être mise à jour que depuis une tâche de service terrain."
+msgstr ""
+"La note du site ne peut être mise à jour que depuis une tâche de service "
+"terrain."
 
 #. module: bemade_fsm
 #. odoo-python
 #: code:addons/bemade_fsm/models/task.py:0
 msgid "This task has no customer / site."
 msgstr "Cette tâche n'a pas de client / site."
-
-#: model:ir.model.fields,help:bemade_fsm.field_project_task__fsm_carried_todo_ids
-msgid "The « to do on the next visit » this subtask was created for."
-msgstr ""
-"Le « à faire à la prochaine visite » pour lequel cette sous-tâche a été "
-"créée."
 
 #. module: bemade_fsm
 #. odoo-python
@@ -1433,13 +1425,9 @@ msgstr "Mettre à jour la note du site"
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_edit_wizard_view_form
 msgid "until someone clears it. Every change is kept in the site's history."
-msgstr "jusqu'à ce que quelqu'un l'efface. Chaque modification est conservée dans l'historique du site."
-
-#: model:ir.model,name:bemade_fsm.model_fsm_carried_todo
-#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard__todo_line_ids
-#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
-msgid "To do on the next visit"
-msgstr "À faire à la prochaine visite"
+msgstr ""
+"jusqu'à ce que quelqu'un l'efface. Chaque modification est conservée dans "
+"l'historique du site."
 
 #. module: bemade_fsm
 #: model:ir.model.fields,field_description:bemade_fsm.field_res_partner__fsm_carried_todo_count
