@@ -66,13 +66,13 @@ msgstr "Contact"
 #: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__create_uid
 #: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__create_uid
 msgid "Created by"
-msgstr ""
+msgstr "Créé par"
 
 #. module: bemade_documents_link
 #: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__create_date
 #: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__create_date
 msgid "Created on"
-msgstr ""
+msgstr "Créé le"
 
 #. module: bemade_documents_link
 #: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__display_name
@@ -83,7 +83,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:bemade_documents_link.field_mail_thread__display_name
 #: model:ir.model.fields,field_description:bemade_documents_link.field_res_partner__display_name
 msgid "Display Name"
-msgstr ""
+msgstr "Nom d'affichage"
 
 #. module: bemade_documents_link
 #: model:ir.model,name:bemade_documents_link.model_documents_document
@@ -115,7 +115,7 @@ msgstr "Lier des documents à une fiche"
 #. module: bemade_documents_link
 #: model:ir.model,name:bemade_documents_link.model_mail_thread
 msgid "Email Thread"
-msgstr ""
+msgstr "Discussion par e-mail"
 
 #. module: bemade_documents_link
 #: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__id
@@ -126,19 +126,19 @@ msgstr ""
 #: model:ir.model.fields,field_description:bemade_documents_link.field_mail_thread__id
 #: model:ir.model.fields,field_description:bemade_documents_link.field_res_partner__id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. module: bemade_documents_link
 #: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__write_uid
 #: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__write_uid
 msgid "Last Updated by"
-msgstr ""
+msgstr "Mis à jour par"
 
 #. module: bemade_documents_link
 #: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__write_date
 #: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__write_date
 msgid "Last Updated on"
-msgstr ""
+msgstr "Mis à jour le"
 
 #. module: bemade_documents_link
 #: model_terms:ir.ui.view,arch_db:bemade_documents_link.documents_link_wizard_view_form
@@ -194,17 +194,17 @@ msgstr "Fiche"
 #. module: bemade_documents_link
 #: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__res_id
 msgid "Res"
-msgstr ""
+msgstr "Res"
 
 #. module: bemade_documents_link
 #: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__res_model
 msgid "Res Model"
-msgstr ""
+msgstr "Modèle de l'enregistrement"
 
 #. module: bemade_documents_link
 #: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__res_name
 msgid "Res Name"
-msgstr ""
+msgstr "Nom de l'enregistrement"
 
 #. module: bemade_documents_link
 #: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__res_model
@@ -244,7 +244,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/bemade_documents_link/models/documents_document.py:0
 msgid "document_id"
-msgstr ""
+msgstr "Document"
 
 #. module: bemade_documents_link
 #. odoo-python

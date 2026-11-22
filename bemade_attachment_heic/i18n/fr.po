@@ -27,6 +27,9 @@ msgid ""
 "\n"
 "This HEIC file could not be converted: the file is corrupt or its format is not supported. Download it and convert it on your device."
 msgstr ""
+"Ce fichier HEIC n'a pas pu être converti : fichier corrompu ou format non pris en charge. Téléchargez-le et convertissez-le sur votre appareil.\n"
+"\n"
+"This HEIC file could not be converted: the file is corrupt or its format is not supported. Download it and convert it on your device."
 
 #. module: bemade_attachment_heic
 #. odoo-python
@@ -36,6 +39,9 @@ msgid ""
 "\n"
 "This file is not a HEIC image: there is nothing to convert."
 msgstr ""
+"Ce fichier n'est pas une image HEIC : il n'y a rien à convertir.\n"
+"\n"
+"This file is not a HEIC image: there is nothing to convert."
 
 #. module: bemade_attachment_heic
 #. odoo-javascript

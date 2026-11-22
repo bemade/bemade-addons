@@ -61,6 +61,7 @@ msgstr "Paramètres de configuration"
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_company__display_name
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_users__display_name
+#: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee_public__display_name
 msgid "Display Name"
 msgstr "Nom d'affichage"
 
@@ -103,8 +104,9 @@ msgstr ""
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_company__id
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__id
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_users__id
+#: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee_public__id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. module: mail_company_signature
 #: model:ir.model.fields,help:mail_company_signature.field_res_company__company_signature_notice_until

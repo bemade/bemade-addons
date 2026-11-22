@@ -187,7 +187,6 @@ msgstr ""
 "<i class=\"fa fa-check-circle me-2\"/>\n"
 "                <strong>Succès!</strong> Merci d'avoir approuvé cette visite de service."
 
-
 #. module: fsm_visit_confirmation
 #: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
 msgid ""
@@ -316,3 +315,233 @@ msgstr ""
 "Lorsque le client approuve la visite depuis le courriel de confirmation "
 "alors que la tâche est encore à cette étape, la tâche passe à l'étape "
 "choisie. Laisser vide pour que la tâche reste où elle est."
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_fsm_task_client_requirement__description
+msgid ""
+"Additional information shown to the client when this requirement applies."
+msgstr ""
+"Information supplémentaire montrée au client quand cette exigence "
+"s'applique."
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.fsm_task_client_requirement_form
+msgid ""
+"Additional information shown to the client when this requirement applies..."
+msgstr ""
+"Information supplémentaire montrée au client quand cette exigence "
+"s'applique..."
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.view_task_form_inherit_fsm_visit_confirmation
+msgid "Additional notes about requirements (duration, timing, etc.)"
+msgstr "Notes supplémentaires sur les exigences (durée, moment, etc.)"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_project_task__client_requirements_notes
+msgid ""
+"Additional notes about requirements (e.g., duration, timing, specific "
+"instructions)."
+msgstr ""
+"Notes supplémentaires sur les exigences (p. ex. durée, moment, instructions "
+"particulières)."
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task_type__approval_template_id
+msgid "Approval Template"
+msgstr "Modèle d'approbation"
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.fsm_task_client_requirement_form
+msgid "Archived"
+msgstr "Archivé"
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.fsm_task_client_requirement_form
+msgid "Client Requirement"
+msgstr "Exigence du client"
+
+#. module: fsm_visit_confirmation
+#: model:ir.actions.act_window,name:fsm_visit_confirmation.fsm_task_client_requirement_action
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task__client_requirement_ids
+#: model:ir.ui.menu,name:fsm_visit_confirmation.fsm_task_client_requirement_menu
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.fsm_task_client_requirement_tree
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.view_task_form_inherit_fsm_visit_confirmation
+msgid "Client Requirements"
+msgstr "Exigences du client"
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.actions.act_window,help:fsm_visit_confirmation.fsm_task_client_requirement_action
+msgid ""
+"Client requirements are shown in visit confirmation emails.\n"
+"                Create requirements like \"Water Shutdown Required\" here."
+msgstr ""
+"Les exigences du client sont montrées dans les courriels de confirmation de visite.\n"
+"                Créez ici des exigences comme « Fermeture d'eau requise »."
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__color
+msgid "Color Index"
+msgstr "Couleur"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_fsm_task_client_requirement__color
+msgid "Color for kanban/tags display."
+msgstr "Couleur de l'affichage kanban/étiquettes."
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__description
+msgid "Description"
+msgstr "Description"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__display_name
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task_type__display_name
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model,name:fsm_visit_confirmation.model_fsm_task_client_requirement
+msgid "FSM Task Client Requirement"
+msgstr "Exigence du client de la tâche FSM"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__id
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task_type__id
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task__id
+msgid "ID"
+msgstr "ID"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__write_uid
+msgid "Last Updated by"
+msgstr "Mis à jour par"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__write_date
+msgid "Last Updated on"
+msgstr "Mis à jour le"
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.actions.act_window,help:fsm_visit_confirmation.fsm_task_client_requirement_action
+msgid "No client requirements defined yet."
+msgstr "Aucune exigence du client définie pour l'instant."
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_fsm_task_client_requirement__name
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.fsm_task_client_requirement_form
+msgid "Requirement Name"
+msgstr "Nom de l'exigence"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.constraint,message:fsm_visit_confirmation.constraint_fsm_task_client_requirement_name_unique
+msgid "Requirement name must be unique."
+msgstr "Le nom de l'exigence doit être unique."
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task__client_requirements_notes
+msgid "Requirements Notes"
+msgstr "Notes sur les exigences"
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.view_task_form_inherit_fsm_visit_confirmation
+msgid "Select client requirements..."
+msgstr "Sélectionnez les exigences du client..."
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_project_task__client_requirement_ids
+msgid ""
+"Select client-facing requirements for this visit. These will be communicated"
+" in the confirmation email."
+msgstr ""
+"Sélectionnez les exigences communiquées au client pour cette visite. Elles "
+"figureront dans le courriel de confirmation."
+
+#. module: fsm_visit_confirmation
+#: model:ir.model,name:fsm_visit_confirmation.model_project_task_type
+msgid "Task Stage"
+msgstr "Étape de tâche"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_project_task_type__approval_template_id
+msgid "Template to use for approval emails when a task reaches this stage."
+msgstr ""
+"Modèle à utiliser pour les courriels d'approbation quand une tâche atteint "
+"cette étape."
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_fsm_task_client_requirement__name
+msgid "The name displayed to the client (e.g., 'Water Shutdown Required')."
+msgstr "Le nom affiché au client (p. ex. « Fermeture d'eau requise »)."
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.view_task_form_inherit_fsm_visit_confirmation
+msgid "Visit Requirements"
+msgstr "Exigences de la visite"
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+msgid "Visit approved by customer"
+msgstr "Visite approuvée par le client"
+
+#. module: fsm_visit_confirmation
+#: model:fsm.task.client.requirement,name:fsm_visit_confirmation.client_requirement_water_shutdown
+msgid "Water Shutdown Required"
+msgstr "Fermeture d'eau requise"
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.fsm_task_client_requirement_form
+msgid "e.g., Water Shutdown Required"
+msgstr "p. ex. Fermeture d'eau requise"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model,website_form_label:fsm_visit_confirmation.model_project_task
+msgid "Create a Task"
+msgstr "Créer une tâche"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model,name:fsm_visit_confirmation.model_project_task
+msgid "Task"
+msgstr "Tâche"
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_project_task__display_name
+msgid ""
+"Use these keywords in the title to set new tasks:\n"
+"\n"
+"        30h Allocate 30 hours to the task\n"
+"        #tags Set tags on the task\n"
+"        @user Assign the task to a user\n"
+"        ! Set the task a medium priority\n"
+"        !! Set the task a high priority\n"
+"        !!! Set the task a urgent priority\n"
+"\n"
+"        Make sure to use the right format and order e.g. Improve the configuration screen 5h #feature #v16 @Mitchell !"
+msgstr ""
+"Utilisez ces mots-clés dans le titre pour créer de nouvelles tâches :\n"
+"\n"
+"    30h Allouer 30 heures à la tâche  \n"
+"    #tags Ajouter des tags à la tâche  \n"
+"    @user Assigner la tâche à un utilisateur  \n"
+"    ! Définir la tâche comme priorité moyenne  \n"
+"    !! Définir la tâche comme priorité élevée  \n"
+"    !!! Définir la tâche comme priorité urgente  \n"
+"\n"
+"    Veillez à utiliser le bon format et l’ordre correct, par exemple : Améliorer l’écran de configuration 5h #feature #v16 @Mitchell !"
