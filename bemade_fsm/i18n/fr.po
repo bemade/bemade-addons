@@ -1601,3 +1601,18 @@ msgstr "Produit"
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.partner_equipment_location_view_form
 msgid "Service Sites"
 msgstr "Sites de service"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,help:bemade_fsm.field_res_partner__is_service_site
+#: model:ir.model.fields,help:bemade_fsm.field_res_users__is_service_site
+msgid ""
+"A partner is a service site if they have one or more equipments, site "
+"contacts or work order contacts."
+msgstr ""
+"Un partenaire est un site de service s'il a un ou plusieurs équipements, "
+"contacts de site ou contacts de bon de travail."
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_history__content
+msgid "Note"
+msgstr "Note"

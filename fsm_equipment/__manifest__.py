@@ -19,7 +19,7 @@
 #
 {
     "name": "FSM Equipment",
-    "version": "19.0.0.3.1",
+    "version": "19.0.0.3.2",
     "summary": "Add the notion of client equipment for Field Service",
     "category": "Services/Field Service",
     "author": "Bemade Inc.",
