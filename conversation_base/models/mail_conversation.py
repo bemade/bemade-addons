@@ -1,10 +1,13 @@
 import ast
+from datetime import datetime, timezone
 
 from markupsafe import Markup
 
 from odoo import _, api, fields, models, tools
 from odoo.exceptions import AccessError, MissingError, UserError
 from odoo.tools.mail import html_to_inner_content
+
+from ..tools import mime
 
 SNIPPET_LENGTH = 160
 TRIAGE_LIST_LIMIT = 3
@@ -737,13 +740,29 @@ class MailConversation(models.Model):
         # holding the transport's own native id -- an IMAP UID, which is
         # meaningless outside that one mailbox -- for provenance and
         # capture-idempotency lookups.
-        message.write(
-            {
-                "external_id": stub.get("external_id"),
-                "message_id": stub.get("message_id") or message.message_id,
-            }
-        )
+        values = {
+            "external_id": stub.get("external_id"),
+            "message_id": stub.get("message_id") or message.message_id,
+        }
+        # A filed mail keeps the date it was SENT (the Date header), not the
+        # moment it was filed. Missing/unparsable -> keep the filing time.
+        sent_date = self._stub_sent_date(stub.get("date"))
+        if sent_date:
+            values["date"] = sent_date
+        message.write(values)
         return conversation
+
+    @api.model
+    def _stub_sent_date(self, value):
+        """A stub ``date`` (aware/naive ``datetime`` or RFC822 string) as a
+        naive-UTC ``datetime`` for ``mail.message.date``, or ``False``."""
+        if value and isinstance(value, str):
+            value = mime.parse_date(value)
+        if not isinstance(value, datetime):
+            return False
+        if value.tzinfo is not None:
+            value = value.astimezone(timezone.utc).replace(tzinfo=None)
+        return value
 
     @api.model
     def _find_captured(self, transport, external_id):

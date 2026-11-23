@@ -12,6 +12,7 @@
 #     call for the same external_id -- so acting twice on one inbox item
 #     (e.g. reply, then later reassign) never creates two conversations.
 
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from odoo.tests import TransactionCase
@@ -114,6 +115,71 @@ class TestConversationCapture(TransactionCase):
             len(conversation.message_ids), initial_message_count + 1
         )
         self.assertEqual(self._outgoing_mail_ids(), before_mail_ids)
+
+    def _captured_message(self, conversation, external_id):
+        return conversation.message_ids.filtered(
+            lambda m: m.external_id == external_id
+        )
+
+    def test_capture_keeps_sent_date_with_offset_new_conversation(self):
+        sent = datetime(2025, 11, 4, 9, 15, tzinfo=timezone(timedelta(hours=-5)))
+        conversation = self.Conversation._capture_stub(
+            self.transport, self._stub(date=sent), mode="new"
+        )
+        message = self._captured_message(conversation, "ext-msg-1")
+        self.assertEqual(message.date, datetime(2025, 11, 4, 14, 15))
+        self.assertEqual(conversation.last_message_date, datetime(2025, 11, 4, 14, 15))
+        self.assertTrue(conversation.unanswered)
+        self.assertEqual(conversation.unanswered_since, datetime(2025, 11, 4, 14, 15))
+
+    def test_capture_sent_date_rfc822_string(self):
+        conversation = self.Conversation._capture_stub(
+            self.transport,
+            self._stub(date="Tue, 04 Nov 2025 09:15:00 -0500"),
+            mode="new",
+        )
+        message = self._captured_message(conversation, "ext-msg-1")
+        self.assertEqual(message.date, datetime(2025, 11, 4, 14, 15))
+
+    def test_capture_old_mail_into_existing_conversation_sorts_by_date(self):
+        conversation = self.Conversation._capture_stub(
+            self.transport,
+            self._stub(date=datetime(2025, 11, 10, 12, 0, tzinfo=timezone.utc)),
+            mode="new",
+        )
+        self.assertEqual(conversation.last_message_date, datetime(2025, 11, 10, 12, 0))
+
+        self.Conversation._capture_stub(
+            self.transport,
+            self._stub(
+                external_id="ext-msg-old",
+                body="<p>Older.</p>",
+                date=datetime(
+                    2025, 11, 4, 9, 15, tzinfo=timezone(timedelta(hours=-5))
+                ),
+            ),
+            mode="existing",
+            target=conversation,
+        )
+        old = self._captured_message(conversation, "ext-msg-old")
+        self.assertEqual(old.date, datetime(2025, 11, 4, 14, 15))
+        # the newest message still defines the thread's last activity ...
+        self.assertEqual(conversation.last_message_date, datetime(2025, 11, 10, 12, 0))
+        # ... and the unanswered stretch starts at the OLDEST inbound mail
+        self.assertTrue(conversation.unanswered)
+        self.assertEqual(conversation.unanswered_since, datetime(2025, 11, 4, 14, 15))
+
+    def test_capture_without_usable_date_keeps_filing_time(self):
+        for index, bad in enumerate((None, False, "", "not a date")):
+            external_id = f"ext-bad-{index}"
+            before = datetime.now() - timedelta(seconds=5)
+            conversation = self.Conversation._capture_stub(
+                self.transport,
+                self._stub(external_id=external_id, date=bad),
+                mode="new",
+            )
+            message = self._captured_message(conversation, external_id)
+            self.assertGreaterEqual(message.date, before)
 
     def test_capture_link_mode_links_record(self):
         record = self.env["res.partner"].create({"name": "Linked Record"})
