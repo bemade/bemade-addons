@@ -9,8 +9,10 @@ export default [
     id: "open-conversation",
     title: "Ouvrir la conversation",
     narration: "Ouvrons la conversation reçue par l'équipe.",
+    // Exact subject: other modules' demo data has conversations whose
+    // subject also starts with "Soumission".
     selector:
-      ".o_list_renderer tr.o_data_row:has(td[name='name'][data-tooltip^='Soumission']) td[name='name']",
+      ".o_list_renderer tr.o_data_row:has(td[name='name'][data-tooltip='Soumission']) td[name='name']",
     action: "click",
   },
   {
@@ -34,8 +36,9 @@ export default [
     title: "Vérifier l'absence de l'adresse de l'équipe",
     narration:
       "L'adresse de l'équipe n'y figure pas : elle n'apparaîtra donc pas parmi les destinataires d'une réponse.",
-    // Three rows: the sender and the two outside people (the Python test proves no other).
-    selector: ".o_field_one2many tr.o_data_row:nth-child(3)",
+    // Exactly three rows: the sender and the two outside people. The row
+    // after the third is not a data row (the Python test names them).
+    selector: ".o_field_one2many tr.o_data_row:nth-child(3) + tr:not(.o_data_row)",
     action: "assert",
   },
 ];
