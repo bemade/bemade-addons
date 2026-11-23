@@ -562,7 +562,7 @@ class MailConversation(models.Model):
     def _sync_participants_from_msg_dict(self, msg_dict):
         """Build ``mail.conversation.participant`` rows from a gateway
         ``msg_dict`` (as produced by ``mail.thread.message_parse``/
-        ``message_route``: comma-joined ``to``/``cc`` strings, a resolved
+        ``message_route``: comma-joined ``to_filtered``/``cc_filtered`` strings, a resolved
         ``author_id``). Used by ``message_new`` (real inbound via the
         alias) and by ``_route_via_alias`` (a captured stub routed through
         the gateway).
@@ -575,9 +575,23 @@ class MailConversation(models.Model):
         self._sync_participants(
             from_email=msg_dict.get("email_from") or msg_dict.get("from"),
             from_partner=author_partner,
-            to_emails=tools.email_split(msg_dict.get("to") or ""),
-            cc_emails=tools.email_split(msg_dict.get("cc") or ""),
+            to_emails=tools.email_split(self._msg_dict_recipients(msg_dict, "to")),
+            cc_emails=tools.email_split(self._msg_dict_recipients(msg_dict, "cc")),
         )
+
+    @api.model
+    def _msg_dict_recipients(self, msg_dict, key):
+        """Comma-joined ``to``/``cc`` addresses of a gateway ``msg_dict``
+        without the addresses of Odoo's own aliases (the team's own
+        address): ``message_parse`` provides them as ``<key>_filtered``.
+        The raw value is used only when that key is absent (a hand-built
+        ``msg_dict``), not when it is present and empty -- empty means every
+        recipient was an alias.
+        """
+        filtered = msg_dict.get(f"{key}_filtered")
+        if filtered is None:
+            filtered = msg_dict.get(key)
+        return filtered or ""
 
     def _sync_participants_from_stub(self, stub):
         """Build ``mail.conversation.participant`` rows from a normalized
