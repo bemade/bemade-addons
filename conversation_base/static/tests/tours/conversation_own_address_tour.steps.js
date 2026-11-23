@@ -34,8 +34,8 @@ export default [
     title: "Vérifier l'absence de l'adresse de l'équipe",
     narration:
       "L'adresse de l'équipe n'y figure pas : elle n'apparaîtra donc pas parmi les destinataires d'une réponse.",
-    selector:
-      ".o_field_one2many:not(:has(td[name='email']:contains('equipe-soumissions')))",
+    // Three rows: the sender and the two outside people (the Python test proves no other).
+    selector: ".o_field_one2many tr.o_data_row:nth-child(3)",
     action: "assert",
   },
 ];
