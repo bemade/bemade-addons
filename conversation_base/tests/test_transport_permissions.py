@@ -230,7 +230,7 @@ class TestTransportPermissions(TransactionCase):
         # Existing writable shared accounts stay as they are; editing other
         # fields or switching write-back off is not restricted.
         shared = self.shared.with_user(self.member)
-        shared.write({"login": "desk@example.com", "mailbox_writable": True})
+        shared.write({"name": "Front desk", "mailbox_writable": True})
         shared.write({"mailbox_writable": False})
         self.assertFalse(self.shared.mailbox_writable)
 
