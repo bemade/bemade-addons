@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import timedelta
 
 from markupsafe import Markup
 
@@ -76,10 +77,12 @@ class ProjectTask(models.Model):
         """For each of ``tools`` used on this visit, the need of this visit and
         of the other open visits planned on overlapping dates.
 
-        Overlap uses the Planning window: ``planned_date_begin`` to
-        ``date_deadline``. A visit without both dates is ignored, as are done or
-        cancelled visits and this visit's own hierarchy (its sub-tasks carry
-        the same dates).
+        Overlap uses the Planning window, ``planned_date_begin`` to
+        ``date_deadline``, extended past the end by the tool's return delay:
+        two visits needing a tool conflict when one starts before the other's
+        end plus that tool's delay. A visit without both dates is ignored, as
+        are done or cancelled visits and this visit's own hierarchy (its
+        sub-tasks carry the same dates).
 
         :return: {tool id: {"need", "others", "owned", "over", "visits", "note"}}
         """
@@ -105,6 +108,11 @@ class ProjectTask(models.Model):
         if origin:
             root = origin._fsm_prep_visit()
             own_ids = origin.search([("id", "child_of", root.id)]).ids
+        tools = self.env["fsm.service.tool"].sudo().browse(list(need))
+        delays = {tool.id: timedelta(days=tool.return_delay_days) for tool in tools}
+        # One search over the window widened by the longest delay, then the
+        # exact window of each tool.
+        widest = max(delays.values())
         others = (
             self.env["fsm.prep.line"]
             .sudo()
@@ -114,17 +122,23 @@ class ProjectTask(models.Model):
                     ("task_id", "not in", own_ids),
                     ("task_id.is_fsm", "=", True),
                     ("task_id.state", "not in", list(CLOSED_STATES)),
-                    ("task_id.planned_date_begin", "<", task.date_deadline),
-                    ("task_id.date_deadline", ">", task.planned_date_begin),
+                    ("task_id.planned_date_begin", "<", task.date_deadline + widest),
+                    ("task_id.date_deadline", ">", task.planned_date_begin - widest),
                 ]
             )
         )
         other_qty = defaultdict(int)
         other_visits = defaultdict(lambda: self.env["project.task"])
         for line in others:
-            other_qty[line.tool_id.id] += line.quantity
-            other_visits[line.tool_id.id] |= line.task_id
-        for tool in self.env["fsm.service.tool"].sudo().browse(list(need)):
+            delay = delays[line.tool_id.id]
+            other = line.task_id
+            if (
+                other.planned_date_begin < task.date_deadline + delay
+                and other.date_deadline + delay > task.planned_date_begin
+            ):
+                other_qty[line.tool_id.id] += line.quantity
+                other_visits[line.tool_id.id] |= other
+        for tool in tools:
             total = need[tool.id] + other_qty[tool.id]
             visits = other_visits[tool.id]
             over = total > tool.quantity_owned
@@ -151,6 +165,7 @@ class ProjectTask(models.Model):
     @api.depends(
         "fsm_prep_line_ids.tool_id",
         "fsm_prep_line_ids.quantity",
+        "fsm_prep_line_ids.tool_id.return_delay_days",
         "planned_date_begin",
         "date_deadline",
         "state",

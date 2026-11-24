@@ -38,8 +38,9 @@ class FsmPrepLine(models.Model):
     checked_label = fields.Char(string="Check", compute="_compute_checked_label")
     overbooked = fields.Boolean(
         compute="_compute_overbooking",
-        help="Visits planned on overlapping dates need more of this tool than "
-        "the quantity owned. Visits without a start and an end date are ignored.",
+        help="Visits planned on overlapping dates (the end extended by the "
+        "tool's return delay) need more of this tool than the quantity owned. "
+        "Visits without a start and an end date are ignored.",
     )
     overbooking_note = fields.Char(
         string="Overbooking", compute="_compute_overbooking"
@@ -113,6 +114,7 @@ class FsmPrepLine(models.Model):
     @api.depends(
         "tool_id",
         "tool_id.quantity_owned",
+        "tool_id.return_delay_days",
         "quantity",
         "task_id",
         "task_id.planned_date_begin",

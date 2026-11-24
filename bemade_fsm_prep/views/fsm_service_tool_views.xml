@@ -7,6 +7,7 @@
             <list editable="bottom">
                 <field name="name" />
                 <field name="quantity_owned" />
+                <field name="return_delay_days" />
                 <field name="notes" optional="show" />
                 <field name="active" column_invisible="True" />
             </list>
@@ -32,6 +33,7 @@
                     </div>
                     <group>
                         <field name="quantity_owned" />
+                        <field name="return_delay_days" />
                         <field name="active" invisible="1" />
                     </group>
                     <field name="notes" placeholder="Notes" />
@@ -62,9 +64,10 @@
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Add a service tool</p>
             <p>
-                List the tools the team brings to visits and how many the company
-                owns. A visit that needs a tool already used by visits planned at
-                the same time beyond that quantity shows a warning.
+                List the tools the team brings to visits, how many the company
+                owns and how many days each one takes to come back. A visit that
+                needs a tool already used by visits planned at the same time
+                (plus that return delay) beyond that quantity shows a warning.
             </p>
         </field>
     </record>

@@ -97,8 +97,9 @@
                     </field>
                     <div class="text-muted small">
                         Tools needed by visits planned on overlapping dates (start to
-                        end date) beyond the quantity owned are shown in red. Visits
-                        without both dates are not counted. This list is not billed.
+                        end date, plus the tool's return delay) beyond the quantity
+                        owned are shown in red. Visits without both dates are not
+                        counted. This list is not billed.
                     </div>
                 </page>
             </xpath>
