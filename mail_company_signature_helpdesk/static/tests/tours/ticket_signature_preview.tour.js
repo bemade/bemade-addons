@@ -14,6 +14,24 @@ registry.category("web_tour.tours").add("mail_company_signature_helpdesk_preview
       trigger: `.o-mail-Composer-signaturePreview:contains('${TEAM_ADDRESS}')`,
     },
     {
+      content: "The team address line is visible, not clipped by the preview box",
+      trigger: ".o-mail-Composer-signaturePreview .o-mail-Composer-signatureBlock",
+      run() {
+        const block = this.anchor;
+        const line = [...block.querySelectorAll("*")]
+          .reverse()
+          .find((el) => el.textContent.includes(TEAM_ADDRESS));
+        const box = block.getBoundingClientRect();
+        const lineBox = line.getBoundingClientRect();
+        if (lineBox.bottom > box.bottom + 1 || block.scrollHeight > block.clientHeight + 1) {
+          throw new Error(
+            `signature clipped: line bottom ${lineBox.bottom} > box bottom ${box.bottom}, ` +
+              `scrollHeight ${block.scrollHeight} > clientHeight ${block.clientHeight}`
+          );
+        }
+      },
+    },
+    {
       content: "No personal address in the preview",
       trigger: ".o-mail-Composer:not(:has(.o-mail-Composer-signaturePreview:contains('desk.agent@')))",
     },

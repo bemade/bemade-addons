@@ -4,6 +4,8 @@ Acceptance criteria:
 - AC1: the chatter « Send message » preview shows the team address, not the
   agent's personal address.
 - AC2: the full composer opened from it inserts the same signature.
+- AC3: a full company signature (name, job, company, phones, address,
+  website) fits the preview: the address line is not clipped.
 """
 
 from odoo.tests import HttpCase, tagged
@@ -18,6 +20,17 @@ class TestTicketPreviewUI(HttpCase, TicketSenderCommon):
         super().setUpClass()
         cls.tour_agent = cls._agent("Desk Tour", "desk_tour", "desk.agent@example.org", password="desk_tour")
         cls.team.mail_send_as_alias_id = cls.sac_alias
+        # A full-length company signature, like a real deployment's.
+        cls.company.sudo().company_signature_template = (
+            "<p><strong>{{name}}</strong></p><p>{{job_title}}</p><p>{{company_name}}</p>"
+            "<p>Tel. : {{work_phone}}</p><p>Cell : {{mobile_phone}}</p>"
+            '<p><a href="mailto:{{work_email}}">{{work_email}}</a></p>'
+            "<p>{{company_website}}</p><div>{{company_notice}}</div>"
+        )
+        cls.company.sudo().write({"phone": "+1 555-0100", "website": "https://www.example.org"})
+        cls.env["hr.employee"].sudo().search([("user_id", "=", cls.tour_agent.id)]).write(
+            {"work_phone": "+1 555-0101", "mobile_phone": "+1 555-0102", "signature_show_mobile": True}
+        )
         cls.company.sudo().company_signature_enforced = True
         cls._grant_ticket_form_read_access(cls.tour_agent)
 

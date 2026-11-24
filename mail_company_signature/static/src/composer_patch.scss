@@ -8,9 +8,16 @@
   opacity: 0.85;
 
   .o-mail-Composer-signatureBlock {
-    max-height: 8em;
+    // Tall enough for a full company signature (name, job, company,
+    // phones, address, website): the sending address, the line the user
+    // checks, must not be cut off. A taller one (logo, notice) scrolls;
+    // its links stay inert, the box itself takes the wheel.
+    max-height: 20em;
     overflow: auto;
-    pointer-events: none;
     user-select: none;
+
+    * {
+      pointer-events: none;
+    }
   }
 }
