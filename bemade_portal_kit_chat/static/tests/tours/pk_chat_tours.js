@@ -33,6 +33,11 @@ tours.add("pk_chat_start_and_send", {
             content: "The message is shown as mine",
             trigger: "[data-pk-chat-window] .o_pk_chat_msg_own:contains(Hello from the tour)",
         },
+        { content: "The back arrow", trigger: "[data-pk-chat-window] [data-pk-chat-back]", run: "click" },
+        {
+            content: "closes the window and shows the list (it stays open)",
+            trigger: "[data-pk-chat-menu]:not([hidden]) [data-pk-chat-list] [data-pk-chat-kind=direct]",
+        },
     ],
 });
 

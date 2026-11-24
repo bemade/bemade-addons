@@ -117,7 +117,9 @@ export class PkChatBubble extends Interaction {
             this.showPicker().catch(() => {})
         );
         this.addListener(document, "click", (ev) => {
-            if (!this.menu.hidden && !this.el.contains(ev.target)) {
+            // A click in the window (its back arrow opens this menu) is not
+            // a click outside.
+            if (!this.menu.hidden && !this.el.contains(ev.target) && !ev.target.closest("[data-pk-chat-window]")) {
                 this.closeMenu();
             }
         });

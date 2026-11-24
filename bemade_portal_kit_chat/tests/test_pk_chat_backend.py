@@ -11,9 +11,11 @@ Acceptance criteria:
 * UC-B2 For a share user it stays the core's (internal users only).
 * UC-B3 An internal user's Discuss sees a portal user's message in their
   direct chat (the chat is a native Discuss channel).
+* UC-B4 The back end loads with the palette and avatar card patches (no
+  JS error; the patch module is defined).
 Synthetic users only.
 """
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import HttpCase, TransactionCase, tagged
 
 from odoo.addons.mail.tools.discuss import Store
 
@@ -53,3 +55,20 @@ class TestPkChatBackend(TransactionCase):
         self.assertIn(channel, dana_channels)
         bodies = channel.with_user(self.dana).message_ids.mapped('body')
         self.assertTrue(any('Question about Saturday' in str(b) for b in bodies))
+
+
+@tagged('post_install', '-at_install')
+class TestPkChatBackendAssets(HttpCase):
+
+    # UC-B4
+    def test_backend_loads_with_patches(self):
+        code = """
+            const mod = odoo.loader.modules.get('@bemade_portal_kit_chat/backend/pk_chat_palette');
+            const pure = odoo.loader.modules.get('@bemade_portal_kit_chat/backend/pk_chat_portal_partners');
+            if (mod && pure && pure.pkPortalPartners) {
+                console.log('test successful');
+            } else {
+                console.error('the chat backend patches are not loaded');
+            }
+        """
+        self.browser_js('/odoo/discuss', code, ready="odoo.isReady", login='admin', timeout=120)
