@@ -20,10 +20,23 @@ class FsmServiceTool(models.Model):
         help="How many of this tool the company owns. Visits planned on "
         "overlapping dates that need more than this are flagged.",
     )
+    return_delay_days = fields.Integer(
+        string="Return Delay (days)",
+        default=1,
+        required=True,
+        help="Days the tool stays unavailable after a visit's planned end "
+        "(coming back, cleaning). A visit needing this tool conflicts with "
+        "another one that starts before that visit's end plus this delay. "
+        "0: the tool is available again as soon as the visit ends.",
+    )
     active = fields.Boolean(default=True)
     notes = fields.Text()
 
     _quantity_owned_positive = models.Constraint(
         "CHECK (quantity_owned >= 0)",
         "The quantity owned cannot be negative.",
+    )
+    _return_delay_days_positive = models.Constraint(
+        "CHECK (return_delay_days >= 0)",
+        "The return delay cannot be negative.",
     )

@@ -91,6 +91,15 @@ msgid "Created on"
 msgstr "Créé le"
 
 #. module: bemade_fsm_prep
+#: model:ir.model.fields,help:bemade_fsm_prep.field_fsm_service_tool__return_delay_days
+msgid ""
+"Days the tool stays unavailable after a visit's planned end (coming back, "
+"cleaning). A visit needing this tool conflicts with another one that starts "
+"before that visit's end plus this delay. 0: the tool is available again as "
+"soon as the visit ends."
+msgstr "Nombre de jours pendant lesquels l'outil reste indisponible après la fin planifiée d'une visite (retour, nettoyage). Une visite qui demande cet outil entre en conflit avec une autre qui commence avant la fin de cette visite plus ce délai. 0 : l'outil est de nouveau disponible dès la fin de la visite."
+
+#. module: bemade_fsm_prep
 #: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__name
 #: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_template_line__name
 msgid "Description"
@@ -140,10 +149,11 @@ msgstr "Dernière mise à jour le"
 #. module: bemade_fsm_prep
 #: model_terms:ir.actions.act_window,help:bemade_fsm_prep.fsm_service_tool_action
 msgid ""
-"List the tools the team brings to visits and how many the company\n"
-"                owns. A visit that needs a tool already used by visits planned at\n"
-"                the same time beyond that quantity shows a warning."
-msgstr "Listez les outils que l'équipe apporte aux visites et combien l'entreprise en possède. Une visite qui demande un outil déjà utilisé au-delà de cette quantité par des visites planifiées en même temps affiche un avertissement."
+"List the tools the team brings to visits, how many the company\n"
+"                owns and how many days each one takes to come back. A visit that\n"
+"                needs a tool already used by visits planned at the same time\n"
+"                (plus that return delay) beyond that quantity shows a warning."
+msgstr "Listez les outils que l'équipe apporte aux visites, combien l'entreprise en possède et combien de jours chacun met à revenir. Une visite qui demande un outil déjà utilisé au-delà de cette quantité par des visites planifiées en même temps (plus ce délai de retour) affiche un avertissement."
 
 #. module: bemade_fsm_prep
 #: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_service_tool__name
@@ -178,6 +188,11 @@ msgid "Quantity Owned"
 msgstr "Quantité possédée"
 
 #. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_service_tool__return_delay_days
+msgid "Return Delay (days)"
+msgstr "Délai de retour (jours)"
+
+#. module: bemade_fsm_prep
 #: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__sequence
 #: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_template_line__sequence
 msgid "Sequence"
@@ -204,6 +219,11 @@ msgstr "Modèle de tâche"
 #: model:ir.model.constraint,message:bemade_fsm_prep.constraint_fsm_service_tool_quantity_owned_positive
 msgid "The quantity owned cannot be negative."
 msgstr "La quantité possédée ne peut pas être négative."
+
+#. module: bemade_fsm_prep
+#: model:ir.model.constraint,message:bemade_fsm_prep.constraint_fsm_service_tool_return_delay_days_positive
+msgid "The return delay cannot be negative."
+msgstr "Le délai de retour ne peut pas être négatif."
 
 #. module: bemade_fsm_prep
 #: model:ir.model.constraint,message:bemade_fsm_prep.constraint_fsm_prep_line_quantity_positive
@@ -251,9 +271,10 @@ msgstr "Outils et matériel à apporter, copiés sur la visite (la tâche de pre
 #: model_terms:ir.ui.view,arch_db:bemade_fsm_prep.project_task_form_fsm_prep
 msgid ""
 "Tools needed by visits planned on overlapping dates (start to\n"
-"                        end date) beyond the quantity owned are shown in red. Visits\n"
-"                        without both dates are not counted. This list is not billed."
-msgstr "Les outils demandés au-delà de la quantité possédée par des visites planifiées à des dates qui se chevauchent (date de début à date de fin) sont affichés en rouge. Les visites sans les deux dates ne sont pas comptées. Cette liste n'est pas facturée."
+"                        end date, plus the tool's return delay) beyond the quantity\n"
+"                        owned are shown in red. Visits without both dates are not\n"
+"                        counted. This list is not billed."
+msgstr "Les outils demandés au-delà de la quantité possédée par des visites planifiées à des dates qui se chevauchent (date de début à date de fin, plus le délai de retour de l'outil) sont affichés en rouge. Les visites sans les deux dates ne sont pas comptées. Cette liste n'est pas facturée."
 
 #. module: bemade_fsm_prep
 #: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__task_id
@@ -263,9 +284,10 @@ msgstr "Visite"
 #. module: bemade_fsm_prep
 #: model:ir.model.fields,help:bemade_fsm_prep.field_fsm_prep_line__overbooked
 msgid ""
-"Visits planned on overlapping dates need more of this tool than the quantity"
-" owned. Visits without a start and an end date are ignored."
-msgstr "Des visites planifiées à des dates qui se chevauchent demandent plus de cet outil que la quantité possédée. Les visites sans date de début et de fin sont ignorées."
+"Visits planned on overlapping dates (the end extended by the tool's return "
+"delay) need more of this tool than the quantity owned. Visits without a "
+"start and an end date are ignored."
+msgstr "Des visites planifiées à des dates qui se chevauchent (la fin prolongée du délai de retour de l'outil) demandent plus de cet outil que la quantité possédée. Les visites sans date de début et de fin sont ignorées."
 
 #. module: bemade_fsm_prep
 #: model_terms:ir.ui.view,arch_db:bemade_fsm_prep.fsm_service_tool_view_form

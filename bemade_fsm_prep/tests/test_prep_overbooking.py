@@ -4,7 +4,7 @@ Acceptance criteria:
 - Two visits whose planned windows (planned_date_begin..date_deadline) overlap
   and together need 2 of a tool owned once: both visits' lines are flagged and
   both visits show a banner naming the other visit.
-- Visits that do not overlap: no warning.
+- Visits that do not overlap (tool without a return delay): no warning.
 - A visit without dates is ignored (no warning on it, not counted for others).
 - Done or cancelled visits are not counted.
 - The visit's own sub-tasks (which share its dates) are not counted against it.
@@ -37,6 +37,8 @@ class TestPrepOverbooking(FsmPrepCommon):
         self.assertTrue(a.fsm_prep_overbooking_warning)
 
     def test_non_overlapping_visits_not_warned(self):
+        # Back to back: only without a return delay (round 2 default is 1 day).
+        self.tool.return_delay_days = 0
         a = self._visit("Visit A", self._dt(10, 8), self._dt(10, 17), [(self.tool, 1)])
         b = self._visit("Visit B", self._dt(10, 17), self._dt(11, 12), [(self.tool, 1)])
         for visit in a | b:

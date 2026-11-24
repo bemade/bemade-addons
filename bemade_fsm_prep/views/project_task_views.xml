@@ -42,7 +42,13 @@
                             <field name="tool_id" options="{'no_create': True}" />
                             <field name="quantity" />
                             <field name="checked_label" class="text-muted" />
-                            <field name="overbooking_note" class="text-danger" />
+                            <!-- fixed width: an empty list freezes the columns at their
+                                 minimum, which cut the note of a line added in edit -->
+                            <field
+                  name="overbooking_note"
+                  class="text-danger"
+                  width="300px"
+                />
                             <field name="overbooked" column_invisible="True" />
                             <!-- kept client-side so a re-tick before save brings the
                                  stamp back; the server ignores client stamp values -->
@@ -97,8 +103,9 @@
                     </field>
                     <div class="text-muted small">
                         Tools needed by visits planned on overlapping dates (start to
-                        end date) beyond the quantity owned are shown in red. Visits
-                        without both dates are not counted. This list is not billed.
+                        end date, plus the tool's return delay) beyond the quantity
+                        owned are shown in red. Visits without both dates are not
+                        counted. This list is not billed.
                     </div>
                 </page>
             </xpath>
