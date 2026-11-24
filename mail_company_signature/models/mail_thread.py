@@ -80,13 +80,6 @@ class MailThread(models.AbstractModel):
     # Incoming: a reply stays on its record
     # ------------------------------------------------------------------
     @api.model
-    def _mail_reply_always_kept_models(self):
-        """Models whose replies stay on the record even when the company
-        setting "Send from the signature address" is off (downstream modules
-        extend it)."""
-        return []
-
-    @api.model
     def message_route(self, message, message_dict, model=None, thread_id=None, custom_values=None):
         parent_id = message_dict.get("parent_id")
         routes = super().message_route(
@@ -125,9 +118,9 @@ class MailThread(models.AbstractModel):
         inbox that creates tickets) as a forward: it drops the reply route and
         creates a new record through the alias. When every route core kept is
         such a creation and the email answers a message of a record, route it
-        back to that record instead. Active for the records of companies with
-        "Send from the signature address" (their emails carry a team inbox in
-        Reply-To) and for ``_mail_reply_always_kept_models``.
+        back to that record instead. Active only for the records of companies
+        with "Send from the signature address" (their emails carry a team
+        inbox in Reply-To); there is no per-model exception.
 
         :return: ``[route]`` or an empty list to keep ``routes``.
         """
@@ -162,8 +155,6 @@ class MailThread(models.AbstractModel):
 
     @api.model
     def _mail_reply_keep_applies(self, record):
-        if record._name in self._mail_reply_always_kept_models():
-            return True
         company = record.company_id if "company_id" in record._fields else self.env["res.company"]
         company = company[:1] or self.env.company
         return bool(company.sudo().mail_send_from_signature_address)

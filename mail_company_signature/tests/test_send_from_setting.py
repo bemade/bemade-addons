@@ -10,6 +10,9 @@ Acceptance criteria:
 - AC4: setting on, a template whose sender is the user (``{{
   user.email_formatted }}``) is rewritten; a template's fixed sender
   (purchasing@) is kept.
+- AC4b: setting on, a template's fixed sender that is a team inbox (an Odoo
+  alias, purchasing@): Reply-To becomes that same address instead of the
+  catchall; a fixed sender that is not an inbox keeps core's Reply-To.
 - AC5: setting on, a user without a team address (personal) and a portal
   user: unchanged.
 - AC6: the setting is per company: a user of another company is unchanged.
@@ -59,6 +62,49 @@ class TestSendFromSetting(SenderCommon):
         self.assertEqual(email_normalize(mail.reply_to), self.alias_email)
         fixed = self._send_template(self._template("<p>Hello</p>", email_from=self.fixed_from), self.u_full)
         self.assertEqual(fixed.email_from, self.fixed_from)
+
+    def _fixed_inbox(self):
+        local, _domain = self.fixed_from.split("@")
+        return self.env["mail.alias"].create(
+            {
+                "alias_name": local,
+                "alias_domain_id": self.mail_alias_domain.id,
+                "alias_model_id": self.env["ir.model"]._get_id("hr.job"),
+            }
+        )
+
+    def _send_fixed_by_composer(self, user, email_from):
+        template = self._template("<p>Hello</p>", email_from=email_from)
+        with self.mock_mail_gateway():
+            composer = (
+                self.env["mail.compose.message"]
+                .with_user(user)
+                .with_context(default_model="res.partner", default_res_ids=self.document.ids,
+                              default_composition_mode="comment", default_template_id=template.id)
+                .create({"partner_ids": self.external.ids})
+            )
+            composer._action_send_mail()
+            self.env.flush_all()
+        return self._new_mails.filtered(lambda m: self.external in m.recipient_ids)
+
+    def test_ac4b_fixed_sender_inbox_reply_to(self):
+        self._fixed_inbox()
+        # Without the setting: core's Reply-To (catchall), for reference.
+        before = self._send_fixed_by_composer(self.u_full, self.fixed_from)
+        self.assertNotEqual(email_normalize(before.reply_to), self.fixed_from)
+        self._setting()
+        mail = self._send_fixed_by_composer(self.u_full, self.fixed_from)
+        self.assertEqual(mail.email_from, self.fixed_from, "the template's sender is kept")
+        self.assertEqual(email_normalize(mail.reply_to), self.fixed_from)
+        sent = self._send_template(self._template("<p>Hello</p>", email_from=self.fixed_from), self.u_full)
+        self.assertEqual(email_normalize(sent.reply_to), self.fixed_from)
+
+    def test_ac4b_fixed_sender_not_inbox_kept(self):
+        self._setting()
+        other = "front-desk@%s" % self.alias_domain
+        mail = self._send_fixed_by_composer(self.u_full, other)
+        self.assertEqual(mail.email_from, other)
+        self.assertNotEqual(email_normalize(mail.reply_to), other)
 
     def test_ac5_personal_and_portal_unchanged(self):
         self._setting()

@@ -91,8 +91,9 @@ default). When on, an internal user's email whose sender would be their
 personal address goes out from the sending address when it is not personal:
 From « Name (Team) » <inbox>, Reply-To the inbox (a record's own routing
 alias in Reply-To is kept, except when the record imposes its address). A
-template's fixed sender is kept; users whose sending address is personal are
-not changed.
+template's fixed sender is kept; when it is a team inbox (an Odoo alias, e.g.
+purchasing@), Reply-To becomes that inbox too instead of the catchall. Users
+whose sending address is personal are not changed.
 
 Replies stay on their record
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -100,8 +101,7 @@ Replies stay on their record
 Core reads a reply addressed to an alias of another model (a helpdesk inbox)
 as a forward and creates a new record through that alias. For the records of
 companies with the setting on (their emails now carry a team inbox in
-Reply-To), and for the models listed by `mail.thread._mail_reply_always_kept_models()`,
-a reply that answers a message of a record and that core would turn into new
+Reply-To), and only for them (no per-model exception), a reply that answers a message of a record and that core would turn into new
 records only through such aliases lands on the record instead. A fresh email
 to the inbox still creates a record. Hook: `record._mail_on_alias_reply(aliases,
 message_dict)` is called after a reply lands on a record while inboxes of other

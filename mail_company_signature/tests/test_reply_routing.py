@@ -5,8 +5,8 @@ Acceptance criteria:
 - AC1: setting « Send from the signature address » on: a reply (In-Reply-To
   a message of a record) addressed to an inbox of another model lands on
   the record, as a reply to that message; no record is created.
-- AC2: setting off: core behaviour (a new record through the inbox), unless
-  the record's model is in ``_mail_reply_always_kept_models``.
+- AC2: setting off: core behaviour (a new record through the inbox), for
+  every model (no per-model exception: the setting alone turns the rule on).
 - AC3: a fresh email (no In-Reply-To) to the inbox still creates a record.
 - AC4: hook ``_mail_on_alias_reply(aliases, message_dict)`` on the record,
   called after the reply is posted, when an inbox of another model was among
@@ -68,12 +68,11 @@ class TestReplyRouting(SenderCommon):
         self.assertEqual(len(self._jobs()), 1)
         self.assertFalse(self._replies())
 
-    def test_ac2_always_kept_models(self):
-        Thread = type(self.env["mail.thread"])
-        with patch.object(Thread, "_mail_reply_always_kept_models", lambda self: ["res.partner"]):
-            thread_id = self._process(to=self.alias_email, in_reply_to=self.sent.message_id)
-        self.assertEqual(thread_id, self.document.id)
-        self.assertFalse(self._jobs())
+    def test_ac2_no_model_exception(self):
+        self.assertFalse(
+            hasattr(self.env["mail.thread"], "_mail_reply_always_kept_models"),
+            "no per-model opt-in: the company setting alone decides",
+        )
 
     def test_ac3_fresh_email_creates_record(self):
         self._setting()

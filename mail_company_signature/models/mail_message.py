@@ -41,7 +41,12 @@ class MailMessage(models.Model):
             if not user or not user.company_id.mail_send_from_signature_address:
                 continue
             personal = user._mail_personal_emails()
+            if catchalls is None:
+                catchalls = self._mail_catchall_emails()
             if email_from not in personal:
+                # A template's fixed sender that is a team inbox (purchasing@):
+                # replies go to that inbox too, not to the catchall.
+                self._mail_reply_to_fixed_inbox(vals, email_from, personal | catchalls)
                 continue
             record = None
             if vals.get("model") and vals.get("res_id") and vals["model"] in self.env:
@@ -53,17 +58,36 @@ class MailMessage(models.Model):
             name = "%s (%s)" % (user.name, info["label"]) if info["label"] else user.name
             sender = formataddr((name, address))
             vals["email_from"] = sender
-            if catchalls is None:
-                catchalls = {
-                    email_normalize(email)
-                    for email in self.env["mail.alias.domain"].sudo().search([]).mapped("catchall_email")
-                    if email
-                }
             # A record's own routing alias in Reply-To is kept, unless the
             # record imposes its address (a ticket: its team's inbox).
             reply_to = email_normalize(vals.get("reply_to") or "")
             if info["source"] == "record" or not reply_to or reply_to in personal | catchalls:
                 vals["reply_to"] = sender if len(sender) < REPLY_TO_LENGTH_LIMIT else address
+
+    @api.model
+    def _mail_catchall_emails(self):
+        return {
+            email_normalize(email)
+            for email in self.env["mail.alias.domain"].sudo().search([]).mapped("catchall_email")
+            if email
+        }
+
+    @api.model
+    def _mail_reply_to_fixed_inbox(self, vals, email_from, replaceable):
+        """Reply-To of an email sent from a fixed, non-personal sender: that
+        sender when it is a team inbox (an Odoo alias, so replies still come
+        back into Odoo) and Reply-To was empty, personal or the catchall."""
+        if email_from in replaceable:
+            return
+        reply_to = email_normalize(vals.get("reply_to") or "")
+        if reply_to == email_from or (reply_to and reply_to not in replaceable):
+            return
+        if not self.env["mail.alias"].sudo().search_count(
+            [("alias_full_name", "=", email_from)], limit=1
+        ):
+            return
+        sender = vals["email_from"]
+        vals["reply_to"] = sender if len(sender) < REPLY_TO_LENGTH_LIMIT else email_from
 
     @api.model
     def _mail_send_from_user(self, vals, email_from):
