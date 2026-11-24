@@ -138,6 +138,17 @@ class PracticeApi(http.Controller):
         if quest and (not quest.exists() or quest.student_id != student):
             raise NotFound()
         decks = self._decks(student)
+        if input_type not in ("touch", "mouse", "keyboard"):
+            input_type = "touch"
+        if quest and quest.kind == "minutes":
+            # the practice-time quest: a new random unit at every click (the learner does not choose)
+            deck, unit, kind = quest._minutes_unit()
+            if not kind or deck not in decks:
+                raise NotFound()
+            session = Session._start(student, deck, kind=kind, unit=unit or None, quest=quest,
+                                     device=(device or "")[:120], input_type=input_type,
+                                     frontend=(frontend or "portal_lesson")[:60])
+            return {"session_id": session.id, "item": self._item_payload(session)}
         surprise = quest._surprise_unit() if quest and quest.kind == "surprise" else None
         if surprise is not None and not surprise:
             raise NotFound()
@@ -171,8 +182,6 @@ class PracticeApi(http.Controller):
                 kind, unit = "unit", needs[0][0]
         if kind == "unit" and not unit:
             kind = "review"
-        if input_type not in ("touch", "mouse", "keyboard"):
-            input_type = "touch"
         session = Session._start(student, deck, kind=kind, unit=unit, units=units, quest=quest, device=(device or "")[:120],
                                  input_type=input_type, frontend=(frontend or "portal_lesson")[:60])
         return {"session_id": session.id, "item": self._item_payload(session)}

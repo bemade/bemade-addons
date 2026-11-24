@@ -38,6 +38,11 @@ MINUTES_ODDS_VERY_LIGHT = (0.5, 0.85)  # recent < 50 % of the goal → 0.85
 MINUTES_ODDS_LIGHT = (0.75, 0.65)      # recent < 75 % of the goal → 0.65
 MINUTES_ODDS_FULL = 0.2              # recent ≥ the goal
 MINUTES_MAX_IN_A_ROW = 2             # never 3 days in a row
+# « Start » on the practice-time quest (owner, 2026-11-24): a session in a unit picked at random,
+# the math facts (daily decks: tables) about a third of the clicks, the other units weighted to
+# the longest unseen and the least practised
+MINUTES_FACTS_SHARE = 1 / 3
+MINUTES_STALE_CAP = 30               # days since last practised count up to this (never practised = this)
 
 
 class PracticeQuestTemplate(models.Model):
@@ -414,6 +419,59 @@ class PracticeQuest(models.Model):
                 return pool[0][0]
         return self.env["homeschool.practice.unit"]
 
+    def _minutes_unit(self, rng=None):
+        """Where the practice-time quest's « Start » opens a session: ``(deck, unit, kind)``,
+        a new random pick at every click (the learner does not choose; the quest's own
+        ``deck_id`` is not used). With probability ``MINUTES_FACTS_SHARE`` the math facts:
+        a daily deck (``quest_daily``: tables; the one with most due or new cards), its unit
+        that needs it most (``kind`` « unit »), else a review of the deck when nothing is new
+        or due (tables mastered). Otherwise a weighted pick among the learner's other unlocked
+        units (``kind`` « unit »), weight = ``(1 + d) × (1 + 1 / (1 + n))``: ``d`` = days since
+        the unit's last session of its own (``_practice_last_practised``), at most
+        ``MINUTES_STALE_CAP`` (never practised = the cap), ``n`` = its finished sessions of its
+        own; the unit of the learner's last session today is left out when another exists.
+        With no daily deck the share is 0; with no other unit, always the facts. Empty records
+        and ``None`` kind when the learner has no unlocked unit. ``rng``: the system's by default
+        (each click differs), injectable for tests."""
+        self.ensure_one()
+        rng = rng or random.SystemRandom()
+        student = self.student_id
+        Unit = self.env["homeschool.practice.unit"]
+        day = student._practice_today()
+        needs = student._practice_needs(day)
+        if not needs:
+            return self.env["homeschool.practice.deck"], Unit, None
+        daily = [n for n in needs if n[0].deck_id.quest_daily]
+        others = [n for n in needs if not n[0].deck_id.quest_daily]
+        if daily and (not others or rng.random() < MINUTES_FACTS_SHARE):
+            due = defaultdict(int)
+            for unit, count, _seen in daily:
+                due[unit.deck_id] += count
+            deck = min(due, key=lambda d: (-due[d], d.sequence, d.id))
+            mine = [n for n in daily if n[0].deck_id == deck]  # most needed first (``_practice_needs``)
+            if mine[0][1]:
+                return deck, mine[0][0], "unit"
+            seen = self.env["homeschool.practice.mastery"].sudo().search_count(
+                [("student_id", "=", student.id), ("deck_id", "=", deck.id), ("last_seen", "!=", False)])
+            return (deck, Unit, "review") if seen else (deck, mine[0][0], "unit")
+        history = student._practice_unit_history()
+        Session = self.env["homeschool.practice.session"].sudo()
+        last_today = Session.search([("student_id", "=", student.id), ("kind", "=", "unit")],
+                                    order="started_at desc, id desc", limit=1)
+        if last_today and student._practice_local_date(last_today.started_at) != day:
+            last_today = Session
+        units = [n[0] for n in others]
+        if len(units) > 1 and last_today.unit_id in units:
+            units.remove(last_today.unit_id)
+        weights = []
+        for unit in units:
+            count, when = history.get(unit.id, (0, None))
+            days = MINUTES_STALE_CAP if when is None else min(
+                max((day - student._practice_local_date(when)).days, 0), MINUTES_STALE_CAP)
+            weights.append((1 + days) * (1 + 1 / (1 + count)))
+        unit = rng.choices(units, weights=weights)[0]
+        return unit.deck_id, unit, "unit"
+
     # ------------------------------------------------------------------
     # progress (only today's events count; capped once the day's quests are done)
     # ------------------------------------------------------------------
@@ -495,14 +553,21 @@ class Student(models.Model):
     def _practice_last_practised(self):
         """``{unit id: datetime}``: when each unit last had a finished session of its own (a unit
         session, or free practice on it). Review sessions do not count."""
+        return {unit_id: when for unit_id, (_count, when) in self._practice_unit_history().items()}
+
+    def _practice_unit_history(self):
+        """``{unit id: (sessions, last datetime)}``: each unit's finished sessions of its own (a
+        unit session, or free practice on it) and when the last one started. Review sessions do
+        not count."""
         self.ensure_one()
         Session = self.env["homeschool.practice.session"].sudo()
         base = [("student_id", "=", self.id), ("state", "=", "done"), ("item_count", ">", 0)]
-        out = {unit.id: when for unit, when in Session._read_group(
-            base + [("kind", "=", "unit"), ("unit_id", "!=", False)], ["unit_id"], ["started_at:max"])}
+        out = {unit.id: (count, when) for unit, count, when in Session._read_group(
+            base + [("kind", "=", "unit"), ("unit_id", "!=", False)], ["unit_id"], ["__count", "started_at:max"])}
         for s in Session.search(base + [("kind", "=", "free")]):
             for unit in s.unit_ids:
-                out[unit.id] = max(out.get(unit.id, s.started_at), s.started_at)
+                count, when = out.get(unit.id, (0, s.started_at))
+                out[unit.id] = (count + 1, max(when, s.started_at))
         return out
 
     def _practice_units_by_staleness(self, day):
