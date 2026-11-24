@@ -46,39 +46,64 @@ existing consumer (chatter email, full composer, templates) uses it unchanged.
 The inline chatter composer shows a read-only preview of the signature with a
 one-click "Remove signature" toggle for the current message.
 
-Signature email address
------------------------
+Sending address
+---------------
 
-"Signature email address" on the user form (Settings > Users, next to the
-signature) picks a team inbox: any email alias with a domain, for example the
-`purchasing@` alias of a helpdesk team. Customers and suppliers then see the
-team inbox in the user's signature instead of the personal address. When it is
-set:
+Each email a user sends has a **sending address**, computed (never stored) by
+`res.users._mail_sender_info(record, email_from)`, in priority:
 
-* in the signature that goes out with the user's emails, the personal address
-  (user email, login when it is an address, employee work email; `mailto:`
-  links and visible text, any case) is replaced by the team inbox. This works
-  with hand-written signatures too, whatever the company signature policy:
-  * the signature the notification layout appends (chatter "Send message",
-    replies, `message_post`), including the layout signing with the record's
-    responsible (`mail.mail_notification_layout_with_responsible_signature`);
-  * the signature block the full composer puts in the message body;
-  * signatures embedded by email templates (`user.signature`,
-    `object.user_id.signature`, `object.write_uid.signature`...): each copy
-    of the stored signature of a user with the setting (or of the current
-    user, or of a user field of the record) is replaced at rendering time;
-* only the signature changes: the same address elsewhere in the body is kept,
-  and the stored signature itself is not modified;
-* `{{work_email}}` in the company signature shows the team inbox instead of
-  the employee's work email; the signature is regenerated when the setting
-  changes;
-* the sender (From) and Reply-To of the emails are NOT changed, nor is the
-  routing of incoming replies. Portal users and users without the setting are
-  not affected.
+1. the record's own address, when the record imposes one
+   (`mail.thread._mail_sender_override(user)`; `mail_company_signature_helpdesk`
+   returns the ticket team's inbox);
+2. the template's fixed sender (a literal address such as `purchasing@`, not a
+   placeholder) when it is not one of the user's personal addresses;
+3. the user's "Sending address" (user form, Settings > Users, next to the
+   signature): any email alias with a domain, for example a helpdesk team's
+   `sac@`;
+4. the user's own address (employee work email, else user email).
 
-Known limit: the signature preview under the chatter composer shows the stored
-signature (with the personal address); the email that goes out carries the
-team inbox.
+Signature built for the email
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`mail_company_signature_helpdesk` adds the helpdesk rule (ticket emails show
-the ticket team's address in the signature).
+For users under the company signature policy, the signature is **built** from
+the company template with `{{work_email}}` = the sending address of the
+context. The stored signature is the context-free one (rule 3 or 4); when an
+email goes out about a record (or with a template) whose sending address
+differs, the template is rendered again for that context:
+
+* the notification layout (chatter "Send message", replies, `message_post`),
+  including the layout signing with the record's responsible;
+* email templates printing a user's stored signature (`user.signature`,
+  `object.user_id.signature`...): each printed copy is swapped for the
+  signature built for the record and the template's sender;
+* the composer: the chatter loads, with the record's data, the current
+  user's signature built for that record (`mailCompanySignature`); the
+  preview under « Send message » shows it and the full composer inserts it.
+  What is previewed is what goes out.
+
+Users not under the policy keep their stored (hand-written) signature, as is.
+
+Send from the signature address (company setting)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Settings > Discuss > Emails, « Send from the signature address » (off by
+default). When on, an internal user's email whose sender would be their
+personal address goes out from the sending address when it is not personal:
+From « Name (Team) » <inbox>, Reply-To the inbox (a record's own routing
+alias in Reply-To is kept, except when the record imposes its address). A
+template's fixed sender is kept; users whose sending address is personal are
+not changed.
+
+Replies stay on their record
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Core reads a reply addressed to an alias of another model (a helpdesk inbox)
+as a forward and creates a new record through that alias. For the records of
+companies with the setting on (their emails now carry a team inbox in
+Reply-To), and for the models listed by `mail.thread._mail_reply_always_kept_models()`,
+a reply that answers a message of a record and that core would turn into new
+records only through such aliases lands on the record instead. A fresh email
+to the inbox still creates a record. Hook: `record._mail_on_alias_reply(aliases,
+message_dict)` is called after a reply lands on a record while inboxes of other
+models were among its recipients (kept by this rule, or routed by core with the
+inbox in Cc); a failure there never moves the reply.

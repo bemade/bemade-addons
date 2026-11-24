@@ -46,6 +46,15 @@
                         </div>
                     </div>
                 </setting>
+                <setting
+          id="mail_send_from_signature_address_setting"
+          string="Send from the signature address"
+          help="Emails of users whose signature shows a team inbox go out from that inbox (« Name (Team) »), with replies to it. Replies to a document's email stay on the document."
+          company_dependent="1"
+          groups="base.group_system"
+        >
+                    <field name="mail_send_from_signature_address" />
+                </setting>
             </xpath>
         </field>
     </record>

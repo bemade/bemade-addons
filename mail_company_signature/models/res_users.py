@@ -1,7 +1,5 @@
-import re
 from contextlib import contextmanager
 
-import lxml.html
 from markupsafe import Markup
 
 from odoo import _, api, fields, models
@@ -44,17 +42,17 @@ class ResUsers(models.Model):
     )
     mail_send_as_alias_id = fields.Many2one(
         "mail.alias",
-        string="Signature email address",
+        string="Sending address",
         domain="[('alias_name', '!=', False), ('alias_domain_id', '!=', False)]",
         ondelete="set null",
         copy=False,
-        help="Team inbox shown as the email address in this user's signature "
-        "on outgoing emails, instead of their personal address (so customers "
-        "and suppliers write to the team). The stored signature is not "
-        "changed: the personal address is replaced when the email is "
-        "rendered, and the {{work_email}} placeholder of the company "
-        "signature shows this address. The sender (From) and Reply-To of the "
-        "emails are not changed.",
+        help="Team inbox this user's emails show instead of their personal "
+        "address: the {{work_email}} placeholder of the company signature "
+        "prints it. When the company setting \"Send from the signature "
+        "address\" is on, the emails also go out from it (\"Name (Team)\" "
+        "<inbox>) with replies to it. A document can impose its own address "
+        "(a helpdesk ticket: its team's), and so can a template with a fixed "
+        "sender (purchasing@).",
     )
     signature_is_generated = fields.Boolean(
         groups="base.group_system",
@@ -286,23 +284,11 @@ class ResUsers(models.Model):
         return "%s / %s" % (french, english)
 
     # ------------------------------------------------------------------
-    # Signature email address (outgoing emails)
+    # Sending address (signature, and From when the company asks for it)
     # ------------------------------------------------------------------
-    def _mail_signature_email(self, record=None):
-        """Address shown in this user's signature on emails about ``record``.
-
-        False when the signature keeps the user's own address. Internal users
-        only. Overridden by bridges (helpdesk: the ticket team's inbox).
-        """
-        self.ensure_one()
-        user = self.sudo()
-        if user.share:
-            return False
-        return email_normalize(user.mail_send_as_alias_id.alias_full_name or "") or False
-
-    def _mail_signature_personal_emails(self):
-        """The user's personal addresses, as they may appear in a signature:
-        email, login (when it is an address) and employee work emails."""
+    def _mail_personal_emails(self):
+        """The user's personal addresses, normalized: email, login (when it is
+        an address) and employee work emails."""
         self.ensure_one()
         user = self.sudo()
         employees = (
@@ -314,88 +300,107 @@ class ResUsers(models.Model):
         candidates = [user.email, user.login, *employees.mapped("work_email")]
         return {email for email in map(email_normalize, filter(None, candidates)) if email}
 
-    def _mail_signature_replace_emails(self, html, address):
-        """``html`` with the user's personal addresses (mailto links and
-        text, any case) replaced by ``address``."""
-        self.ensure_one()
-        if not html or not address:
-            return html
-        emails = self._mail_signature_personal_emails() - {address.lower()}
-        if not emails:
-            return html
-        pattern = re.compile(
-            r"(?<![\w.+%%-])(?:%s)(?![\w-])(?!\.\w)"
-            % "|".join(re.escape(email) for email in sorted(emails, key=len, reverse=True)),
-            re.IGNORECASE,
-        )
-        result = pattern.sub(address, str(html))
-        return Markup(result) if isinstance(html, Markup) else result
+    def _mail_sender_info(self, record=None, email_from=None):
+        """The address this user sends from (and shows in the signature) on an
+        email about ``record``, sent with a template whose sender is
+        ``email_from``. Pure, no write.
 
-    def _mail_outgoing_signature(self, record=None):
-        """The signature as it goes out on an email about ``record``: the
-        stored signature with the personal address replaced by the signature
-        email address, when one applies. The stored signature is unchanged."""
+        In priority:
+
+        a. the record's override (``mail.thread._mail_sender_override``, e.g.
+           a helpdesk ticket: its team's address);
+        b. the template's fixed sender (``email_from`` or the context key
+           ``mail_signature_email_from``) when it is not personal (a
+           purchasing@ template);
+        c. the user's "Sending address" (``mail_send_as_alias_id``);
+        d. the user's own address (employee work email, else user email).
+
+        Portal users always get d.
+
+        :return: dict ``email`` (address as shown), ``label`` (team name shown
+            after the person's name in From, may be empty), ``personal``
+            (True for d), ``source`` (``record``, ``template``, ``user``,
+            ``personal``)
+        """
         self.ensure_one()
-        signature = self.sudo().signature
-        address = self._mail_signature_email(record)
-        if not address or not signature:
+        user = self.sudo()
+        if not user.share:
+            if record is not None and len(record) == 1 and hasattr(record, "_mail_sender_override"):
+                override = record._mail_sender_override(user)
+                if override and email_normalize(override.get("email") or ""):
+                    return {
+                        "email": email_normalize(override["email"]),
+                        "label": override.get("label") or "",
+                        "personal": False,
+                        "source": "record",
+                    }
+            fixed = email_from or self.env.context.get("mail_signature_email_from")
+            fixed = email_normalize(fixed or "") if fixed and "{" not in fixed else False
+            if fixed and fixed not in user._mail_personal_emails():
+                return {"email": fixed, "label": "", "personal": False, "source": "template"}
+            alias = user.mail_send_as_alias_id
+            alias_email = email_normalize(alias.alias_full_name or "") if alias else False
+            if alias_email:
+                return {
+                    "email": alias_email,
+                    "label": alias._mail_send_as_label(),
+                    "personal": False,
+                    "source": "user",
+                }
+        emp = user._company_signature_employees().get(user.id)
+        return {
+            "email": (emp.work_email if emp else "") or user.email or "",
+            "label": "",
+            "personal": True,
+            "source": "personal",
+        }
+
+    def _mail_sender_address(self, record=None, email_from=None):
+        """See ``_mail_sender_info``: the address only."""
+        return self._mail_sender_info(record, email_from)["email"]
+
+    def _mail_signature_for(self, record=None, email_from=None):
+        """The signature this user's email about ``record`` carries.
+
+        Users under the company signature policy: the company template
+        rendered with ``{{work_email}}`` = the sending address for this
+        context (the same render as the stored signature, which is the
+        context-free one). Other users: their stored signature, unchanged.
+        """
+        self.ensure_one()
+        user = self.sudo()
+        signature = user.signature
+        if user not in user._company_signature_enforced_users():
             return signature
-        return self._mail_signature_replace_emails(signature, address)
+        address = user._mail_sender_address(record, email_from)
+        # The stored signature is the context-free one (no record, no
+        # template sender, whatever the context carries).
+        if address == user.with_context(mail_signature_email_from=False)._mail_sender_address():
+            return signature
+        values = user._company_signature_values()[user.id]
+        values["work_email"] = address
+        company = user.company_id
+        return company._company_signature_compact(company._company_signature_render(values))
 
     @api.model
-    def _mail_signature_rewrite_html(self, html, users, record=None):
-        """Replace, in ``html``, every copy of a stored signature of ``users``
-        by its outgoing version. Only the signature fragments change; the
-        rest of ``html`` is left as is."""
-        if not html or "@" not in html:
+    def _mail_signature_swap_printed(self, html, users, record=None, email_from=None):
+        """``html`` (a rendered template) with each verbatim copy of a stored
+        signature of ``users`` replaced by that user's signature for this
+        context (``_mail_signature_for``). Only the signature fragments
+        change."""
+        if not html:
             return html
         result = str(html)
         for user in users.sudo():
-            signature = str(user.signature or "")
-            if not signature or signature not in result:
+            stored = str(user.signature or "")
+            if not stored or stored not in result:
                 continue
-            outgoing = str(user._mail_outgoing_signature(record) or "")
-            if outgoing != signature:
-                result = result.replace(signature, outgoing)
+            built = str(user._mail_signature_for(record, email_from) or "")
+            if built != stored:
+                result = result.replace(stored, built)
         if result == str(html):
             return html
         return Markup(result) if isinstance(html, Markup) else result
-
-    @api.model
-    def _mail_signature_rewrite_blocks(self, html, user, record=None):
-        """Replace the user's personal addresses inside the signature block
-        the web client adds to a message body (full composer: a
-        ``data-o-mail-quote`` element starting with "--")."""
-        if not html or "data-o-mail-quote" not in html or not user:
-            return html
-        address = user._mail_signature_email(record)
-        if not address:
-            return html
-        emails = user._mail_signature_personal_emails() - {address}
-        if not emails or not any(email in str(html).lower() for email in emails):
-            return html
-        root = lxml.html.fragment_fromstring(str(html), create_parent="div")
-        changed = False
-        for element in root.xpath("//*[@data-o-mail-quote]"):
-            if element.xpath("ancestor::*[@data-o-mail-quote]"):
-                continue
-            if not (element.text_content() or "").lstrip().startswith("--"):
-                continue
-            before = lxml.html.tostring(element, encoding="unicode")
-            after = user._mail_signature_replace_emails(before, address)
-            if after == before:
-                continue
-            new_element = lxml.html.fragment_fromstring(after)
-            new_element.tail = element.tail
-            element.getparent().replace(element, new_element)
-            changed = True
-        if not changed:
-            return html
-        result = (root.text or "") + "".join(
-            lxml.html.tostring(child, encoding="unicode") for child in root
-        )
-        return Markup(result) if isinstance(html, Markup) else result
-
     # ------------------------------------------------------------------
     # Guards
     # ------------------------------------------------------------------
