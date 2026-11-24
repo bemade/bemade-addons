@@ -16,7 +16,8 @@ Acceptance criteria:
 * UC-V5 ``/discuss/channel/<id>`` sends a share member to the kit's
   conversation page; an internal member keeps Discuss.
 * UC-V6 The conversation pages render in the shell (the list and one
-  conversation's block) for a member, 404 for anyone else.
+  conversation's block) for a member, 404 for anyone else; both pages
+  have a parent in the page registry (« More » > Conversations > one).
 Synthetic users only.
 """
 import json
@@ -133,3 +134,11 @@ class TestPkChatPrivacy(HttpCase):
         page = self.url_open('/my/app/conversations/%s' % self.group.id)
         self.assertEqual(page.status_code, 200)
         self.assertIn('data-pk-chat-block="%s"' % self.group.id, page.text)
+
+    def test_pages_have_parents(self):
+        from odoo.addons.bemade_portal_kit_chat.models.portal_kit import PortalKit as ChatKit
+        pages = {page.key: page for page in ChatKit._pk_pages(self.env['portal.kit'])
+                 if page.key.startswith('pk_chat_')}
+        self.assertEqual(set(pages), {'pk_chat_page_list', 'pk_chat_page_conversation'})
+        self.assertEqual(pages['pk_chat_page_list'].parent({}), ('pk_app_more', {}))
+        self.assertEqual(pages['pk_chat_page_conversation'].parent({}), ('pk_chat_page_list', {}))

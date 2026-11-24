@@ -66,7 +66,10 @@ class PortalKit(models.AbstractModel):
     @api.model
     def _pk_pages(self):
         return super()._pk_pages() + [
-            pk_static_page('pk_chat_page_list', '/my/app/conversations', _lt("Conversations")),
+            # A sub-page of « More » (like the kit's « Settings »): every
+            # page of an app but its tabs has a parent.
+            pk_static_page('pk_chat_page_list', '/my/app/conversations', _lt("Conversations"),
+                           parent=lambda v: ('pk_app_more', {})),
             Page('pk_chat_page_conversation',
                  label=lambda v: v.get('pk_chat_title') or '',
                  url=lambda v: '/my/app/conversations/%s' % v.get('pk_chat_channel_id'),
