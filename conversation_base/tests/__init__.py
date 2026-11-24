@@ -26,3 +26,4 @@ from . import test_saved_filter_names
 from . import test_triage_fields_js
 from . import test_delivery_icon_tour
 from . import test_own_address_tour
+from . import test_neutralize
