@@ -57,18 +57,36 @@ msgid "Config Settings"
 msgstr "Paramètres de configuration"
 
 #. module: mail_company_signature
+#: model_terms:ir.ui.view,arch_db:mail_company_signature.view_users_form_simple_modif
+msgid "Copy signature HTML"
+msgstr "Copier le HTML de la signature"
+
+#. module: mail_company_signature
 #: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee__display_name
+#: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee_public__display_name
+#: model:ir.model.fields,field_description:mail_company_signature.field_mail_alias__display_name
+#: model:ir.model.fields,field_description:mail_company_signature.field_mail_message__display_name
+#: model:ir.model.fields,field_description:mail_company_signature.field_mail_thread__display_name
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_company__display_name
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_users__display_name
-#: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee_public__display_name
 msgid "Display Name"
 msgstr "Nom d'affichage"
+
+#. module: mail_company_signature
+#: model:ir.model,name:mail_company_signature.model_mail_alias
+msgid "Email Aliases"
+msgstr "Alias de courriel"
 
 #. module: mail_company_signature
 #: model:ir.actions.server,name:mail_company_signature.ir_cron_expire_company_notice_ir_actions_server
 msgid "Email Signatures: Remove Expired Company Notices"
 msgstr "Signatures courriel : retirer les avis d'entreprise expirés"
+
+#. module: mail_company_signature
+#: model:ir.model,name:mail_company_signature.model_mail_thread
+msgid "Email Thread"
+msgstr "Discussion par e-mail"
 
 #. module: mail_company_signature
 #: model:ir.model,name:mail_company_signature.model_hr_employee
@@ -101,10 +119,13 @@ msgstr ""
 
 #. module: mail_company_signature
 #: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee__id
+#: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee_public__id
+#: model:ir.model.fields,field_description:mail_company_signature.field_mail_alias__id
+#: model:ir.model.fields,field_description:mail_company_signature.field_mail_message__id
+#: model:ir.model.fields,field_description:mail_company_signature.field_mail_thread__id
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_company__id
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__id
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_users__id
-#: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee_public__id
 msgid "ID"
 msgstr "ID"
 
@@ -123,6 +144,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_users__company_signature_manual
 msgid "Manage own signature"
 msgstr "Gère sa propre signature"
+
+#. module: mail_company_signature
+#: model:ir.model,name:mail_company_signature.model_mail_message
+msgid "Message"
+msgstr "Message"
 
 #. module: mail_company_signature
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_users__personal_signature_backup
@@ -162,6 +188,11 @@ msgstr "Retirer la signature de ce message"
 #: model_terms:ir.ui.view,arch_db:mail_company_signature.view_users_form
 msgid "Restore personal signature"
 msgstr "Restaurer la signature personnelle"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_users__mail_send_as_alias_id
+msgid "Send emails as"
+msgstr "Envoyer les courriels en tant que"
 
 #. module: mail_company_signature
 #: model:ir.model.fields,help:mail_company_signature.field_res_users__signature_is_generated
@@ -216,6 +247,23 @@ msgstr ""
 "l'entreprise."
 
 #. module: mail_company_signature
+#: model:ir.model.fields,help:mail_company_signature.field_res_users__mail_send_as_alias_id
+msgid ""
+"Team inbox this user's emails go out from. When set, an email the user sends"
+" from their own address goes out as \"Name (Team)\" <team inbox> with "
+"replies to the team inbox, and the {{work_email}} placeholder of the company"
+" signature shows the team inbox. Emails sent from another address (a "
+"template using purchasing@ for example) are not changed."
+msgstr ""
+"Boîte d'équipe depuis laquelle partent les courriels de cet utilisateur. Si "
+"elle est définie, un courriel que l'utilisateur envoie depuis sa propre "
+"adresse part comme « Nom (Équipe) » <boîte d'équipe>, les réponses vont à la"
+" boîte d'équipe, et la variable {{work_email}} de la signature de "
+"l'entreprise affiche la boîte d'équipe. Les courriels envoyés depuis une "
+"autre adresse (un modèle qui utilise purchasing@ par exemple) ne sont pas "
+"modifiés."
+
+#. module: mail_company_signature
 #: model_terms:ir.ui.view,arch_db:mail_company_signature.res_config_settings_view_form
 msgid "Template"
 msgstr "Modèle"
@@ -231,11 +279,6 @@ msgstr ""
 "Avis temporaire (fermeture, horaire des fêtes...) qui remplace "
 "{{company_notice}} dans le modèle jusqu'au jour « Afficher jusqu'au » "
 "inclus; il est ensuite retiré automatiquement."
-
-#. module: mail_company_signature
-#: model_terms:ir.ui.view,arch_db:mail_company_signature.view_users_form_simple_modif
-msgid "Copy signature HTML"
-msgstr "Copier le HTML de la signature"
 
 #. module: mail_company_signature
 #: model_terms:ir.ui.view,arch_db:mail_company_signature.view_users_form

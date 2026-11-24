@@ -1,0 +1,54 @@
+# Translation of Odoo Server.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: mail_company_signature_helpdesk
+#: model:ir.model.fields,field_description:mail_company_signature_helpdesk.field_helpdesk_team__display_name
+#: model:ir.model.fields,field_description:mail_company_signature_helpdesk.field_mail_message__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: mail_company_signature_helpdesk
+#: model:ir.model,name:mail_company_signature_helpdesk.model_helpdesk_team
+msgid "Helpdesk Team"
+msgstr "Équipe d'assistance"
+
+#. module: mail_company_signature_helpdesk
+#: model:ir.model.fields,field_description:mail_company_signature_helpdesk.field_helpdesk_team__id
+#: model:ir.model.fields,field_description:mail_company_signature_helpdesk.field_mail_message__id
+msgid "ID"
+msgstr "ID"
+
+#. module: mail_company_signature_helpdesk
+#: model:ir.model.fields,help:mail_company_signature_helpdesk.field_helpdesk_team__mail_send_as_alias_id
+msgid ""
+"Inbox the emails written on this team's tickets go out from, as \"Name "
+"(Team)\" <inbox>, with replies to that inbox. It applies to every internal "
+"user and wins over their own \"Send emails as\". Empty: the team's own "
+"alias."
+msgstr ""
+"Boîte depuis laquelle partent les courriels écrits sur les billets de cette "
+"équipe, comme « Nom (Équipe) » <boîte>, les réponses allant à cette boîte. "
+"S'applique à tout utilisateur interne et l'emporte sur son propre « Envoyer "
+"les courriels en tant que ». Vide : l'alias de l'équipe."
+
+#. module: mail_company_signature_helpdesk
+#: model:ir.model,name:mail_company_signature_helpdesk.model_mail_message
+msgid "Message"
+msgstr "Message"
+
+#. module: mail_company_signature_helpdesk
+#: model:ir.model.fields,field_description:mail_company_signature_helpdesk.field_helpdesk_team__mail_send_as_alias_id
+msgid "Send as"
+msgstr "Envoyer en tant que"
+
+#. module: mail_company_signature_helpdesk
+#: model_terms:ir.ui.view,arch_db:mail_company_signature_helpdesk.helpdesk_team_view_form
+msgid "Team alias"
+msgstr "Alias de l'équipe"

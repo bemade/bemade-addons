@@ -1,6 +1,6 @@
 {
     "name": "Mail Company Signature",
-    "version": "19.0.1.3.1",
+    "version": "19.0.1.4.0",
     "category": "Discuss",
     "summary": "Company-standard email signature generated from a template, "
     "with a visible signature preview in the chatter composer.",

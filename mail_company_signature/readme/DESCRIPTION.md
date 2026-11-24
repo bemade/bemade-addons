@@ -45,3 +45,32 @@ The generated signature is written to `res.users.signature`, so every
 existing consumer (chatter email, full composer, templates) uses it unchanged.
 The inline chatter composer shows a read-only preview of the signature with a
 one-click "Remove signature" toggle for the current message.
+
+Send emails as a team inbox
+---------------------------
+
+"Send emails as" on the user form (Settings > Users, next to the signature)
+picks a team inbox: any email alias with a domain, for example the
+`purchasing@` alias of a helpdesk team. When it is set:
+
+* every email the user sends from their own address goes out as
+  "User Name (Team)" <team inbox>, with Reply-To the team inbox: chatter
+  "Send message", the full composer, templates whose sender is the user
+  (`{{ user.email_formatted }}`), `mail.template.send_mail` and code calling
+  `message_post`. "Team" is the name of the alias's parent record (the
+  helpdesk team, sales team...), else the alias local part. A Reply-To that
+  is a document's own alias (a project alias, for example) is kept;
+* an email whose sender is another fixed address (a template sending from
+  `finance@...`) is not changed; nor are incoming emails, messages from
+  OdooBot or from users without the setting;
+* `{{work_email}}` in the company signature shows the team inbox instead of
+  the employee's work email; the signature is regenerated when the setting
+  changes;
+* a reply sent to the team inbox that answers such an email (In-Reply-To /
+  References) lands on the same document, even when the inbox is the alias of
+  another model (core would read it as a forward and open, for example, a new
+  ticket). Other recipients of the reply are routed as usual.
+
+The team inbox must be on a domain the outgoing mail server may send from.
+`mail_company_signature_helpdesk` adds the helpdesk rule (ticket emails
+always go out from the ticket team's inbox).

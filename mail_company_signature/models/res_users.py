@@ -2,6 +2,7 @@ from contextlib import contextmanager
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import email_normalize
 
 
 class ResUsers(models.Model):
@@ -36,6 +37,19 @@ class ResUsers(models.Model):
         related="employee_id.signature_show_mobile",
         readonly=False,
         related_sudo=False,
+    )
+    mail_send_as_alias_id = fields.Many2one(
+        "mail.alias",
+        string="Send emails as",
+        domain="[('alias_name', '!=', False), ('alias_domain_id', '!=', False)]",
+        ondelete="set null",
+        copy=False,
+        help="Team inbox this user's emails go out from. When set, an email "
+        "the user sends from their own address goes out as \"Name (Team)\" "
+        "<team inbox> with replies to the team inbox, and the {{work_email}} "
+        "placeholder of the company signature shows the team inbox. Emails "
+        "sent from another address (a template using purchasing@ for example) "
+        "are not changed.",
     )
     signature_is_generated = fields.Boolean(
         groups="base.group_system",
@@ -176,6 +190,8 @@ class ResUsers(models.Model):
         "employee_ids.mobile_phone",
         "employee_ids.signature_show_mobile",
         "employee_ids.work_email",
+        "mail_send_as_alias_id",
+        "mail_send_as_alias_id.alias_full_name",
     )
     def _compute_signature(self):
         enforced = self._company_signature_enforced_users()
@@ -234,7 +250,10 @@ class ResUsers(models.Model):
                     emp.mobile_phone if emp and emp.signature_show_mobile else ""
                 )
                 or "",
-                "work_email": (emp.work_email if emp else "") or user.email or "",
+                "work_email": user.mail_send_as_alias_id.alias_full_name
+                or (emp.work_email if emp else "")
+                or user.email
+                or "",
                 "company_name": company.name or "",
                 "company_phone": company.phone or "",
                 "company_email": company.email or "",
@@ -260,6 +279,22 @@ class ResUsers(models.Model):
         if not english:
             return french
         return "%s / %s" % (french, english)
+
+    # ------------------------------------------------------------------
+    # Send as a team inbox
+    # ------------------------------------------------------------------
+    def _mail_send_as_own_emails(self):
+        """Normalized addresses that count as "this user's own" sender."""
+        self.ensure_one()
+        user = self.sudo()
+        return {
+            email
+            for email in (
+                user.email_normalized,
+                email_normalize(user.mail_send_as_alias_id.alias_full_name or ""),
+            )
+            if email
+        }
 
     # ------------------------------------------------------------------
     # Guards
