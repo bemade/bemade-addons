@@ -1,0 +1,15 @@
+{
+  "stepsFile": "../../static/tests/tours/imap_shared_settings_locked.steps.js",
+  "startPath": "/odoo/conversation.transport/1",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "voice": "fr_FR-siwis-medium",
+  "lang": "fr_CA",
+  "title": "Les paramètres d'un compte de messagerie partagé sont protégés",
+  "introNarration": "Sur un compte de messagerie partagé, seuls les gestionnaires des conversations et les administrateurs peuvent modifier le serveur et l'identifiant. Voyons ce qui arrive à un utilisateur ordinaire.",
+  "outroTitle": "C'est protégé",
+  "outroNarration": "Chacun garde la maîtrise de son propre compte, et les comptes partagés sont gérés par les personnes responsables.",
+  "stepOverrides": {
+    "refused": {"containsText": "Seul un gestionnaire des conversations"}
+  }
+}

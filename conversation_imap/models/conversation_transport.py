@@ -59,6 +59,7 @@ class ConversationTransport(models.Model):
     def _inverse_smtp_ssl(self):
         for transport in self:
             transport.smtp_encryption = "starttls" if transport.smtp_ssl else "none"
+
     password = fields.Char(
         groups="base.group_system",
         help="IMAP/SMTP account password. Generic IMAP has no universal "
@@ -101,16 +102,82 @@ class ConversationTransport(models.Model):
                 )
             )
 
+    # Fields that decide which server the stored password is sent to, and as
+    # whom. On a shared account they are a Conversations manager's to change.
+    # ``smtp_ssl`` is the legacy alias of ``smtp_encryption`` and ``provider``
+    # selects which endpoint fields are in use.
+    _CONNECTION_FIELDS = (
+        "provider",
+        "login",
+        "imap_host",
+        "imap_port",
+        "imap_ssl",
+        "smtp_host",
+        "smtp_port",
+        "smtp_encryption",
+        "smtp_ssl",
+    )
+
+    def _can_manage_connection(self):
+        return self.env.su or self.env.user.has_group(
+            "conversation_base.group_conversation_manager"
+        )
+
+    def _check_can_change_connection(self, vals):
+        """Only a Conversations manager (or an administrator) may change the
+        connection settings of a shared account; the owner of a personal
+        account keeps control of it. The owner is read *before* the write, so
+        a single write cannot take ownership of a shared account and
+        change its server in one go."""
+        keys = [key for key in self._CONNECTION_FIELDS if key in vals]
+        if not keys or self._can_manage_connection():
+            return
+        for transport in self:
+            if transport.user_id == self.env.user:
+                continue
+            for key in keys:
+                # The legacy alias writes through to the encryption mode even
+                # when it reads back unchanged, so any write of it counts.
+                if key == "smtp_ssl" or (transport[key] or False) != (
+                    vals[key] or False
+                ):
+                    transport._raise_connection_denied()
+
+    def _raise_connection_denied(self):
+        raise AccessError(
+            self.env._(
+                "Only a Conversations manager can change the server settings "
+                "and login of a shared mail account (%(transport)s).",
+                transport=self.display_name or "",
+            )
+        )
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             if vals.get("new_password"):
                 self._check_can_set_password([vals.get("user_id")])
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        # Checked after the fact, like the password: ``user_id`` defaults are
+        # context-driven, so the stored result tells whether the new account
+        # is shared. Defaults sent along by a form are not a change.
+        if not self._can_manage_connection():
+            defaults = self.default_get(list(self._CONNECTION_FIELDS))
+            for record, vals in zip(records, vals_list):
+                if record.user_id == self.env.user:
+                    continue
+                if any(
+                    key in self._CONNECTION_FIELDS
+                    and (value or False) != (defaults.get(key) or False)
+                    for key, value in vals.items()
+                ):
+                    record._raise_connection_denied()
+        return records
 
     def write(self, vals):
         if vals.get("new_password"):
             self._check_can_set_password([t.user_id.id for t in self])
+        self._check_can_change_connection(vals)
         return super().write(vals)
 
     def _inverse_new_password(self):
