@@ -6,8 +6,9 @@
         <field name="arch" type="xml">
             <list editable="bottom">
                 <field name="name" />
-                <field name="quantity_owned" />
-                <field name="return_delay_days" />
+                <!-- fixed widths: the default integer column cuts the headers -->
+                <field name="quantity_owned" width="140px" />
+                <field name="return_delay_days" width="160px" />
                 <field name="notes" optional="show" />
                 <field name="active" column_invisible="True" />
             </list>
