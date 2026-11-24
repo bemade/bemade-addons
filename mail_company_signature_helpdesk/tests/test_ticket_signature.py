@@ -105,6 +105,14 @@ class TestTicketSignature(MailCommon):
         self.assertEqual(len(mail), 1)
         return message, mail
 
+    @staticmethod
+    def _signature_part(html):
+        """From the signature on (a sibling addon may print the author's
+        address in a header block above the body)."""
+        html = str(html)
+        start = html.find("-- <br")
+        return html[start:] if start >= 0 else ""
+
     def test_from_and_reply_to_unchanged(self):
         before, before_mail = self._reply(self.agent)
         self.team.mail_send_as_alias_id = self.sac_alias
@@ -119,30 +127,33 @@ class TestTicketSignature(MailCommon):
     def test_agent_signature_shows_team_address(self):
         self.team.mail_send_as_alias_id = self.sac_alias
         _message, mail = self._reply(self.agent)
-        self.assertIn('href="mailto:%s"' % self.sac_email, mail.body_html)
-        self.assertIn(">%s</a>" % self.sac_email, mail.body_html)
-        self.assertNotIn("mailto:desk.agent@example.com", mail.body_html)
+        signature = self._signature_part(mail.body_html)
+        self.assertIn('href="mailto:%s"' % self.sac_email, signature)
+        self.assertIn(">%s</a>" % self.sac_email, signature)
+        self.assertNotIn("desk.agent@example.com", signature)
         self.assertIn("desk.agent@example.com", self.agent.signature)
 
     def test_team_address_wins_over_user_setting(self):
         self.team.mail_send_as_alias_id = self.sac_alias
         _message, mail = self._reply(self.agent_sendas)
-        self.assertIn("Desk Buyer - %s" % self.sac_email, mail.body_html)
-        self.assertNotIn(self.buying_email, mail.body_html)
+        signature = self._signature_part(mail.body_html)
+        self.assertIn("Desk Buyer - %s" % self.sac_email, signature)
+        self.assertNotIn(self.buying_email, signature)
+        self.assertNotIn("desk.buyer@example.com", signature.lower())
 
     def test_team_address_empty_uses_team_alias(self):
         self.team.mail_send_as_alias_id = False
         _message, mail = self._reply(self.agent)
-        self.assertIn('href="mailto:%s"' % self.care_email, mail.body_html)
+        self.assertIn('href="mailto:%s"' % self.care_email, self._signature_part(mail.body_html))
 
     def test_team_without_inbox_falls_back_on_user_rule(self):
         ticket = self.env["helpdesk.ticket"].create(
             {"name": "Quiet ticket", "team_id": self.no_alias_team.id, "partner_id": self.customer.id}
         )
         _message, mail = self._reply(self.agent_sendas, ticket=ticket)
-        self.assertIn("Desk Buyer - %s" % self.buying_email, mail.body_html)
+        self.assertIn("Desk Buyer - %s" % self.buying_email, self._signature_part(mail.body_html))
         _message, mail = self._reply(self.agent, ticket=ticket)
-        self.assertIn('href="mailto:desk.agent@example.com"', mail.body_html)
+        self.assertIn('href="mailto:desk.agent@example.com"', self._signature_part(mail.body_html))
 
     def test_customer_message_untouched(self):
         body = Markup(

@@ -76,11 +76,23 @@ class TestSignatureAddress(CompanySignatureCommon):
         self.assertEqual(len(mail), 1)
         return message, mail
 
-    def _assert_signature_rewritten(self, html, user=None):
-        user = user or self.u_full
-        self.assertIn('href="mailto:%s"' % self.alias_email, html)
-        self.assertIn(user._mail_outgoing_signature(), html)
-        self.assertNotIn(PERSONAL_SIGNATURE, html)
+    @staticmethod
+    def _signature_part(html):
+        """The signature and what follows it. Sibling addons may print the
+        author's address in their own header block above the body, and the
+        sanitizer adds attributes to a signature kept in the body, so the
+        checks look at the signature fragment, not at an exact copy."""
+        html = str(html)
+        start = html.find("Sig Full, buyer")
+        return html[start:] if start >= 0 else ""
+
+    def _assert_signature_rewritten(self, html):
+        signature = self._signature_part(html)
+        self.assertTrue(signature, "no signature in the email")
+        self.assertIn('href="mailto:%s"' % self.alias_email, signature)
+        self.assertIn(">%s</a>" % self.alias_email, signature)
+        self.assertIn("Direct: %s" % self.alias_email, signature)
+        self.assertNotIn("full@example.com", signature.lower())
 
     # ------------------------------------------------------------------
     # Sender and Reply-To are not changed
@@ -133,7 +145,9 @@ class TestSignatureAddress(CompanySignatureCommon):
 
     def test_user_without_setting_unchanged(self):
         _message, mail = self._post(self.u_full)
-        self.assertIn(PERSONAL_SIGNATURE, mail.body_html)
+        signature = self._signature_part(mail.body_html)
+        self.assertIn('href="mailto:Full@Example.com"', signature)
+        self.assertIn("Direct: full@example.com", signature)
         self.assertNotIn(self.alias_email, mail.body_html)
 
     def test_portal_user_never_rewritten(self):
@@ -225,7 +239,8 @@ class TestSignatureAddress(CompanySignatureCommon):
         mail = self.env["mail.mail"].sudo().browse(
             template.with_user(self.u_full).send_mail(self.record.id)
         )
-        self.assertIn(PERSONAL_SIGNATURE, mail.body_html)
+        self.assertIn('href="mailto:Full@Example.com"', self._signature_part(mail.body_html))
+        self.assertNotIn(self.alias_email, mail.body_html)
 
     # ------------------------------------------------------------------
     # Company signature placeholder
