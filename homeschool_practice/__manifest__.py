@@ -4,7 +4,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     "name": "Homeschool Practice",
-    "version": "19.0.1.9.1",
+    "version": "19.0.1.10.0",
     "category": "Education",
     "summary": "Short, frequent retrieval practice with game mechanics and family-defined rewards, "
     "touch-first (iPad).",
@@ -79,7 +79,10 @@ Game mechanics
   sessions the day asks for, optional subject quests (« 3 séances de math »:
   any deck of the subject counts) and an optional practice-time quest
   (« Pratique 15 minutes aujourd'hui », on some days only, more often after light
-  days, never three days in a row). Practice time counts each answer's
+  days, never three days in a row). Its « Start » opens a session in a unit
+  picked at random at every click: the times tables about a third of the time,
+  the other units weighted toward the least practised and longest unseen.
+  Practice time counts each answer's
   gap since the previous one, capped at a minute, so an idle screen does not
   count; the learner sees the day's minutes on that quest card only, never
   inside a session. A bigger day makes the quests bigger, not more numerous,
