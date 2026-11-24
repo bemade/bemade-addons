@@ -28,7 +28,7 @@
                 <!-- Expand/Collapse button if there are children -->
                 <button t-if="record.children"
                     t-att-data-expand="record.resId"
-                    t-on-click.prevent="_onExpandClick"
+                    t-on-click.prevent.stop="(ev) => this._onExpandClick(ev, record)"
                     t-att-data-depth="record.depth"
                     class="o_expand_button">
                     <span role="img"

@@ -9,7 +9,7 @@ const tours = registry.category("web_tour.tours");
 
 const FORM = "form[data-sc-event-form]";
 const TEAMS = `${FORM} [data-sc-event-pick="teams"]`;
-const SEARCH = `${TEAMS} input.o_sc_tags_search`;
+const SEARCH = `${TEAMS} input.o_pk_tags_search`;
 
 function assert(condition, message) {
     if (!condition) {
@@ -58,7 +58,7 @@ const create = {
 
 const created = {
     content: "The new event's page",
-    trigger: '[data-sc-section="event.hero"]',
+    trigger: '[data-pk-section="event.hero"]',
 };
 
 // Typed then picked from the list.
@@ -66,7 +66,7 @@ tours.add("sc_1723_typed_then_picked", {
     steps: () => [
         basics("SC 1723 Picked", "2026-05-04T18:00", "2026-05-04T20:00"),
         ...typeTeam("team a"),
-        { content: "Pick it", trigger: `${TEAMS} .o_sc_tags_option:contains("PC Team A")`, run: "click" },
+        { content: "Pick it", trigger: `${TEAMS} .o_pk_tags_option:contains("PC Team A")`, run: "click" },
         create,
         created,
     ],
@@ -80,10 +80,10 @@ tours.add("sc_1723_typed_exact", {
         leaveBox,
         {
             content: "The typed name became a chip",
-            trigger: `${TEAMS} .o_sc_tag:contains("PC Team A")`,
+            trigger: `${TEAMS} .o_pk_tag:contains("PC Team A")`,
             run() {
                 assert(document.querySelector(`${FORM} input[name="team_ids"]`).value, "team_ids empty");
-                assert(!document.querySelector(`${TEAMS} [data-sc-tags-typed-error]`), "an error shows");
+                assert(!document.querySelector(`${TEAMS} [data-pk-tags-typed-error]`), "an error shows");
             },
         },
         create,
@@ -99,7 +99,7 @@ tours.add("sc_1723_typed_nothing", {
         leaveBox,
         {
             content: "The inline error; « Créer » says why",
-            trigger: `${TEAMS} [data-sc-tags-typed-error]`,
+            trigger: `${TEAMS} [data-pk-tags-typed-error]`,
             run() {
                 assert(this.anchor.textContent.includes("No Such Synthetic Team"), this.anchor.textContent);
                 const submit = document.querySelector(`${FORM} button[data-sc-action="event.save"]`);
@@ -113,7 +113,7 @@ tours.add("sc_1723_typed_nothing", {
         },
         {
             content: "No error any more",
-            trigger: `${TEAMS}:not(:has([data-sc-tags-typed-error]))`,
+            trigger: `${TEAMS}:not(:has([data-pk-tags-typed-error]))`,
         },
     ],
 });
@@ -124,20 +124,20 @@ tours.add("sc_1723_server_refusal_kept", {
     steps: () => [
         basics("SC 1723 Refused", "2026-05-07T20:00", "2026-05-07T18:00"),
         ...typeTeam("team a"),
-        { content: "Pick it", trigger: `${TEAMS} .o_sc_tags_option:contains("PC Team A")`, run: "click" },
+        { content: "Pick it", trigger: `${TEAMS} .o_pk_tags_option:contains("PC Team A")`, run: "click" },
         {
             content: "Submit past the client rule",
             trigger: `${FORM} button[data-sc-action="event.save"]`,
             run() {
                 const form = document.querySelector(FORM);
-                form.removeAttribute("data-sc-guard-rules");
+                form.removeAttribute("data-pk-guard-rules");
                 this.anchor.removeAttribute("aria-disabled");
                 this.anchor.click();
             },
         },
         {
             content: "The refusal shows under the end time; the values stay",
-            trigger: `${FORM} .o_sc_field_error[data-sc-guard-field-error="date_end"]`,
+            trigger: `${FORM} .o_pk_field_error[data-pk-guard-field-error="date_end"]`,
             run() {
                 assert(document.querySelector(`${FORM} input[name="name"]`).value === "SC 1723 Refused", "name lost");
                 assert(document.querySelector(`${FORM} input[name="team_ids"]`).value, "team lost");
@@ -166,43 +166,43 @@ function chooseOrg(label) {
 tours.add("sc_1723_org_drop_notice", {
     steps: () => [
         ...typeTeam("team a"),
-        { content: "Pick it", trigger: `${TEAMS} .o_sc_tags_option:contains("PC Team A")`, run: "click" },
+        { content: "Pick it", trigger: `${TEAMS} .o_pk_tags_option:contains("PC Team A")`, run: "click" },
         chooseOrg("ZZ Org 1597"),
         {
             content: "A warning first: the team is still there, the submit waits",
-            trigger: `${TEAMS} [data-sc-org-confirm-box] [data-sc-org-cancel]`,
+            trigger: `${TEAMS} [data-pk-group-confirm-box] [data-pk-group-cancel]`,
             run() {
                 assert(document.querySelector(`${FORM} input[name="team_ids"]`).value, "team dropped before confirming");
-                assert(document.querySelector(`${TEAMS} [data-sc-org-confirm-box]`).textContent.includes("PC Team A"),
+                assert(document.querySelector(`${TEAMS} [data-pk-group-confirm-box]`).textContent.includes("PC Team A"),
                     "the warning does not name the team");
-                assert(!document.querySelector(`${TEAMS} [data-sc-tags-group-notice]`), "an after-the-fact notice");
+                assert(!document.querySelector(`${TEAMS} [data-pk-tags-group-notice]`), "an after-the-fact notice");
                 // Review round 2: right under the Organisation field, above
                 // the teams picker — which waits, disabled.
-                const box = document.querySelector(`${TEAMS} [data-sc-org-confirm-box]`).getBoundingClientRect();
-                const org = document.querySelector(`${FORM} select[name="organization_id"]`).closest(".o_sc_field");
+                const box = document.querySelector(`${TEAMS} [data-pk-group-confirm-box]`).getBoundingClientRect();
+                const org = document.querySelector(`${FORM} select[name="organization_id"]`).closest(".o_pk_field");
                 const search = document.querySelector(SEARCH);
                 assert(box.top >= org.getBoundingClientRect().bottom - 1, "the warning is not under the organisation");
                 assert(box.bottom <= search.getBoundingClientRect().top + 1, "the warning is not above the teams picker");
                 assert(search.disabled, "the teams picker is not disabled while the warning waits");
             },
         },
-        { content: "« Cancel »", trigger: `${TEAMS} [data-sc-org-cancel]`, run: "click" },
+        { content: "« Cancel »", trigger: `${TEAMS} [data-pk-group-cancel]`, run: "click" },
         {
             content: "The former organisation and the team are kept",
-            trigger: `${TEAMS}:not(:has([data-sc-org-confirm-box]))`,
+            trigger: `${TEAMS}:not(:has([data-pk-group-confirm-box]))`,
             run() {
                 const select = document.querySelector(`${FORM} select[name="organization_id"]`);
                 assert(select.value === select.dataset.scTourBefore, "the organisation was not restored");
                 assert(document.querySelector(`${FORM} input[name="team_ids"]`).value, "team lost on cancel");
-                assert(document.querySelector(`${TEAMS} .o_sc_tag`), "no team chip");
+                assert(document.querySelector(`${TEAMS} .o_pk_tag`), "no team chip");
                 assert(!document.querySelector(SEARCH).disabled, "the teams picker stayed disabled");
             },
         },
         chooseOrg("ZZ Org 1597"),
-        { content: "« Change organization »", trigger: `${TEAMS} [data-sc-org-confirm]`, run: "click" },
+        { content: "« Change organization »", trigger: `${TEAMS} [data-pk-group-confirm]`, run: "click" },
         {
             content: "The team is dropped once confirmed",
-            trigger: `${TEAMS}:not(:has([data-sc-org-confirm-box]))`,
+            trigger: `${TEAMS}:not(:has([data-pk-group-confirm-box]))`,
             run() {
                 assert(!document.querySelector(`${FORM} input[name="team_ids"]`).value, "team kept");
                 const select = document.querySelector(`${FORM} select[name="organization_id"]`);

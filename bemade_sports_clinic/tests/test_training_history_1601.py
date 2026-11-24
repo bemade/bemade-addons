@@ -148,7 +148,7 @@ class TestTrainingHistoryModel1601(TransactionCase):
     def test_stamp_after_clear_and_in_french(self):
         self.env['res.lang']._activate_lang('fr_CA')
         self.env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         self.player.with_user(self.writer).write({'training_recommendation': 'Synthetic x'})
         self.player.with_user(self.writer).write({'training_recommendation': False})
         self.player.invalidate_recordset()
@@ -254,7 +254,7 @@ class TestTrainingHistoryPortal1601(History1581Common):
     def _training_props(self, tree):
         # Review fixes 2026-10-18: the therapist's island is in the header's
         # edit view (``player.training.edit``); the read view is static.
-        for node in tree.xpath('//*[@data-sc-section="player.training" or @data-sc-section="player.training.edit"]'
+        for node in tree.xpath('//*[@data-pk-section="player.training" or @data-pk-section="player.training.edit"]'
                                '//owl-component'):
             props = json.loads(node.get('props'))
             if props.get('field') == 'training_recommendation':
@@ -301,13 +301,13 @@ class TestTrainingHistoryPortal1601(History1581Common):
         self._login_coach()
         _text, tree = self._get('/my/player?player_id=%s&tab=info' % self.player.id)
         self.assertIsNone(self._training_props(tree))
-        hint = tree.xpath('//*[@data-sc-section="player.training"]//*[contains(@class, "o_sc_hint")]')
+        hint = tree.xpath('//*[@data-pk-section="player.training"]//*[contains(@class, "o_pk_hint")]')
         self.assertEqual([h.text_content().strip() for h in hint],
                          [_stamp(self.env, row.change_datetime, 'PC TP')])
         # Task 1629: the stamp stays under the value, below the title + link.
-        section = tree.xpath('//*[@data-sc-section="player.training"]')[0]
+        section = tree.xpath('//*[@data-pk-section="player.training"]')[0]
         self.assertEqual(section.xpath('./*')[0].tag, 'h3')
-        self.assertEqual(len(section.xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]')), 1)
+        self.assertEqual(len(section.xpath('.//*[@data-pk-sheet-open="sc_training_history_sheet"]')), 1)
         entries = self._entries(self._fragment('/my/player/%s/training-history' % self.player.id))
         self.assertEqual([e['body'] for e in entries], ['Synthetic pool'])
         with mute_logger('odoo.http'):
@@ -353,7 +353,7 @@ class TestTrainingStampClinic1601(Clinic1540Common):
     @staticmethod
     def _owl_fields(tree):
         out = {}
-        for node in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+        for node in tree.xpath('//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'):
             props = json.loads(node.get('props'))
             out[props.get('field') or props.get('name')] = props
         return out
@@ -369,7 +369,7 @@ class TestTrainingStampClinic1601(Clinic1540Common):
         # page's player card, which shows the recommendation (read); the
         # stamp lives in the player page's editor (and the card's details).
         self.assertNotIn('training_recommendation', self._owl_fields(tree))
-        card = tree.xpath('//*[@data-sc-section="clinic.dossier.player"]')[0]
+        card = tree.xpath('//*[@data-pk-section="clinic.dossier.player"]')[0]
         self.assertIn('Synthetic clinic', card.text_content())
         # Legacy (switch off) dossier: the stamp under the textarea.
         self._switch(False)

@@ -12,7 +12,7 @@
                 <span t-esc="'%.0f' % line.product_uom_qty" class="text-nowrap"/>
             </t>
             <t t-else="">
-                <span t-field="line.product_uom_qty" class="text-nowrap"/>
+                <span t-field="line.product_uom_qty" t-options="{'min_precision': 1}" class="text-nowrap"/>
             </t>
         </xpath>
     </template>

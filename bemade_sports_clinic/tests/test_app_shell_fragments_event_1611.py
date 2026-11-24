@@ -99,7 +99,7 @@ class TestFragmentsEvent1611(FragmentsCommon):
         self.assertNotIn('PC TP', answer['fragments'][self._ekey('read')])
         self._saved(self.event, 'assigned_staff_ids', str(self.tp.id))
         answer = self._fragments(self._url(), [self._ekey('ts-head'), self._ekey('ts-add'), self._ekey('read')])
-        self.assertIn('data-sc-action="timesheet.add"', answer['fragments'][self._ekey('ts-head')])
+        self.assertIn('data-pk-action="timesheet.add"', answer['fragments'][self._ekey('ts-head')])
         self.assertIn('sc_ts_add_sheet', answer['fragments'][self._ekey('ts-add')])
         self.assertIn('PC TP', answer['fragments'][self._ekey('read')])
         self.assertFragmentMatchesPage(self._url(), self._ekey('ts-add'))
@@ -127,8 +127,8 @@ class TestFragmentsEvent1611(FragmentsCommon):
 
         def group_of_card():
             node = self._fragment(url, key)
-            self.assertEqual(node.get('data-sc-fragment-mode'), 'list')
-            card = node.xpath('.//*[@data-sc-fragment-item="%s"]' % self._tkey('card'))[0]
+            self.assertEqual(node.get('data-pk-fragment-mode'), 'list')
+            card = node.xpath('.//*[@data-pk-fragment-item="%s"]' % self._tkey('card'))[0]
             group = card.xpath('ancestor::*[@data-sc-group][1]')[0]
             return self._text(group.xpath('./h3')[0])
         self.assertEqual(group_of_card(), '2026-02-02')
@@ -142,6 +142,9 @@ class TestFragmentsEvent1611(FragmentsCommon):
         url = '/my/activity/%s' % self.act_player.id
         akey = 'mail.activity:%s:%%s' % self.act_player.id
         past = fields.Date.to_string(fields.Date.today() - timedelta(days=3))
+        # Task 1744: the portal refuses a NEW past due date — the activity is
+        # made overdue internally; saving its (stored) date is allowed.
+        self.act_player.sudo().date_deadline = past
         payload = self._saved(self.act_player, 'date_deadline', past)
         self.assertTrue(payload['live_counts'])
         for part in ('chips', 'read', 'appbar'):
@@ -166,7 +169,7 @@ class TestFragmentsEvent1611(FragmentsCommon):
         payload = self._saved(note, 'patient_id', str(self.player.id))
         self.assertRefreshes(payload, key)
         read = self._fragment('/my/notepad', key)
-        chips = [self._text(chip) for chip in read.xpath('.//span[contains(concat(" ", @class, " "), " o_sc_chip ")]')]
+        chips = [self._text(chip) for chip in read.xpath('.//span[contains(concat(" ", @class, " "), " o_pk_chip ")]')]
         self.assertEqual(chips, [self.player._portal_list_name()])
         self.assertEqual(payload['display'], self.player._portal_list_name())
         self._saved(note, 'note', 'Synthetic jot, edited')
@@ -195,4 +198,4 @@ class TestFragmentsMissingTimesheets1611(FragmentsMixin, EventTimesheets1584Comm
         self.authenticate('p77.cadmin@example.com', 'p77-cadmin-pass')
         banner = self._fragment(url, key)
         self.assertNotIn('P77 Internal TP', self._text(banner))
-        self.assertFalse(banner.xpath('.//*[contains(@class, "o_sc_banner")]'))
+        self.assertFalse(banner.xpath('.//*[contains(@class, "o_pk_banner")]'))

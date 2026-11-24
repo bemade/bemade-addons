@@ -53,7 +53,7 @@ class TestMissingFeatures1665(Features1665Common):
         self.assertEqual(holder[0].get('data-sc-ts-existing-id'), str(self.timesheet.id))
         submit = tree.xpath('//dialog[@id="sc_ts_add_sheet"]//button[@type="submit"]')[0]
         self.assertEqual(' '.join(submit.text_content().split()), 'Add another timesheet')
-        self.assertTrue(tree.xpath('//*[@data-sc-timesheet-id="%s"][@data-sc-edit-card]' % self.timesheet.id))
+        self.assertTrue(tree.xpath('//*[@data-sc-timesheet-id="%s"][@data-pk-edit-card]' % self.timesheet.id))
         resp = self.url_open('/my/event/%s/timesheet/add' % self.event.id,
                              data={'csrf_token': self._csrf()}, allow_redirects=False)
         self.assertIn('ts_saved=1', resp.headers['Location'])
@@ -82,7 +82,7 @@ class TestMissingFeatures1665(Features1665Common):
         self.assertTrue(messages.filtered(lambda m: 'restored via portal' in str(m.body or '')))
         tree = self._tree('/my/event/%s' % self.event.id)
         self.assertFalse(tree.xpath('//button[@data-sc-action="event.restore"]'))
-        self.assertFalse(tree.xpath('//span[contains(@class, "o_sc_chip_red")][normalize-space()="Cancelled"]'))
+        self.assertFalse(tree.xpath('//span[contains(@class, "o_pk_chip_red")][normalize-space()="Cancelled"]'))
         self.assertTrue(tree.xpath('//button[@data-sc-action="event.cancel"]'))
 
     @mute_logger('odoo.http')
@@ -98,7 +98,7 @@ class TestMissingFeatures1665(Features1665Common):
     def test_morning_summary_opt_out(self):
         self._login_tp()
         tree = self._tree('/my/app/settings')
-        section = tree.xpath('//section[@data-sc-section="settings.morning_summary"]')[0]
+        section = tree.xpath('//section[@data-pk-section="settings.morning_summary"]')[0]
         # Task 1726: a switch (on), its « 0 » twin disabled while on.
         self.assertEqual(section.xpath('.//input[@role="switch"][@name="digest_daily_enabled"]/@aria-checked'), ['true'])
         self.assertTrue(section.xpath('.//input[@type="hidden"][@value="0"][@disabled]'))
@@ -108,7 +108,7 @@ class TestMissingFeatures1665(Features1665Common):
         self.assertFalse(self.tp.digest_daily_enabled)
         self.assertTrue(self.coach.digest_daily_enabled)
         tree = self._tree('/my/app/settings')
-        section = tree.xpath('//section[@data-sc-section="settings.morning_summary"]')[0]
+        section = tree.xpath('//section[@data-pk-section="settings.morning_summary"]')[0]
         self.assertEqual(section.xpath('.//input[@role="switch"]/@aria-checked'), ['false'])
         self.assertFalse(section.xpath('.//input[@type="hidden"][@value="0"][@disabled]'))
         # Never another user's record.
@@ -157,7 +157,7 @@ class TestMissingFeatures1665(Features1665Common):
                for o in tree.xpath('//select[@id="sc_note_injury"]/option') if o.get('value')]
         self.assertEqual(add, [(str(self.injury.id), 'Sprain'),
                                (str(resolved.id), 'Synthetic old strain (resolved)')])
-        edits = [json.loads(raw) for raw in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+        edits = [json.loads(raw) for raw in tree.xpath('//owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
         pickers = [p for p in edits if p.get('model') == 'sports.treatment.note' and p.get('field') == 'injury_id'
                    and p.get('recordId', p.get('id')) in (note.id, str(note.id))] or \
                   [p for p in edits if p.get('model') == 'sports.treatment.note' and p.get('field') == 'injury_id']

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="zeffy_payment_view_list" model="ir.ui.view">
+        <field name="name">zeffy.payment.list</field>
+        <field name="model">zeffy.payment</field>
+        <field name="arch" type="xml">
+            <list
+        create="0"
+        decoration-muted="zeffy_deleted or refund_status == 'full'"
+      >
+                <field name="payment_date" />
+                <field name="partner_id" />
+                <field name="campaign_id" />
+                <field name="amount" sum="Total" />
+                <field name="eligible_amount" optional="hide" sum="Total" />
+                <field name="currency_id" column_invisible="1" />
+                <field name="payment_type" optional="show" />
+                <field name="payment_method" optional="show" />
+                <field name="is_recurring" optional="show" />
+                <field name="status" optional="show" />
+                <field name="refund_status" optional="show" />
+                <field name="fund_name" optional="hide" />
+                <field
+          name="receipt_url"
+          widget="url"
+          text="PDF"
+          optional="show"
+          invisible="not receipt_url"
+        />
+                <field name="zeffy_deleted" optional="hide" />
+                <field name="company_id" groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="zeffy_payment_view_form" model="ir.ui.view">
+        <field name="name">zeffy.payment.form</field>
+        <field name="model">zeffy.payment</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <sheet>
+                    <div
+            class="alert alert-warning"
+            role="alert"
+            invisible="not zeffy_deleted"
+          >This payment was deleted in Zeffy.</div>
+                    <div class="oe_title">
+                        <h1><field name="display_name" /></h1>
+                    </div>
+                    <group>
+                        <group string="Payment">
+                            <field name="payment_date" />
+                            <field name="partner_id" />
+                            <field name="contact_id" />
+                            <field name="buyer_email" widget="email" />
+                            <field name="amount" />
+                            <field name="eligible_amount" />
+                            <field
+                name="refunded_amount"
+                invisible="refund_status == 'none'"
+              />
+                            <field name="currency_id" invisible="1" />
+                            <field name="status" />
+                            <field name="refund_status" />
+                            <field name="payment_type" />
+                            <field name="payment_method" />
+                            <field name="receipt_url" widget="url" />
+                        </group>
+                        <group string="Campaign">
+                            <field name="campaign_id" />
+                            <field name="utm_campaign_id" />
+                            <field name="description" />
+                            <field name="campaign_category" />
+                            <field name="fund_name" />
+                            <field name="fund_code" />
+                            <field name="tribute_type" invisible="not tribute_type" />
+                            <field name="tribute_name" invisible="not tribute_type" />
+                        </group>
+                        <group string="Monthly giving" invisible="not is_recurring">
+                            <field name="is_recurring" />
+                            <field name="recurring_interval" />
+                            <field name="recurring_status" />
+                            <field name="subscription_id" />
+                            <field name="recurring_period_end" />
+                        </group>
+                        <group string="Zeffy">
+                            <field name="zeffy_id" />
+                            <field name="zeffy_deleted" />
+                            <field
+                name="company_id"
+                groups="base.group_multi_company"
+              />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="zeffy_payment_view_search" model="ir.ui.view">
+        <field name="name">zeffy.payment.search</field>
+        <field name="model">zeffy.payment</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id" />
+                <field name="campaign_id" />
+                <field name="subscription_id" />
+                <filter
+          name="recurring"
+          string="Monthly giving"
+          domain="[('is_recurring', '=', True)]"
+        />
+                <filter
+          name="refunded"
+          string="Refunded"
+          domain="[('refund_status', 'in', ('partial', 'full'))]"
+        />
+                <filter
+          name="deleted"
+          string="Deleted in Zeffy"
+          domain="[('zeffy_deleted', '=', True)]"
+        />
+                <separator />
+                <filter name="payment_date" string="Date" date="payment_date" />
+                <filter
+          name="group_campaign"
+          string="Campaign"
+          context="{'group_by': 'campaign_id'}"
+        />
+                <filter
+          name="group_partner"
+          string="Donor"
+          context="{'group_by': 'partner_id'}"
+        />
+                <filter
+          name="group_month"
+          string="Month"
+          context="{'group_by': 'payment_date:month'}"
+        />
+            </search>
+        </field>
+    </record>
+
+    <record id="zeffy_payment_action" model="ir.actions.act_window">
+        <field name="name">Zeffy Payments</field>
+        <field name="res_model">zeffy.payment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

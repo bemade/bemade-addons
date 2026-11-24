@@ -69,7 +69,7 @@ class TestCoachExternalNoteReadOnly1675(AppShellCommon):
     def _external_card(self):
         _text, tree = self._get('/my/player?player_id=%s&tab=injuries&injury=%s'
                                 % (self.player.id, self.injury.id))
-        cards = tree.xpath('//details[@id="injury-%s"]//*[@data-sc-edit-card="injury-notes-external"]'
+        cards = tree.xpath('//details[@id="injury-%s"]//*[@data-pk-edit-card="injury-notes-external"]'
                            % self.injury.id)
         self.assertEqual(len(cards), 1)
         return cards[0]
@@ -77,7 +77,7 @@ class TestCoachExternalNoteReadOnly1675(AppShellCommon):
     @staticmethod
     def _fields(node):
         return [(lambda d: d.get('field') or d.get('name'))(json.loads(p)) for p in node.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
 
     def _create(self, **data):
         self.url_open('/my/patient/injury/create', data={
@@ -106,17 +106,17 @@ class TestCoachExternalNoteReadOnly1675(AppShellCommon):
     def test_coach_card_reads_without_pencil(self):
         self._login_coach()
         card = self._external_card()
-        self.assertFalse(card.xpath('.//button[@data-sc-edit-toggle]'))
-        self.assertFalse(card.xpath('.//*[@data-sc-edit-view="edit"]'))
+        self.assertFalse(card.xpath('.//button[@data-pk-edit-toggle]'))
+        self.assertFalse(card.xpath('.//*[@data-pk-edit-view="edit"]'))
         self.assertEqual(self._fields(card), [])
-        read = card.xpath('./*[@data-sc-edit-view="read"]')[0]
+        read = card.xpath('./*[@data-pk-edit-view="read"]')[0]
         self.assertIn(EXT, read.text_content())
         self.assertTrue(read.xpath('.//*[@data-sc-note-stamp="external"]'))
 
     def test_therapist_card_keeps_pencil(self):
         self._login_tp()
         card = self._external_card()
-        self.assertEqual(len(card.xpath('.//button[@data-sc-edit-toggle]')), 1)
+        self.assertEqual(len(card.xpath('.//button[@data-pk-edit-toggle]')), 1)
         self.assertEqual(self._fields(card), ['external_notes'])
 
     # -- AC-3 ------------------------------------------------------------

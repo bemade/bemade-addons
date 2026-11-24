@@ -16,8 +16,8 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const ROSTER = '[data-sc-section="team.roster"]';
-const DASH = '[data-sc-section="team.recent_changes"]';
+const ROSTER = '[data-pk-section="team.roster"]';
+const DASH = '[data-pk-section="team.recent_changes"]';
 const TARGET = `${ROSTER} .o_sc_player_row[data-sc-tour-1634]`;
 
 function assert(condition, message) {
@@ -34,14 +34,14 @@ function rosterOrder() {
 
 function headerOf(init) {
     const headers = (init && init.headers) || {};
-    return headers instanceof Headers ? headers.get("X-Sc-Fragments") : headers["X-Sc-Fragments"];
+    return headers instanceof Headers ? headers.get("X-Pk-Fragments") : headers["X-Pk-Fragments"];
 }
 
 tours.add("sc_1634_card_pills", {
     steps: () => [
         {
             content: "Roster cards carry the compact dropdown pills",
-            trigger: `${ROSTER} .o_sc_pill_select_compact button.o_sc_pill_select`,
+            trigger: `${ROSTER} .o_pk_pill_select_compact button.o_pk_pill_select`,
             run() {
                 const dash = document.querySelector(`${DASH} .o_sc_player_row`);
                 assert(dash, "the player is not on the dashboard");
@@ -56,7 +56,7 @@ tours.add("sc_1634_card_pills", {
                     fragmentFetches: 0,
                 };
                 assert(
-                    dash.querySelector('[data-sc-pill-key="match"] button.o_sc_chip_green'),
+                    dash.querySelector('[data-pk-pill-key="match"] button.o_pk_chip_green'),
                     "the dashboard card's Match pill is not green"
                 );
                 const fetchOrig = window.fetch;
@@ -70,39 +70,39 @@ tours.add("sc_1634_card_pills", {
         },
         {
             content: "Open the roster card's Match pill (not the player page)",
-            trigger: `${TARGET} [data-sc-pill-key="match"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_green`,
+            trigger: `${TARGET} [data-pk-pill-key="match"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_green`,
             run: "click",
         },
         {
             content: "The menu is open; « Practice » choices untouched",
-            trigger: `${TARGET} [data-sc-pill-key="match"] button.o_sc_pill_select[aria-expanded="true"]`,
+            trigger: `${TARGET} [data-pk-pill-key="match"] button.o_pk_pill_select[aria-expanded="true"]`,
             run() {
                 assert(window.location.href === window.__sc1634.url, "the tap navigated");
             },
         },
         {
             content: "Pick « No »",
-            trigger: `${TARGET} [data-sc-pill-key="match"] [role="menuitemradio"][data-sc-pill-value="no"]:not([aria-disabled])`,
+            trigger: `${TARGET} [data-pk-pill-key="match"] [role="menuitemradio"][data-pk-pill-value="no"]:not([aria-disabled])`,
             run: "click",
         },
         {
             content: "The roster card recoloured in place",
-            trigger: `${TARGET} [data-sc-pill-key="match"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_red`,
+            trigger: `${TARGET} [data-pk-pill-key="match"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_red`,
             run() {
                 const state = window.__sc1634;
                 assert(state, "the page reloaded");
                 assert(window.location.href === state.url, "the page navigated");
                 assert(
-                    document.querySelector(`${TARGET} [data-sc-pill-key="practice"] button.o_sc_chip_green`),
+                    document.querySelector(`${TARGET} [data-pk-pill-key="practice"] button.o_pk_chip_green`),
                     "the Practice pill changed"
                 );
-                const dot = document.querySelector(`${TARGET} .o_sc_link_row .o_sc_dot`);
-                assert(dot && !dot.classList.contains("o_sc_tone_green"), "the card's dot did not recolour");
+                const dot = document.querySelector(`${TARGET} .o_pk_link_row .o_pk_dot`);
+                assert(dot && !dot.classList.contains("o_pk_tone_green"), "the card's dot did not recolour");
                 const dash = document.querySelector(
                     `${DASH} .o_sc_player_row[data-sc-player-id="${state.id}"]`
                 );
                 assert(
-                    dash && dash.querySelector('[data-sc-pill-key="match"] button.o_sc_chip_red'),
+                    dash && dash.querySelector('[data-pk-pill-key="match"] button.o_pk_chip_red'),
                     "the same player's dashboard card did not update"
                 );
                 assert(rosterOrder() === state.order, "the roster re-sorted");
@@ -110,7 +110,7 @@ tours.add("sc_1634_card_pills", {
         },
         {
             content: "One fragment fetch for the pick",
-            trigger: `${TARGET} [data-sc-pill-key="match"] button.o_sc_chip_red`,
+            trigger: `${TARGET} [data-pk-pill-key="match"] button.o_pk_chip_red`,
             async run() {
                 // Anything still queued would fire within the debounce window.
                 await new Promise((resolve) => setTimeout(resolve, 700));
@@ -126,11 +126,11 @@ tours.add("sc_1634_card_pills_coach", {
     steps: () => [
         {
             content: "Coach: coloured read-only pills, no button, no menu",
-            trigger: `${ROSTER} .o_sc_row_status .o_sc_status_pill`,
+            trigger: `${ROSTER} .o_sc_row_status .o_pk_status_pill`,
             run() {
                 assert(!document.querySelector(".o_sc_row_status button"), "a button on a coach's card");
-                assert(!document.querySelector("[data-sc-pill-select]"), "a dropdown for a coach");
-                assert(document.querySelector(`${DASH} .o_sc_row_status .o_sc_status_pill`), "no dashboard pills");
+                assert(!document.querySelector("[data-pk-pill-select]"), "a dropdown for a coach");
+                assert(document.querySelector(`${DASH} .o_sc_row_status .o_pk_status_pill`), "no dashboard pills");
             },
         },
     ],

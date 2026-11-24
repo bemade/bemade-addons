@@ -3,7 +3,7 @@
 1366 px. Synthetic fixtures only.
 
 * TOUR-PREF « Paramètres »: the « Terminé » buttons switch posts the
-  preference on its own (sc_show_done_buttons -> True).
+  preference on its own (pk_show_done_buttons -> True).
 * TOUR-FILTER the events filter form: « Afficher les événements annulés »
   applies on change (show_cancelled=1 in the address).
 * TOUR-AUTOSAVE the new injury's date « N/A » switch (OWL autosave field):
@@ -23,10 +23,10 @@ from odoo.addons.bemade_sports_clinic.tests.test_switches_1726 import Switch1726
 class _Tours1726:
 
     def test_pref_switch(self):
-        self.tp.sc_show_done_buttons = False
+        self.tp.pk_show_done_buttons = False
         self.start_tour('/my/app/settings', 'sc_1726_switch_pref', login='pc.tp@example.com')
         self.tp.invalidate_recordset()
-        self.assertTrue(self.tp.sc_show_done_buttons)
+        self.assertTrue(self.tp.pk_show_done_buttons)
 
     def test_filter_switch(self):
         self.start_tour('/my/events', 'sc_1726_switch_filter', login='pc.tp@example.com')

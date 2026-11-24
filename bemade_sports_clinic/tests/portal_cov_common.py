@@ -95,7 +95,7 @@ class PortalCovCommon(HttpCase):
         # Task 1676: the « Done » buttons are hidden by default; the existing
         # tours click them, so the fixture users show them (the 1676 tests
         # switch it off to cover the default).
-        (cls.coach | cls.tp | cls.plain).write({'sc_show_done_buttons': True})
+        (cls.coach | cls.tp | cls.plain).write({'pk_show_done_buttons': True})
 
     def _login_coach(self):
         self.authenticate('pc.coach@example.com', 'pc-coach')

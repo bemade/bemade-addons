@@ -22,6 +22,12 @@ left as typed.
   optional "Show until" date. A daily scheduled action removes it once that day
   has passed.
 
+`mobile_phone` is the employee's work mobile only when "Show cell phone in
+email signature" is ticked on the employee (default: not ticked, so the cell
+line is hidden). HR sets it on the employee form, next to the work mobile; each
+user can also tick or untick it for themselves in their preferences (My
+Profile), without HR rights. The signature is regenerated at once.
+
 Write one optional line per paragraph: a paragraph whose placeholders are all
 empty (for example a user without a mobile phone) is removed entirely, label
 included. A paragraph mixing empty and non-empty placeholders is kept.
@@ -30,9 +36,10 @@ An administrator can exempt a user ("Manage own signature" on the user
 form): that user writes their own signature again. Unticking it regenerates
 the signature (the personal one is kept as backup).
 
-The signatures are regenerated when the employee (name, phones, email, job
-position or title, also on its current version), the job position (including
-its French name), the template, the notice or the company changes.
+The signatures are regenerated when the employee (name, phones, "Show cell
+phone in email signature", email, job position or title, also on its current
+version), the job position (including its French name), the template, the
+notice or the company changes.
 
 The generated signature is written to `res.users.signature`, so every
 existing consumer (chatter email, full composer, templates) uses it unchanged.

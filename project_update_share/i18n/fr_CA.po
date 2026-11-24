@@ -1,0 +1,107 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* project_update_share
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-03 19:30+0000\n"
+"PO-Revision-Date: 2026-11-03 19:30+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"Language: fr_CA\n"
+
+#. module: project_update_share
+#: model_terms:ir.ui.view,arch_db:project_update_share.portal_my_project_updates_button
+msgid ""
+"<i class=\"fa fa-bullhorn me-1\" role=\"img\" aria-label=\"Updates\"/"
+"><span>Updates</span>"
+msgstr ""
+"<i class=\"fa fa-bullhorn me-1\" role=\"img\" aria-label=\"Mises à jour\"/"
+"><span>Mises à jour</span>"
+
+#. module: project_update_share
+#: model_terms:ir.ui.view,arch_db:project_update_share.portal_my_project_updates
+msgid ""
+"<i class=\"fa fa-tasks me-1\" role=\"img\" aria-label=\"Tasks\"/"
+"><span>Tasks</span>"
+msgstr ""
+"<i class=\"fa fa-tasks me-1\" role=\"img\" aria-label=\"Tâches\"/"
+"><span>Tâches</span>"
+
+#. module: project_update_share
+#: model:ir.model.fields,field_description:project_update_share.field_project_update__emailed_partner_ids
+msgid "Already Emailed"
+msgstr "Déjà envoyée à"
+
+#. module: project_update_share
+#: model:ir.model.fields,field_description:project_update_share.field_project_project__display_name
+#: model:ir.model.fields,field_description:project_update_share.field_project_update__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: project_update_share
+#: model:ir.model.fields,field_description:project_update_share.field_project_project__id
+#: model:ir.model.fields,field_description:project_update_share.field_project_update__id
+msgid "ID"
+msgstr "ID"
+
+#. module: project_update_share
+#: model:ir.model.fields,field_description:project_update_share.field_project_update__internal_only
+msgid "Internal Only"
+msgstr "Interne seulement"
+
+#. module: project_update_share
+#: model:ir.model,name:project_update_share.model_project_project
+msgid "Project"
+msgstr "Projet"
+
+#. module: project_update_share
+#: model:ir.model,name:project_update_share.model_project_update
+msgid "Project Update"
+msgstr "Mise à jour de projet"
+
+#. module: project_update_share
+#: model:ir.model.fields,field_description:project_update_share.field_project_update__recipient_ids
+msgid "Recipients"
+msgstr "Destinataires"
+
+#. module: project_update_share
+#: model_terms:ir.ui.view,arch_db:project_update_share.update_share_message
+msgid "See all project updates"
+msgstr "Voir toutes les mises à jour du projet"
+
+#. module: project_update_share
+#: model_terms:ir.ui.view,arch_db:project_update_share.portal_my_project_updates
+msgid "There are no updates yet."
+msgstr "Il n'y a pas encore de mise à jour."
+
+#. module: project_update_share
+#: model:ir.model.fields,help:project_update_share.field_project_update__internal_only
+msgid ""
+"Untick to share this update with its recipients: each is emailed once, and "
+"can read it on the portal."
+msgstr ""
+"Décochez pour partager cette mise à jour avec ses destinataires : chacun la "
+"reçoit une fois par courriel et peut la lire sur le portail."
+
+#. module: project_update_share
+#. odoo-javascript
+#: code:addons/project_update_share/static/src/project_sharing/control_panel.xml:0
+#: model_terms:ir.ui.view,arch_db:project_update_share.portal_my_project_updates
+msgid "Updates"
+msgstr "Mises à jour"
+
+#. module: project_update_share
+#: model:ir.model.fields,help:project_update_share.field_project_update__recipient_ids
+msgid ""
+"Who receives this update by email and can read it on the portal. Prefilled "
+"with the project's followers and collaborators."
+msgstr ""
+"Qui reçoit cette mise à jour par courriel et peut la lire sur le portail. "
+"Prérempli avec les abonnés et les collaborateurs du projet."

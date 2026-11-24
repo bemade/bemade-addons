@@ -61,7 +61,7 @@ class Dashboard1626Common(AppShellCommon):
             return_value={'players': {self.player.id}, 'injuries': set()})
 
     def _dashboard_row(self, tree):
-        rows = tree.xpath('//*[@data-sc-section="team.recent_changes"]'
+        rows = tree.xpath('//*[@data-pk-section="team.recent_changes"]'
                           '//*[contains(@class, "o_sc_player_row")][@data-sc-player-id="%s"]'
                           % self.player.id)
         self.assertEqual(len(rows), 1)
@@ -78,10 +78,10 @@ class TestDashboardCard1626(Dashboard1626Common):
             login()
             with self._presence():
                 _t, tree = self._get(self.url)
-            section = tree.xpath('//*[@data-sc-section="team.recent_changes"]')[0]
+            section = tree.xpath('//*[@data-pk-section="team.recent_changes"]')[0]
             self.assertFalse(section.xpath('.//details'), 'a native <details> card is left')
             row = self._dashboard_row(tree)
-            main = row.xpath('.//a[contains(@class, "o_sc_link_row_main")]')
+            main = row.xpath('.//a[contains(@class, "o_pk_link_row_main")]')
             self.assertEqual(len(main), 1)
             self.assertEqual(main[0].get('href'), '/my/player?player_id=%s&team_id=%s'
                              % (self.player.id, self.team_a.id))
@@ -91,7 +91,7 @@ class TestDashboardCard1626(Dashboard1626Common):
             self.assertEqual(len(pill), 1)
             self.assertTrue(row.xpath('.//*[@data-sc-row-training]'))
             self.assertTrue(row.xpath('.//*[@data-sc-row-return]'))
-            self.assertEqual(len(row.xpath('.//button[@data-sc-row-expand]')), 1)
+            self.assertEqual(len(row.xpath('.//button[@data-pk-row-expand]')), 1)
 
     def test_recent_change_card_removal_pending(self):
         self.player.sudo().write({'pending_removal': True})
@@ -108,15 +108,15 @@ class TestDashboardCard1626(Dashboard1626Common):
         with self._presence():
             _t, tree = self._get(self.url)
         row = self._dashboard_row(tree)
-        button = row.xpath('.//button[@data-sc-row-expand]')[0]
+        button = row.xpath('.//button[@data-pk-row-expand]')[0]
         region = row.xpath('.//*[@data-sc-row-detail]')
         self.assertEqual(len(region), 1)
-        self.assertEqual(region[0].get('id'), button.get('data-sc-row-expand'))
+        self.assertEqual(region[0].get('id'), button.get('data-pk-row-expand'))
         self.assertEqual(region[0].get('hidden'), 'hidden')
-        self.assertEqual(region[0].get('data-sc-lazy-url'),
+        self.assertEqual(region[0].get('data-pk-lazy-url'),
                          '/my/player/%s/recent-changes?detail=1&team_id=%s'
                          % (self.player.id, self.team_a.id))
-        resp = self.url_open(region[0].get('data-sc-lazy-url'))
+        resp = self.url_open(region[0].get('data-pk-lazy-url'))
         self.assertEqual(resp.status_code, 200)
 
     def test_detail_ids_unique_when_also_watched(self):
@@ -140,7 +140,7 @@ class TestDashboardCard1626(Dashboard1626Common):
         ):
             _t, tree = self._get(url)
             body = tree.xpath('//*[contains(@class, "o_sc_change_detail")]')[0]
-            links = body.xpath('.//a[contains(@class, "o_sc_section_more")]')
+            links = body.xpath('.//a[contains(@class, "o_pk_section_more")]')
             self.assertTrue(links, url)
             last = links[-1]
             self.assertEqual(_text(last), 'Open the player page')
@@ -211,9 +211,9 @@ class TestDashboardCardI18n1626(TestAppShellI18n1538):
         with patch.object(type(self.env['sports.patient']), '_dashboard_card_presence',
                           return_value={'players': {self.player.id}, 'injuries': set()}):
             tree = lxml_html.fromstring(self._fr('/my/team?team_id=%s' % self.team_a.id))
-        row = tree.xpath('//*[@data-sc-section="team.recent_changes"]'
+        row = tree.xpath('//*[@data-pk-section="team.recent_changes"]'
                          '//*[contains(@class, "o_sc_player_row")][@data-sc-player-id="%s"]'
                          % self.player.id)[0]
-        self.assertEqual(_text(row.xpath('.//button[@data-sc-row-expand]')[0]), 'Détails')
+        self.assertEqual(_text(row.xpath('.//button[@data-pk-row-expand]')[0]), 'Détails')
         text = self._fr('/my/player/%s/recent-changes?detail=1' % self.player.id)
         self.assertIn('Ouvrir la fiche du joueur', text)

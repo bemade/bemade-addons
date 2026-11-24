@@ -1,0 +1,334 @@
+// Task 5202 (kit P7) — the configurable dashboard and its configure sheet
+// (moved from the first consumer, task 1624). Everything scoped under
+// .o_pk_app; kit tokens only.
+
+$pk-dash-laptop: 1024px;
+
+.o_pk_app {
+    // ------------------------------------------------------------ dashboard
+    .o_pk_dash_head {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: var(--pk-space-2);
+
+        .o_pk_dash_configure {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--pk-space-2);
+            min-height: var(--pk-tap);
+
+            .o_pk_icon {
+                width: 18px;
+                height: 18px;
+            }
+        }
+    }
+
+    .o_pk_dash {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-5);
+        min-width: 0;
+        // pk_dashboard_anchor.js keeps a toggled fold-out's
+        // header in place itself; the browser's own anchoring would pick
+        // another node and fight it.
+        overflow-anchor: none;
+    }
+
+    // Review round 2 (owner 2026-10-29): the three zones. Phone: left,
+    // right, bottom, one under the other. Laptop: left and right are two
+    // independent columns side by side, bottom spans both underneath.
+    .o_pk_dash_zone {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-5);
+        min-width: 0;
+    }
+
+    @media (min-width: $pk-dash-laptop) {
+        .o_pk_dash {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-areas: "left right" "bottom bottom";
+            align-items: start;
+            gap: var(--pk-space-5) var(--pk-space-6);
+        }
+
+        .o_pk_dash_zone_left {
+            grid-area: left;
+        }
+
+        .o_pk_dash_zone_right {
+            grid-area: right;
+        }
+
+        .o_pk_dash_zone_bottom {
+            grid-area: bottom;
+        }
+
+        // Only one side column in use: it takes the full width.
+        .o_pk_dash_zone.o_pk_dash_zone_solo {
+            grid-column: 1 / -1;
+        }
+    }
+
+    .o_pk_dash_section {
+        min-width: 0;
+        margin: 0;
+
+        .o_pk_dash_section_header {
+            margin-bottom: 2px;
+        }
+
+        .o_pk_dash_title {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .o_pk_dash_scope {
+            margin: 0 0 var(--pk-space-2);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    // Review round 2 (owner 2026-10-29): a widget's body stacks its parts
+    // (the « Cliniques aujourd'hui » row, the cards, « Voir les N autres »,
+    // « Tout voir ») with the card-list gap — nothing touches.
+    .o_pk_dash_body {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+
+    }
+
+    .o_pk_dash_count {
+        font-variant-numeric: tabular-nums;
+    }
+
+    // ------------------------------------------------------------ configure
+    .o_pk_dash_cfg_intro {
+        margin: 0 0 var(--pk-space-3);
+    }
+
+    // Review round 2: the zones of « Configurer » (as on the dashboard).
+    .o_pk_dash_cfg_zones {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-4);
+        margin-bottom: var(--pk-space-4);
+        min-width: 0;
+    }
+
+    .o_pk_dash_cfg_zone {
+        min-width: 0;
+
+        > .o_pk_dash_cfg {
+            min-height: 56px;
+            margin: 0;
+            padding: var(--pk-space-2);
+            border: 1px dashed var(--pk-line);
+            border-radius: var(--pk-radius-md);
+        }
+    }
+
+    .o_pk_dash_cfg_zone_title {
+        margin-bottom: var(--pk-space-2);
+    }
+
+    @media (min-width: $pk-dash-laptop) {
+        .o_pk_dash_cfg_zones {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-areas: "left right" "bottom bottom";
+            align-items: stretch;
+            gap: var(--pk-space-4) var(--pk-space-5);
+        }
+
+        .o_pk_dash_cfg_zone_left {
+            grid-area: left;
+        }
+
+        .o_pk_dash_cfg_zone_right {
+            grid-area: right;
+        }
+
+        .o_pk_dash_cfg_zone_bottom {
+            grid-area: bottom;
+        }
+    }
+
+    // The drag handle: laptop widths only; phones, touch and keyboard use
+    // ▲ / ▼ and « Move to ».
+    .o_pk_dash_cfg_grip::before {
+        content: "⋮⋮";
+    }
+
+    .o_pk_dash_cfg_drag {
+        display: none;
+        cursor: grab;
+        color: var(--pk-fg-3);
+        letter-spacing: -3px;
+        font-weight: 700;
+    }
+
+    @media (min-width: $pk-dash-laptop) {
+        .o_pk_dash_cfg_drag {
+            display: inline-flex;
+        }
+    }
+
+    .o_pk_dash_cfg_item.o_dragged {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+        cursor: grabbing;
+    }
+
+    .o_pk_dash_cfg_placeholder {
+        opacity: 0.35;
+    }
+
+    .o_pk_dash_cfg_zone_form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin: 0 0 var(--pk-space-1);
+
+        .o_pk_input {
+            width: auto;
+            min-width: 0;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+    }
+
+    .o_pk_dash_cfg {
+        list-style: none;
+        margin: 0 0 var(--pk-space-4);
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+    }
+
+    // Task 1736: a third column for the item's top bar (the red trash of
+    // « Retirer », right of the section switch; empty for a default section).
+    .o_pk_dash_cfg_item {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 0 var(--pk-space-2);
+
+        > .o_pk_dash_cfg_head {
+            grid-column: 1;
+            grid-row: 1 / span 2;
+        }
+
+        > .o_pk_dash_cfg_form {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        > .o_pk_card_icons {
+            grid-column: 3;
+            grid-row: 1;
+            margin-left: 0;
+            margin-right: calc(var(--pk-space-2) * -1);
+        }
+
+        > .o_pk_dash_cfg_remove,
+        > .o_pk_dash_cfg_zone_form {
+            grid-column: 2;
+            justify-self: start;
+        }
+    }
+
+    .o_pk_dash_cfg_off .o_pk_dash_cfg_switch .o_pk_switch_label {
+        color: var(--pk-fg-3);
+    }
+
+    .o_pk_dash_cfg_head {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .o_pk_dash_cfg_moves {
+        display: flex;
+        flex-direction: column;
+
+        .o_pk_icon_btn[disabled] {
+            opacity: 0.3;
+        }
+    }
+
+    .o_pk_dash_cfg_form {
+        gap: var(--pk-space-1);
+        min-width: 0;
+    }
+
+    .o_pk_dash_cfg_fields {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-2);
+        padding: var(--pk-space-2) 0;
+
+        fieldset {
+            display: flex;
+            flex-direction: column;
+            gap: var(--pk-space-2);
+            margin: 0;
+            padding: 0;
+            border: 0;
+            min-width: 0;
+        }
+
+        legend {
+            margin: 0;
+            float: none;
+        }
+    }
+
+    .o_pk_dash_cfg_actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: var(--pk-space-2);
+        min-height: 0;
+
+        .o_pk_dash_cfg_status:empty {
+            display: none;
+        }
+    }
+
+    .o_pk_dash_cfg_add {
+        margin-bottom: var(--pk-space-4);
+    }
+
+    .o_pk_dash_cfg_add_row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--pk-space-2);
+
+        .o_pk_input {
+            flex: 1 1 180px;
+            min-width: 0;
+        }
+
+        .o_pk_btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--pk-space-2);
+        }
+    }
+
+    .o_pk_dash_cfg_reset,
+    .o_pk_dash_cfg_back {
+        margin: 0 0 var(--pk-space-3);
+    }
+}

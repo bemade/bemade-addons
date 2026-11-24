@@ -2733,7 +2733,7 @@ class Patient(models.Model):
 
     def _sc_status_pills(self, labels=None):
         """Task 1627: the Match and Practice pill dropdowns of ONE player
-        (the ``sc_status_pill_select`` component): ``[match, practice]``,
+        (the ``bemade_portal_kit.pk_status_pill_select`` component): ``[match, practice]``,
         each ``{key, label, text, value, tone, icon, title, menu_label,
         options, target}``.
 

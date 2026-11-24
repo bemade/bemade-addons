@@ -1,0 +1,11 @@
+// Bemade Portal Kit (task 5357, kit P3b2) — SCSS variables shared by the kit's
+// stylesheets and its consumers' (an asset bundle compiles its SCSS files as
+// one unit, the kit's first).
+
+// The one generic breakpoint: from this width the shell is a « laptop » (left
+// rail, no bottom tabs).
+$pk-laptop: 992px;
+
+// Picker icons (owner review 2026-10-14), used as CSS masks: a calendar and a clock.
+$pk-icon-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3V2zm12 8H5v9h14v-9zM5 6v2h14V6H5zm2 6h4v4H7v-4z'/%3E%3C/svg%3E");
+$pk-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm1 3v4.6l3.2 3.2-1.4 1.4L11 12.4V7h2z'/%3E%3C/svg%3E");

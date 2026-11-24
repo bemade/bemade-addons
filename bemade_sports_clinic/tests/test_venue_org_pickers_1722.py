@@ -4,8 +4,8 @@ pickers (the #1648 picker the « Équipe » links use). Synthetic fixtures.
 Acceptance criteria:
 
 * AC-1 Create / edit form: ``select[name=venue_id]`` and
-  ``select[name=organization_id]`` carry ``data-sc-picker`` (keys venue /
-  org) and ``data-sc-picker-empty`` — « To be determined » / « All
+  ``select[name=organization_id]`` carry ``data-pk-picker`` (keys venue /
+  org) and ``data-pk-picker-empty`` — « To be determined » / « All
   organizations » stay the first, choosable option; the posted field
   names are unchanged; the « New venue » sheet stays.
 * AC-2 The event page's edit card: the venue autosave select is a picker.
@@ -45,14 +45,14 @@ class TestVenueOrgPickers1722(Org1597Common):
         self._login_cadmin()
         form = self._form()
         venue = form.xpath('.//select[@name="venue_id"]')[0]
-        self.assertEqual(venue.get('data-sc-picker'), '1')
-        self.assertEqual(venue.get('data-sc-picker-key'), 'venue')
-        self.assertEqual(venue.get('data-sc-picker-empty'), '1')
+        self.assertEqual(venue.get('data-pk-picker'), '1')
+        self.assertEqual(venue.get('data-pk-picker-key'), 'venue')
+        self.assertEqual(venue.get('data-pk-picker-empty'), '1')
         first = venue.xpath('./option')[0]
         self.assertEqual((first.get('value'), first.text_content().strip()), ('', 'To be determined'))
-        self.assertTrue(form.xpath('.//button[@data-sc-sheet-open="sc_venue_sheet"]'))
+        self.assertTrue(form.xpath('.//button[@data-pk-sheet-open="sc_venue_sheet"]'))
         org = form.xpath('.//select[@name="organization_id"]')[0]
-        self.assertEqual((org.get('data-sc-picker'), org.get('data-sc-picker-key'), org.get('data-sc-picker-empty')),
+        self.assertEqual((org.get('data-pk-picker'), org.get('data-pk-picker-key'), org.get('data-pk-picker-empty')),
                          ('1', 'org', '1'))
         self.assertEqual(org.xpath('./option')[0].get('value'), '')
 

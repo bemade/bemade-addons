@@ -4,17 +4,9 @@
 #    Copyright (C) October 2023 Bemade Inc. (<https://www.bemade.org>).
 #    Author: Marc Durepos (Contact : marc@bemade.org)
 #
-#    This program is under the terms of the Odoo Proprietary License v1.0 (OPL-1)
-#    It is forbidden to publish, distribute, sublicense, or sell copies of the Software
-#    or modified copies of the Software.
-#
-#    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-#    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-#    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-#    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-#    DEALINGS IN THE SOFTWARE.
+#    This program is free software: you can redistribute it and/or modify it under the terms of the
+#    GNU Lesser General Public License as published by the Free Software Foundation, version 3 (LGPL-3).
+#    See https://www.gnu.org/licenses/lgpl-3.0.html.
 #
 
 from odoo import http, _, fields
@@ -22,7 +14,7 @@ from odoo.exceptions import UserError, AccessError, MissingError, ValidationErro
 from odoo.http import request
 from odoo.tools import format_date
 
-from ..models import sc_app_nav, sc_app_roles
+from odoo.addons.bemade_portal_kit.tools import pk_form_props, pk_safe_return_url
 from datetime import datetime, time
 import time as systime
 import logging
@@ -31,7 +23,7 @@ import pytz
 _logger = logging.getLogger(__name__)
 
 # Task 1640: the date range a portal / app form may post (the browser's
-# date inputs carry the same 4-digit-year bounds, sc_date_bounds.js).
+# date inputs carry the same 4-digit-year bounds, pk_date_bounds.js).
 PORTAL_MIN_YEAR = 1900
 PORTAL_MAX_YEAR = 9999
 
@@ -60,6 +52,21 @@ def parse_portal_date(value):
         raise ValidationError(_("Please enter a valid date."))
     _check_portal_year(day.year)
     return day
+
+
+def sc_deadline_in_past(day, current=None):
+    """Task 1744 (owner 2026-11-02): True when ``day`` is a NEW activity due
+    date (not the stored ``current`` one: an overdue activity saved without
+    touching its date is fine) before the user's today (their timezone,
+    Québec). The portal routes refuse it; crons / internal code do not go
+    through them."""
+    if not day or day == current:
+        return False
+    return day < fields.Date.context_today(http.request.env.user)
+
+
+def sc_past_deadline_message(env):
+    return env._("The due date cannot be in the past.")
 
 
 class AccessControlMixin:
@@ -353,7 +360,7 @@ class AccessControlMixin:
         return attached | activity.sudo().attachment_ids
 
     # Task 1595: the record(s) an activity row / detail links to. Kind →
-    # (portal URL pattern, sc_icon key).
+    # (portal URL pattern, pk_icon key).
     _SC_ACTIVITY_RELATED_KINDS = {
         'sports.patient': ('/my/player?player_id=%s', 'players'),
         'sports.team': ('/my/team?team_id=%s', 'teams'),
@@ -409,7 +416,7 @@ class AccessControlMixin:
         if not allowed:
             return link
         link['url'] = pattern % record.id
-        if model == 'sports.patient.injury' and self._sc_app_shell_active():
+        if model == 'sports.patient.injury' and self._pk_shell_active():
             # Task 1616: the injury's open card (no injury page any more).
             link['url'] = self._sc_injury_card_url(record)
         if model == 'sports.patient':
@@ -532,8 +539,9 @@ class AccessControlMixin:
         user = request.env.user
         if not (self._is_treatment_professional() or self._is_clinic_admin()):
             return False
-        return sc_app_roles.can('patient.status.edit', user._sc_app_roles(),
-                                is_system=user.has_group('base.group_system'))
+        return request.env['portal.kit'].pk_can(
+            'patient.status.edit', user._sc_app_roles(),
+            is_system=user.has_group('base.group_system'))
 
     def _sc_player_row_extras(self, players, team_links=True, team=None, status_edit=False,
                               labels=None):
@@ -669,7 +677,7 @@ class AccessControlMixin:
 
     @staticmethod
     def _sc_activity_tab_badge(activities):
-        """Task 1635 — the Activities tab's count pill (``sc_page_tabs``'
+        """Task 1635 — the Activities tab's count pill (``pk_page_tabs``'
         optional 5th tuple item): ``{'count', 'tone', 'label'}``, or None at
         0. ``activities`` is the recordset the tab itself lists — searched
         as the viewer, so the record rules make the count per viewer (no
@@ -851,7 +859,7 @@ class AccessControlMixin:
             'data': data,
             'team_target': target_id,
             'team_csv': chosen,
-            'team_props': self._sc_form_props(
+            'team_props': pk_form_props(
                 target_id, env._("Teams"), value=chosen,
                 options=[(t.id, t.name) for t in targets],
                 placeholder=env._("Add a team…")),
@@ -1140,9 +1148,9 @@ class AccessControlMixin:
         (task 1544: no open redirect through a posted ``return_url``).
 
         Task 1579: ONE validator for the whole addon —
-        ``models/sc_app_nav.safe_return_url`` (same rule as before, plus the
-        optional ``prefixes`` the events pages restrict themselves to)."""
-        return sc_app_nav.safe_return_url(value, fallback, prefixes=prefixes)
+        the kit's ``pk_safe_return_url`` (task 5196; same rule as before, plus
+        the optional ``prefixes`` the events pages restrict themselves to)."""
+        return pk_safe_return_url(value, fallback, prefixes=prefixes)
 
     @classmethod
     def _local_return_url(cls, value, default):

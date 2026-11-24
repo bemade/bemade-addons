@@ -7,10 +7,10 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const HERO = '[data-sc-section="player.hero"]';
-const EDIT = '[data-sc-section="player.header.edit"]';
-const TRAINING = '[data-sc-section="player.training.edit"]';
-const ROWS = [TRAINING, '[data-sc-section="player.predicted_return"]', '[data-sc-section="player.return_date.edit"]'];
+const HERO = '[data-pk-section="player.hero"]';
+const EDIT = '[data-pk-section="player.header.edit"]';
+const TRAINING = '[data-pk-section="player.training.edit"]';
+const ROWS = [TRAINING, '[data-pk-section="player.predicted_return"]', '[data-pk-section="player.return_date.edit"]'];
 const CONTROLS = 'button, a[href], input:not([type="hidden"]), textarea, select';
 
 function assert(condition, message) {
@@ -60,23 +60,23 @@ function typeAndLeave(input, value) {
 
 const openPencil = {
     content: "Open the header's pencil",
-    trigger: `${HERO} > button[data-sc-edit-toggle][aria-expanded="false"]`,
+    trigger: `${HERO} [data-pk-card-icons] > button[data-pk-edit-toggle][aria-expanded="false"]`,
     run: "click",
 };
 
 const everyClear = {
     content: "Every row shows its « Effacer »",
-    trigger: `${EDIT}:not([hidden]) ${TRAINING} .o_sc_clear_btn`,
+    trigger: `${EDIT}:not([hidden]) ${TRAINING} .o_pk_clear_btn`,
     run() {
         for (const row of ROWS) {
-            assert(document.querySelector(`${row} .o_sc_clear_btn`), `no Effacer in ${row}`);
+            assert(document.querySelector(`${row} .o_pk_clear_btn`), `no Effacer in ${row}`);
         }
     },
 };
 
 const pastDate = {
     content: "Type a past « Retour prévu » (refused inline, #1727)",
-    trigger: '[data-sc-section="player.predicted_return"] input[type="date"]',
+    trigger: '[data-pk-section="player.predicted_return"] input[type="date"]',
     run() {
         typeAndLeave(this.anchor, "2001-01-01");
     },
@@ -89,7 +89,7 @@ tours.add("sc_1729_header_edit_phone", {
         pastDate,
         {
             content: "No overlap, no overflow; fields full width, actions under them",
-            trigger: '[data-sc-section="player.predicted_return"] .o_sc_field_error',
+            trigger: '[data-pk-section="player.predicted_return"] .o_pk_field_error',
             run() {
                 const hero = document.querySelector(HERO);
                 const found = overlaps(hero);
@@ -100,9 +100,9 @@ tours.add("sc_1729_header_edit_phone", {
                 );
                 const heroBox = hero.getBoundingClientRect();
                 for (const row of ROWS) {
-                    const field = document.querySelector(`${row} .o_sc_autosave`);
+                    const field = document.querySelector(`${row} .o_pk_autosave`);
                     const input = field.querySelector("textarea, input:not([type=hidden])");
-                    const clear = field.querySelector(".o_sc_clear_btn");
+                    const clear = field.querySelector(".o_pk_clear_btn");
                     const f = field.getBoundingClientRect();
                     const i = input.getBoundingClientRect();
                     const c = clear.getBoundingClientRect();
@@ -122,12 +122,12 @@ tours.add("sc_1729_header_edit_laptop", {
         pastDate,
         {
             content: "Laptop: nothing overlaps; « Effacer » stays on the training title's line",
-            trigger: '[data-sc-section="player.predicted_return"] .o_sc_field_error',
+            trigger: '[data-pk-section="player.predicted_return"] .o_pk_field_error',
             run() {
                 const found = overlaps(document.querySelector(HERO));
                 assert(!found.length, `overlapping controls: ${found.join(" | ")}`);
                 const title = document.querySelector(`${TRAINING} .o_sc_training_title`).getBoundingClientRect();
-                const clear = document.querySelector(`${TRAINING} .o_sc_clear_btn`).getBoundingClientRect();
+                const clear = document.querySelector(`${TRAINING} .o_pk_clear_btn`).getBoundingClientRect();
                 assert(clear.top < title.bottom && clear.bottom > title.top, "« Effacer » left the title line");
             },
         },

@@ -62,11 +62,11 @@ class EventTimesheets1584Common(Parity1577Common):
         })
 
     def _section(self, tree):
-        nodes = tree.xpath('//*[@data-sc-section="event.timesheets"]')
+        nodes = tree.xpath('//*[@data-pk-section="event.timesheets"]')
         return nodes[0] if nodes else None
 
     def _title(self, section):
-        return ' '.join(' '.join(section.xpath('.//h2[contains(@class, "o_sc_section_header")]//text()')).split())
+        return ' '.join(' '.join(section.xpath('.//h2[contains(@class, "o_pk_section_header")]//text()')).split())
 
     def _cards(self, section):
         return {int(card.get('data-sc-timesheet-id')): card
@@ -94,7 +94,7 @@ class TestAppShellEventTimesheets1584(EventTimesheets1584Common):
         self.assertEqual(self._employee(cards[self.timesheet.id]), 'PC TP')
         self.assertEqual(self._employee(cards[self.ts_tp2.id]), 'SC84 Second Therapist')
         # Not theirs: read-only (no pencil) for the admin.
-        self.assertFalse(section.xpath('.//*[@data-sc-edit-card]'))
+        self.assertFalse(section.xpath('.//*[@data-pk-edit-card]'))
         self.assertEqual(self._missing_text(section), 'Missing timesheets: P77 Internal TP')
 
     # -- UC-1 ------------------------------------------------------------
@@ -170,7 +170,7 @@ class TestAppShellEventTimesheetsFr1584(EventTimesheets1584Common):
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

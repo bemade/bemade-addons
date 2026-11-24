@@ -1,7 +1,7 @@
 /*
- * Task 1603 — follow-up proposals (inert outside .o_sc_app).
+ * Task 1603 — follow-up proposals (inert outside .o_pk_app).
  *
- * A save may answer ``propose`` (controllers/app_shell.py, SAVE_REGISTRY
+ * A save may answer ``propose`` (controllers/app_shell.py, the save specs
  * ``propose``; payload documented in models/patient_return_proposal.py):
  * {kind, patient_id, title, message, items: [{model, id, field, label,
  * current, proposed, current_display, proposed_display, editable, tickable,
@@ -15,8 +15,8 @@
  * - « Apply » posts the ticked rows to /my/app/apply-proposal
  *   ({patient_id, changes: JSON [{model, id, field, value}]}), which
  *   re-validates and writes them through the normal save paths; on success
- *   the sheet closes, each written field is announced as an « sc:saved »
- *   (the autosave islands and data-sc-display read views follow, the read
+ *   the sheet closes, each written field is announced as an « pk:saved »
+ *   (the autosave islands and data-pk-display read views follow, the read
  *   fragments refresh — task 1611) and the toast confirms;
  * - « Dismiss », the close button, Escape or the backdrop: nothing written.
  * - Task 1727: a « Retour prévu » row's date input starts at ``item.min``
@@ -25,18 +25,18 @@
  *   instead of posting — the same when the server answers ``needs_date``
  *   (the date passed while the sheet was open).
  *
- * Sources: an « sc:saved » whose result carries ``propose``; the
+ * Sources: an « pk:saved » whose result carries ``propose``; the
  * data-sc-proposal JSON a POST round-trip left on the sheet (shown on load);
  * the « sc:propose » DOM event ({detail: proposal}); or openProposal() from
  * other modules (task 1604's « Résoudre »).
  */
 import { _t } from "@web/core/l10n/translation";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 
 const APPLY_URL = "/my/app/apply-proposal";
 
 function sheet() {
-    return document.querySelector(".o_sc_app #sc_proposal_sheet");
+    return document.querySelector(".o_pk_app #sc_proposal_sheet");
 }
 
 function el(tag, className, text) {
@@ -59,7 +59,7 @@ function buildRow(item) {
     row.dataset.scProposalItem = itemKey(item);
     const head = el(item.tickable ? "label" : "div", "o_sc_proposal_head");
     if (item.tickable) {
-        head.classList.add("o_sc_check");
+        head.classList.add("o_pk_check");
         const box = el("input");
         box.type = "checkbox";
         box.checked = item.checked !== false;
@@ -73,7 +73,7 @@ function buildRow(item) {
     change.append(el("span", "o_sc_proposal_arrow", "→"));
     if (item.type === "selection" && Array.isArray(item.options)) {
         // Task 1670: a status row — the field's own choices.
-        const select = el("select", "o_sc_input o_sc_proposal_select");
+        const select = el("select", "o_pk_input o_sc_proposal_select");
         for (const option of item.options) {
             const node = el("option", null, option.label);
             node.value = option.value;
@@ -84,7 +84,7 @@ function buildRow(item) {
         select.setAttribute("aria-label", item.label);
         change.append(select);
     } else if (item.editable) {
-        const input = el("input", "o_sc_input o_sc_proposal_date");
+        const input = el("input", "o_pk_input o_sc_proposal_date");
         input.type = "date";
         input.value = item.proposed || "";
         input.dataset.scProposalValue = "1";
@@ -101,7 +101,7 @@ function buildRow(item) {
         row.dataset.scProposalNeedsDate = "1";
     }
     if (item.hint) {
-        row.append(el("p", "o_sc_hint o_sc_proposal_hint", item.hint));
+        row.append(el("p", "o_pk_hint o_sc_proposal_hint", item.hint));
     }
     return row;
 }
@@ -209,7 +209,7 @@ function announce(result) {
     for (const entry of result.saved || []) {
         const shown = { value: entry.value, display: entry.display };
         document.dispatchEvent(
-            new CustomEvent("sc:saved", {
+            new CustomEvent("pk:saved", {
                 detail: {
                     model: entry.model,
                     recordId: entry.id,
@@ -251,7 +251,7 @@ export async function applyProposal() {
     button.disabled = true;
     error.hidden = true;
     try {
-        const result = await scFetch(APPLY_URL, {
+        const result = await pkFetch(APPLY_URL, {
             method: "POST",
             data: { patient_id: current.patient_id, changes: JSON.stringify(changes) },
             toast: false,
@@ -259,7 +259,7 @@ export async function applyProposal() {
         close();
         announce(result);
         if (result.message) {
-            document.dispatchEvent(new CustomEvent("sc:toast", { detail: { message: result.message } }));
+            document.dispatchEvent(new CustomEvent("pk:toast", { detail: { message: result.message } }));
         }
         return true;
     } catch (err) {
@@ -293,7 +293,7 @@ document.addEventListener("click", (ev) => {
     }
 });
 
-document.addEventListener("sc:saved", (ev) => {
+document.addEventListener("pk:saved", (ev) => {
     const result = ev.detail && ev.detail.result;
     if (result && result.propose) {
         openProposal(result.propose);

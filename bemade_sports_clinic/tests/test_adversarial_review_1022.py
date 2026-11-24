@@ -119,12 +119,12 @@ class TestAdversarialSearch1022(Search1650Common):
         self._login_tp()
         resp = self.url_open('/my/app/search?q=synth')
         tree = lxml_html.fromstring('<div>%s</div>' % resp.text)
-        ids = [int(li.get('data-sc-search-player')) for li in tree.xpath('//li[@data-sc-search-player]')]
+        ids = [int(li.get('data-pk-search-row')) for li in tree.xpath('//li[@data-pk-search-row]')]
         self.assertNotIn(gone.id, ids, 'an archived out-of-team player is never listed')
         self.assertIn(self.other.id, ids, 'active out-of-team players still are (locked)')
         self.assertEqual(ids[-1], self.old.id, 'the own archived player stays, last')
         row = self._players(tree)[self.old.id]
-        self.assertIn('o_sc_search_archived', row.get('class'))
+        self.assertIn('o_pk_search_archived', row.get('class'))
         # A clinic admin still finds it (their scope is everything).
         self.authenticate('search1650.admin@example.com', 'search-1650-admin')
         resp = self.url_open('/my/app/search?q=synth')

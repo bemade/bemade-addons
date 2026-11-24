@@ -13,7 +13,7 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const PILLS = '[data-sc-section="player.medical"]';
+const PILLS = '[data-pk-section="player.medical"]';
 
 function assert(condition, message) {
     if (!condition) {
@@ -35,17 +35,17 @@ tours.add("sc_1630_medical_coach", {
         },
         {
             content: "Its popup: the condition, no pencil, no editor",
-            trigger: "dialog[open] [data-sc-section='medical.medical_alert']",
+            trigger: "dialog[open] [data-pk-section='medical.medical_alert']",
             run() {
                 assert(this.anchor.textContent.includes("Synthetic asthma"), "details missing");
                 const dialog = this.anchor.closest("dialog");
-                assert(!dialog.querySelector("[data-sc-edit-toggle], [data-sc-action='medical.edit']"), "a pencil");
-                assert(!dialog.querySelector(".o_sc_autosave, owl-component"), "an editor");
+                assert(!dialog.querySelector("[data-pk-edit-toggle], [data-sc-action='medical.edit']"), "a pencil");
+                assert(!dialog.querySelector(".o_pk_autosave, owl-component"), "an editor");
             },
         },
         {
             content: "Close it",
-            trigger: "dialog[open] [data-sc-sheet-close]",
+            trigger: "dialog[open] [data-pk-sheet-close]",
             run: "click",
         },
     ],
@@ -62,9 +62,9 @@ tours.add("sc_1630_card_pills", {
     steps: () => [
         {
             content: "The red pills on the roster card",
-            trigger: '[data-sc-section="team.roster"] .o_sc_row_status [data-sc-med-pill="allergy"].o_sc_med_urgent',
+            trigger: '[data-pk-section="team.roster"] .o_sc_row_status [data-sc-med-pill="allergy"].o_sc_med_urgent',
             run() {
-                const row = this.anchor.closest(".o_sc_link_row");
+                const row = this.anchor.closest(".o_pk_link_row");
                 assert(row.querySelector('.o_sc_row_status [data-sc-med-pill="medical_alert"].o_sc_med_urgent'),
                     "no medical-alert pill");
                 assert(this.anchor.querySelector("[data-sc-med-epipen] svg"), "no EpiPen icon");
@@ -84,7 +84,7 @@ tours.add("sc_1630_card_pills", {
             content: "Task 1652: its popup opens (read-only for a coach)",
             trigger: 'dialog[id^="sc_med_card_allergy_"][open]',
             run() {
-                assert(!this.anchor.querySelector("[data-sc-edit-toggle]"), "a coach gets a pencil");
+                assert(!this.anchor.querySelector("[data-pk-edit-toggle]"), "a coach gets a pencil");
             },
         },
     ],

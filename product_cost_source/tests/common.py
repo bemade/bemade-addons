@@ -6,7 +6,11 @@ Deliberately minimal: each use case builds the prices and stock it needs, so
 that a test reads as the situation it describes rather than as a lookup into
 a shared pile of setup.
 """
+from datetime import datetime, time
 
+from dateutil.relativedelta import relativedelta
+
+from odoo import fields
 from odoo.tests import TransactionCase
 
 
@@ -14,6 +18,10 @@ class ProductCostSourceCommon(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # The engine reads "today" in the user's timezone while the tests build
+        # their dates from UTC today; pin the user to UTC so the two agree at
+        # every hour of the day.
+        cls.env.user.tz = "UTC"
         cls.company = cls.env.company
         cls.vendor = cls.env["res.partner"].create({"name": "Test Vendor"})
         cls.other_vendor = cls.env["res.partner"].create({"name": "Other Vendor"})
@@ -21,10 +29,10 @@ class ProductCostSourceCommon(TransactionCase):
             {"name": "Test Component", "type": "consu", "is_storable": True}
         )
 
-    def _supplier_price(self, price, product=None, partner=None, **values):
+    def _supplier_price(self, price, product=None, partner=None, entered=None, **values):
         """A supplier price entry; pass date_start/date_end/min_qty as needed."""
         product = product or self.product
-        return self.env["product.supplierinfo"].create(
+        seller = self.env["product.supplierinfo"].create(
             {
                 "partner_id": (partner or self.vendor).id,
                 "product_tmpl_id": product.product_tmpl_id.id,
@@ -32,6 +40,24 @@ class ProductCostSourceCommon(TransactionCase):
                 **values,
             }
         )
+        return self._enter_on(
+            seller,
+            entered or fields.Date.today() - relativedelta(years=3),
+        )
+
+    def _enter_on(self, seller, on):
+        """Pretend the supplier price line was created on ``on``.
+
+        A line with no tracked change takes its age from its creation; the
+        fixtures create lines years ago by default, so a test only meets a
+        fresh price when it asks for one.
+        """
+        self.env.cr.execute(
+            "UPDATE product_supplierinfo SET create_date = %s WHERE id = %s",
+            [datetime.combine(on, time(12, 0)), seller.id],
+        )
+        seller.invalidate_recordset(["create_date"])
+        return seller
 
     def _resolve(self, qty=1.0, product=None, **kwargs):
         product = product or self.product
@@ -39,6 +65,14 @@ class ProductCostSourceCommon(TransactionCase):
 
     def _set_stock_value(self, value, product=None):
         (product or self.product).standard_price = value
+
+    def _fmt(self, date):
+        from odoo.tools.misc import format_date
+        return format_date(self.env, date)
+
+    def _money(self, amount, currency=None):
+        from odoo.tools.misc import format_amount
+        return format_amount(self.env, amount, currency or self.env.company.currency_id)
 
     def _months_ago(self, months):
         from dateutil.relativedelta import relativedelta

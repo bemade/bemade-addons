@@ -21,14 +21,14 @@ tours.add("sc_1679_group_by_once", {
     steps: () => [
         {
             content: "Open the filters",
-            trigger: 'form[data-sc-section="events.filters"] summary.o_sc_disclosure_summary',
+            trigger: 'form[data-pk-section="events.filters"] summary.o_pk_disclosure_summary',
             run: "click",
         },
         {
             content: "« Group by » is shown once (the legend)",
-            trigger: 'fieldset[data-sc-section="events.group"] select#sc_ev_group:visible',
+            trigger: 'fieldset[data-pk-section="events.group"] select#sc_ev_group:visible',
             run() {
-                const group = document.querySelector('fieldset[data-sc-section="events.group"]');
+                const group = document.querySelector('fieldset[data-pk-section="events.group"]');
                 const shown = [...group.querySelectorAll("legend, label")].filter(
                     (el) => visible(el) && el.textContent.trim() === "Group by"
                 );
@@ -43,19 +43,19 @@ tours.add("sc_1679_toast_clear", {
     steps: () => [
         {
             content: "« Add My Timesheet »",
-            trigger: 'button[data-sc-action="timesheet.add"][data-sc-sheet-open]',
+            trigger: 'button[data-pk-action="timesheet.add"][data-pk-sheet-open]',
             run: "click",
         },
         {
             content: "The toast is up",
-            trigger: ".o_sc_toast:not([hidden]) button[data-sc-toast-action]",
+            trigger: ".o_pk_toast:not([hidden]) button[data-pk-toast-action]",
         },
         {
             content: "The open card's buttons are above the toast",
-            trigger: "[data-sc-timesheet-id][data-sc-edit-card][data-sc-edit-open]",
+            trigger: "[data-sc-timesheet-id][data-pk-edit-card][data-pk-edit-open]",
             run() {
-                const card = document.querySelector("[data-sc-timesheet-id][data-sc-edit-card][data-sc-edit-open]");
-                const toast = document.querySelector(".o_sc_toast:not([hidden])");
+                const card = document.querySelector("[data-sc-timesheet-id][data-pk-edit-card][data-pk-edit-open]");
+                const toast = document.querySelector(".o_pk_toast:not([hidden])");
                 const bottom = card.getBoundingClientRect().bottom;
                 const top = toast.getBoundingClientRect().top;
                 console.log(`sc_1679: card bottom ${bottom}, toast top ${top}`);
@@ -66,15 +66,15 @@ tours.add("sc_1679_toast_clear", {
 });
 
 // Review round 1 (2026-10-26): « Reset » keeps an open filter panel open
-// (any filter form carrying a[data-sc-filter-reset]).
+// (any filter form carrying a[data-pk-filter-reset]).
 function resetKeepsOpen(section) {
-    const form = `form[data-sc-section="${section}"]`;
+    const form = `form[data-pk-section="${section}"]`;
     return [
         {
             content: "Open the filters (if closed)",
-            trigger: `${form} summary.o_sc_disclosure_summary`,
+            trigger: `${form} summary.o_pk_disclosure_summary`,
             run() {
-                const details = document.querySelector(`${form} details.o_sc_disclosure`);
+                const details = document.querySelector(`${form} details.o_pk_disclosure`);
                 if (!details.open) {
                     details.querySelector("summary").click();
                 }
@@ -82,15 +82,15 @@ function resetKeepsOpen(section) {
         },
         {
             content: "Tap « Reset »",
-            trigger: `${form} a[data-sc-filter-reset]:visible`,
+            trigger: `${form} a[data-pk-filter-reset]:visible`,
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "The panel is still open after the reload",
-            trigger: `${form} details.o_sc_disclosure[open]`,
+            trigger: `${form} details.o_pk_disclosure[open]`,
             run() {
-                assert(!document.querySelector(`${form}[data-sc-submitting]`), "a fresh page is expected");
+                assert(!document.querySelector(`${form}[data-pk-submitting]`), "a fresh page is expected");
             },
         },
     ];
@@ -106,7 +106,7 @@ tours.add("sc_1679_date_inputs_fit", {
     steps: () => [
         {
             content: "Open the filters",
-            trigger: 'form[data-sc-section="events.filters"] summary.o_sc_disclosure_summary',
+            trigger: 'form[data-pk-section="events.filters"] summary.o_pk_disclosure_summary',
             run: "click",
         },
         {
@@ -115,7 +115,7 @@ tours.add("sc_1679_date_inputs_fit", {
             run() {
                 for (const id of ["sc_ev_from", "sc_ev_to"]) {
                     const input = document.getElementById(id);
-                    const cell = input.closest(".o_sc_field").getBoundingClientRect();
+                    const cell = input.closest(".o_pk_field").getBoundingClientRect();
                     const box = input.getBoundingClientRect();
                     const style = getComputedStyle(input);
                     assert(box.right <= cell.right + 0.5 && box.left >= cell.left - 0.5,

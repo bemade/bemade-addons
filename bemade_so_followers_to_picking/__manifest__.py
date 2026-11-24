@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Add SO Followers to Picking",
-    "version": "19.0.0.0.1",
+    "version": "19.0.0.0.2",
     "category": "Extra Tools",
     "summary": "Add SO Followers to Picking",
     "description": """
@@ -17,5 +17,5 @@
     "data": [],
     "auto_install": False,
     "installable": True,
-    "license": "OPL-1",
+    "license": "LGPL-3",
 }

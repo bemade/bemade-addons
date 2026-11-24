@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <!-- Ships inactive: activate it once to convert the HEIC attachments stored
+         before the module; it deactivates itself when none is left.
+         noupdate: a module upgrade must not switch it back off. -->
+    <record id="ir_cron_convert_heic_attachments" model="ir.cron">
+        <field name="name">Attachments: convert stored HEIC images to JPEG</field>
+        <field name="model_id" ref="base.model_ir_attachment" />
+        <field name="user_id" ref="base.user_root" />
+        <field name="state">code</field>
+        <field name="code">model._cron_convert_heic_attachments()</field>
+        <field name="interval_number">15</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="False" />
+    </record>
+</odoo>

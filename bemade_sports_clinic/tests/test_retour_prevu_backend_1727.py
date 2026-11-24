@@ -91,7 +91,7 @@ class TestRetourPrevuBackend1727(TransactionCase):
     # UC-B5
     def test_french(self):
         self.env['res.lang']._activate_lang('fr_CA')
-        self.env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        self.env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         Patient = self.env['sports.patient'].with_context(lang='fr_CA')
         form = Patient.get_view(self.env.ref('bemade_sports_clinic.sports_patient_view_form').id, 'form')
         [badge] = etree.fromstring(form['arch']).xpath("//span[hasclass('o_sc_overdue_badge')]")

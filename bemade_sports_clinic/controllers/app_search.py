@@ -1,7 +1,12 @@
-"""Task 1650 — the app header's search (the magnifier).
+"""Task 1650 — the app header's search (the magnifier): the clinic's
+providers.
 
-``GET /my/app/search?q=…`` answers an HTML fragment (the search sheet's body):
-players, teams and events matching the typed text, grouped, ~8 each.
+Task 5200 (kit P5): the route (``GET /my/app/search?q=…``, an HTML
+fragment), the sheet, the matching rule and the row layout are the kit's
+(``PortalKitShell.pk_app_search``, ``bemade_portal_kit.tools.match``); the
+clinic registers three providers through ``portal.kit._pk_search_providers``
+(models/sc_app_roles.py): players, teams and events matching the typed
+text, ~8 each.
 
 * Players: first / last name only — accent- and case-insensitive, every
   typed word the start of a word of the name (« andy cous » finds
@@ -16,36 +21,18 @@ players, teams and events matching the typed text, grouped, ~8 each.
 * Never more than the name, the team(s), the jersey / the date: no date of
   birth, phone or medical data.
 """
-import re
-import unicodedata
 from urllib.parse import urlencode
 
-from odoo import fields, http
+from odoo import _, fields
 from odoo.http import request
 from odoo.tools import format_datetime
+
+from odoo.addons.bemade_portal_kit.tools import pk_fold, pk_name_matches
 
 from ..models.sc_name_match import NEAR, NameIndex
 from .team_staff_portal import TeamStaffPortal
 
-SEARCH_MIN = 2
 SEARCH_LIMIT = 8
-_WORD_RE = re.compile(r"[\w]+", re.UNICODE)
-
-
-def sc_fold(text):
-    """Lower case, without accents (« Élodie » -> « elodie »)."""
-    text = unicodedata.normalize("NFKD", str(text or ""))
-    return "".join(ch for ch in text if not unicodedata.combining(ch)).casefold()
-
-
-def sc_words(text):
-    return _WORD_RE.findall(sc_fold(text))
-
-
-def sc_name_matches(query_words, *names):
-    """Every typed word is the start of a word of the name."""
-    tokens = [token for name in names for token in sc_words(name)]
-    return all(any(token.startswith(word) for token in tokens) for word in query_words)
 
 
 class AppSearchPortal(TeamStaffPortal):
@@ -82,16 +69,18 @@ class AppSearchPortal(TeamStaffPortal):
             rows.append({
                 'id': player.id,
                 'title': player._portal_list_name(),
-                'teams': ', '.join(teams.mapped('name')),
+                'subtitle': ', '.join(teams.mapped('name')),
                 'archived': not player.active,
-                'accessible': accessible,
+                'archived_label': _("Archived player"),
+                'locked': not accessible,
                 'url': '/my/player?player_id=%s' % player.id if accessible else False,
                 # « Add to team »: the Joueurs page's own guarded action, on
                 # its name search for this player.
-                'add_url': False if accessible else '/my/players?%s' % urlencode({
+                'action_label': False if accessible else _("Add to team"),
+                'action_url': False if accessible else '/my/players?%s' % urlencode({
                     'first_name': player.first_name or '', 'last_name': player.last_name or ''}),
                 'near': grades[player.id] == NEAR,
-                'sort': (not player.active, not accessible, sc_fold(player.last_name), sc_fold(player.first_name)),
+                'sort': (not player.active, not accessible, pk_fold(player.last_name), pk_fold(player.first_name)),
             })
         rows.sort(key=lambda r: r['sort'])
         return ([r for r in rows if not r['near']][:SEARCH_LIMIT]
@@ -100,7 +89,7 @@ class AppSearchPortal(TeamStaffPortal):
     def _sc_search_teams(self, words):
         rows = []
         for team in self._get_accessible_teams():
-            if sc_name_matches(words, team.name) or sc_name_matches(words, team.parent_id.name or ''):
+            if pk_name_matches(words, team.name) or pk_name_matches(words, team.parent_id.name or ''):
                 rows.append({'id': team.id, 'title': team.name,
                              'subtitle': team.parent_id.name or '',
                              'url': '/my/team?team_id=%s' % team.id})
@@ -119,7 +108,7 @@ class AppSearchPortal(TeamStaffPortal):
         events |= Events.search(domain + [('date_start', '<', now)], order='date_start desc', limit=50)
         rows = []
         for event in events:
-            if not sc_name_matches(words, event.name):
+            if not pk_name_matches(words, event.name):
                 continue
             rows.append({'id': event.id, 'title': event.name,
                          'subtitle': self._sc_search_date(event),
@@ -131,21 +120,3 @@ class AppSearchPortal(TeamStaffPortal):
     @staticmethod
     def _sc_search_date(event):
         return format_datetime(request.env, event.date_start, dt_format='short') if event.date_start else ''
-
-    @http.route('/my/app/search', type='http', auth='user', methods=['GET'], multilang=False, sitemap=False)
-    def sc_app_search(self, q='', **kw):
-        query = (q or '').strip()
-        words = sc_words(query)
-        values = {'sc_query': query, 'sc_too_short': len(sc_fold(query).replace(' ', '')) < SEARCH_MIN}
-        if not values['sc_too_short'] and words:
-            players = self._sc_search_players(words)
-            values.update({
-                'sc_players': [r for r in players if not r['near']],
-                'sc_near_players': [r for r in players if r['near']],
-                'sc_teams': self._sc_search_teams(words),
-                'sc_events': self._sc_search_events(words),
-            })
-        html = request.env['ir.ui.view']._render_template(
-            'bemade_sports_clinic.sc_app_search_results', values)
-        return request.make_response(html, headers=[('Content-Type', 'text/html; charset=utf-8'),
-                                                    ('Cache-Control', 'no-store')])

@@ -6,8 +6,8 @@
  */
 import { registry } from "@web/core/registry";
 
-const CARD = '[data-sc-edit-card^="contact-"]';
-const MOBILE = `${CARD} [data-sc-edit-view="read"] a[data-sc-display-href="tel"][data-sc-display$=":mobile"]`;
+const CARD = '[data-pk-edit-card^="contact-"]';
+const MOBILE = `${CARD} [data-pk-edit-view="read"] a[data-pk-display-href="tel"][data-pk-display$=":mobile"]`;
 
 registry.category("web_tour.tours").add("sc_1585_tap_links", {
     steps: () => [
@@ -16,7 +16,7 @@ registry.category("web_tour.tours").add("sc_1585_tap_links", {
             trigger: `${MOBILE}[href="tel:5550100456"]`,
             run() {
                 const email = document.querySelector(
-                    `${CARD} [data-sc-edit-view="read"] a[data-sc-display-href="mailto"][data-sc-display$=":email"]`
+                    `${CARD} [data-pk-edit-view="read"] a[data-pk-display-href="mailto"][data-pk-display$=":email"]`
                 );
                 if (!email || email.getAttribute("href") !== "mailto:parent.one@example.com") {
                     throw new Error(`email link is « ${email && email.getAttribute("href")} »`);
@@ -26,26 +26,26 @@ registry.category("web_tour.tours").add("sc_1585_tap_links", {
         },
         {
             content: "Pencil: the contact's fields appear",
-            trigger: `${CARD} button[data-sc-edit-toggle]`,
+            trigger: `${CARD} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "Edit the mobile",
-            trigger: `${CARD} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="mobile"] input`,
+            trigger: `${CARD} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-pk-autosave-field="mobile"] input`,
             run: "edit 514 555 0177", // task 1645: a valid number, saved formatted
         },
         {
             content: "Leave the field (saves)",
-            trigger: ".o_sc_appbar_title",
+            trigger: ".o_pk_appbar_title",
             run: "click",
         },
         {
             content: "Saved",
-            trigger: `${CARD} .o_sc_autosave[data-sc-field="mobile"][data-sc-state="saved"]`,
+            trigger: `${CARD} .o_pk_autosave[data-pk-autosave-field="mobile"][data-pk-autosave-state="saved"]`,
         },
         {
             content: "Done: back to read mode",
-            trigger: `${CARD} button[data-sc-edit-done]`,
+            trigger: `${CARD} button[data-pk-edit-done]`,
             run: "click",
         },
         {

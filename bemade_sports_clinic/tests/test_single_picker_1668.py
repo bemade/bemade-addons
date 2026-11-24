@@ -4,7 +4,7 @@ choice from a long list of records. Synthetic fixtures only.
 Acceptance criteria:
 
 * AC-1 The activity assignee selects (new / edit form ``sc_act_user``,
-  add-activity panel, reassign sheet) carry ``data-sc-picker``; the
+  add-activity panel, reassign sheet) carry ``data-pk-picker``; the
   activity detail's autosave « Assigned To » has ``picker: true``; the
   plain select stays the posted value (no-JS fallback).
 * AC-2 Swept record filters carry it too: events (organization, team,
@@ -50,7 +50,7 @@ class TestSinglePicker1668(Picker1668Common):
     def _picker(self, tree, select_id):
         nodes = tree.xpath('//select[@id="%s"]' % select_id)
         self.assertEqual(len(nodes), 1, select_id)
-        return nodes[0].get('data-sc-picker')
+        return nodes[0].get('data-pk-picker')
 
     def test_activity_assignees(self):
         self._login_tp()

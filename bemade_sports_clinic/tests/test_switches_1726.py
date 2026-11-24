@@ -3,7 +3,7 @@ segmented choices. Synthetic fixtures only (this repository is public).
 
 Acceptance criteria (owner-approved plan, 2026-10-27):
 
-* UC-1 One shared switch (``bemade_sports_clinic.sc_switch``): the label on
+* UC-1 One shared switch (``bemade_portal_kit.pk_switch``): the label on
   the left, the switch on the right; a real ``<input type="checkbox"
   role="switch">`` with ``aria-checked`` matching its state, and a locked
   state carrying its reason line.
@@ -13,7 +13,7 @@ Acceptance criteria (owner-approved plan, 2026-10-27):
   vital » (item add + item edit), « Aucune allergie / condition connue »
   (locked until the EpiPen is answered, #1717), the account deletion's
   block-list opt-out (on by default), and the date field's « N/A »
-  (sc_autosave_field.xml — browser-verified by the tour).
+  (the kit's pk_autosave_field.xml — browser-verified by the tour).
 * UC-3 The boolean segmented choices of « Paramètres » become switches
   (dark mode, daily summary, « Terminé » buttons) posting the same values
   (dark / light, 1 / 0): one value per post (the off twin is disabled
@@ -41,7 +41,7 @@ class Switch1726Common(AppShellCommon):
 
     @staticmethod
     def _switches(node, **attrs):
-        expr = './/label[contains(concat(" ", @class, " "), " o_sc_switch ")]' \
+        expr = './/label[contains(concat(" ", @class, " "), " o_pk_switch ")]' \
                '//input[@type="checkbox"][@role="switch"]'
         for key, value in attrs.items():
             expr += '[@%s="%s"]' % (key.replace('_', '-'), value)
@@ -65,11 +65,11 @@ class TestSwitches1726(Switch1726Common):
         self._login_tp()
         for url in ('/my/events', '/my/events/calendar'):
             _text, tree = self._get(url)
-            form = tree.xpath('//form[@data-sc-section="events.filters"]')[0]
+            form = tree.xpath('//form[@data-pk-section="events.filters"]')[0]
             switch = self._one(form, name='show_cancelled')
             self.assertEqual(switch.get('value'), '1')
             self._assert_state(switch, False)
-            self.assertFalse(form.xpath('.//label[contains(@class, "o_sc_check")]'), url)
+            self.assertFalse(form.xpath('.//label[contains(@class, "o_pk_check")]'), url)
         _text, tree = self._get('/my/events/calendar?show_cancelled=1&team_id=%s' % self.team_a.id)
         self._assert_state(self._one(tree, name='show_cancelled'), True)
 
@@ -88,15 +88,15 @@ class TestSwitches1726(Switch1726Common):
         self.player.sudo().write({'allergy_epipen_state': False})
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
-        allergy = tree.xpath('//div[@data-sc-section="medical.allergy"]')[0]
+        allergy = tree.xpath('//div[@data-pk-section="medical.allergy"]')[0]
         none_allergy = self._one(allergy, data_sc_med_set='allergy_none_confirmed')
         self.assertEqual(none_allergy.get('disabled'), 'disabled')
         row = none_allergy.xpath('ancestor::label[1]')[0]
-        self.assertEqual(row.get('data-sc-switch-locked'), '1')
-        self.assertTrue(row.xpath('.//*[@data-sc-switch-reason]'))
+        self.assertEqual(row.get('data-pk-switch-locked'), '1')
+        self.assertTrue(row.xpath('.//*[@data-pk-switch-reason]'))
         # The EpiPen (tri-state, #1717) is never a switch.
         self.assertFalse(allergy.xpath('.//input[@role="switch"][@data-sc-med-set="allergy_epipen_state"]'))
-        condition = tree.xpath('//div[@data-sc-section="medical.medical_alert"]')[0]
+        condition = tree.xpath('//div[@data-pk-section="medical.medical_alert"]')[0]
         add = self._one(condition, name='life_threatening')
         self.assertEqual(add.get('value'), '1')
         edit = self._one(condition, data_sc_med_item_field='life_threatening')
@@ -108,50 +108,50 @@ class TestSwitches1726(Switch1726Common):
                     none_allergy=True, none_condition=False)
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
-        allergy = tree.xpath('//div[@data-sc-section="medical.allergy"]')[0]
+        allergy = tree.xpath('//div[@data-pk-section="medical.allergy"]')[0]
         switch = self._one(allergy, data_sc_med_set='allergy_none_confirmed')
         self.assertIsNone(switch.get('disabled'))
         self._assert_state(switch, True)
-        self.assertFalse(allergy.xpath('.//*[@data-sc-switch-reason]'))
+        self.assertFalse(allergy.xpath('.//*[@data-pk-switch-reason]'))
 
     def test_account_block_list_switch_on_by_default(self):
         self._login_tp()
         _text, tree = self._get('/my/security')
         switch = self._one(tree, name='request_blacklist')
-        self.assertEqual(switch.get('id'), 'sc_deactivate_blacklist')
+        self.assertEqual(switch.get('id'), 'pk_deactivate_blacklist')
         self.assertIsNone(switch.get('value'))  # posts « on », as before
         self._assert_state(switch, True)
 
     # -- UC-3 -------------------------------------------------------------
     def test_settings_preferences_are_switches(self):
         self._theme_choice(True)
-        self.tp.write({'sc_theme': 'dark', 'digest_daily_enabled': True, 'sc_show_done_buttons': False})
+        self.tp.write({'pk_theme': 'dark', 'digest_daily_enabled': True, 'pk_show_done_buttons': False})
         self._login_tp()
         _text, tree = self._get('/my/app/settings')
         for section_id, name, on_value, off_value, on in (
-                ('sc_appearance', 'sc_theme', 'dark', 'light', True),
+                ('pk_appearance', 'pk_theme', 'dark', 'light', True),
                 ('sc_morning_summary', 'digest_daily_enabled', '1', '0', True),
-                ('sc_done_buttons', 'sc_show_done_buttons', '1', '0', False)):
+                ('pk_done_buttons', 'pk_show_done_buttons', '1', '0', False)):
             section = tree.xpath('//section[@id="%s"]' % section_id)[0]
-            self.assertFalse(section.xpath('.//*[contains(@class, "o_sc_segmented")]'), section_id)
+            self.assertFalse(section.xpath('.//*[contains(@class, "o_pk_segmented")]'), section_id)
             switch = self._one(section, name=name)
             self.assertEqual(switch.get('value'), on_value)
-            self.assertEqual(switch.get('data-sc-switch-submit'), '1')
+            self.assertEqual(switch.get('data-pk-switch-submit'), '1')
             self._assert_state(switch, on)
             twin = section.xpath('.//input[@type="hidden"][@name="%s"]' % name)
             self.assertEqual(len(twin), 1)
             self.assertEqual(twin[0].get('value'), off_value)
             self.assertEqual(twin[0].get('disabled') is not None, on, section_id)
         # The language is not boolean: never a switch.
-        self.assertFalse(tree.xpath('//section[@id="sc_language"]//input[@role="switch"]'))
+        self.assertFalse(tree.xpath('//section[@id="pk_language"]//input[@role="switch"]'))
 
     def test_settings_switch_posts_the_same_values(self):
         self._theme_choice(True)
         self._login_tp()
-        for name, value, field, expected in (('sc_theme', 'light', 'sc_theme', 'light'),
-                                             ('sc_theme', 'dark', 'sc_theme', 'dark'),
+        for name, value, field, expected in (('pk_theme', 'light', 'pk_theme', 'light'),
+                                             ('pk_theme', 'dark', 'pk_theme', 'dark'),
                                              ('digest_daily_enabled', '0', 'digest_daily_enabled', False),
-                                             ('sc_show_done_buttons', '1', 'sc_show_done_buttons', True)):
+                                             ('pk_show_done_buttons', '1', 'pk_show_done_buttons', True)):
             resp = self.url_open('/my/app/pref', data={'csrf_token': self._csrf(), name: value,
                                                        'redirect': '/my/app/settings'}, allow_redirects=False)
             self.assertIn(resp.status_code, (302, 303))
@@ -174,7 +174,7 @@ class TestSwitches1726(Switch1726Common):
         hidden = form.xpath('.//input[@type="hidden"][@name="team_ids"]')
         self.assertEqual(len(hidden), 1)
         self.assertEqual(hidden[0].get('id'), 'sc_new_team_ids')
-        props = form.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')
+        props = form.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')
         self.assertTrue([p for p in props if '"target": "sc_new_team_ids"' in p and '"inputType": "tags"' in p])
 
     def test_create_save_accepts_comma_separated_teams(self):

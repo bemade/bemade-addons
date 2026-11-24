@@ -17,10 +17,10 @@ Acceptance criteria covered here:
   player details folded under « Show details »; a coach never gets the
   internal content.
 * UC-DH4 Access: a non-member gets a 403, a digest of another team a 404.
-* UC-DH5 An empty day answers a fragment marked ``.o_sc_empty`` (the shell's
+* UC-DH5 An empty day answers a fragment marked ``.o_pk_empty`` (the shell's
   lazy loader keeps it instead of « Nothing to show. »).
 * UC-DH6 Dark-mode theming: the history body and the single-digest page wrap
-  the Bootstrap digest in ``o_sc_legacy`` (player names were white on white);
+  the Bootstrap digest in ``o_pk_legacy`` (player names were white on white);
   the single-digest page shows the restored snapshot line too.
 * UC-DH7 fr_CA: the subtitle and the snapshot line come out in French.
 
@@ -71,7 +71,7 @@ class Digest1614Common(ChangeDetailFixture, AppShellCommon):
         return '/my/team/%s/digest/%s/body' % ((team or self.team_a).id, digest.id)
 
     def _rows(self, tree):
-        return tree.xpath('//*[@data-sc-section="digest.history"]//details[@data-sc-digest-row]')
+        return tree.xpath('//*[@data-pk-section="digest.history"]//details[@data-sc-digest-row]')
 
     def _row(self, tree, digest):
         rows = [r for r in self._rows(tree) if r.get('data-sc-digest-row') == str(digest.id)]
@@ -80,7 +80,7 @@ class Digest1614Common(ChangeDetailFixture, AppShellCommon):
 
     @staticmethod
     def _subtitle(row):
-        return ' '.join(''.join(row.xpath('.//summary//*[contains(@class, "o_sc_row_subtitle")]'
+        return ' '.join(''.join(row.xpath('.//summary//*[contains(@class, "o_pk_row_subtitle")]'
                                           '//text()')).split())
 
 
@@ -95,10 +95,10 @@ class TestDigestHistoryInline1614(Digest1614Common):
         rows = self._rows(tree)
         self.assertEqual(len(rows), 2)
         row = self._row(tree, self.digest)
-        self.assertEqual(row.get('data-sc-lazy-url'), self._body_url(self.digest))
-        self.assertIn('o_sc_expand', row.get('class'))
-        self.assertTrue(row.xpath('.//*[contains(@class, "o_sc_legacy")]'
-                                  '[contains(@class, "o_sc_lazy_body")]'))
+        self.assertEqual(row.get('data-pk-lazy-url'), self._body_url(self.digest))
+        self.assertIn('o_pk_expand', row.get('class'))
+        self.assertTrue(row.xpath('.//*[contains(@class, "o_pk_legacy")]'
+                                  '[contains(@class, "o_pk_lazy_body")]'))
         d = self.digest
         self.assertTrue(d.player_count and d.change_count, 'fixture has changes')
         expected = ['%s player%s' % (d.player_count, '' if d.player_count == 1 else 's'),
@@ -142,10 +142,10 @@ class TestDigestHistoryInline1614(Digest1614Common):
         resp = self.url_open(self._body_url(self.digest))
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.headers.get('Cache-Control'), 'no-store')
-        self.assertNotIn('data-sc-app-shell', resp.text)
+        self.assertNotIn('data-pk-app-shell', resp.text)
         self.assertNotIn('<html', resp.text.lower())
         tree = lxml_html.fromstring(resp.text)
-        line = ' '.join(''.join(tree.xpath('//*[@data-sc-section="digest.snapshot"]//text()')).split())
+        line = ' '.join(''.join(tree.xpath('//*[@data-pk-section="digest.snapshot"]//text()')).split())
         self.assertTrue(line.startswith('Snapshot of '), line)
         self.assertIn('(America/Toronto)', line)
         self.assertTrue(line.endswith('changes over the last 24 h'), line)
@@ -194,7 +194,7 @@ class TestDigestHistoryInline1614(Digest1614Common):
         resp = self.url_open(self._body_url(self.empty_digest))
         self.assertEqual(resp.status_code, 200)
         tree = lxml_html.fromstring(resp.text)
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_empty")]'))
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_empty")]'))
         self.assertIn('No changes were recorded for this day.', resp.text)
 
     # -- UC-DH6 ----------------------------------------------------------
@@ -202,10 +202,10 @@ class TestDigestHistoryInline1614(Digest1614Common):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/team/%s/digest/%s' % (self.team_a.id, self.digest.id))
-        body = tree.xpath('//*[@data-sc-section="digest.body"]')
+        body = tree.xpath('//*[@data-pk-section="digest.body"]')
         self.assertTrue(body)
-        self.assertIn('o_sc_legacy', body[0].get('class'))
-        line = ' '.join(''.join(tree.xpath('//*[@data-sc-section="digest.snapshot"]//text()')).split())
+        self.assertIn('o_pk_legacy', body[0].get('class'))
+        line = ' '.join(''.join(tree.xpath('//*[@data-pk-section="digest.snapshot"]//text()')).split())
         self.assertTrue(line.startswith('Snapshot of '), line)
         self.assertIn('(America/Toronto)', line)
 
@@ -219,7 +219,7 @@ class TestDigestHistoryInlineFr1614(Digest1614Common):
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):
@@ -244,6 +244,6 @@ class TestDigestHistoryInlineFr1614(Digest1614Common):
         self.assertIn('Ouvrir cette journée', self._fr(self.history_url))
         text = self._fr(self._body_url(self.digest))
         tree = lxml_html.fromstring(text)
-        line = ' '.join(''.join(tree.xpath('//*[@data-sc-section="digest.snapshot"]//text()')).split())
+        line = ' '.join(''.join(tree.xpath('//*[@data-pk-section="digest.snapshot"]//text()')).split())
         self.assertTrue(line.startswith('Instantané du '), line)
         self.assertTrue(line.endswith('changements des dernières 24 h'), line)

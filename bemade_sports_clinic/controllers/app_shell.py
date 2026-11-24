@@ -1,9 +1,10 @@
 """Portal app shell (task 1538, epic #1535) — P1a.
 
-The new Fit Crew app shell renders ONLY when the system switch
-``bemade_sports_clinic.app_shell_enabled`` is on (staging until the launch)
-AND the user holds at least one app role (see ``models/sc_app_roles.py``).
-With the switch off (prod) every page renders exactly today's template.
+The new Fit Crew app shell renders ONLY when the system switch (task 5200,
+kit P5: the kit's ``bemade_portal_kit.enabled``, ``portal.kit.
+_pk_shell_active``) is on AND the user holds at least one app role (see
+``models/sc_app_roles.py``). With the switch off every page renders exactly
+today's template.
 
 Every migrated page picks its template through ONE helper,
 ``AppShellMixin._sc_render(legacy_template, app_template, values)``, so
@@ -13,145 +14,60 @@ change per page.
 P1b (task 1542) adds:
 
 * the server autosave pattern — ``POST /my/app/save/<model>/<id>`` driven by
-  the declarative ``SAVE_REGISTRY`` (EMPTY in production code until P2: the
-  tests register a test-only entry);
-* the installable app — ``/my/app.webmanifest``, ``/my/service-worker.js``,
-  the data-free ``/my/app/offline`` page and « Plus › Installer
-  l'application » (``/my/app/install``). The manifest, the service worker
-  and the offline page answer 404 while the switch is off: the page script
-  (``sc_sw_register.js``) then unregisters every registration of the worker
-  a device still holds (the kill switch).
-
-Task 1543: the worker and the manifest cover the WHOLE origin (scope ``/``).
-A session in a non-default website language is served under ``/<lang>/my/``
-(e.g. ``/en/my/team``), which a ``/my/`` scope never saw offline. The PWA
-routes themselves stay ``multilang=False`` (stable, unprefixed URLs).
+  declarative save specs (task 5199: the route and the spec format moved to
+  bemade_portal_kit; the clinic's specs are ``sc_save_specs()``, registered
+  through ``portal.kit._pk_save_specs()``);
+* the installable app (manifest, service worker, offline and install
+  pages; tasks 1542 / 1543). Task 5201 (kit P6): it is the kit addon
+  ``bemade_portal_kit_pwa``'s now, same URLs; the clinic brings its
+  branding (company fields filled by ``models/sc_app_pwa.py``) and its
+  hooks (start URL, shortcuts, offline style).
 """
 import json
 import logging
 import re
-import time
 from datetime import timedelta
 from urllib.parse import urlencode
 
 from dateutil.relativedelta import relativedelta
 import werkzeug.exceptions
-from lxml import etree
-from lxml import html as lxml_html
-
-from markupsafe import Markup
 
 from odoo import Command, _, fields, http
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
-from odoo.modules.module import get_manifest
-from odoo.tools import file_open, format_date, format_datetime, html2plaintext, plaintext2html
+from odoo.tools import format_date, format_datetime, html2plaintext, plaintext2html
 
-from odoo.addons.portal.controllers.portal import CustomerPortal
+from odoo.addons.bemade_portal_kit.controllers.pk_app import PortalKitApp
+from odoo.addons.bemade_portal_kit.controllers.pk_shell import PortalKitShell
+from odoo.addons.bemade_portal_kit.tools import (
+    pk_contact_href, pk_display, pk_display_key, pk_draft_props, pk_field_props, pk_form_props, pk_fragment_key,
+    pk_now_ms,
+)
 
 from ..models import sc_app_nav, sc_app_roles
 from ..models.patient import IDENTITY_CONFIRM_KEY, IDENTITY_FIELDS
 from ..models.patient_injury import STAGE_ORDER
-from .access_control_mixin import AccessControlMixin, parse_portal_date
+from .access_control_mixin import (
+    AccessControlMixin, parse_portal_date,
+)
 
 _logger = logging.getLogger(__name__)
 
-APP_SHELL_PARAM = 'bemade_sports_clinic.app_shell_enabled'
-# Task 1602: the dark / light choice. Absent or falsy = forced dark for
-# everyone and both theme toggles hidden; the saved ``sc_theme`` is kept and
-# applies again once this is on.
-THEME_CHOICE_PARAM = 'bemade_sports_clinic.sc_theme_choice_enabled'
+# Task 5200 (kit P5): the switch, the theme choice, /my/app/pref and its
+# preferences are the kit's (controllers/pk_shell.py, portal.kit hooks).
 _TRUTHY = ('1', 'true', 'yes', 'on')
-# The ONLY fields /my/app/pref may write, with their allowed values.
-# Task 1579: no navigation setting any more — the screen width decides.
-PREF_FIELDS = {
-    'sc_theme': ('dark', 'light'),
-    # Task 1665: « Recevoir le sommaire quotidien par courriel » (the same
-    # per-user preference as the backend « Daily Morning Briefing »).
-    'digest_daily_enabled': ('1', '0'),
-    # Task 1676: « Afficher les boutons Terminé » (default off).
-    'sc_show_done_buttons': ('1', '0'),
-}
-# Task 1665: the boolean preferences, posted as '1' / '0'.
-PREF_BOOLEANS = ('digest_daily_enabled', 'sc_show_done_buttons')
-# Task 1588: « Plus › Langue » — the user's profile language (``res.users.lang``),
-# allowed values = the request's frontend languages (checked at post time).
-PREF_LANG = 'lang'
 # ---------------------------------------------------------------------------
 # Server autosave (task 1542, filled by task 1539) — WHAT may be saved field
-# by field, and BY WHOM.
-#
-#   SAVE_REGISTRY = {
-#       '<model>': {
-#           'fields': {'field_a': ROLES, ...},       # per-role allowlist: the
-#                                                    # field is refused (403)
-#                                                    # unless the caller holds
-#                                                    # one of ROLES. A plain
-#                                                    # tuple = any app role.
-#           'check': callable(controller, record),   # raises AccessError /
-#                                                    # MissingError to refuse;
-#                                                    # reuse AccessControlMixin
-#           'write': callable(controller, record, field, value) -> dict | None
-#                                                    # optional write hook (the
-#                                                    # controller's existing
-#                                                    # rules: validation, pairs,
-#                                                    # normalisation). Raises
-#                                                    # UserError/ValidationError
-#                                                    # -> 400; returns extra
-#                                                    # payload keys (``message``).
-#           'read': callable(record, field) -> value # optional, for VIRTUAL
-#                                                    # fields (not on the model)
-#           'hint': callable(record, field) -> str | None
-#                                                    # optional (task 1601): the
-#                                                    # field's fresh « updated on
-#                                                    # … by … » stamp, answered
-#                                                    # as ``hint`` so the page
-#                                                    # updates it in place; None
-#                                                    # = the field has no stamp.
-#           'refresh': {field | '*': [entry, ...]}   # task 1611: the READ
-#                                                    # FRAGMENTS of the page a
-#                                                    # save of ``field`` makes
-#                                                    # stale (``'*'`` key: every
-#                                                    # field). An entry is a part
-#                                                    # of THIS record's keys
-#                                                    # (``'hero'`` ->
-#                                                    # ``<model>:<id>:hero``,
-#                                                    # ``'*'`` = all of them), a
-#                                                    # full key pattern
-#                                                    # (``'sports.treatment.note:*:meta'``)
-#                                                    # or callable(record) -> [patterns]
-#                                                    # (another record's keys).
-#                                                    # Answered as ``refresh``.
-#           'propose': callable(record, field) -> dict | None
-#                                                    # task 1603: a FOLLOW-UP
-#                                                    # PROPOSAL after the save
-#                                                    # (therapists only), answered
-#                                                    # as ``propose`` — see
-#                                                    # models/patient_return_proposal.py
-#                                                    # and /my/app/apply-proposal.
-#           'live_counts': True,                     # task 1611: the save also
-#                                                    # refreshes the app bar's
-#                                                    # live counters (overdue
-#                                                    # activities badge).
-#           'sudo_write': True,                      # the hook writes as sudo …
-#           'permission': callable(controller, record) -> bool,
-#                                                    # … which REQUIRES this
-#                                                    # permission callable,
-#                                                    # checked before any write
-#                                                    # (asserted at import).
-#       },
-#   }
-#
-# The write runs AS THE USER unless a spec declares ``sudo_write`` (only where
-# the user genuinely lacks the ACL for the write — portal therapists have a
-# read-only ACL on treatment notes): ACLs, record rules and the models' own
-# write guards still apply on top of ``check``. Role-restricted fields are
-# refused server-side even when the ORM would allow them (a coach holds a
-# write ACL on injuries, yet may not change their stage).
+# by field, and BY WHOM. Task 5199 (P4a): the route (``POST
+# /my/app/save/<model>/<id>``) and the spec format moved to the kit
+# (bemade_portal_kit/tools/save.py documents every key). The clinic's specs
+# are built by ``sc_save_specs()`` below and registered per database through
+# ``portal.kit._pk_save_specs()`` (models/sc_app_roles.py); ``mail.activity``
+# is the kit's spec, with the clinic's rules in its two hooks.
 # ---------------------------------------------------------------------------
 _TP_ROLES = sc_app_roles.TP
 # Task 1603: what an applied follow-up proposal may write (on top of the
-# SAVE_REGISTRY role allowlist and check), and how many changes at once.
+# save spec's role allowlist and check), and how many changes at once.
 PROPOSAL_FIELDS = {
     # Task 1670: the last active injury resolved also proposes the statuses
     # (applied together as one « sc_status » save — the pair rule).
@@ -184,23 +100,6 @@ def sc_country_options(env):
     countries = env['res.country'].search([], order='name')
     canada = countries.filtered(lambda country: country.code == 'CA')
     return [('', '')] + [(country.id, country.name) for country in canada + (countries - canada)]
-
-
-def sc_contact_href(kind, value):
-    """Task 1585: the tap-to-call / tap-to-email href of a shown phone or
-    email (``kind`` = ``'tel'`` / ``'mailto'``), or None when there is
-    nothing to dial or write to. A phone keeps only ``+`` and its digits
-    (« +1 (555) 010-0123 » -> ``tel:+15550100123``). Same rule in the
-    browser: static/src/js/sc_contact_href.js."""
-    value = (value or '').strip() if isinstance(value, str) else ''
-    if not value:
-        return None
-    if kind == 'tel':
-        digits = re.sub(r'[^0-9+]', '', value)
-        return 'tel:%s' % digits if re.search(r'[0-9]', digits) else None
-    if kind == 'mailto':
-        return 'mailto:%s' % value
-    return None
 
 
 def sc_file_size(size, env=None):
@@ -256,61 +155,8 @@ def _date_value(value):
 
 
 # -- mail.activity (owner review 2026-10-11: the activity page's pencil card) --
-def _activity_check(ctrl, activity):
-    if not ctrl._activity_act_access(activity):
-        raise AccessError(_("You do not have access to this activity."))
-
-
-def _activity_permission(ctrl, activity):
-    return ctrl._activity_act_access(activity)
-
-
-def _activity_write(ctrl, activity, field, value):
-    """/my/activity/update's rules, one field at a time; sudo (coaches hold a
-    read-only mail.activity ACL — the access check is the authorization)."""
-    record = activity.sudo()
-    if field == 'summary':
-        value = (value or '').strip()
-        if not value:
-            raise ValidationError(_("Please fill in all required fields."))
-        record.write({'summary': value})
-    elif field == 'date_deadline':
-        day = _date_value(value)
-        if not day:
-            raise ValidationError(_("Please fill in all required fields."))
-        record.write({'date_deadline': day})
-    elif field == 'note':
-        record.write({'note': plaintext2html(value) if (value or '').strip() else False})
-    elif field == 'user_id':
-        try:
-            user = request.env['res.users'].browse(int(value))
-        except (TypeError, ValueError):
-            user = request.env['res.users']
-        if user != record.user_id:
-            if user not in ctrl._activity_assignable_users_for(request.env.user):
-                raise ValidationError(_("You cannot assign this activity to that user."))
-            record.write({'user_id': user.id})
-    return {}
-
-
-def _activity_read(activity, field):
-    activity = activity.sudo()
-    if field == 'note':
-        return html2plaintext(activity.note or '').strip()
-    if field == 'user_id':
-        return activity.user_id.id or False
-    if field == 'date_deadline':
-        return fields.Date.to_string(activity.date_deadline) if activity.date_deadline else ''
-    return activity[field] or ''
-
-
-def _activity_display(activity, field):
-    activity = activity.sudo()
-    if field == 'note':
-        return html2plaintext(activity.note or '').strip()
-    if field == 'user_id':
-        return activity.user_id.name or ''
-    return None
+# Task 5199 (P4a): the kit's spec (bemade_portal_kit/tools/activity.py); the
+# clinic's act / assign rules are its hooks (models/sc_app_roles.py).
 
 
 # -- sports.quick.note (owner review 2026-10-11: notepad pencil cards) -------
@@ -538,7 +384,7 @@ def _patient_read(patient, field):
         # posts back) those; the player's other teams are not theirs to touch.
         mine = patient.sudo().team_ids & _assignable_teams()
         return ','.join(str(team_id) for team_id in sorted(mine.ids))
-    return AppShellPortal._sc_save_value(patient, field, raw=True)
+    return AppShellPortal._pk_save_value(patient, field, raw=True)
 
 
 def _patient_display(patient, field):
@@ -626,6 +472,41 @@ def _patient_write(ctrl, patient, field, value):
     return extra
 
 
+def _patient_context(ctrl, patient, field, kw):
+    """Task 1639: the identity guard applies to everyone working through the
+    app (internal users included). Task 1600: a confirmed identity
+    correction (``confirm=1``) is recorded on the file by the model."""
+    context = {'sc_identity_guard': True}
+    if field in IDENTITY_FIELDS and kw.get('confirm') == '1':
+        context[IDENTITY_CONFIRM_KEY] = True
+    return context
+
+
+def _patient_confirm(ctrl, patient, field, value, kw):
+    """Task 1600: changing an existing name / date of birth is an explicit,
+    confirmed step — the 428 payload (``confirm``, message, old, new,
+    detail; the kit's autosave field shows it) until the field's confirm
+    banner re-posts with ``confirm=1``."""
+    if field not in IDENTITY_FIELDS:
+        return None
+    return ctrl._sc_identity_confirm_needed(patient, field, value)
+
+
+def _patient_before_write(ctrl, patient, field):
+    """Task 1656: the teams before a player's teams save (a removal may end
+    the viewer's own access)."""
+    return patient.sudo().team_ids if field == 'sc_team_ids' else None
+
+
+def _patient_after_write(ctrl, patient, field, teams_before):
+    """Task 1656: the viewer removed the team that gave them access — the
+    answer is ``{ok, lost_access, message}`` only (``replace``)."""
+    if teams_before is None:
+        return None
+    lost = ctrl._sc_lost_access_payload(patient, teams_before)
+    return dict(lost, replace=True) if lost else None
+
+
 def _patient_propose(patient, field):
     """Task 1603: Retour prévu changed by hand -> align the active injuries'
     predicted resolution dates (a follow-up proposal)."""
@@ -654,7 +535,7 @@ def _injury_read(injury, field):
     if field == 'hidden_from_coaches':
         # The segmented control's values (« Entraîneurs » / « Masquée »).
         return '1' if injury.hidden_from_coaches else '0'
-    return AppShellPortal._sc_save_value(injury, field, raw=True)
+    return AppShellPortal._pk_save_value(injury, field, raw=True)
 
 
 def _injury_display(injury, field):
@@ -875,14 +756,14 @@ def _document_permission(ctrl, document):
         return False
     if ctrl._is_clinic_admin():
         return True
-    return bool(ctrl._is_treatment_professional() and sc_app_roles.can(
+    return bool(ctrl._is_treatment_professional() and request.env['portal.kit'].pk_can(
         'documents.upload', user._sc_app_roles(), is_system=user.has_group('base.group_system')))
 
 
 def _document_read(document, field):
     if field == 'category':
         return _DOCUMENT_LEGACY_CATEGORIES.get(document.category, document.category)
-    return AppShellPortal._sc_save_value(document, field, raw=True)
+    return AppShellPortal._pk_save_value(document, field, raw=True)
 
 
 def _document_write(ctrl, document, field, value):
@@ -926,7 +807,10 @@ def _timesheet_event_fragments(timesheet):
     return ['sports.event:%s:*' % timesheet.event_id.id] if timesheet.event_id else []
 
 
-SAVE_REGISTRY = {
+def sc_save_specs():
+    """The clinic's save specs ``{model: spec}`` (a fresh dict on each call:
+    ``portal.kit._pk_save_specs()`` caches the merged result per database)."""
+    return {
     'sports.patient': {
         'fields': {
             # Every staff role, as on today's player form.
@@ -965,6 +849,12 @@ SAVE_REGISTRY = {
         'display': _patient_display,
         'hint': _patient_hint,
         'propose': _patient_propose,
+        # Tasks 1600 / 1639 / 1656: the identity guard and its confirmation,
+        # the lost-access answer of a teams save.
+        'context': _patient_context,
+        'confirm': _patient_confirm,
+        'before_write': _patient_before_write,
+        'after_write': _patient_after_write,
         # The player page / dossier: title, hero (initials, teams, the
         # allergy / medical-alert pills and their popups), identity read view
         # (age), memberships, removal actions.
@@ -991,7 +881,10 @@ SAVE_REGISTRY = {
         # The card (summary, read view), the injury page's title / details,
         # the player's fragments (card order, active list, choices) and the
         # linked-injury name in the treatment notes' meta lines.
-        'refresh': {'*': ['*', _injury_patient_fragments, 'sports.treatment.note:*:meta']},
+        # Task 1740: the dashboard's « À faire » counts and its injury lines
+        # (a verified injury leaves « Injuries to verify » at once).
+        'refresh': {'*': ['*', _injury_patient_fragments, 'sports.treatment.note:*:meta',
+                          'pk.dashboard:todo:*', 'pk.dashboard:todo:*:list']},
     },
     'sports.treatment.note': {
         'fields': {'note': _TP_ROLES, 'date': _TP_ROLES, 'injury_id': _TP_ROLES},
@@ -1002,21 +895,6 @@ SAVE_REGISTRY = {
         'permission': _note_permission,
         # The note's meta line (date, linked injury) and « modified » stamp.
         'refresh': {'*': ['*']},
-    },
-    'mail.activity': {
-        'fields': {
-            'summary': _STAFF_ROLES, 'date_deadline': _STAFF_ROLES,
-            'user_id': _STAFF_ROLES, 'note': _STAFF_ROLES,
-        },
-        'check': _activity_check,
-        'write': _activity_write,
-        'read': _activity_read,
-        'display': _activity_display,
-        'sudo_write': True,
-        'permission': _activity_permission,
-        # Title, state chip, note; the app bar's overdue badge.
-        'refresh': {'*': ['*']},
-        'live_counts': True,
     },
     'sports.quick.note': {
         'fields': {name: _TP_ROLES for name in ('note',) + _QUICK_NOTE_LINKS},
@@ -1072,57 +950,23 @@ SAVE_REGISTRY = {
         # The document row (name, category · date · author, description).
         'refresh': {'*': ['*']},
     },
-}
+    }
 
 
-def _validate_save_registry(registry):
-    """A spec that writes as sudo MUST carry its permission callable."""
-    for model, spec in registry.items():
-        assert callable(spec.get('check')), "%s: 'check' is mandatory" % model
-        if spec.get('sudo_write'):
-            assert callable(spec.get('permission')), (
-                "%s: a sudo_write spec requires a 'permission' callable" % model)
-            assert callable(spec.get('write')), (
-                "%s: a sudo_write spec requires its 'write' hook" % model)
-        assert spec.get('propose') is None or callable(spec['propose']), (
-            "%s: 'propose' must be callable(record, field)" % model)
-        for field, entries in (spec.get('refresh') or {}).items():
-            assert field == '*' or field in (spec.get('fields') or ()), (
-                "%s: 'refresh' names an unknown field %r" % (model, field))
-            assert all(callable(entry) or isinstance(entry, str) for entry in entries), (
-                "%s: a 'refresh' entry is a key pattern or a callable" % model)
+# The kit's mail.activity spec, with the clinic's role allowlist (every staff
+# role, as on the activity page).
+SC_ACTIVITY_FIELD_ROLES = ('summary', 'date_deadline', 'user_id', 'note')
 
 
 # ---------------------------------------------------------------------------
-# Read fragments (task 1611) — what refreshes on screen after a save.
-#
-# A server-built, READ-ONLY region of a shell page carries
-# ``data-sc-fragment="<model>:<id>:<part>"`` (``sc_fragment_key(record,
-# part)`` in the templates; page-level regions use ``page:<name>:<part>``).
-# Keys are unique on the page and stable across renders. A region never holds
-# an OWL island (``owl-component``) — mark its read-only parts instead.
-#
-# * A save answers ``refresh`` (the spec's ``refresh`` map, resolved for the
-#   record) — key patterns where ``*`` matches one key segment.
-# * The page (static/src/js/sc_fragments.js) matches them against the keys it
-#   carries and GETs ITS OWN URL with the ``X-Sc-Fragments: k1,k2`` header:
-#   the page route renders exactly as for a reload (same values, same access
-#   rules, same QWeb) and ``_sc_shell_response`` answers only those nodes as
-#   JSON ``{fragments: {key: outer html}, missing: [...], title, rendered_at}``.
-# * The client swaps each node in place, never one holding an OWL island or
-#   the focused element (retried once that element loses focus).
-# * ``data-sc-fragment-mode="list"`` on a container whose children carry
-#   ``data-sc-fragment-item="<key>"``: the live items are kept (their islands
-#   survive) and only re-ordered / dropped / added as in the fresh render.
+# Read fragments (task 1611) — what refreshes on screen after a save. Task
+# 5199 (P4a): moved to the kit (bemade_portal_kit/tools/fragments.py,
+# @bemade_portal_kit/js/pk_fragments): ``data-pk-fragment`` regions keyed
+# ``pk_fragment_key(record, part)``, the ``X-Pk-Fragments`` request,
+# ``PortalKitApp._pk_fragments_response``. The clinic keeps its filler
+# (``sc_fill_moved_row_fragments``, registered in
+# ``portal.kit._pk_fragment_fillers()``).
 # ---------------------------------------------------------------------------
-SC_FRAGMENTS_HEADER = 'X-Sc-Fragments'
-SC_FRAGMENTS_MAX = 200
-_SC_FRAGMENT_KEY_RE = re.compile(r'^[\w.\-]+(?::[\w.\-*]+)*$')
-
-
-def sc_fragment_key(record, part):
-    """The fragment key of ``part`` of ``record`` (``<model>:<id>:<part>``)."""
-    return '%s:%s:%s' % (record._name, record.id, part)
 
 
 # Task 1607: the list header's sort menu — each option re-opens the CURRENT
@@ -1150,43 +994,6 @@ def sc_sort_options(path, args, param, options, current, drop=()):
     } for key, label in options]
 
 
-def sc_now_ms():
-    """Server time in ms (the render stamp and the save's ``saved_at``: both
-    on the server clock, so the « back » check never compares two clocks)."""
-    return int(time.time() * 1000)
-
-
-def sc_refresh_patterns(model, record, field):
-    """The fragment key patterns a save of ``record.field`` makes stale."""
-    spec = SAVE_REGISTRY.get(model) or {}
-    refresh = spec.get('refresh') or {}
-    base = '%s:%s' % (model, record.id)
-    patterns = []
-    for entry in list(refresh.get('*', ())) + list(refresh.get(field, ())):
-        items = entry(record.sudo()) if callable(entry) else [entry]
-        for item in items or ():
-            if not item:
-                continue
-            if ':' not in item:
-                item = '%s:%s' % (base, item)
-            if item not in patterns:
-                patterns.append(item)
-    return patterns
-
-
-def sc_extract_fragments(html, keys):
-    """``{key: outer html}`` of the nodes of the rendered page ``html`` whose
-    ``data-sc-fragment`` is one of ``keys``, and the document title."""
-    tree = lxml_html.document_fromstring(html)
-    wanted = set(keys)
-    found = {}
-    for node in tree.iterfind('.//*[@data-sc-fragment]'):
-        key = node.get('data-sc-fragment')
-        if key in wanted and key not in found:
-            found[key] = etree.tostring(node, encoding='unicode', method='html', with_tail=False)
-    title = tree.find('.//title')
-    return found, (title.text_content().strip() if title is not None else '')
-
 SC_ROW_KEY_RE = re.compile(r'^sports\.patient:(\d+):row-(\w+)$')
 
 
@@ -1197,7 +1004,7 @@ def sc_fill_moved_row_fragments(found, keys):
     player's fresh card from another section, its row scope rewritten (the
     fragment key, the pill menu ids, the details region id) — so the card the
     user just changed updates in place instead of staying stale (it is kept
-    where it is until the next visit, data-sc-fragment-keep)."""
+    where it is until the next visit, data-pk-fragment-keep)."""
     by_player = {}
     for key, html in found.items():
         match = SC_ROW_KEY_RE.match(key)
@@ -1210,21 +1017,12 @@ def sc_fill_moved_row_fragments(found, keys):
         pid, scope = match.groups()
         other, html = by_player[pid]
         html = html.replace('sports.patient:%s:row-%s' % (pid, other), key)
-        html = re.sub(r'(sc-pill-sports-patient-%s-\w+)-%s\b' % (pid, re.escape(other)),
+        html = re.sub(r'(pk-pill-sports-patient-%s-\w+)-%s\b' % (pid, re.escape(other)),
                       r'\1-%s' % scope, html)
         html = html.replace('sc-row-detail-%s-%s' % (other, pid), 'sc-row-detail-%s-%s' % (scope, pid))
         found[key] = html
 
 
-# PWA (task 1542): static files the service worker precaches, besides the
-# offline page. Never a /my/ page or any data.
-SW_PRECACHE_STATIC = (
-    '/bemade_sports_clinic/static/src/css/sc_offline.css',
-    '/bemade_sports_clinic/static/src/img/sc_logo_chrome.png',
-    '/bemade_sports_clinic/static/src/img/sc_icon_192.png',
-)
-SW_SOURCE = 'bemade_sports_clinic/static/src/sw/sc_service_worker.js'
-SC_MIDNIGHT = '#120e12'
 
 
 
@@ -1233,31 +1031,12 @@ class AppShellMixin:
     CustomerPortal controller that serves a migrated page."""
 
     @staticmethod
-    def _sc_app_shell_enabled():
-        raw = request.env['ir.config_parameter'].sudo().get_param(APP_SHELL_PARAM)
-        return str(raw or '').strip().lower() in _TRUTHY
-
-    @staticmethod
-    def _sc_theme_choice_enabled():
-        raw = request.env['ir.config_parameter'].sudo().get_param(THEME_CHOICE_PARAM)
-        return str(raw or '').strip().lower() in _TRUTHY
-
-    @classmethod
-    def _sc_effective_theme(cls, user):
-        """The theme the app renders for ``user``: forced dark unless the
-        theme choice is enabled (task 1602)."""
-        if not cls._sc_theme_choice_enabled():
-            return 'dark'
-        return user.sc_theme or 'dark'
-
-    def _sc_app_shell_active(self):
-        """Switch on AND the viewer holds an app role."""
-        if not self._sc_app_shell_enabled():
-            return False
-        user = request.env.user
-        if user._is_public():
-            return False
-        return bool(user._sc_app_roles() & sc_app_roles.APP_ROLES)
+    def _pk_shell_active():
+        """Task 5200 (kit P5): the kit's switch + role gate
+        (``portal.kit._pk_shell_active``; the same method as
+        ``PortalKitShell._pk_shell_active``, for the controllers that mix
+        this class in)."""
+        return request.env['portal.kit']._pk_shell_active()
 
     def _sc_booking_enabled(self):
         """The bookings addon (appointment_portal_staff) flags its home card
@@ -1267,50 +1046,19 @@ class AppShellMixin:
         except AccessError:
             return False
 
-    @staticmethod
-    def _sc_nav_items(entries):
-        """Registry entries -> render dicts with the labels translated in the
-        request language."""
-        items = []
-        for entry in entries:
-            item = dict(entry)
-            item['label'] = str(entry['label'])
-            item['subtitle'] = str(entry['subtitle']) if entry.get('subtitle') else ''
-            items.append(item)
-        return items
+    def _sc_activity_user_options_for(self, user):
+        """Task 1736 r1: ``activity -> [(id, name)]``, the assignee choices of
+        an activity card's inline edit — the same list as the detail page's
+        (``_activity_assignable_users_for`` + the current assignee; the save
+        route re-checks). The assignable users are searched once per page."""
+        cache = {}
 
-    @staticmethod
-    def _sc_guard_probe():
-        """Task 1658: this request is a guarded form's fetch (sc_form_guard.js
-        sends X-Sc-Guard on the POST, kept across its redirect)."""
-        try:
-            return request.httprequest.headers.get('X-Sc-Guard') == '1'
-        except RuntimeError:  # no request
-            return False
-
-    @staticmethod
-    def _sc_pop_notification():
-        """Task 1583: pop ``request.session['notification']`` (the
-        ``{type, title, message}`` dict the POST routes store) into the
-        toast payload ``{message, title, tone}`` — tone ``error`` for the
-        danger / warning types, ``success`` otherwise — or False. A fragment
-        request (task 1611) leaves it for the next real page."""
-        if AppShellMixin._sc_fragment_keys() is not None:
-            return False
-        # Task 1658: a guarded form's fetch (X-Sc-Guard) reads the page it
-        # landed on to find a refusal — peek, so the real navigation that
-        # follows a success still shows the toast.
-        if AppShellMixin._sc_guard_probe():
-            notif = request.session.get('notification')
-        else:
-            notif = request.session.pop('notification', None)
-        if not isinstance(notif, dict) or not (notif.get('message') or notif.get('title')):
-            return False
-        return {
-            'message': str(notif.get('message') or ''),
-            'title': str(notif.get('title') or ''),
-            'tone': 'error' if notif.get('type') in ('danger', 'warning', 'error') else 'success',
-        }
+        def options(activity):
+            if 'users' not in cache:
+                cache['users'] = self._activity_assignable_users_for(user)
+            users = (cache['users'] | activity.sudo().user_id).sorted('name')
+            return [(u.id, u.name) for u in users]
+        return options
 
     @staticmethod
     def _sc_stash_proposal(proposal):
@@ -1324,7 +1072,7 @@ class AppShellMixin:
     def _sc_pop_proposal():
         """Task 1603: the pending proposal as JSON (popped: shown once), or
         False. A fragment request (task 1611) leaves it for the next page."""
-        if AppShellMixin._sc_fragment_keys() is not None or AppShellMixin._sc_guard_probe():
+        if PortalKitApp._pk_fragment_keys() is not None or PortalKitApp._pk_guard_probe():
             return False
         proposal = request.session.pop(SC_PROPOSAL_SESSION_KEY, None)
         return json.dumps(proposal) if isinstance(proposal, dict) else False
@@ -1333,28 +1081,35 @@ class AppShellMixin:
         """``values`` + everything ``sc_app_layout`` needs. ``page`` is the
         app template (``module.template``): its navigation — back target,
         context line, crumb trail — comes from the parent registry
-        (``models/sc_app_nav.py``, task 1579); without it the page is top
-        level."""
-        self._sc_profile_lang_guard()
+        (``models/sc_app_nav.py``, task 1579; ``portal.kit.pk_resolve``, task
+        5196); without it the page is top level.
+
+        Task 5200 (kit P5): the generic values (theme, preferences,
+        languages, user menu, navigation, help, search, toast) and the
+        profile language guard are the kit's
+        (``PortalKitShell._pk_shell_values``); the clinic's own come as its
+        ``extra``. The guard runs first (a redirect pops nothing)."""
+        PortalKitShell._pk_profile_lang_guard()
         user = request.env.user
         roles = user._sc_app_roles()
         is_system = user.has_group('base.group_system')
+        kit = request.env['portal.kit']
         ctx = {'booking_card_enable': self._sc_booking_enabled()}
-        tabs = self._sc_nav_items(sc_app_roles.visible_nav(roles, 'tab', ctx))
-        rail = self._sc_nav_items(sc_app_roles.visible_nav(roles, 'rail', ctx))
-        plus = self._sc_nav_items(sc_app_roles.visible_nav(roles, 'plus', ctx))
-        labels = {
-            entry['key']: str(entry['label']) for entry in sc_app_roles.NAV_REGISTRY
-        }
+        nav_items = PortalKitShell._pk_nav_items
+        # Task 5391: a clinic page is the clinic app's (nav, crumbs, help).
+        app = sc_app_nav.SC_APP
+        tabs = nav_items(kit.pk_visible_nav(roles, 'tab', ctx, app=app))
+        rail = nav_items(kit.pk_visible_nav(roles, 'rail', ctx, app=app))
+        plus = nav_items(kit.pk_visible_nav(roles, 'plus', ctx, app=app))
+        labels = kit.pk_nav_labels(app=app)
         path = request.httprequest.path
-        query = request.httprequest.query_string.decode()
-        initials = ''.join(part[:1] for part in (user.name or '').split()[:2]).upper()
-        shell = {
+        extra = {
+            'pk_app_key': app,
             'sc_app_shell': True,
             'sc_roles': roles,
             # Task 1598: a system admin also sees the TP actions legacy
             # granted them (registry keys flagged ``system``).
-            'sc_can': lambda key: sc_app_roles.can(key, roles, is_system=is_system),
+            'sc_can': lambda key: kit.pk_can(key, roles, is_system=is_system),
             # Task 1652: the players whose red card pills this page shows
             # (filled while the rows are built) and the viewer's role there.
             'sc_card_med_patients': lambda: request.env['sports.patient'].browse(
@@ -1363,164 +1118,64 @@ class AppShellMixin:
             # Task 1604: today in the user's timezone (the resolve sheet's
             # default and latest resolution date).
             'sc_today_iso': fields.Date.to_string(fields.Date.context_today(user)),
-            'sc_tabs': tabs,
-            'sc_rail': rail,
-            'sc_plus': plus,
+            'pk_tabs': tabs,
+            'pk_rail': rail,
+            'pk_plus': plus,
             'sc_nav_labels': labels,
-            # Task 1602: forced dark (no toggles) unless the choice is on.
-            'sc_theme': self._sc_effective_theme(user),
-            'sc_theme_choice': self._sc_theme_choice_enabled(),
-            # Task 1676: the edit cards' « Done » buttons, per user.
-            'sc_show_done': bool(user.sudo().sc_show_done_buttons),
-            'sc_langs': self._sc_lang_options(),
-            'sc_current_url': path + ('?' + query if query else ''),
-            'sc_search_url': '/my/players' if any(t['key'] == 'players' for t in rail) else False,
             # Task 1592: the app bar's activity clock (its overdue badge is
             # fetched by sc_live_count.js, not computed here).
-            'sc_activity_clock': sc_app_roles.can('app.activity_clock', roles, is_system=is_system),
+            'sc_activity_clock': kit.pk_can('app.activity_clock', roles, is_system=is_system),
             # Task 1622: the clock's href carries the page it is tapped on.
             'sc_clock_url': sc_app_nav.clock_url(path, request.httprequest.args),
-            'sc_user_initials': initials or '?',
-            # Task 1606: the head of the user menu (name + role).
-            'sc_user_name': user.name or '',
-            'sc_user_role': sc_app_roles.role_label(roles),
-            # Task 1542: the device draft store is namespaced by db + uid.
-            'sc_db': request.db or '',
-            'sc_uid': user.id,
+            # Task 1606: the role line of the user menu.
+            'pk_user_role': sc_app_roles.role_label(roles),
+            # Task 1660: the help follows the player page's active tab.
+            'pk_help_tab': values.get('sc_player_active_tab'),
             # Row builder for list templates (computed in the shell only, so
             # the legacy pages pay nothing for it).
             'sc_team_row': self._sc_team_row,
-            # Task 1539: props builders for the sc_autosave_field component.
-            'sc_field_props': self._sc_field_props,
+            # Task 1539: props builders of the autosave field (task 5382: the
+            # kit's component and builders, tools/field_props.py).
+            'pk_field_props': pk_field_props,
+            'pk_draft_props': pk_draft_props,
+            'pk_form_props': pk_form_props,
             # Task 1727: today in the user's timezone (a date input's
             # « not in the past » min, e.g. « Retour prévu »).
             'sc_today': fields.Date.to_string(fields.Date.context_today(user)),
             # Owner review 2026-10-10: a card's read view (same strings the
             # save route answers, so an in-place update matches a reload).
-            'sc_display': lambda record, field: AppShellPortal._sc_save_display(record, field),
-            'sc_display_key': lambda record, field: '%s:%s:%s' % (record._name, record.id, field),
+            # Task 5381 (P4c2): the kit's helpers (bemade_portal_kit.pk_display_row).
+            'pk_display': pk_display,
+            'pk_display_key': pk_display_key,
             # Task 1611: read fragments (keys of the regions a save refreshes)
-            # and the render stamp the « back » check compares against.
-            'sc_fragment_key': sc_fragment_key,
+            # and the render stamp the « back » check compares against (task
+            # 5199: the kit's names).
+            'pk_fragment_key': pk_fragment_key,
             # Task 1607: the sort menu of a list header (sc_list_header).
             'sc_sort_options': lambda param, options, current, drop=(): sc_sort_options(
                 path, request.httprequest.args, param, options, current, drop),
-            'sc_rendered_at': sc_now_ms(),
-            # Task 1585: tap-to-call / tap-to-email hrefs (sc_display_row
+            # Task 1585: tap-to-call / tap-to-email hrefs (pk_display_row
             # with ``href_kind``, the event page's staff / organization).
-            'sc_contact_href': sc_contact_href,
+            'pk_contact_href': pk_contact_href,
             # Task 1586: an attachment row's file size.
             'sc_file_size': lambda size: sc_file_size(size, request.env),
             # Task 1589: an activity row's Done / Reschedule / Reassign /
             # Cancel buttons follow the one act rule (the routes re-check).
             'sc_activity_can_act': self._activity_act_access,
+            # Task 1736 r1 (owner 2026-11-01): an activity card edited in
+            # place — its assignee choices (the per-actor rule of
+            # /my/activity/reassign, task 1500, plus the current assignee).
+            'sc_activity_assignee_options': self._sc_activity_user_options_for(user),
             # Task 1595: an activity row's related-record links (player /
             # team / event, the injury it is about), access-gated.
             'sc_activity_related': self._sc_activity_related,
             # Owner review 2026-10-14: the related record's name in an
             # activity title is a link too.
             'sc_activity_title_parts': self._sc_activity_title_parts,
-            'sc_draft_props': self._sc_draft_props,
-            # Task 1583: the pending session notification (set by a POST
-            # round-trip, e.g. « Add to Team ») pops on whichever shell page
-            # comes next, as the status toast.
-            'sc_notification': self._sc_pop_notification(),
             # Task 1603: a follow-up proposal left by a POST round-trip.
             'sc_proposal_json': self._sc_pop_proposal(),
         }
-        shell.update(values)
-        nav = sc_app_nav.resolve(
-            (page or '').rpartition('.')[2], shell, request.env,
-            request_url=shell['sc_current_url'],
-            request_return_url=request.httprequest.args.get('return_url'))
-        shell.update({
-            'sc_parent_url': nav['parent_url'],
-            'sc_crumbs': nav['crumbs'],
-            'sc_context': nav['context'],
-            # Task 1660: the page's help (the app bar « ? », « Aide »).
-            'sc_help': request.env['sc.help.article']._sc_help_for(
-                (page or '').rpartition('.')[2],
-                tab=request.params.get('tab') or shell.get('sc_player_active_tab')),
-        })
-        return shell
-
-    # ------------------------------------------------------------------
-    # Task 1588: the PROFILE language is the only source of truth
-    # ------------------------------------------------------------------
-    @staticmethod
-    def _sc_profile_lang():
-        """The frontend language serving the user's profile language
-        (``res.users.lang``, or its nearest frontend sibling), or None when
-        the frontend offers nothing close (then the request's language
-        stands: never a redirect that cannot land)."""
-        return request.env['ir.http'].get_nearest_lang(request.env.user.lang)
-
-    @staticmethod
-    def _sc_lang_url(url, lang_code):
-        """``url`` (a local path + query) in ``lang_code``: any language
-        prefix dropped, the frontend prefix of ``lang_code`` added when it is
-        not the default language and the path is a multilang route — the URL
-        the http_routing ``_match`` serves in that language WITHOUT a
-        further language redirect (so no loop with the website's own)."""
-        env = request.env
-        frontend = env['res.lang']._get_frontend()
-        url_codes = [lang.url_code for lang in frontend.values()]
-        path, sep, query = url.partition('?')
-        parts = path.split('/')
-        if len(parts) > 1 and parts[1] in url_codes:
-            parts.pop(1)
-        path = '/'.join(parts) or '/'
-        lang = frontend.get(lang_code)
-        default = env['ir.http']._get_default_lang()
-        if (lang and lang.code != default.code and len(url_codes) > 1
-                and env['ir.http']._is_multilang_url(path, url_codes)):
-            path = '/%s%s' % (lang.url_code, path if path != '/' else '')
-        return path + sep + query
-
-    def _sc_profile_lang_guard(self):
-        """Profile wins (owner decision 2026-10-12): a shell page served in
-        another language than the user's profile one — a stale
-        ``frontend_lang`` cookie, an ``/en/`` URL prefix — is redirected
-        (GET/HEAD) to the same page in the profile language with the cookie
-        reset to it. Other methods are aligned in place."""
-        user = request.env.user
-        if user._is_public():
-            return
-        target = self._sc_profile_lang()
-        current = getattr(request, 'lang', None)
-        if not target or not current or current.code == target:
-            return
-        if request.httprequest.method in ('GET', 'HEAD'):
-            query = request.httprequest.query_string.decode()
-            url = self._sc_lang_url(
-                request.httprequest.path + ('?' + query if query else ''), target)
-            response = request.redirect(url, code=303, local=True)
-            response.set_cookie('frontend_lang', target)
-            werkzeug.exceptions.abort(response)
-        request.lang = request.env['res.lang']._get_data(code=target)
-        request.update_context(lang=target)
-        request.future_response.set_cookie('frontend_lang', target)
-
-    @staticmethod
-    def _sc_lang_options():
-        """« Plus › Langue »: one entry per frontend language (FR / EN),
-        the profile language pressed; empty with a single language."""
-        frontend = request.env['res.lang']._get_frontend()
-        if len(frontend) < 2:
-            return []
-        current = AppShellMixin._sc_profile_lang()
-        shorts = [code.partition('_')[0] for code in frontend]
-        options = []
-        for code, lang in frontend.items():
-            short = code.partition('_')[0]
-            options.append({
-                'code': code,
-                # Two variants of one language (fr_CA + fr_FR): their names.
-                'label': short.upper() if shorts.count(short) == 1 else lang.name,
-                'name': lang.name,
-                'active': code == current,
-            })
-        return options
+        return self._pk_shell_values(values, page, extra)
 
     @staticmethod
     def _sc_history_entry(when, author, body, action=None, tone=None, state=None, **extra):
@@ -1550,36 +1205,6 @@ class AppShellMixin:
         url = self._with_clinic(url, clinic) if clinic else url
         return url + '&tab=%s' % tab
 
-
-    @staticmethod
-    def _sc_options(pairs):
-        """[(key, label)] -> JSON-safe [[str(key), str(label)]]. Task 1608: a
-        tags option may carry its group, (key, label, group_label, group_key)
-        — kept, as strings."""
-        return [[str(part) for part in option] for option in pairs]
-
-    @staticmethod
-    def _sc_field_props(record, field, label, input_type='text', **extra):
-        """JSON props of a SERVER-mode sc_autosave_field for ``record.field``
-        (the value and write_date the save route will compare against)."""
-        props = {
-            'mode': 'server',
-            'model': record._name,
-            'recordId': record.id,
-            'field': field,
-            'writeDate': fields.Datetime.to_string(record.write_date),
-            'label': str(label),
-            'inputType': input_type,
-            'inputId': 'sc_%s_%s_%s' % (record._name.replace('.', '_'), record.id, field),
-            'value': AppShellPortal._sc_save_value(record, field),
-        }
-        if extra.get('options') is not None:
-            extra['options'] = AppShellMixin._sc_options(extra['options'])
-        for key, value in extra.items():
-            if value is not None:
-                props[key] = str(value) if key in ('hint', 'placeholder', 'undoMessage', 'historyLabel',
-                                                   'savedLabel') else value
-        return json.dumps(props, default=str)
 
     @staticmethod
     def _sc_note_injury_options(patient, active_only=False, keep=None):
@@ -1618,9 +1243,9 @@ class AppShellMixin:
         options = [('', env._("General note"))] + self._sc_note_injury_options(
             note_sudo.patient_id, active_only=active_only, keep=note_sudo.injury_id)
         return [
-            self._sc_field_props(note, 'note', env._("Note"), 'textarea'),
-            self._sc_field_props(note, 'date', env._("Date"), 'date'),
-            self._sc_field_props(note, 'injury_id', env._("Injury"), 'select', options=options),
+            pk_field_props(note, 'note', env._("Note"), 'textarea'),
+            pk_field_props(note, 'date', env._("Date"), 'date'),
+            pk_field_props(note, 'injury_id', env._("Injury"), 'select', options=options),
         ]
 
     # ------------------------------------------------------------------
@@ -1765,91 +1390,24 @@ class AppShellMixin:
             'clock': (clocks or {}).get(injury.id),
         }
 
-    @staticmethod
-    def _sc_draft_props(draft_key, name, label, input_type='text', value='', **extra):
-        """JSON props of a DRAFT-mode sc_autosave_field: a real form field
-        (``name``) whose typing is kept on the device under ``draft_key``."""
-        props = {
-            'mode': 'draft',
-            'name': name,
-            'draftKey': draft_key,
-            'label': str(label),
-            'inputType': input_type,
-            'inputId': 'sc_draft_%s' % name,
-            'value': value or '',
-        }
-        if extra.get('options') is not None:
-            extra['options'] = AppShellMixin._sc_options(extra['options'])
-        for key, val in extra.items():
-            if val is not None:
-                props[key] = str(val) if key in ('hint', 'placeholder') else val
-        return json.dumps(props, default=str)
-
-    @staticmethod
-    def _sc_form_props(target, label, input_type='tags', value='', **extra):
-        """Task 1608 — JSON props of a FORM-mode sc_autosave_field: no
-        autosave, no draft; the value goes to the enclosing form's hidden
-        input ``target`` (its id), which the form posts as before."""
-        props = {
-            'mode': 'form',
-            'target': target,
-            'label': str(label),
-            'inputType': input_type,
-            'inputId': '%s_field' % target,
-            'value': value or '',
-        }
-        if extra.get('options') is not None:
-            extra['options'] = AppShellMixin._sc_options(extra['options'])
-        for key, val in extra.items():
-            if val is not None:
-                props[key] = str(val) if key in ('hint', 'placeholder') else val
-        return json.dumps(props, default=str)
-
     def _sc_render(self, legacy_template, app_template, values):
         """THE per-page switch: the app template in the shell, else today's."""
-        if app_template and self._sc_app_shell_active():
+        if app_template and self._pk_shell_active():
             return self._sc_shell_response(app_template, self._sc_app_values(values, app_template))
         return request.render(legacy_template, values)
 
     # ------------------------------------------------------------------
     # Task 1611: read fragments (see « Read fragments » above)
     # ------------------------------------------------------------------
-    @staticmethod
-    def _sc_fragment_keys():
-        """The fragment keys a request asks for (``X-Sc-Fragments``), or None
-        for a normal page request."""
-        try:
-            raw = request.httprequest.headers.get(SC_FRAGMENTS_HEADER)
-        except RuntimeError:
-            return None
-        if raw is None:
-            return None
-        keys = []
-        for key in raw.split(','):
-            key = key.strip()
-            if key and _SC_FRAGMENT_KEY_RE.match(key) and key not in keys:
-                keys.append(key)
-        return keys[:SC_FRAGMENTS_MAX]
-
     def _sc_shell_response(self, template, values):
-        """A shell page: the page itself, or — asked with ``X-Sc-Fragments`` —
-        the requested read fragments of the SAME render, as JSON (never
-        cached)."""
+        """A shell page: the page itself, or — asked with ``X-Pk-Fragments``
+        — the requested read fragments of the SAME render, as JSON (never
+        cached; task 5199: the kit's fragment answer)."""
         response = request.render(template, values)
-        keys = self._sc_fragment_keys()
+        keys = PortalKitApp._pk_fragment_keys()
         if keys is None:
             return response
-        found, title = sc_extract_fragments(response.render(), keys)
-        sc_fill_moved_row_fragments(found, keys)
-        response = request.make_json_response({
-            'fragments': found,
-            'missing': [key for key in keys if key not in found],
-            'title': title,
-            'rendered_at': values.get('sc_rendered_at') or sc_now_ms(),
-        })
-        response.headers['Cache-Control'] = 'no-store'
-        response.headers['Vary'] = SC_FRAGMENTS_HEADER
-        return response
+        return PortalKitApp._pk_fragments_response(response, keys, values.get('pk_rendered_at'))
 
     # ------------------------------------------------------------------
     # Task 1540: timesheet rows (event page + /my/sc/timesheets)
@@ -1970,20 +1528,14 @@ class AppShellMixin:
             teams, lambda t: '/my/team?team_id=%s&tab=activities' % t.id)
 
 
-class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
+class AppShellPortal(PortalKitShell, AccessControlMixin, AppShellMixin):
 
     # ------------------------------------------------------------------
-    # /my/home — app home (« Équipes ») when the shell is active
+    # /my/home — the app home (« Tableau de bord ») when the shell is
+    # active: task 5202 (kit P7), bemade_portal_kit_dashboard's route
+    # (PortalKitDashboard.home) draws the clinic's sc_app_home with the
+    # clinic's widgets (controllers/app_dashboard.py).
     # ------------------------------------------------------------------
-    @http.route()
-    def home(self, **kw):
-        if kw.get('classic') or not self._sc_app_shell_active():
-            return super().home(**kw)
-        values = self._prepare_portal_layout_values()
-        # Task 1624: the configurable widget sections (controllers/app_dashboard.py).
-        values.update(self._sc_dashboard_values())
-        return self._sc_shell_response('bemade_sports_clinic.sc_app_home',
-                                       self._sc_app_values(values, 'sc_app_home'))
 
     @http.route(['/my/clinics/today/count'], type='http', auth='user', website=True,
                 methods=['GET'], multilang=False, sitemap=False)
@@ -1995,7 +1547,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         read access to events; never cached."""
         env = request.env
         roles = env.user._sc_app_roles()
-        if not (sc_app_roles.can('home.clinic_teaser', roles)
+        if not (env['portal.kit'].pk_can('home.clinic_teaser', roles)
                 and env['sports.event'].has_access('read')):
             response = request.make_json_response({'error': 'forbidden'}, status=403)
         else:
@@ -2018,152 +1570,24 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return request.env['sports.event'].search_count(domain)
 
     # ------------------------------------------------------------------
-    # /my/app/more — « Plus »
+    # Task 5200 (kit P5): /my/app/more, /my/app/settings, /my/app/pref,
+    # /my/app/search, /my/account and /my/security are the kit's
+    # (PortalKitShell). Its pages are drawn on sc_app_layout
+    # (portal.kit._pk_layout) with the clinic's values:
     # ------------------------------------------------------------------
-    @http.route(['/my/app/more'], type='http', auth='user', website=True)
-    def sc_app_more(self, **kw):
-        if not self._sc_app_shell_active():
-            return request.redirect('/my/home')
-        values = self._prepare_portal_layout_values()
-        values['page_name'] = 'sc_app_more'
-        return self._sc_shell_response('bemade_sports_clinic.sc_app_more',
-                                       self._sc_app_values(values, 'sc_app_more'))
-
-    # ------------------------------------------------------------------
-    # /my/app/settings — « Paramètres » (task 1606: language, appearance,
-    # account, security, classic portal — out of « Plus »; reached from the
-    # user menu)
-    # ------------------------------------------------------------------
-    @http.route(['/my/app/settings'], type='http', auth='user', website=True)
-    def sc_app_settings(self, **kw):
-        if not self._sc_app_shell_active():
-            return request.redirect('/my/home')
-        values = self._prepare_portal_layout_values()
-        values['page_name'] = 'sc_app_settings'
-        return self._sc_shell_response('bemade_sports_clinic.sc_app_settings',
-                                       self._sc_app_values(values, 'sc_app_settings'))
+    def _pk_app_values(self, values, page=None):
+        # Task 5391: the kit's pages are drawn with the clinic's values in the
+        # clinic's app only.
+        if request.env['portal.kit']._pk_current_app() != sc_app_nav.SC_APP:
+            return super()._pk_app_values(values, page)
+        return self._sc_app_values(values, page)
 
     # ------------------------------------------------------------------
-    # /my/app/pref — the two self-service preferences, nothing else
+    # /my/app/save/<model>/<id> — the server autosave pattern (task 1542).
+    # Task 5199 (P4a): the route and its helpers (``_pk_save_json``,
+    # ``_pk_save_value``, ``_pk_save_display``, …) are the kit's
+    # (PortalKitApp); the clinic's specs carry its own rules.
     # ------------------------------------------------------------------
-    @http.route(['/my/app/pref'], type='http', auth='user', website=True,
-                methods=['POST'], multilang=False)
-    def sc_app_pref(self, **post):
-        """Set ``sc_theme`` on the CALLER's own record (task 1579: the
-        navigation mode setting is gone) and/or ``lang`` (task 1588: one of
-        the frontend languages — the profile language, mirrored in the
-        ``frontend_lang`` cookie and the session; the redirect lands on the
-        target page in that language).
-
-        CSRF is enforced by the http POST route. Any other field, a bad value
-        or another user's id is refused and nothing is written. A caller that
-        accepts JSON (the app-bar toggle) gets JSON; a plain form post (no-JS
-        path) is redirected back to ``redirect`` (same-site paths only)."""
-        user = request.env.user
-        post.pop('csrf_token', None)
-        redirect = post.pop('redirect', None)
-        target = post.pop('user_id', None)
-        if target not in (None, '') and str(target) != str(user.id):
-            return request.make_json_response({'error': 'forbidden'}, status=403)
-        if not post or set(post) - set(PREF_FIELDS) - {PREF_LANG}:
-            return request.make_json_response({'error': 'bad_request'}, status=400)
-        for name, value in post.items():
-            allowed = (request.env['res.lang']._get_frontend() if name == PREF_LANG
-                       else PREF_FIELDS[name])
-            if not value or value not in allowed:
-                return request.make_json_response({'error': 'bad_request'}, status=400)
-        vals = dict(post)
-        for name in PREF_BOOLEANS:
-            if name in vals:
-                vals[name] = vals[name] == '1'
-        user.write(vals)
-        lang = post.get(PREF_LANG)
-        if lang:
-            # Task 1588: the session context too (the backend and the
-            # http_routing fallback read it); the cookie below wins anyway.
-            request.session.context = dict(request.session.context, lang=lang)
-        accept = request.httprequest.headers.get('Accept', '')
-        if 'application/json' in accept:
-            response = request.make_json_response(
-                {'sc_theme': self._sc_effective_theme(user), 'lang': user.lang})
-        else:
-            url = self._safe_return_url(redirect, '/my/app/settings')
-            if lang:
-                url = self._sc_lang_url(url, lang)
-            response = request.redirect(url)
-        if lang:
-            response.set_cookie('frontend_lang', lang)
-        return response
-
-    # ------------------------------------------------------------------
-    # /my/app/save/<model>/<id> — the server autosave pattern (task 1542)
-    # ------------------------------------------------------------------
-    @staticmethod
-    def _sc_save_json(payload, status=200):
-        return request.make_json_response(payload, status=status)
-
-    @staticmethod
-    def _sc_save_value(record, name, raw=False):
-        spec = SAVE_REGISTRY.get(record._name) or {}
-        if not raw and spec.get('read'):
-            return spec['read'](record, name)
-        value = record[name]
-        field = record._fields[name]
-        if field.type in ('many2one',):
-            return value.id or False
-        if field.type in ('date', 'datetime'):
-            return field.to_string(value) if value else False
-        return value
-
-    @staticmethod
-    def _sc_save_display(record, name):
-        """The saved value as a reader sees it (owner review 2026-10-10: a
-        card's read view updates in place after a save) — a name for a
-        many2one, a label for a selection, a formatted date; '' when empty."""
-        spec = SAVE_REGISTRY.get(record._name) or {}
-        if spec.get('display'):
-            shown = spec['display'](record, name)
-            if shown is not None:
-                return shown
-        field = record._fields.get(name)
-        if field is None:
-            return ''
-        value = record[name]
-        if not value:
-            return ''
-        if field.type == 'many2one':
-            # The plain name, as the select options show it (a province reads
-            # « Quebec », not « Quebec (CA) »).
-            value = value.sudo()
-            return (value.name if 'name' in value._fields else value.display_name) or ''
-        if field.type == 'selection':
-            return dict(field._description_selection(record.env)).get(value, '')
-        if field.type == 'date':
-            return format_date(record.env, value)
-        if field.type == 'datetime':
-            return format_datetime(record.env, value)
-        return str(value)
-
-    @classmethod
-    def _sc_field_unchanged(cls, record, field, old_value):
-        """Does ``record.field`` still hold what the client last saw?"""
-        if old_value is None:
-            return False
-        current = cls._sc_save_value(record, field)
-        if current is False or current is None:
-            current = ''
-        return str(current).strip() == str(old_value).strip()
-
-    @staticmethod
-    def _sc_save_allowed(spec, field):
-        """Is ``field`` in the spec's allowlist for the CALLER's roles?"""
-        allowed = spec.get('fields') or ()
-        if field not in allowed:
-            return False
-        if isinstance(allowed, dict):
-            return bool(request.env.user._sc_app_roles() & frozenset(allowed[field]))
-        return True
-
     def _sc_lost_access_payload(self, patient, teams_before):
         """Task 1656: the viewer removed the team that gave them access to
         ``patient`` — ``{ok, lost_access, message}`` (no refresh patterns, no
@@ -2185,7 +1609,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
     @staticmethod
     def _sc_identity_confirm_needed(patient, field, value):
-        """The 409 payload asking the client to confirm an identity
+        """The 428 payload asking the client to confirm an identity
         correction (an existing first / last name or date of birth changed
         by a portal user), or None when no confirmation is needed."""
         new = _date_value(value) if field == 'date_of_birth' else (value or '').strip()
@@ -2199,27 +1623,25 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             old = format_date(patient.env, old) if old else ''
             new_text = format_date(patient.env, new_text) if new_text else ''
         return {
-            'confirm_identity': True,
+            'confirm': True,
             'message': _("Correct this player's identity?"),
             'old': old,
             'new': new_text,
+            # Task 5382: the clinic's line under old → new (it was in the
+            # field's template).
+            'detail': _("The change will be noted in the player's file."),
         }
 
-    @staticmethod
-    def _sc_save_proposal(spec, record, field):
-        """Task 1603: the spec's follow-up proposal for this save (therapists
-        only), or None. A builder failure never fails the save it follows."""
-        if not spec.get('propose') or not (request.env.user._sc_app_roles() & _TP_ROLES):
+    def _pk_save_proposal(self, spec, record, field):
+        """Task 1603: the spec's follow-up proposal for this save — for
+        therapists only (the kit's builder call otherwise)."""
+        if not (request.env.user._sc_app_roles() & _TP_ROLES):
             return None
-        try:
-            return spec['propose'](record, field) or None
-        except Exception:  # noqa: BLE001 — a proposal is a convenience only
-            _logger.exception("Follow-up proposal failed for %s.%s", record._name, field)
-            return None
+        return super()._pk_save_proposal(spec, record, field)
 
     def _sc_apply_changes(self, patient, changes):
         """Task 1603: write the changes of an applied proposal — each one
-        re-validated (the proposal allowlist, the SAVE_REGISTRY role
+        re-validated (the proposal allowlist, the save spec's role
         allowlist and check, the record belongs to ``patient``) and written
         by the spec's write hook (the normal save path: validation,
         tracking, history). Raises AccessError / ValidationError; the
@@ -2233,10 +1655,10 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             model, field = change.get('model'), change.get('field')
             if field not in PROPOSAL_FIELDS.get(model, ()):
                 raise AccessError(_("This change cannot be applied here."))
-            spec = SAVE_REGISTRY.get(model)
+            spec = self._pk_save_spec(model)
             # Match / practice are saved as the player's one « sc_status ».
             allowed_as = 'sc_status' if field in _STATUS_FIELDS else field
-            if not spec or not self._sc_save_allowed(spec, allowed_as):
+            if not spec or not self._pk_save_allowed(spec, allowed_as):
                 raise AccessError(_("This change cannot be applied here."))
             try:
                 record = request.env[model].browse(int(change.get('id'))).exists()
@@ -2294,7 +1716,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if 'practice_status' in statuses and practice != 'yes' and match == 'yes':
                 raise ValidationError(_("Set Match to No first"))
             raise ValidationError(_("Requires Practice: Yes"))
-        SAVE_REGISTRY['sports.patient']['write'](self, patient, 'sc_status', '%s:%s' % (match, practice))
+        self._pk_save_spec('sports.patient')['write'](self, patient, 'sc_status', '%s:%s' % (match, practice))
         return [(patient, name) for name in ('match_status', 'practice_status') if name in statuses]
 
     @http.route(['/my/app/apply-proposal'], type='http', auth='user',
@@ -2317,14 +1739,14 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
           (nothing written).
         """
         if not (request.env.user._sc_app_roles() & _TP_ROLES):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
+            return self._pk_save_json({'error': 'forbidden'}, 403)
         try:
             parsed = json.loads(changes or '')
             patient_id = int(patient_id)
         except (TypeError, ValueError):
-            return self._sc_save_json({'error': 'bad_request'}, 400)
+            return self._pk_save_json({'error': 'bad_request'}, 400)
         if not isinstance(parsed, list) or not parsed or len(parsed) > PROPOSAL_MAX_CHANGES:
-            return self._sc_save_json({'error': 'bad_request'}, 400)
+            return self._pk_save_json({'error': 'bad_request'}, 400)
         try:
             patient = self._check_access_to_patient(patient_id)
             # Task 1727: a « Retour prévu » that has passed since the sheet
@@ -2332,7 +1754,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # written.
             stale = self._sc_past_return_changes(patient, parsed)
             if stale:
-                return self._sc_save_json({
+                return self._pk_save_json({
                     'error': 'invalid',
                     'needs_date': stale,
                     'min': fields.Date.to_string(fields.Date.context_today(patient)),
@@ -2349,25 +1771,25 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     'model': record._name,
                     'id': record.id,
                     'field': field,
-                    'value': self._sc_save_value(record, field),
-                    'display': self._sc_save_display(record, field),
+                    'value': self._pk_save_value(record, field),
+                    'display': self._pk_save_display(record, field),
                     'write_date': fields.Datetime.to_string(record.write_date),
                 })
-                for pattern in sc_refresh_patterns(record._name, record, field):
+                for pattern in request.env['portal.kit'].pk_refresh_patterns(record, field):
                     if pattern not in refresh:
                         refresh.append(pattern)
-            return self._sc_save_json({
+            return self._pk_save_json({
                 'ok': True,
                 'saved': saved,
                 'refresh': refresh,
-                'saved_at': sc_now_ms(),
+                'saved_at': pk_now_ms(),
                 'message': _("Changes applied."),
             })
         except (AccessError, MissingError):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
+            return self._pk_save_json({'error': 'forbidden'}, 403)
         except (UserError, ValidationError, ValueError) as exc:
             message = exc.args[0] if getattr(exc, 'args', None) else str(exc)
-            return self._sc_save_json({'error': 'invalid', 'message': str(message)}, 400)
+            return self._pk_save_json({'error': 'invalid', 'message': str(message)}, 400)
 
     # ------------------------------------------------------------------
     # Task 1604 — quick « Vérifier » / « Résoudre » (the injury card row and
@@ -2382,40 +1804,39 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         access), 400 ``{error, message}`` (wrong stage, invalid date —
         nothing written)."""
         if not (request.env.user._sc_app_roles() & _TP_ROLES):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
+            return self._pk_save_json({'error': 'forbidden'}, 403)
         try:
             injury = self._check_access_to_injury(injury_id)
         except (AccessError, MissingError, UserError):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
+            return self._pk_save_json({'error': 'forbidden'}, 403)
         try:
             with request.env.cr.savepoint():
                 run(injury)
                 injury.flush_recordset()
         except (AccessError, MissingError):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
+            return self._pk_save_json({'error': 'forbidden'}, 403)
         except (UserError, ValidationError, ValueError) as exc:
             message = exc.args[0] if getattr(exc, 'args', None) else str(exc)
-            return self._sc_save_json({'error': 'invalid', 'message': str(message)}, 400)
+            return self._pk_save_json({'error': 'invalid', 'message': str(message)}, 400)
         injury.invalidate_recordset()
-        model = injury._name
         payload = {
             'ok': True,
             'write_date': fields.Datetime.to_string(injury.write_date),
-            'value': self._sc_save_value(injury, 'stage'),
-            'display': self._sc_save_display(injury, 'stage'),
+            'value': self._pk_save_value(injury, 'stage'),
+            'display': self._pk_save_display(injury, 'stage'),
             'also': {name: {
-                'value': self._sc_save_value(injury, name),
-                'display': self._sc_save_display(injury, name),
+                'value': self._pk_save_value(injury, name),
+                'display': self._pk_save_display(injury, name),
             } for name in ('stage', 'resolution_date', 'predicted_resolution_date')},
-            'refresh': sc_refresh_patterns(model, injury, 'stage'),
-            'saved_at': sc_now_ms(),
+            'refresh': request.env['portal.kit'].pk_refresh_patterns(injury, 'stage'),
+            'saved_at': pk_now_ms(),
             'live_counts': True,
             'message': message,
         }
-        proposal = self._sc_save_proposal(SAVE_REGISTRY[model], injury, 'stage')
+        proposal = self._pk_save_proposal(self._pk_save_spec(injury._name), injury, 'stage')
         if proposal:
             payload['propose'] = proposal
-        return self._sc_save_json(payload)
+        return self._pk_save_json(payload)
 
     @http.route(['/my/injury/<int:injury_id>/verify'], type='http', auth='user',
                 methods=['POST'], csrf=True, multilang=False)
@@ -2445,234 +1866,4 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             injury.action_resolve_injury(resolution_date=day)
         return self._sc_injury_quick(injury_id, run, _("Injury resolved."))
 
-    @http.route(['/my/app/save/<string:model>/<int:record_id>'], type='http', auth='user',
-                methods=['POST'], csrf=True, multilang=False)
-    def sc_app_save(self, model, record_id, field=None, value=None, write_date=None,
-                    old_value=None, **kw):
-        """Save ONE field of ONE record, as the user.
 
-        Body (form-encoded, CSRF enforced by the http POST route):
-        ``field``, ``value``, ``write_date`` (the value the client last saw),
-        optional ``old_value`` (task 1539: the FIELD value the client last
-        saw — a record written since, but whose field still holds
-        ``old_value``, is not a conflict: e.g. a sibling field of the same
-        form was saved a moment ago).
-        Answers JSON:
-
-        * 200 ``{ok, write_date, value[, message]}`` — saved (``value`` is the
-          stored value, e.g. a normalised jersey number; ``message`` a soft
-          warning such as a duplicate jersey number);
-        * 409 ``{conflict, current_value, current_write_date, by}`` — the
-          record changed since ``write_date`` (nothing written);
-        * 403 ``{error}`` — model / field outside ``SAVE_REGISTRY``, a field
-          outside the caller's role allowlist, the registry check or
-          permission refused, or the ORM refused the write;
-        * 400 ``{error}`` — missing parameters or an invalid value;
-        * 428 ``{confirm_identity, message, old, new}`` — task 1600: a portal
-          user changes an existing first / last name or date of birth; nothing
-          is written until the same save is re-posted with ``confirm=1``.
-        """
-        spec = SAVE_REGISTRY.get(model)
-        if not spec or not field or not self._sc_save_allowed(spec, field):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
-        if value is None or not write_date:
-            return self._sc_save_json({'error': 'bad_request'}, 400)
-        record = request.env[model].browse(record_id)
-        try:
-            if not record.exists():
-                raise MissingError(_("Record not found."))
-            spec['check'](self, record)
-            if spec.get('sudo_write') and not spec['permission'](self, record):
-                raise AccessError(_("You cannot edit this record."))
-            current = fields.Datetime.to_string(record.write_date)
-            # Owner review 2026-10-14: the stale-check and the 409 payload read
-            # the field through sudo — the caller's role allowlist and the
-            # spec's check passed above, and a group-restricted field (the
-            # injury's internal notes) is not readable by a portal therapist
-            # through the ORM after a sibling save changed the write_date.
-            if current != write_date and not self._sc_field_unchanged(record.sudo(), field, old_value):
-                return self._sc_save_json({
-                    'conflict': True,
-                    'current_value': self._sc_save_value(record.sudo(), field),
-                    'current_write_date': current,
-                    'by': record.sudo().write_uid.name or '',
-                }, 409)
-            if model == 'sports.patient':
-                # Task 1639: the identity guard applies to everyone working
-                # through the app (internal users included).
-                record = record.with_context(sc_identity_guard=True)
-            if model == 'sports.patient' and field in IDENTITY_FIELDS:
-                # Task 1600: changing an existing name / date of birth is an
-                # explicit, confirmed step (``confirm=1``, posted by the
-                # field's confirm banner) — the model records it on the file.
-                if kw.get('confirm') == '1':
-                    record = record.with_context(**{IDENTITY_CONFIRM_KEY: True})
-                else:
-                    refusal = self._sc_identity_confirm_needed(record, field, value)
-                    if refusal:
-                        return self._sc_save_json(refusal, 428)
-            extra = {}
-            # A refused / invalid write leaves nothing behind (a hook may
-            # write more than one field).
-            # Task 1656: the teams before a player's teams save (a removal may
-            # end the viewer's own access).
-            teams_before = (record.sudo().team_ids
-                            if model == 'sports.patient' and field == 'sc_team_ids' else None)
-            with request.env.cr.savepoint():
-                if spec.get('write'):
-                    extra = spec['write'](self, record, field, value) or {}
-                else:
-                    if value == '' and record._fields[field].type not in _TEXT_TYPES:
-                        value = False
-                    record.write({field: value})
-                record.flush_recordset()
-            record.invalidate_recordset()
-            if teams_before is not None:
-                lost = self._sc_lost_access_payload(record, teams_before)
-                if lost:
-                    return self._sc_save_json(lost)
-            payload = {
-                'ok': True,
-                'write_date': fields.Datetime.to_string(record.write_date),
-                'value': self._sc_save_value(record, field),
-                'display': self._sc_save_display(record, field),
-            }
-            # Other fields the write hook set along (e.g. an injury's
-            # resolution date with « Resolved »), so the page updates them
-            # in place: {field: {value, display}}.
-            also = extra.pop('also_fields', None) or ()
-            # Task 1594: and their fresh choices when they changed (a country
-            # save answers the province choices of the new country).
-            also_options = extra.pop('also_options', None) or {}
-            # Task 1653: and whether they are locked now.
-            also_disabled = extra.pop('also_disabled', None) or {}
-            if also:
-                payload['also'] = {name: {
-                    'value': self._sc_save_value(record, name),
-                    'display': self._sc_save_display(record, name),
-                } for name in also}
-                for name, options in also_options.items():
-                    if name in payload['also']:
-                        payload['also'][name]['options'] = AppShellMixin._sc_options(options)
-                for name, disabled in also_disabled.items():
-                    if name in payload['also']:
-                        payload['also'][name]['disabled'] = bool(disabled)
-            hint = spec['hint'](record, field) if spec.get('hint') else None
-            if hint is not None:
-                payload['hint'] = hint
-            # Task 1611: the read fragments this save makes stale, the
-            # server time of the save (the « back » check) and the live
-            # counters to refresh.
-            payload['refresh'] = sc_refresh_patterns(model, record, field)
-            payload['saved_at'] = sc_now_ms()
-            if spec.get('live_counts'):
-                payload['live_counts'] = True
-            # Task 1603: a follow-up proposal — never blocking (the field is
-            # saved); the page shows it as a sheet (sc_proposal.js).
-            # Task 1631: what the write hook knew before writing (e.g. an
-            # injury's previous stage) reaches the proposal builder.
-            propose_context = extra.pop('propose_context', None)
-            proposal = self._sc_save_proposal(
-                spec, record.with_context(**propose_context) if propose_context else record, field)
-            if proposal:
-                payload['propose'] = proposal
-            payload.update(extra)
-            return self._sc_save_json(payload)
-        except (AccessError, MissingError):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
-        except (UserError, ValidationError, ValueError) as exc:
-            message = exc.args[0] if getattr(exc, 'args', None) else str(exc)
-            return self._sc_save_json({'error': 'invalid', 'message': str(message)}, 400)
-
-    # ------------------------------------------------------------------
-    # PWA — manifest, service worker, offline page, install page (1542)
-    # ------------------------------------------------------------------
-    @http.route(['/my/app.webmanifest'], type='http', auth='public', methods=['GET'],
-                multilang=False, sitemap=False)
-    def sc_app_webmanifest(self, **kw):
-        if not self._sc_app_shell_enabled():
-            return request.not_found()
-        img = '/bemade_sports_clinic/static/src/img/'
-        labels = {entry['key']: str(entry['label']) for entry in sc_app_roles.NAV_REGISTRY}
-        manifest = {
-            'name': 'Le Fit Crew',
-            'short_name': 'Fit Crew',
-            'id': '/my/home',
-            'start_url': '/my/home',
-            # Whole origin (1543): /en/my/... pages belong to the app too.
-            'scope': '/',
-            'display': 'standalone',
-            'background_color': SC_MIDNIGHT,
-            'theme_color': SC_MIDNIGHT,
-            'icons': [
-                {'src': img + 'sc_icon_192.png', 'sizes': '192x192', 'type': 'image/png',
-                 'purpose': 'any'},
-                {'src': img + 'sc_icon_512.png', 'sizes': '512x512', 'type': 'image/png',
-                 'purpose': 'any'},
-                {'src': img + 'sc_icon_maskable_512.png', 'sizes': '512x512',
-                 'type': 'image/png', 'purpose': 'maskable'},
-            ],
-            'shortcuts': [
-                {'name': labels['teams'], 'url': '/my/teams'},
-                {'name': labels['players'], 'url': '/my/players'},
-            ],
-        }
-        return request.make_response(json.dumps(manifest), headers=[
-            ('Content-Type', 'application/manifest+json'),
-            ('Cache-Control', 'no-cache'),
-        ])
-
-    @staticmethod
-    def _sc_sw_version():
-        return get_manifest('bemade_sports_clinic').get('version') or '0'
-
-    @http.route(['/my/service-worker.js'], type='http', auth='public', methods=['GET'],
-                multilang=False, sitemap=False)
-    def sc_app_service_worker(self, **kw):
-        """The service worker, allowed the whole origin (scope ``/``, task
-        1543). ``no-cache`` so a device picks up a new version (or this route's 404, which the page script turns into an
-        unregister) on its next visit."""
-        if not self._sc_app_shell_enabled():
-            return request.not_found()
-        with file_open(SW_SOURCE) as source:
-            body = source.read()
-        body = (body
-                .replace('__SC_SW_VERSION__', self._sc_sw_version())
-                .replace('"__SC_SW_PRECACHE__"', json.dumps(list(SW_PRECACHE_STATIC))))
-        return request.make_response(body, headers=[
-            ('Content-Type', 'text/javascript; charset=utf-8'),
-            ('Cache-Control', 'no-cache'),
-            ('Service-Worker-Allowed', '/'),
-        ])
-
-    @http.route(['/my/app/offline'], type='http', auth='public', methods=['GET'],
-                multilang=False, sitemap=False)
-    def sc_app_offline(self, **kw):
-        """Branded, DATA-FREE page the service worker shows when a navigation
-        fails offline. Rendered without any layout: no user, no session info,
-        no CSRF token — it is cached on the device."""
-        if not self._sc_app_shell_enabled():
-            return request.not_found()
-        # The doctype is prepended here, not written in the template: a raw
-        # text node at the template root changes how the view's terms are
-        # extracted, and the page then rendered untranslated.
-        html = request.env['ir.ui.view']._render_template(
-            'bemade_sports_clinic.sc_app_offline', {})
-        return request.make_response(
-            Markup('<!DOCTYPE html>\n') + html,
-            headers=[('Content-Type', 'text/html; charset=utf-8')])
-
-    @http.route(['/my/app/install'], type='http', auth='user', website=True,
-                multilang=False)
-    def sc_app_install(self, **kw):
-        """« Plus › Installer l'application »: per-device steps. No banner
-        anywhere else (owner decision 2026-09-27)."""
-        if not self._sc_app_shell_active():
-            return request.redirect('/my/home')
-        values = self._prepare_portal_layout_values()
-        values['page_name'] = 'sc_app_install'
-        return self._sc_shell_response('bemade_sports_clinic.sc_app_install',
-                                       self._sc_app_values(values, 'sc_app_install'))
-
-
-_validate_save_registry(SAVE_REGISTRY)

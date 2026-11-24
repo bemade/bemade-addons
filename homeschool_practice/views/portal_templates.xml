@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- The practice app: a full-screen page of its own (no portal header), touch first. -->
+    <template id="practice_app" name="Homeschool: practice app">
+        <html t-att-lang="lang">
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
+                <meta name="apple-mobile-web-app-capable" content="yes"/>
+                <meta name="mobile-web-app-capable" content="yes"/>
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+                <meta name="theme-color" content="#14213d"/>
+                <title>Pratique</title>
+                <!-- No manifest of its own (19.0.1.4.0): the installed app is the
+                     portal kit's, which opens practice inside it. -->
+                <link rel="stylesheet" t-attf-href="/homeschool_practice/static/src/css/practice.css?v=#{asset_version}"/>
+            </head>
+            <body t-att-data-handedness="student.practice_handedness" t-att-data-exit-url="exit_url">
+                <main id="app" aria-live="polite"><div class="hp-loading">…</div></main>
+                <script t-attf-src="/homeschool_practice/static/src/js/practice.js?v=#{asset_version}"/>
+            </body>
+        </html>
+    </template>
+
+    <!-- A way in from the homeschool portal home, for the learner himself (in the
+         app, practice is a nav entry and « Today »'s quests card). -->
+    <template id="portal_home_practice" inherit_id="homeschool_portal.portal_home" name="Homeschool: practice link">
+        <xpath expr="//div[hasclass('o_hs_card_links')]" position="inside">
+            <a t-if="s.user_id == request.env.user" href="/my/homeschool/practice" class="btn btn-success">Practice</a>
+        </xpath>
+    </template>
+</odoo>

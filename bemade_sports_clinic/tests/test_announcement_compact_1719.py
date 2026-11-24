@@ -7,7 +7,7 @@ Acceptance criteria:
   « History », and for an author the pencil (edit) and archive icon
   buttons (≥40×44 targets, 18 px glyphs).
 * AC-2 Under it the megaphone beside the text; the text is clamped to 3
-  lines (``data-sc-clamp="3"``) with « See more » (hidden until the text
+  lines (``data-pk-clamp="3"``) with « See more » (hidden until the text
   really overflows, browser) that expands it in place; one muted line
   « Until <date> » when there is a deadline.
 * AC-3 A thin divider before the counters (CSS: the section's bottom
@@ -41,7 +41,7 @@ class Announcement1719Common(AppShellCommon):
         self.url = '/my/team?team_id=%s' % self.team_a.id
 
     def _area(self, tree):
-        areas = tree.xpath('//section[@data-sc-section="team.announcement.area"]')
+        areas = tree.xpath('//section[@data-pk-section="team.announcement.area"]')
         return areas[0] if areas else None
 
 
@@ -55,30 +55,30 @@ class TestAnnouncementCompact1719(Announcement1719Common):
         _text, tree = self._get(self.url)
         area = self._area(tree)
         self.assertIsNotNone(area)
-        self.assertEqual(area.get('data-sc-edit-card'), 'announcement')
-        self.assertFalse(area.xpath('.//*[contains(concat(" ", @class, " "), " o_sc_card ")]'))
+        self.assertEqual(area.get('data-pk-edit-card'), 'announcement')
+        self.assertFalse(area.xpath('.//*[contains(concat(" ", @class, " "), " o_pk_card ")]'))
         self.assertFalse(area.xpath('.//*[contains(concat(" ", @class, " "), " o_sc_announcement_head ")]'))
         line = area.xpath('./div[contains(@class, "o_sc_announcement_titleline")]')
         self.assertEqual(len(line), 1)
         line = line[0]
         self.assertIn('Team announcement', line.text_content())
-        self.assertTrue(line.xpath('.//button[@data-sc-sheet-open="sc_announcement_history_sheet"]'))
-        self.assertEqual(len(line.xpath('.//button[@data-sc-edit-toggle]')), 1)
-        self.assertEqual(len(line.xpath('.//form[@data-sc-section="team.announcement.archive"]//button')), 1)
+        self.assertTrue(line.xpath('.//button[@data-pk-sheet-open="sc_announcement_history_sheet"]'))
+        self.assertEqual(len(line.xpath('.//button[@data-pk-edit-toggle]')), 1)
+        self.assertEqual(len(line.xpath('.//form[@data-pk-section="team.announcement.archive"]//button')), 1)
         # The text: megaphone beside it, clamped, « See more » hidden by default.
         content = area.xpath('.//div[contains(@class, "o_sc_announcement_content")]')[0]
-        self.assertTrue(content.xpath('./*[local-name()="svg" or contains(@class, "o_sc_icon")]'))
+        self.assertTrue(content.xpath('./*[local-name()="svg" or contains(@class, "o_pk_icon")]'))
         body = content.xpath('.//p[contains(@class, "o_sc_announcement_body")]')[0]
-        self.assertEqual(body.get('data-sc-clamp'), '3')
+        self.assertEqual(body.get('data-pk-clamp'), '3')
         self.assertEqual(body.text_content(), 'Synthetic short note')
-        more = content.xpath('.//button[@data-sc-clamp-more]')[0]
+        more = content.xpath('.//button[@data-pk-clamp-more]')[0]
         self.assertEqual(more.get('hidden'), 'hidden')
         self.assertEqual(' '.join(more.text_content().split()), 'See more')
         # Review round 1 (owner 2026-10-27): « See less », hidden until expanded.
-        less = content.xpath('.//button[@data-sc-clamp-less]')[0]
+        less = content.xpath('.//button[@data-pk-clamp-less]')[0]
         self.assertEqual(less.get('hidden'), 'hidden')
         self.assertEqual(' '.join(less.text_content().split()), 'See less')
-        meta = content.xpath('.//*[@data-sc-clamp-meta]')[0]
+        meta = content.xpath('.//*[@data-pk-clamp-meta]')[0]
         self.assertIsNone(meta.get('hidden'))
         meta_text = ' '.join(meta.text_content().split())
         self.assertTrue(meta_text.startswith('Until '), meta_text)
@@ -92,11 +92,11 @@ class TestAnnouncementCompact1719(Announcement1719Common):
         _text, tree = self._get(self.url)
         area = self._area(tree)
         self.assertIsNotNone(area)
-        meta = area.xpath('.//*[@data-sc-clamp-meta]')[0]
+        meta = area.xpath('.//*[@data-pk-clamp-meta]')[0]
         self.assertEqual(meta.get('hidden'), 'hidden')
         # A coach: no pencil, no archive.
-        self.assertFalse(area.xpath('.//button[@data-sc-edit-toggle]'))
-        self.assertFalse(area.xpath('.//*[@data-sc-section="team.announcement.archive"]'))
+        self.assertFalse(area.xpath('.//button[@data-pk-edit-toggle]'))
+        self.assertFalse(area.xpath('.//*[@data-pk-section="team.announcement.archive"]'))
 
     def test_empty_author_and_viewer(self):
         self.team_a.sudo().write({'announcement': False})
@@ -107,20 +107,20 @@ class TestAnnouncementCompact1719(Announcement1719Common):
         empty = area.xpath('.//p[contains(@class, "o_sc_announcement_empty")]')
         self.assertEqual(len(empty), 1)
         self.assertEqual(empty[0].text_content().strip(), 'No current announcement.')
-        self.assertIn('o_sc_muted', empty[0].get('class'))
-        self.assertEqual(len(area.xpath('.//button[@data-sc-edit-toggle]')), 1)
-        self.assertFalse(area.xpath('.//*[contains(@class, "o_sc_list_add")]'))
-        self.assertTrue(area.xpath('.//*[@data-sc-section="team.announcement.edit"]'))
+        self.assertIn('o_pk_muted', empty[0].get('class'))
+        self.assertEqual(len(area.xpath('.//button[@data-pk-edit-toggle]')), 1)
+        self.assertFalse(area.xpath('.//*[contains(@class, "o_pk_list_add")]'))
+        self.assertTrue(area.xpath('.//*[@data-pk-section="team.announcement.edit"]'))
         self._login_coach()
         _text, tree = self._get(self.url)
         self.assertIsNone(self._area(tree))
         # The counters are still there.
-        self.assertTrue(tree.xpath('//*[@data-sc-section="team.stats"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="team.stats"]'))
 
     def test_french(self):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

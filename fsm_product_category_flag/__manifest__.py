@@ -1,7 +1,7 @@
 {
     'name': 'FSM Product Category Flag',
     'summary': 'Adds an FSM Product flag on product categories for use in FSM-related logic.',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'author': 'Bemade Inc.',
     'license': 'LGPL-3',
     'website': 'https://www.bemade.org',

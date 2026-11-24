@@ -35,7 +35,9 @@ from odoo.exceptions import ValidationError
 from odoo.tests import tagged
 
 from odoo.addons.bemade_sports_clinic.controllers.app_dashboard import AppDashboardPortal
+from odoo.addons.bemade_portal_kit_dashboard.models import portal_kit_dashboard as dash_engine
 from odoo.addons.bemade_sports_clinic.models import sc_dashboard
+from odoo.addons.bemade_sports_clinic.models.sc_app_nav import SC_APP
 from odoo.addons.bemade_sports_clinic.tests.dashboard_common_1624 import Dashboard1624Common
 
 ORDER = ['today', 'todo', 'coverage', 'missing_timesheets', 'indicators', 'announcements',
@@ -49,40 +51,42 @@ class TestDashboardLayout1624(Dashboard1624Common):
 
     # -- UC-L1 ---------------------------------------------------------------
     def test_registry_round_one(self):
-        self.assertEqual([spec['key'] for spec in sc_dashboard.WIDGETS], ORDER)
-        for spec in sc_dashboard.WIDGETS:
+        widgets = self.env['portal.kit.dashboard'].pk_dash_app_widgets(SC_APP)
+        self.assertEqual([spec['key'] for spec in widgets], ORDER)
+        for spec in widgets:
+            self.assertEqual(spec['app'], SC_APP)
             self.assertTrue(self.env.ref(spec['template'], raise_if_not_found=False), spec['key'])
             self.assertTrue(callable(getattr(AppDashboardPortal, spec['builder'], None)), spec['key'])
             # The key exists (an unknown one raises).
-            self._dash(self.tp)._sc_can(spec['can'])
+            self._dash(self.tp)._pk_dash_can(spec['can'])
 
     # -- UC-L2 ---------------------------------------------------------------
     def test_role_gating(self):
         for user in (self.tp, self.itp, self.cadmin):
-            keys = [spec['key'] for spec in self._dash(user)._sc_widgets()]
+            keys = [spec['key'] for spec in self._dash(user)._pk_dash_widgets()]
             self.assertEqual(keys, ORDER, user.login)
-        self.assertEqual([spec['key'] for spec in self._dash(self.coach)._sc_widgets()], COACH_ORDER)
+        self.assertEqual([spec['key'] for spec in self._dash(self.coach)._pk_dash_widgets()], COACH_ORDER)
         self.assertEqual(self._dash(self.coach)._sc_todo_kinds(), ['activities'])
         self.assertEqual(self._dash(self.tp)._sc_todo_kinds(), list(sc_dashboard.TODO_KINDS))
-        self.assertEqual(self._dash(self.plain)._sc_widgets(), [])
+        self.assertEqual(self._dash(self.plain)._pk_dash_widgets(), [])
 
     # -- UC-L3 ---------------------------------------------------------------
     def test_default_and_invalid_layouts(self):
         dash = self._dash(self.tp)
-        default = [inst['id'] for inst in dash._sc_layout()]
+        default = [inst['id'] for inst in dash._pk_dash_layout()]
         self.assertEqual(default, ORDER)
         for bad in ('nope', ['a'], {'v': 99, 'instances': []}, {'v': 1}, {'v': 1, 'instances': 'x'}):
-            self.tp.sudo().sc_dashboard_layout = bad
-            self.assertEqual([inst['id'] for inst in dash._sc_layout()], ORDER, bad)
-        dash._sc_layout_save(dash._sc_layout())
-        self.assertEqual(self.tp.sudo().sc_dashboard_layout['v'], sc_dashboard.LAYOUT_VERSION)
+            self.tp.sudo().pk_dashboard_layout = bad
+            self.assertEqual([inst['id'] for inst in dash._pk_dash_layout()], ORDER, bad)
+        dash._pk_dash_layout_save(dash._pk_dash_layout())
+        self.assertEqual(self.tp.sudo().pk_dashboard_layout['v'], dash_engine.LAYOUT_VERSION)
 
     # -- UC-L4 ---------------------------------------------------------------
     def test_save_refuses_bad_input(self):
         dash = self._dash(self.coach)
-        layout = dash._sc_layout()
+        layout = dash._pk_dash_layout()
         by_id = {inst['id']: inst for inst in layout}
-        stored = self.coach.sudo().sc_dashboard_layout
+        stored = self.coach.sudo().pk_dashboard_layout
         cases = [
             layout + [{'id': 'future', 'widget': 'future', 'settings': {}}],
             # A therapist-only widget for a coach.
@@ -95,16 +99,16 @@ class TestDashboardLayout1624(Dashboard1624Common):
         ]
         for case in cases:
             with self.assertRaises(ValidationError, msg=case):
-                dash._sc_layout_save(case)
-            self.assertEqual(self.coach.sudo().sc_dashboard_layout, stored)
+                dash._pk_dash_layout_save(case)
+            self.assertEqual(self.coach.sudo().pk_dashboard_layout, stored)
 
     def test_load_is_forward_compatible(self):
-        self.tp.sudo().sc_dashboard_layout = {'v': 1, 'instances': [
+        self.tp.sudo().pk_dashboard_layout = {'v': 1, 'instances': [
             {'id': 'watch', 'widget': 'watch', 'enabled': False, 'title': 'Mine',
              'settings': {'level': 'red'}},
             {'id': 'later', 'widget': 'later', 'enabled': True, 'settings': {}},
         ]}
-        layout = self._dash(self.tp)._sc_layout()
+        layout = self._dash(self.tp)._pk_dash_layout()
         self.assertEqual(layout[0]['id'], 'watch')
         # Round 2: a v1 layout is migrated (its first half to the left).
         self.assertEqual(layout[0]['zone'], 'left')
@@ -119,40 +123,40 @@ class TestDashboardLayout1624(Dashboard1624Common):
     # -- UC-L5 ---------------------------------------------------------------
     def test_multi_instance_add_title_remove(self):
         dash = self._dash(self.tp)
-        new_id = dash._sc_layout_add('watch')
+        new_id = dash._pk_dash_layout_add('watch')
         self.assertEqual(new_id, 'watch-2')
-        dash._sc_layout_update(new_id, title='  Watch   C  ',
+        dash._pk_dash_layout_update(new_id, title='  Watch   C  ',
                                settings={'scope_team_ids': [self.team_c.id], 'level': 'red'})
         inst = self._instance(self.tp, new_id)
         self.assertEqual(inst['title'], 'Watch C')
         self.assertEqual(inst['settings']['scope_team_ids'], [self.team_c.id])
         # The base instance is untouched.
         self.assertEqual(self._instance(self.tp, 'watch')['settings']['scope_team_ids'], [])
-        self.assertEqual(dash._sc_layout_add('watch'), 'watch-3')
+        self.assertEqual(dash._pk_dash_layout_add('watch'), 'watch-3')
         with self.assertRaises(ValidationError):
-            dash._sc_layout_remove('watch')
-        dash._sc_layout_remove('watch-2')
-        ids = [inst['id'] for inst in dash._sc_layout()]
+            dash._pk_dash_layout_remove('watch')
+        dash._pk_dash_layout_remove('watch-2')
+        ids = [inst['id'] for inst in dash._pk_dash_layout()]
         self.assertNotIn('watch-2', ids)
         self.assertIn('watch-3', ids)
         with self.assertRaises(ValidationError):
-            dash._sc_layout_add('nope')
+            dash._pk_dash_layout_add('nope')
 
     # -- UC-L6 ---------------------------------------------------------------
     def test_move_and_reset(self):
         dash = self._dash(self.tp)
-        dash._sc_layout_move('todo', -1)
-        self.assertEqual([inst['id'] for inst in dash._sc_layout()][:2], ['todo', 'today'])
-        dash._sc_layout_move('todo', -1)  # already first: no-op
-        dash._sc_layout_move('missing_timesheets', 1)  # last of its zone: no-op
-        dash._sc_layout_move('indicators', -1)  # first of its zone: no-op
-        dash._sc_layout_move('today', 1)
-        self.assertEqual([inst['id'] for inst in dash._sc_layout()][:3], ['todo', 'coverage', 'today'])
+        dash._pk_dash_layout_move('todo', -1)
+        self.assertEqual([inst['id'] for inst in dash._pk_dash_layout()][:2], ['todo', 'today'])
+        dash._pk_dash_layout_move('todo', -1)  # already first: no-op
+        dash._pk_dash_layout_move('missing_timesheets', 1)  # last of its zone: no-op
+        dash._pk_dash_layout_move('indicators', -1)  # first of its zone: no-op
+        dash._pk_dash_layout_move('today', 1)
+        self.assertEqual([inst['id'] for inst in dash._pk_dash_layout()][:3], ['todo', 'coverage', 'today'])
         self.assertEqual(self._instance(self.tp, 'indicators')['zone'], 'right')
-        dash._sc_layout_update('today', enabled=False)
-        dash._sc_layout_reset()
-        self.assertFalse(self.tp.sudo().sc_dashboard_layout)
-        layout = dash._sc_layout()
+        dash._pk_dash_layout_update('today', enabled=False)
+        dash._pk_dash_layout_reset()
+        self.assertFalse(self.tp.sudo().pk_dashboard_layout)
+        layout = dash._pk_dash_layout()
         self.assertEqual([inst['id'] for inst in layout], ORDER)
         self.assertTrue(all(inst['enabled'] for inst in layout))
 
@@ -182,20 +186,20 @@ class TestDashboardLayout1624(Dashboard1624Common):
         resp = self._post('/add', {'widget': 'watch'}, fetch=False)
         self.assertEqual(resp.status_code, 303)
         self.assertIn(URL, resp.headers['Location'])
-        self.assertIn('watch-2', [i['id'] for i in self._dash(self.tp)._sc_layout()])
+        self.assertIn('watch-2', [i['id'] for i in self._dash(self.tp)._pk_dash_layout()])
         self._post('/move', {'instance_id': 'watch-2', 'step': 'up'}, fetch=False)
-        ids = [i['id'] for i in self._dash(self.tp)._sc_layout()]
+        ids = [i['id'] for i in self._dash(self.tp)._pk_dash_layout()]
         self.assertLess(ids.index('watch-2'), ids.index('missing_timesheets'))
         self._post('/remove', {'instance_id': 'watch-2'}, fetch=False)
-        self.assertNotIn('watch-2', [i['id'] for i in self._dash(self.tp)._sc_layout()])
+        self.assertNotIn('watch-2', [i['id'] for i in self._dash(self.tp)._pk_dash_layout()])
         self._post('/reset', {}, fetch=False)
-        self.assertFalse(self.tp.sudo().sc_dashboard_layout)
+        self.assertFalse(self.tp.sudo().pk_dashboard_layout)
 
     def test_refusal_shown_on_page_without_js(self):
         self._login_tp()
         resp = self._post('/remove', {'instance_id': 'watch'}, fetch=False)
         self.assertEqual(resp.status_code, 303)
         _text, tree = self._get(URL)
-        banner = tree.xpath('//*[@data-sc-flash-error]')
+        banner = tree.xpath('//*[@data-pk-flash-error]')
         self.assertTrue(banner)
         self.assertIn('switched off', banner[0].text_content())

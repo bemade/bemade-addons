@@ -51,7 +51,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         values = self._create_injury_form_values(patient, post)
         # Task 1539: the app shell (switch on: a DEVICE draft until « Créer »,
         # nothing is created before the POST) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_injury_new_values(patient, values))
         return self._sc_render('bemade_sports_clinic.portal_create_injury',
                                'bemade_sports_clinic.sc_app_injury_new', values)
@@ -207,7 +207,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # card posts the coach visibility (therapists: required, no default)
         # and the diagnosis only; today's date; it lands back on the
         # player's Injuries tab with the new injury open for editing.
-        sc_inline = bool(post.get('sc_inline')) and self._sc_app_shell_active()
+        sc_inline = bool(post.get('sc_inline')) and self._pk_shell_active()
         if sc_inline:
             injuries_url = self._sc_inline_injuries_url(patient, post, clinic_event)
             visibility = post.get('coach_visibility')
@@ -236,7 +236,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         external_dropped = False
         if self._sc_drops_external_notes(is_treatment_prof):
             posted_external = vals.pop('external_notes')
-            external_dropped = bool((posted_external or '').strip()) and not self._sc_app_shell_active()
+            external_dropped = bool((posted_external or '').strip()) and not self._pk_shell_active()
 
         # Handle injury date and injury_date_na checkbox
         if post.get('injury_date_na'):
@@ -299,7 +299,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         # Task 1603: created with a predicted resolution date by a therapist
         # in the app -> the landing page proposes the player's Retour prévu.
-        if is_treatment_prof and vals.get('predicted_resolution_date') and self._sc_app_shell_active():
+        if is_treatment_prof and vals.get('predicted_resolution_date') and self._pk_shell_active():
             self._sc_stash_proposal(patient._retour_prevu_after_injury_change(injury))
         
         # Use explicit navigation context (team_context_id) for redirect, not inferred team assignment
@@ -333,8 +333,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # lands on a POST result page — it redirects to the player's
         # Injuries tab (same context) with the new injury open and its
         # « Undo »; that page drops the device draft of the new injury
-        # (data-sc-draft-clear, task 1539) once it exists.
-        if self._sc_app_shell_active():
+        # (data-pk-draft-clear, task 1539) once it exists.
+        if self._pk_shell_active():
             injuries_url = self._sc_inline_injuries_url(patient, post, clinic_event)
             return request.redirect(self._url_with_query(
                 injuries_url, 'created=%s' % injury.id) + '#injury-%s' % injury.id)
@@ -446,7 +446,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Task 1616: the app shell has no injury page any more — the injury
         # is its open card (player page, or the clinic dossier listing it);
         # an old link / bookmark lands there. Switch off: today's page.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             return self._sc_injury_card_redirect(injury, post, team_id=team_id)
         values = self._edit_injury_form_values(injury, team_id, post)
         return request.render('bemade_sports_clinic.portal_edit_injury', values)
@@ -600,7 +600,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         external_dropped = False
         if self._sc_drops_external_notes(is_treatment_prof):
             posted_external = vals.pop('external_notes')
-            external_dropped = (not self._sc_app_shell_active() and (posted_external or '').strip()
+            external_dropped = (not self._pk_shell_active() and (posted_external or '').strip()
                                 != (injury.external_notes or '').strip())
 
         # Handle injury date and N/A checkbox
@@ -692,7 +692,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 continue
             value = post.get(fname)
             if fname == 'external_notes' and drop_external:
-                external_dropped = (not self._sc_app_shell_active() and (value or '').strip()
+                external_dropped = (not self._pk_shell_active() and (value or '').strip()
                                     != (injury.external_notes or '').strip())
                 continue
             vals[fname] = value if (value or '').strip() else False
@@ -715,7 +715,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         from them). An internal non-therapist on the legacy portal keeps it."""
         if is_tp:
             return False
-        return self._sc_app_shell_active() or request.env.user.share
+        return self._pk_shell_active() or request.env.user.share
 
     def _add_treatment_note(self, patient, note_content, injury=None, event=None):
         """Helper method to add a treatment note to a patient, optionally linked
@@ -820,7 +820,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         
         # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_notes_values(patient, notes, post))
         return self._sc_render('bemade_sports_clinic.portal_treatment_notes',
                                'bemade_sports_clinic.sc_app_treatment_notes', values)
@@ -840,7 +840,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # Task 1665: the same list as the note edit picker.
             'sc_injury_choices': self._sc_note_injury_options(patient),
             'sc_note_draft_prefix': 'sports.patient.%s.new_note.' % patient.id,
-            'sc_flash': {
+            'pk_flash': {
                 'success': {
                     'note_added': env._("Treatment note added successfully."),
                     'note_updated': env._("Treatment note updated."),
@@ -1040,7 +1040,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Task 1581: the page is retired in the app shell — the history is
         # the injury page's sheet now; an old link lands on that page (same
         # team / clinic context). Switch off: today's page, unchanged.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             # Task 1616: … which is now the injury's open card.
             return self._sc_injury_card_redirect(injury, post, team_id=team_context_id)
         values = {
@@ -1129,7 +1129,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         keyed = [((row.note_datetime or row.create_date, 1, row.id), self._sc_history_entry(
             row.note_datetime, row.author_id.name, row.content,
             action=scope_labels.get(row.scope) if is_treatment_prof else None,
-            tone='mauve' if row.scope == 'internal' else 'ghost',
+            tone='secondary' if row.scope == 'internal' else 'ghost',
             scope=row.scope,
         )) for row in histories]
         if is_treatment_prof and scope in ('all', 'internal'):
@@ -1161,7 +1161,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         injury = self._check_access_to_injury(injury_id)
         # Task 1616: in the app shell the documents are the injury card's
         # « Documents » section — an old link lands on the open card.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             return self._sc_injury_card_redirect(injury, post, team_id=team_id)
             
         # Get documents for this injury
@@ -1484,7 +1484,54 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return _back('error=permission_denied')
 
         document._sc_portal_archive(user)
+        # Task 1736 (owner 2026-11-01): the app shell's archive icon — no
+        # banner, an « Document archived · Undo » toast instead.
+        if post.get('sc_undo'):
+            undo = '/my/injury/document/restore/%s' % document.id
+            if return_url:
+                undo += '?return_url=%s' % url_quote(return_url, safe='')
+            self._pk_offer_undo(request.env._("Document archived."), undo)
+            return request.redirect(return_url or fallback)
         return _back('success=document_deleted')
+
+    @http.route(['/my/injury/document/restore/<int:document_id>'], type='http', auth='user',
+                website=True, methods=['POST'], csrf=True)
+    def restore_injury_document(self, document_id, **post):
+        """Task 1736: « Annuler » of a document just archived from the app
+        (the archive icon's undo toast) — the same right as the archive (its
+        uploader or a clinic administrator, with access to the injury / the
+        player); the player's chatter says it is back."""
+        document = request.env['sports.injury.document'].sudo().with_context(
+            active_test=False).browse(int(document_id))
+        if not document.exists():
+            raise request.not_found()
+        try:
+            if document.injury_id:
+                self._check_access_to_injury(document.injury_id.id)
+            else:
+                self._check_access_to_patient(document.patient_id.id)
+        except (UserError, AccessError):
+            raise request.not_found()
+        ctx_qs = _nav_ctx_qs(post, self._clinic_context(post))
+        return_url = self._safe_return_url(post.get('return_url'), None)
+        if document.injury_id:
+            fallback = f'/my/injury/documents?injury_id={document.injury_id.id}{ctx_qs}'
+        else:
+            fallback = f'/my/player?player_id={document.patient_id.id}{ctx_qs}&tab=documents'
+        user = request.env.user
+        allowed = (
+            (self._is_treatment_professional() or self._is_clinic_admin())
+            and document._sc_can_manage(user)
+        )
+        if not allowed:
+            _logger.info("Document %s restore refused for user %s", document.id, user.id)
+            return request.redirect(self._url_with_query(return_url or fallback, 'error=permission_denied'))
+        if not document.active:
+            document._sc_portal_restore(user)
+        request.session['notification'] = {
+            'type': 'success', 'title': '', 'message': request.env._("Document restored."),
+        }
+        return request.redirect(return_url or fallback)
 
     @http.route(['/my/injury/verify'], type='http', auth='user', website=True, methods=['POST'])
     def verify_injury(self, injury_id, **post):

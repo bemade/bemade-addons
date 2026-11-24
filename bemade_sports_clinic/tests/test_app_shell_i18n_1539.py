@@ -77,15 +77,21 @@ class TestAppShellI18n1539(TestAppShellI18n1538):
         self._switch(True)
         self._login_tp()
         text = self._fr_text('/my/activities')
+        # Task 1736 r1 (deliberate update): no « Reprogrammer » — the card's
+        # pencil (« Modifier ») edits the due date in place.
         for term in ('Toutes (', 'En retard (', "Aujourd'hui (", 'Planifiées (',
-                     "Terminer l'activité", 'Reprogrammer'):
+                     "Terminer l'activité", 'aria-label="Modifier"'):
             self.assertIn(term, text, term)
 
     def test_p2_owl_strings_served_in_french(self):
-        resp = self.url_open('/web/webclient/translations?lang=fr_CA&mods=bemade_sports_clinic')
+        # Task 5382 (kit P4c3): the autosave field's texts are the kit's.
+        resp = self.url_open('/web/webclient/translations?lang=fr_CA'
+                             '&mods=bemade_portal_kit,bemade_sports_clinic')
+        modules = resp.json()['modules']
         messages = {
             m['id']: m['string']
-            for m in resp.json()['modules']['bemade_sports_clinic']['messages']}
+            for name in ('bemade_portal_kit', 'bemade_sports_clinic')
+            for m in modules[name]['messages']}
         for source, french in (('Undo', 'Annuler'), ('Change saved', 'Modification enregistrée'),
                                ('N/A', 'S/O'), ('Clear', 'Effacer')):
             self.assertEqual(messages.get(source), french, source)

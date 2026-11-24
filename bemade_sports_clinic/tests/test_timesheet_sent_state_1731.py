@@ -114,7 +114,7 @@ class TestTimesheetSent1731(TimesheetSent1731Common):
         chip = self._chip(card)
         self.assertEqual(chip.get('data-sc-ts-state'), 'submitted')
         self.assertEqual(self._text(chip), 'Submitted ✓')
-        self.assertIn('o_sc_chip_green', chip.get('class'))
+        self.assertIn('o_pk_chip_green', chip.get('class'))
 
     def test_timesheets_list_chips(self):
         self._login_tp()
@@ -124,7 +124,7 @@ class TestTimesheetSent1731(TimesheetSent1731Common):
         self.assertEqual(self._text(submitted), 'Submitted ✓')
         self.assertEqual(billed.get('data-sc-ts-state'), 'invoiced')
         self.assertEqual(self._text(billed), 'Billed')
-        self.assertNotIn('o_sc_chip_green', billed.get('class'))
+        self.assertNotIn('o_pk_chip_green', billed.get('class'))
 
     # -- UC-2 -------------------------------------------------------------
     def test_add_says_sent(self):
@@ -145,8 +145,8 @@ class TestTimesheetSent1731(TimesheetSent1731Common):
     def test_editable_card_hint_and_sent_label(self):
         self._login_tp()
         card = self._card(self._tree('/my/event/%s' % self.event.id), self.timesheet)
-        self.assertEqual(card.get('data-sc-edit-card'), 'timesheet-%s' % self.timesheet.id)
-        hint = card.xpath('.//*[@data-sc-edit-view="edit"]//*[@data-sc-ts-sent-hint]')
+        self.assertEqual(card.get('data-pk-edit-card'), 'timesheet-%s' % self.timesheet.id)
+        hint = card.xpath('.//*[@data-pk-edit-view="edit"]//*[@data-sc-ts-sent-hint]')
         self.assertTrue(hint, 'the hint sits in the edit view')
         self.assertEqual(self._hint(card), HINT_EN)
         props = {p['field']: p for p in self._props(card)}
@@ -190,7 +190,7 @@ class TestTimesheetSentFr1731(TimesheetSent1731Common):
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

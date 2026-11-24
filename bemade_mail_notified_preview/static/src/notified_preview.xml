@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="bemade_mail_notified_preview.NotifiedPreview">
+        <div
+      class="o-mail-NotifiedPreview small fst-italic pe-3 pb-1"
+      style="padding-left: calc(1rem + 54px)"
+      t-att-class="state.warn ? 'text-warning-emphasis' : 'text-muted'"
+      t-att-data-key="previewKey"
+      t-if="state.line"
+      t-esc="state.line"
+    />
+        <span t-else="" class="d-none" t-att-data-key="previewKey" />
+    </t>
+
+    <t t-inherit="mail.Chatter" t-inherit-mode="extension">
+        <xpath expr="//RecipientsInput/.." position="after">
+            <NotifiedPreview thread="state.thread" />
+        </xpath>
+    </t>
+
+</templates>

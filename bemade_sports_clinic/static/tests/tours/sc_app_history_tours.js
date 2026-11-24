@@ -17,14 +17,14 @@ const ANN = "Tour 1581 synthetic announcement";
 const NOTE = "Tour 1581 synthetic external note";
 
 function entries(sheet) {
-    return [...document.querySelectorAll(`${sheetSel(sheet)}[open] li.o_sc_history_entry`)];
+    return [...document.querySelectorAll(`${sheetSel(sheet)}[open] li.o_pk_history_entry`)];
 }
 
 // Task 1616: the injury notes live in the open injury card — its combined
 // notes-history sheet is « sc_note_history_sheet_<injury id> ».
 // Task 1675: the Notes section (its head holds the one « History »), one
 // edit card per note.
-const NOTES_CARD = 'details.o_sc_injury_item[open] section[data-sc-section="injury.notes"]';
+const NOTES_CARD = 'details.o_sc_injury_item[open] section[data-pk-section="injury.notes"]';
 const NOTES_SHEET = 'dialog[id^="sc_note_history_sheet_"]:not([id$="_external"]):not([id$="_internal"])';
 
 function sheetSel(sheet) {
@@ -37,7 +37,7 @@ tours.add("sc_1581_announcement_fresh", {
         {
             content: "« History » in the announcement header; mark the page to detect a reload",
             trigger:
-                '[data-sc-section="team.announcement.area"] .o_sc_section_header .o_sc_link_btn[data-sc-sheet-open="sc_announcement_history_sheet"]',
+                '[data-pk-section="team.announcement.area"] .o_pk_section_header .o_pk_link_btn[data-pk-sheet-open="sc_announcement_history_sheet"]',
             run(helpers) {
                 window.__sc1581NoReload = true;
                 return helpers.click();
@@ -45,7 +45,7 @@ tours.add("sc_1581_announcement_fresh", {
         },
         {
             content: "The sheet lists the existing entries",
-            trigger: "dialog#sc_announcement_history_sheet[open] li.o_sc_history_entry",
+            trigger: "dialog#sc_announcement_history_sheet[open] li.o_pk_history_entry",
             run() {
                 window.__sc1581Count = entries("sc_announcement_history_sheet").length;
                 assert(window.__sc1581Count === 2, `entries: ${window.__sc1581Count}`);
@@ -53,7 +53,7 @@ tours.add("sc_1581_announcement_fresh", {
         },
         {
             content: "Close the sheet",
-            trigger: "dialog#sc_announcement_history_sheet[open] [data-sc-sheet-close]",
+            trigger: "dialog#sc_announcement_history_sheet[open] [data-pk-sheet-close]",
             run: "click",
         },
         {
@@ -74,12 +74,12 @@ tours.add("sc_1581_announcement_fresh", {
         },
         {
             content: "Open the history again",
-            trigger: '.o_sc_link_btn[data-sc-sheet-open="sc_announcement_history_sheet"]',
+            trigger: '.o_pk_link_btn[data-pk-sheet-open="sc_announcement_history_sheet"]',
             run: "click",
         },
         {
             content: "The new entry is there, fetched again (no reload)",
-            trigger: `dialog#sc_announcement_history_sheet[open] li.o_sc_history_entry:contains(${ANN})`,
+            trigger: `dialog#sc_announcement_history_sheet[open] li.o_pk_history_entry:contains(${ANN})`,
             run() {
                 assert(window.__sc1581NoReload, "the page reloaded");
                 const count = entries("sc_announcement_history_sheet").length;
@@ -95,7 +95,7 @@ tours.add("sc_1581_notes_fresh", {
         {
             content: "« History » next to the External Notes label",
             trigger:
-                `${NOTES_CARD} .o_sc_edit_card_head .o_sc_link_btn[data-sc-sheet-open^="sc_note_history_sheet_"]`,
+                `${NOTES_CARD} .o_pk_edit_card_head .o_pk_link_btn[data-pk-sheet-open^="sc_note_history_sheet_"]`,
             run(helpers) {
                 window.__sc1581NoReload = true;
                 return helpers.click();
@@ -103,7 +103,7 @@ tours.add("sc_1581_notes_fresh", {
         },
         {
             content: "The notes history, all scopes",
-            trigger: `${NOTES_SHEET}[open] nav[data-sc-section="history.scope"] a[href$="scope=all"][aria-pressed="true"]`,
+            trigger: `${NOTES_SHEET}[open] nav[data-pk-section="history.scope"] a[href$="scope=all"][aria-pressed="true"]`,
             run() {
                 window.__sc1581Count = entries("sc_note_history_sheet").length;
                 assert(window.__sc1581Count === 3, `entries: ${window.__sc1581Count}`);
@@ -111,52 +111,52 @@ tours.add("sc_1581_notes_fresh", {
         },
         {
             content: "Filter: internal only (re-fetched inside the sheet)",
-            trigger: `${NOTES_SHEET}[open] nav[data-sc-section="history.scope"] a[href$="scope=internal"]`,
+            trigger: `${NOTES_SHEET}[open] nav[data-pk-section="history.scope"] a[href$="scope=internal"]`,
             run: "click",
         },
         {
             content: "Only internal entries",
             trigger: `${NOTES_SHEET}[open] a[href$="scope=internal"][aria-pressed="true"]`,
             run() {
-                const scopes = entries("sc_note_history_sheet").map((li) => li.dataset.scScope);
+                const scopes = entries("sc_note_history_sheet").map((li) => li.dataset.pkScope);
                 assert(scopes.length === 1 && scopes[0] === "internal", `scopes: ${scopes}`);
             },
         },
         {
             content: "Close the sheet",
-            trigger: `${NOTES_SHEET}[open] [data-sc-sheet-close]`,
+            trigger: `${NOTES_SHEET}[open] [data-pk-sheet-close]`,
             run: "click",
         },
         {
             content: "Edit the notes card (pencil)",
-            trigger: `${NOTES_CARD} [data-sc-edit-card="injury-notes-external"] button[data-sc-edit-toggle]`,
+            trigger: `${NOTES_CARD} [data-pk-edit-card="injury-notes-external"] button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "Type an external note",
-            trigger: '.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="external_notes"] textarea',
+            trigger: '.o_sc_injury_item[open] .o_pk_autosave[data-pk-autosave-field="external_notes"] textarea',
             run: `edit ${NOTE}`,
         },
         {
             content: "Leave the field so it saves",
-            trigger: '.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="external_notes"] textarea',
+            trigger: '.o_sc_injury_item[open] .o_pk_autosave[data-pk-autosave-field="external_notes"] textarea',
             run() {
                 this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
             },
         },
         {
             content: "Saved",
-            trigger: '.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="external_notes"][data-sc-state="saved"]',
+            trigger: '.o_sc_injury_item[open] .o_pk_autosave[data-pk-autosave-field="external_notes"][data-pk-autosave-state="saved"]',
         },
         {
             content: "Open the history again",
             trigger:
-                `${NOTES_CARD} .o_sc_edit_card_head .o_sc_link_btn[data-sc-sheet-open^="sc_note_history_sheet_"]`,
+                `${NOTES_CARD} .o_pk_edit_card_head .o_pk_link_btn[data-pk-sheet-open^="sc_note_history_sheet_"]`,
             run: "click",
         },
         {
             content: "All scopes again, with the new note — no reload",
-            trigger: `${NOTES_SHEET}[open] li.o_sc_history_entry:contains(${NOTE})`,
+            trigger: `${NOTES_SHEET}[open] li.o_pk_history_entry:contains(${NOTE})`,
             run() {
                 assert(window.__sc1581NoReload, "the page reloaded");
                 const count = entries("sc_note_history_sheet").length;

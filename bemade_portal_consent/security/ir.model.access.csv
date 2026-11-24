@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_portal_consent_document_manager,portal.consent.document manager,model_portal_consent_document,group_portal_consent_manager,1,1,1,1
+access_portal_consent_version_manager,portal.consent.version manager,model_portal_consent_version,group_portal_consent_manager,1,1,1,1
+access_portal_consent_acceptance_manager,portal.consent.acceptance manager,model_portal_consent_acceptance,group_portal_consent_manager,1,0,0,0
+access_portal_consent_acceptance_system,portal.consent.acceptance system,model_portal_consent_acceptance,base.group_system,1,0,0,1
+access_portal_consent_acceptance_portal,portal.consent.acceptance portal,model_portal_consent_acceptance,base.group_portal,1,0,0,0
+access_portal_consent_publish_wizard_manager,portal.consent.publish.wizard manager,model_portal_consent_publish_wizard,group_portal_consent_manager,1,1,1,0

@@ -3896,3 +3896,8 @@ msgstr "Évènement du calendrier de l'activité suivante"
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_qualification__rating_ids
 msgid "Ratings"
 msgstr "Évaluations"
+
+#. module: hr_skills_cbet
+#: model:ir.model,name:hr_skills_cbet.model_hr_version
+msgid "Employee Contract"
+msgstr "Contrat de l'employé"

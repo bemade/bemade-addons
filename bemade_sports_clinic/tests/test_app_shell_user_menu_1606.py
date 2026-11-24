@@ -69,7 +69,7 @@ class UserMenuCommon(AppShellCommon):
     def _menu(tree, where='bar'):
         """(trigger button, menu) of the ``bar`` user menu (task 1638: the
         only one; ``rail`` must find nothing)."""
-        menu_id = 'sc_user_menu_%s' % where
+        menu_id = 'pk_user_menu_%s' % where
         triggers = tree.xpath('//button[@aria-controls="%s"]' % menu_id)
         menus = tree.xpath('//*[@id="%s"]' % menu_id)
         return (triggers[0] if len(triggers) == 1 else None,
@@ -89,10 +89,10 @@ class TestUserMenu1606(UserMenuCommon):
             for url in ('/my/home', '/my/teams', '/my/app/more'):
                 _text, tree = self._get(url)
                 # Task 1638: exactly one user menu in the DOM, none in the rail.
-                self.assertEqual(len(tree.xpath('//*[@data-sc-user-menu-popup]')), 1, url)
-                self.assertEqual(len(tree.xpath('//button[@data-sc-user-menu-toggle]')), 1, url)
-                self.assertFalse(tree.xpath('//aside[contains(@class, "o_sc_rail")]'
-                                            '//*[@data-sc-user-menu-toggle or @data-sc-user-menu]'))
+                self.assertEqual(len(tree.xpath('//*[@data-pk-user-menu-popup]')), 1, url)
+                self.assertEqual(len(tree.xpath('//button[@data-pk-user-menu-toggle]')), 1, url)
+                self.assertFalse(tree.xpath('//aside[contains(@class, "o_pk_rail")]'
+                                            '//*[@data-pk-user-menu-toggle or @data-pk-user-menu]'))
                 self.assertEqual(self._menu(tree, 'rail'), (None, None))
                 for where in ('bar',):
                     trigger, menu = self._menu(tree, where)
@@ -111,18 +111,18 @@ class TestUserMenu1606(UserMenuCommon):
                     self.assertEqual(hrefs[0], '/my/app/settings')
                     self.assertTrue(hrefs[1].startswith(LOGOUT), hrefs)
                     head = ' '.join(' '.join(
-                        menu.xpath('.//*[@data-sc-user-menu-head]//text()')).split())
+                        menu.xpath('.//*[@data-pk-user-menu-head]//text()')).split())
                     self.assertIn(user.name, head)
                     self.assertIn(role, head)
-                    self.assertEqual(menu.xpath('.//*[@data-sc-user-menu-head]/@aria-hidden'),
+                    self.assertEqual(menu.xpath('.//*[@data-pk-user-menu-head]/@aria-hidden'),
                                      [], 'the name must stay readable')
-                    self.assertFalse(menu.xpath('.//*[@role="menu"]//*[@data-sc-user-menu-head]'))
+                    self.assertFalse(menu.xpath('.//*[@role="menu"]//*[@data-pk-user-menu-head]'))
                 # App bar: the initials + a label (the name and role are
                 # in the opened menu's head, task 1638).
                 trigger, _menu = self._menu(tree, 'bar')
                 self.assertEqual(trigger.get('aria-label'), 'User menu')
-                self.assertTrue(trigger.xpath('ancestor::header[contains(@class, "o_sc_appbar")]'))
-                initials = trigger.xpath('.//*[contains(@class, "o_sc_avatar")]')
+                self.assertTrue(trigger.xpath('ancestor::header[contains(@class, "o_pk_appbar")]'))
+                initials = trigger.xpath('.//*[contains(@class, "o_pk_avatar")]')
                 self.assertEqual(len(initials), 1)
                 self.assertEqual(initials[0].text_content().strip(),
                                  ''.join(p[0] for p in user.name.split()[:2]).upper())
@@ -132,9 +132,9 @@ class TestUserMenu1606(UserMenuCommon):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/teams')
-        bar = tree.xpath('//header[contains(@class, "o_sc_appbar")]')[0]
+        bar = tree.xpath('//header[contains(@class, "o_pk_appbar")]')[0]
         last = bar.getchildren()[-1]
-        self.assertTrue(last.xpath('.//button[@aria-controls="sc_user_menu_bar"]'))
+        self.assertTrue(last.xpath('.//button[@aria-controls="pk_user_menu_bar"]'))
         self.assertTrue(bar.xpath('.//*[@data-sc-activity-clock-bar]'))
         self.assertTrue(bar.xpath('.//a[@href="/my/players"]'))
 
@@ -156,7 +156,7 @@ class TestUserMenu1606(UserMenuCommon):
             login()
             _text, tree = self._get('/my/app/settings')
             self.assertIsNotNone(self._shell(tree))
-            main = tree.xpath('//main[@id="sc_content"]')[0]
+            main = tree.xpath('//main[@id="pk_content"]')[0]
             hrefs = set(main.xpath('.//a/@href'))
             for href in ('/my/account', '/my/security'):
                 self.assertIn(href, hrefs)
@@ -165,25 +165,25 @@ class TestUserMenu1606(UserMenuCommon):
             self.assertFalse([h for h in hrefs if 'classic=1' in h])
             # Logging out is the menu's job (no duplicate row here).
             self.assertFalse([h for h in hrefs if h.startswith(LOGOUT)])
-            lang = main.xpath('.//section[@id="sc_language"]//form')
+            lang = main.xpath('.//section[@id="pk_language"]//form')
             self.assertEqual(len(lang), 1)
             self.assertEqual(lang[0].xpath('.//input[@name="redirect"]/@value'),
                              ['/my/app/settings'])
             # Task 1602: forced dark -> no Appearance block.
-            self.assertFalse(main.xpath('.//*[@id="sc_appearance"]'))
+            self.assertFalse(main.xpath('.//*[@id="pk_appearance"]'))
             # No app navigation entries on this page.
-            self.assertFalse(main.xpath('.//a[@data-sc-nav-key]'))
+            self.assertFalse(main.xpath('.//a[@data-pk-nav-key]'))
 
     def test_settings_appearance_when_choice_enabled(self):
         self._switch(True)
         self._theme_choice(True)
         self._login_coach()
         _text, tree = self._get('/my/app/settings')
-        form = tree.xpath('//*[@id="sc_appearance"]//form[@data-sc-pref]')
+        form = tree.xpath('//*[@id="pk_appearance"]//form[@data-pk-pref]')
         self.assertEqual(len(form), 1)
         # Task 1726: a switch posting dark (on) / light (its off twin).
-        self.assertTrue(form[0].xpath('.//input[@role="switch"][@name="sc_theme"][@value="dark"]'))
-        self.assertTrue(form[0].xpath('.//input[@type="hidden"][@name="sc_theme"][@value="light"]'))
+        self.assertTrue(form[0].xpath('.//input[@role="switch"][@name="pk_theme"][@value="dark"]'))
+        self.assertTrue(form[0].xpath('.//input[@type="hidden"][@name="pk_theme"][@value="light"]'))
         self.assertEqual(form[0].xpath('.//input[@name="redirect"]/@value'),
                          ['/my/app/settings'])
 
@@ -191,12 +191,12 @@ class TestUserMenu1606(UserMenuCommon):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/app/settings')
-        self.assertEqual(self._shell(tree).get('data-sc-top'), '0')
-        self.assertEqual(tree.xpath('//header//a[@data-sc-back]/@href'), ['/my/home'])
+        self.assertEqual(self._shell(tree).get('data-pk-top'), '0')
+        self.assertEqual(tree.xpath('//header//a[@data-pk-back]/@href'), ['/my/home'])
         crumbs = [(a.get('href'), a.text_content().strip())
-                  for a in tree.xpath('//nav[contains(@class, "o_sc_crumbs")]//li/a')]
+                  for a in tree.xpath('//nav[contains(@class, "o_pk_crumbs")]//li/a')]
         self.assertEqual(crumbs, [('/my/home', 'Dashboard')])
-        current = tree.xpath('//nav[contains(@class, "o_sc_crumbs")]//li[@aria-current="page"]')
+        current = tree.xpath('//nav[contains(@class, "o_pk_crumbs")]//li[@aria-current="page"]')
         self.assertEqual(current[0].text_content().strip(), 'Settings')
         # Nothing on the bottom tabs / rail claims to be the current page.
         self.assertFalse(tree.xpath('//nav//a[@aria-current="page"]'))
@@ -208,16 +208,16 @@ class TestUserMenu1606(UserMenuCommon):
         for login in (self._login_coach, self._login_tp, self._login_itp):
             login()
             _text, tree = self._get('/my/app/more')
-            main = tree.xpath('//main[@id="sc_content"]')[0]
-            for section in ('sc_language', 'sc_appearance', 'sc_account'):
+            main = tree.xpath('//main[@id="pk_content"]')[0]
+            for section in ('pk_language', 'pk_appearance', 'pk_account'):
                 self.assertFalse(main.xpath('.//*[@id="%s"]' % section), section)
             hrefs = set(main.xpath('.//a/@href'))
             for href in ('/my/account', '/my/security', '/my/home?classic=1'):
                 self.assertNotIn(href, hrefs)
             self.assertFalse([h for h in hrefs if h.startswith(LOGOUT)])
-            self.assertFalse(main.xpath('.//button[@name="lang"] | .//*[@name="sc_theme"]'))
+            self.assertFalse(main.xpath('.//button[@name="lang"] | .//*[@name="pk_theme"]'))
             # The app entries stay.
-            self.assertIn('install', main.xpath('.//a/@data-sc-nav-key'))
+            self.assertIn('install', main.xpath('.//a/@data-pk-nav-key'))
 
     # -- UC-M4 -----------------------------------------------------------
     def test_pref_without_redirect_lands_on_settings(self):
@@ -225,7 +225,7 @@ class TestUserMenu1606(UserMenuCommon):
         self._theme_choice(True)
         self._login_coach()
         resp = self.url_open('/my/app/pref', data={
-            'csrf_token': self._csrf(), 'sc_theme': 'light'}, allow_redirects=False)
+            'csrf_token': self._csrf(), 'pk_theme': 'light'}, allow_redirects=False)
         self.assertIn(resp.status_code, (302, 303))
         self.assertTrue(resp.headers['Location'].endswith('/my/app/settings'),
                         resp.headers['Location'])
@@ -253,7 +253,7 @@ class TestUserMenuFrench1606(UserMenuCommon):
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):
@@ -281,7 +281,7 @@ class TestUserMenuFrench1606(UserMenuCommon):
                 labels = [' '.join(i.text_content().split())
                           for i in menu.xpath('.//*[@role="menuitem"]')]
                 self.assertEqual(labels, ['Paramètres', 'Se déconnecter'])
-                head = ' '.join(menu.xpath('.//*[@data-sc-user-menu-head]//text()'))
+                head = ' '.join(menu.xpath('.//*[@data-pk-user-menu-head]//text()'))
                 self.assertIn(role, head)
                 if where == 'bar':
                     self.assertEqual(trigger.get('aria-label'), 'Menu utilisateur')

@@ -6,3 +6,8 @@ from . import test_price_age
 from . import test_evidence
 from . import test_expiry_warning
 from . import test_extension_point
+from . import test_company_scope
+from . import test_wording
+from . import test_indicative
+from . import test_zero_valued_stock
+from . import test_seller_freshness

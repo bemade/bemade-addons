@@ -108,7 +108,7 @@
                         <!-- Task 1383 (revised): both Cancel and a
                              semantically-identical Done link back to the
                              player page; Save stays on the edit form.
-                             English source + fr_CA.po (CR-D4). -->
+                             English source + fr.po (CR-D4). -->
                         <div class="d-flex flex-wrap gap-2">
                             <a t-att-href="return_url" class="btn btn-outline-secondary flex-fill">
                                 <i class="fa fa-times"></i> Cancel

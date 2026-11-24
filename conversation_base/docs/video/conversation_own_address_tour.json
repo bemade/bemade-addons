@@ -1,0 +1,12 @@
+{
+  "stepsFile": "../../static/tests/tours/conversation_own_address_tour.steps.js",
+  "startPath": "/odoo/action-conversation_base.mail_conversation_action",
+  "lang": "fr_CA",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "voice": "fr_FR-siwis-medium",
+  "title": "L'adresse de l'équipe n'est plus parmi les destinataires d'une réponse",
+  "introNarration": "Dans cette démonstration, nous voyons qu'un courriel reçu par l'équipe ne place plus l'adresse de l'équipe parmi les participants de la conversation.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "Une réponse ne contient désormais que les vraies personnes concernées : les personnes de l'extérieur et les personnes en copie, jamais l'adresse de l'équipe."
+}

@@ -30,6 +30,13 @@ class ResUsers(models.Model):
         help="Signature the user had before the company-standard signature "
         "was enforced.",
     )
+    # Self-service toggle, same pattern as hr's own employee fields on the user
+    # (registered in SELF_READABLE/WRITEABLE_FIELDS below).
+    signature_show_mobile = fields.Boolean(
+        related="employee_id.signature_show_mobile",
+        readonly=False,
+        related_sudo=False,
+    )
     signature_is_generated = fields.Boolean(
         groups="base.group_system",
         copy=False,
@@ -37,6 +44,21 @@ class ResUsers(models.Model):
         help="Set when the current signature was produced by the company "
         "template rather than written by a person.",
     )
+
+    @property
+    def SELF_READABLE_FIELDS(self):
+        # company_signature_enforced sits (invisible) on the preferences form.
+        # A form field missing from this list makes res.users.read() drop its
+        # self-read sudo, so a non-HR user's My Preferences then fails on hr's
+        # private employee fields (pin, private_street, ...).
+        return super().SELF_READABLE_FIELDS + [
+            "company_signature_enforced",
+            "signature_show_mobile",
+        ]
+
+    @property
+    def SELF_WRITEABLE_FIELDS(self):
+        return super().SELF_WRITEABLE_FIELDS + ["signature_show_mobile"]
 
     @api.depends(
         "company_id",
@@ -152,6 +174,7 @@ class ResUsers(models.Model):
         "employee_ids.job_id.name",
         "employee_ids.work_phone",
         "employee_ids.mobile_phone",
+        "employee_ids.signature_show_mobile",
         "employee_ids.work_email",
     )
     def _compute_signature(self):
@@ -164,6 +187,28 @@ class ResUsers(models.Model):
             company = user.company_id.sudo()
             user.signature = company._company_signature_compact(
                 company._company_signature_render(values_by_user[user.id])
+            )
+
+    @api.onchange("signature_show_mobile")
+    def _onchange_signature_show_mobile(self):
+        """Refresh the signature preview in the form before saving.
+
+        The stored signature is regenerated on save; this only renders what
+        it will become, from the saved employee data and the box as ticked
+        in the form.
+        """
+        for user in self:
+            origin = user._origin
+            if not origin or origin not in origin._company_signature_enforced_users():
+                continue
+            values = origin.sudo()._company_signature_values()[origin.id]
+            emp = origin.sudo()._company_signature_employees().get(origin.id)
+            values["mobile_phone"] = (
+                (emp.mobile_phone or "") if emp and user.signature_show_mobile else ""
+            )
+            company = origin.company_id.sudo()
+            user.signature = company._company_signature_compact(
+                company._company_signature_render(values)
             )
 
     def _company_signature_values(self):
@@ -185,7 +230,10 @@ class ResUsers(models.Model):
                 "job_position": self._company_signature_job_position(emp),
                 "company_notice": notices[company.id],
                 "work_phone": (emp.work_phone if emp else "") or "",
-                "mobile_phone": (emp.mobile_phone if emp else "") or "",
+                "mobile_phone": (
+                    emp.mobile_phone if emp and emp.signature_show_mobile else ""
+                )
+                or "",
                 "work_email": (emp.work_email if emp else "") or user.email or "",
                 "company_name": company.name or "",
                 "company_phone": company.phone or "",

@@ -33,11 +33,11 @@ class _UserMenuTourCommon(AppShellCommon):
         super().setUpClass()
         env = cls.env
         env['ir.config_parameter'].sudo().set_param(
-            'bemade_sports_clinic.app_shell_enabled', 'True')
+            'bemade_portal_kit.enabled', 'True')
         fr = env['res.lang']._activate_lang('fr_CA')
         en = env['res.lang']._activate_lang('en_US')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             for website in env['website'].sudo().search([]):
                 website.language_ids = [Command.link(fr.id), Command.link(en.id)]

@@ -33,7 +33,7 @@ class _Tour1590Common(Clinic1540Common):
     def setUpClass(cls):
         super().setUpClass()
         cls.env['ir.config_parameter'].sudo().set_param(
-            'bemade_sports_clinic.app_shell_enabled', 'True')
+            'bemade_portal_kit.enabled', 'True')
 
     def _url(self):
         return '/my/clinic/%s?patient=%s&tab=dossier' % (self.clinic.id, self.player.id)

@@ -20,11 +20,11 @@ Acceptance criteria:
 * AC-6 French: « Non renseigné », « EpiPen ? », the gate message, the To-Do.
 * AC-7 (review round 1, owner 2026-10-27): the answer is ONE line — the
   « EpiPen » label and a segmented Oui / Non slider pill
-  (``o_sc_toggle_pill``, a radiogroup named by the label), nothing selected
+  (``o_pk_toggle_pill``, a radiogroup named by the label), nothing selected
   while unanswered.
 * AC-8 (review round 2, owner 2026-10-27): the pill reads Non | Oui (Non
-  left); the switch label has its own text (« Carries an EpiPen » / « Porte
-  un EpiPen »); « Non » / « Oui » / the label render in French; the
+  left); the switch label has its own text (#1739: the field's « EpiPen? » /
+  « EpiPen ? », as the gate messages quote it); « Non » / « Oui » / the label render in French; the
   allergies level pill sits in the popup's header, next to its title.
 """
 import importlib.util
@@ -144,8 +144,8 @@ class TestEpiPenGate1717(EpiPen1717Common):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=injuries' % player.id)
         sheet = tree.xpath('//dialog[@id="sc_med_player_allergy_%s"]' % player.id)[0]
-        card = sheet.xpath('.//section[@data-sc-section="medical.allergy.epipen"]')[0]
-        self.assertEqual(card.get('data-sc-edit-open-on-load'), '1')
+        card = sheet.xpath('.//section[@data-pk-section="medical.allergy.epipen"]')[0]
+        self.assertEqual(card.get('data-pk-edit-open-on-load'), '1')
         self.assertEqual(card.xpath('.//*[@data-sc-med-epipen-state]/@data-sc-med-epipen-state'), ['unset'])
         self.assertEqual(sorted(card.xpath('.//input[@type="radio"][@data-sc-med-set="allergy_epipen_state"]/@value')),
                          ['no', 'yes'])
@@ -154,27 +154,27 @@ class TestEpiPenGate1717(EpiPen1717Common):
         self.assertEqual(ask.get('role'), 'radiogroup')
         label = ask.xpath('./span[contains(@class, "o_sc_med_epipen_ask_label")]')[0]
         self.assertEqual(ask.get('aria-labelledby'), label.get('id'))
-        self.assertEqual(label.text_content().strip(), 'Carries an EpiPen')
-        pill = ask.xpath('./div[contains(@class, "o_sc_toggle_pill")]')[0]
+        self.assertEqual(label.text_content().strip(), 'EpiPen?')  # #1739
+        pill = ask.xpath('./div[contains(@class, "o_pk_toggle_pill")]')[0]
         # AC-8: Non | Oui.
         self.assertEqual([' '.join(o.text_content().split()) for o in pill.xpath('./label')], ['No', 'Yes'])
         self.assertEqual(pill.xpath('./label/@data-sc-toggle-opt'), ['no', 'yes'])
         self.assertEqual(pill.xpath('./label/input/@value'), ['no', 'yes'])
         # AC-8: the level pill in the popup's header, next to the title.
-        head = sheet.xpath('./div[contains(@class, "o_sc_sheet_head")]')[0]
+        head = sheet.xpath('./div[contains(@class, "o_pk_sheet_head")]')[0]
         self.assertTrue(head.xpath('./div[contains(@class, "o_sc_med_head")]/*[@data-sc-med-head]'))
-        self.assertFalse(sheet.xpath('.//*[contains(@class, "o_sc_sheet_body")]//*[@data-sc-med-head]'))
+        self.assertFalse(sheet.xpath('.//*[contains(@class, "o_pk_sheet_body")]//*[@data-sc-med-head]'))
         self.assertFalse(pill.xpath('.//input[@checked]'))
         self.assertTrue(sheet.xpath('.//*[@data-sc-med-epipen-first]'))
-        self.assertFalse(sheet.xpath('.//button[@data-sc-list-add-toggle]'))
+        self.assertFalse(sheet.xpath('.//button[@data-pk-list-add-toggle]'))
         self.assertTrue(sheet.xpath('.//input[@data-sc-med-set="allergy_none_confirmed"][@disabled]'))
         player.sudo().write({'allergy_epipen_state': 'yes'})
         _text, tree = self._get('/my/player?player_id=%s&tab=injuries' % player.id)
         sheet = tree.xpath('//dialog[@id="sc_med_player_allergy_%s"]' % player.id)[0]
         self.assertFalse(sheet.xpath('.//*[@data-sc-med-epipen-first]'))
-        self.assertTrue(sheet.xpath('.//button[@data-sc-list-add-toggle]'))
-        self.assertIsNone(sheet.xpath('.//section[@data-sc-section="medical.allergy.epipen"]')[0].get(
-            'data-sc-edit-open-on-load'))
+        self.assertTrue(sheet.xpath('.//button[@data-pk-list-add-toggle]'))
+        self.assertIsNone(sheet.xpath('.//section[@data-pk-section="medical.allergy.epipen"]')[0].get(
+            'data-pk-edit-open-on-load'))
 
     # -- AC-5 --------------------------------------------------------------
     def test_todo_to_the_creator(self):
@@ -196,7 +196,7 @@ class TestEpiPenGate1717(EpiPen1717Common):
     def test_french(self):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         self.tp.write({'lang': 'fr_CA'})
         player = self._new_player(user=self.tp)
         self.assertEqual(self._todos(player).summary, 'Compléter le dossier médical (allergies/EpiPen)')
@@ -207,7 +207,7 @@ class TestEpiPenGate1717(EpiPen1717Common):
                 'patient_id': player.id, 'family': 'allergy', 'name': 'Synthetic nut'})
         # AC-8: the switch in French (the popup's view translation).
         arch = env.ref('bemade_sports_clinic.sc_medical_sheets').with_context(lang='fr_CA').arch_db
-        self.assertIn('<t t-set="sc_epipen_ask_label">Porte un EpiPen</t>', arch)
+        self.assertIn('<t t-set="sc_epipen_ask_label">EpiPen ?</t>', arch)  # #1739
         self.assertIn('<t t-set="sc_epipen_no">Non</t>', arch)
         self.assertIn('<t t-set="sc_epipen_yes">Oui</t>', arch)
 

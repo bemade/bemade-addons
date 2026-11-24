@@ -24,7 +24,7 @@ Acceptance criteria covered here:
   title's main link carrying the whole title as its label — no nested
   anchors; a record the viewer may not open stays plain text.
 * RF6 The events list / calendar, clinics and timesheets filters apply on
-  change (``data-sc-autosubmit``; the « Apply filters » button kept only as
+  change (``data-pk-autosubmit``; the « Apply filters » button kept only as
   the no-JS / Enter fallback); the group by sits in its own labelled
   « Group by » group, not among the filters (task 1607: the sort moved to
   the list header). Tour: a date applies
@@ -191,20 +191,20 @@ class TestReviewFixes1014Pages(AppShellCommon):
                 (self.act_player, 'Pat One', '/my/player?player_id=%s' % self.player.id),
                 (self.act_team, 'PC Team A', '/my/team?team_id=%s' % self.team_a.id)):
             row = self._activity_row(tree, activity)
-            title = row.xpath('.//*[@data-sc-title-split]')
+            title = row.xpath('.//*[@data-pk-title-split]')
             self.assertEqual(len(title), 1, activity.summary)
             self.assertEqual(_text(title[0]), activity.summary)
-            links = title[0].xpath('.//a[contains(@class, "o_sc_row_title_link")]')
+            links = title[0].xpath('.//a[contains(@class, "o_pk_row_title_link")]')
             self.assertEqual([(a.get('href'), _text(a)) for a in links], [(url, name)])
-            main = row.xpath('.//a[contains(@class, "o_sc_link_row_main")]')
+            main = row.xpath('.//a[contains(@class, "o_pk_link_row_main")]')
             self.assertEqual(len(main), 1)
             self.assertEqual(main[0].get('href'), '/my/activity/%s' % activity.id)
             self.assertEqual(main[0].get('aria-label'), activity.summary)
             self.assertFalse(row.xpath('.//a//a'))
         # A title without a record name stays the plain main link.
         row = self._activity_row(tree, self.act_event)
-        self.assertFalse(row.xpath('.//*[@data-sc-title-split]'))
-        self.assertEqual(_text(row.xpath('.//a[contains(@class, "o_sc_link_row_main")]')[0]),
+        self.assertFalse(row.xpath('.//*[@data-pk-title-split]'))
+        self.assertEqual(_text(row.xpath('.//a[contains(@class, "o_pk_link_row_main")]')[0]),
                          self.act_event.summary)
 
     def test_activity_title_name_plain_when_refused(self):
@@ -214,16 +214,16 @@ class TestReviewFixes1014Pages(AppShellCommon):
                           side_effect=AccessError('refused')):
             _text_, tree = self._get('/my/activities')
         row = self._activity_row(tree, self.act_player)
-        self.assertFalse(row.xpath('.//*[@data-sc-title-split]'))
+        self.assertFalse(row.xpath('.//*[@data-pk-title-split]'))
         self.assertNotIn('/my/player?player_id=', lxml_html.tostring(row).decode())
 
     # -- RF6 -------------------------------------------------------------
     def _filter_form(self, tree, section):
-        forms = tree.xpath('//form[@data-sc-section="%s"]' % section)
+        forms = tree.xpath('//form[@data-pk-section="%s"]' % section)
         self.assertEqual(len(forms), 1, section)
         form = forms[0]
-        self.assertEqual(form.get('data-sc-autosubmit'), '1', section)
-        fallback = form.xpath('.//button[@type="submit"][@data-sc-autosubmit-fallback]')
+        self.assertEqual(form.get('data-pk-autosubmit'), '1', section)
+        fallback = form.xpath('.//button[@type="submit"][@data-pk-autosubmit-fallback]')
         self.assertEqual(len(fallback), 1, section)
         return form
 
@@ -236,7 +236,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
                 ('/my/sc/timesheets', 'timesheets.filters', 'timesheets.group')):
             _text_, tree = self._get(url)
             form = self._filter_form(tree, section)
-            group = form.xpath('.//fieldset[@data-sc-section="%s"]' % group_section)
+            group = form.xpath('.//fieldset[@data-pk-section="%s"]' % group_section)
             self.assertEqual(len(group), 1, url)
             self.assertEqual(_text(group[0].xpath('./legend')[0]), 'Group by')
             self.assertEqual(group[0].xpath('.//select/@name'), ['group_by'])
@@ -247,7 +247,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
         # The calendar shares the bar, without sort / group by.
         _text_, tree = self._get('/my/events/calendar')
         form = self._filter_form(tree, 'events.filters')
-        self.assertFalse(form.xpath('.//fieldset[@data-sc-section="events.group"]'))
+        self.assertFalse(form.xpath('.//fieldset[@data-pk-section="events.group"]'))
         _text_, tree = self._get('/my/clinics')
         self._filter_form(tree, 'clinics.filters')
 
@@ -262,12 +262,12 @@ class TestReviewFixes1014Pages(AppShellCommon):
         self.assertEqual(resp.status_code, 303)
         self.assertFalse(self.env['sports.event'].search([('name', '=', 'Synthetic bad times')]))
         _text_, tree = self._get('/my/event/create')
-        error = tree.xpath('//*[@data-sc-field-error="date_end"]')
+        error = tree.xpath('//*[@data-pk-field-error="date_end"]')
         self.assertEqual(len(error), 1)
         self.assertEqual(_text(error[0]), 'Event end time must be after start time.')
         self.assertEqual(tree.xpath('//input[@name="date_end"]/@aria-invalid'), ['true'])
         self.assertNotIn('Event end time must be after start time.',
-                         ' '.join(_text(b) for b in tree.xpath('//*[contains(@class, "o_sc_banner")]')))
+                         ' '.join(_text(b) for b in tree.xpath('//*[contains(@class, "o_pk_banner")]')))
         # On the event page (edited in place), the autosave answers the
         # refusal as the field's own message (400 + message).
         self.event.invalidate_recordset()
@@ -280,8 +280,8 @@ class TestReviewFixes1014Pages(AppShellCommon):
 
     # -- RF9 -------------------------------------------------------------
     def _add_card(self, tree):
-        return tree.xpath('//section[@data-sc-tab-panel="players"]'
-                          '/details[@data-sc-section="team.add_player"]')[0]
+        return tree.xpath('//section[@data-pk-tab-panel="players"]'
+                          '/details[@data-pk-section="team.add_player"]')[0]
 
     def test_add_player_one_set_of_fields(self):
         # Task 1655 (deliberate update): ONE set of name fields still — the
@@ -364,7 +364,7 @@ class TestReviewFixes1014I18n(TestAppShellI18n1538):
         }, allow_redirects=False)
         self.assertEqual(resp.status_code, 303)
         tree = lxml_html.fromstring(self._fr('/my/event/create'))
-        error = tree.xpath('//*[@data-sc-field-error="date_end"]')
+        error = tree.xpath('//*[@data-pk-field-error="date_end"]')
         self.assertEqual([_text(e) for e in error], ["La fin de l'événement doit être après le début."])
         self.event.invalidate_recordset()
         resp = self.url_open('/my/app/save/sports.event/%s' % self.event.id, data={

@@ -7,14 +7,15 @@ redirect away. Never a button that silently does nothing.
 
 Acceptance criteria covered here:
 
-* AC-1 Every submit form of the app shell is guarded (data-sc-guard) and
+* AC-1 Every submit form of the app shell is guarded (data-pk-guard) and
   keeps its POST contract (same action, same field names); the shared texts
   (« Complete: », the generic error) are rendered once by the layout; the
   #1655 panel uses the shared guard (its own data attributes kept).
-* AC-2 A guarded form's fetch (X-Sc-Guard) never consumes the pending
+* AC-2 A guarded form's fetch (X-Pk-Guard) never consumes the pending
   session toast: the real navigation that follows still shows it.
 * AC-3 (tours, phone) contact, timesheet, injury, event create,
-  announcement, activity reassign: greyed with a reason → ready when valid →
+  announcement (task 1736 r1: the activity reassign sheet is gone — its
+  refusal is the inline assignee field's, server-side test): greyed with a reason → ready when valid →
   a forced server refusal shows in the form, values kept, same page (and a
   valid contact / announcement goes through).
 """
@@ -22,7 +23,7 @@ from datetime import datetime, timedelta
 
 from lxml import html as lxml_html
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.tests import tagged
 
 from odoo.addons.bemade_sports_clinic.tests.test_internal_tp_parity_1577 import Parity1577Common
@@ -64,12 +65,12 @@ class TestFormGuard1658(Guard1658Common):
                 '/my/player/contact/save': ('fetch', {'name', 'contact_type', 'mobile', 'email', 'patient_id'}),
                 '/my/patient/injury/create': ('fetch', {'diagnosis', 'patient_id'}),
                 '/my/injury/note/add': ('fetch', {'patient_id', 'injury_id'}),
-                '/my/activity/save': ('fetch', {'summary', 'date_deadline', 'user_id', 'activity_type_id'}),
+                '/my/activity/save': ('fetch', {'summary', 'date_deadline', 'user_id'}),  # #1739: no type
             },
             '/my/activities': {
                 '/my/activity/complete': ('fetch', {'activity_id', 'feedback'}),
-                '/my/activity/reschedule': ('fetch', {'activity_id', 'new_deadline'}),
-                '/my/activity/reassign': ('fetch', {'activity_id', 'new_user_id'}),
+                # Task 1736 r1 (deliberate update): no reschedule / reassign
+                # sheets — the cards are edited in place (autosave fields).
                 '/my/activity/cancel': ('fetch', {'activity_id'}),
             },
             '/my/event/%s' % self.clinic_event.id: {
@@ -89,23 +90,23 @@ class TestFormGuard1658(Guard1658Common):
         }
         for page, forms in expectations.items():
             tree = self._tree(page)
-            self.assertTrue(tree.xpath('//*[@data-sc-guard-texts][@data-missing][@data-generic]'), page)
+            self.assertTrue(tree.xpath('//*[@data-pk-guard-texts][@data-missing][@data-generic]'), page)
             for action, (mode, names) in forms.items():
-                found = [f for f in tree.xpath('//form[@data-sc-guard]') if (f.get('action') or '').split('?')[0] == action]
+                found = [f for f in tree.xpath('//form[@data-pk-guard]') if (f.get('action') or '').split('?')[0] == action]
                 self.assertTrue(found, (page, action))
                 form = found[0]
-                self.assertEqual(form.get('data-sc-guard-mode') or 'native', mode, (page, action))
+                self.assertEqual(form.get('data-pk-guard-mode') or 'native', mode, (page, action))
                 self.assertEqual(form.get('method'), 'post', action)
                 present = set(form.xpath('.//*[@name]/@name'))
                 self.assertTrue(names <= present, (action, names - present))
-                self.assertTrue(form.xpath('.//*[@data-sc-guard-reason][@id]'), action)
-                self.assertTrue(form.xpath('.//*[@data-sc-guard-error]'), action)
+                self.assertTrue(form.xpath('.//*[@data-pk-guard-reason][@id]'), action)
+                self.assertTrue(form.xpath('.//*[@data-pk-guard-error]'), action)
         # The #1655 panel: on the shared guard, its own attributes kept.
         tree = self._tree('/my/players?add=1')
-        panel = tree.xpath('//form[@data-sc-player-add][@data-sc-guard]')
+        panel = tree.xpath('//form[@data-sc-player-add][@data-pk-guard]')
         self.assertTrue(panel)
-        self.assertTrue(panel[0].xpath('.//button[@data-sc-player-add-submit][@data-sc-guard-submit]'))
-        self.assertTrue(panel[0].xpath('.//*[@data-sc-player-add-reason][@data-sc-guard-reason]'))
+        self.assertTrue(panel[0].xpath('.//button[@data-sc-player-add-submit][@data-pk-guard-submit]'))
+        self.assertTrue(panel[0].xpath('.//*[@data-sc-player-add-reason][@data-pk-guard-reason]'))
 
     # -- AC-2 -------------------------------------------------------------
     def test_guard_probe_keeps_the_session_toast(self):
@@ -116,13 +117,13 @@ class TestFormGuard1658(Guard1658Common):
         self.url_open('/my/team/%s/announcement/restore' % self.team_a.id,
                       data={'csrf_token': self._csrf()}, allow_redirects=False)
         url = '/my/team?team_id=%s' % self.team_a.id
-        probe = self.url_open(url, headers={'X-Sc-Guard': '1'})
+        probe = self.url_open(url, headers={'X-Pk-Guard': '1'})
         tree = lxml_html.fromstring(probe.text)
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_toast")][@data-sc-notify]'), 'the probe sees it')
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_toast")][@data-pk-notify]'), 'the probe sees it')
         tree = self._tree(url)
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_toast")][@data-sc-notify]'), 'the real page still shows it')
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_toast")][@data-pk-notify]'), 'the real page still shows it')
         tree = self._tree(url)
-        self.assertFalse(tree.xpath('//*[contains(@class, "o_sc_toast")][@data-sc-notify]'), 'shown once')
+        self.assertFalse(tree.xpath('//*[contains(@class, "o_pk_toast")][@data-pk-notify]'), 'shown once')
 
 
 @tagged('post_install', '-at_install')
@@ -155,5 +156,17 @@ class TestFormGuardTours1658(Guard1658Common):
         self.assertEqual(self.team_a.announcement, 'Synthetic bus at 7 (1658)')
 
     def test_activity_reassign(self):
-        self.start_tour('/my/activities?x1658=%s' % self.plain.id, 'sc_1658_activity', login='pc.tp@example.com')
+        # Task 1736 r1 (deliberate update): the « Reassign » sheet is gone —
+        # the assignee is a field of the activity card's in-place edit (an
+        # autosave field: a refusal shows under the field, the value kept).
+        # The same forced refusal (a real user outside my assignable list)
+        # is answered 400 with its message, nothing written.
+        self.authenticate('pc.tp@example.com', 'pc-tp')
+        self.act_player.invalidate_recordset()
+        resp = self.url_open('/my/app/save/mail.activity/%s' % self.act_player.id, data={
+            'field': 'user_id', 'value': str(self.plain.id), 'csrf_token': self._csrf(),
+            'write_date': fields.Datetime.to_string(self.act_player.write_date)}, allow_redirects=False)
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('You cannot assign this activity to that user.', resp.json()['message'])
+        self.act_player.invalidate_recordset()
         self.assertEqual(self.act_player.user_id, self.tp)

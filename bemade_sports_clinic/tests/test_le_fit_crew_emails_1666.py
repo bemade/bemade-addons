@@ -49,7 +49,7 @@ class TestLeFitCrewEmails1666(TransactionCase):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         internal = env.ref('base.group_user').id
         tp = env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional').id
         cls.staff_fr = env['res.users'].create({
@@ -127,13 +127,13 @@ class TestTeamPlayersTabNoLegacyPanel1666(Parity1577Common):
         self._login_tp()
         text, tree = self._players_tab()
         self._assert_no_legacy(text, tree)
-        self.assertTrue(tree.xpath('//details[@data-sc-section="team.add_player"]//form[@data-sc-player-add]'))
+        self.assertTrue(tree.xpath('//details[@data-pk-section="team.add_player"]//form[@data-sc-player-add]'))
         self._login_coach()
         text, tree = self._players_tab()
         self._assert_no_legacy(text, tree)
         self.assertTrue(tree.xpath('//details[@id="sc_request_add"]'))
-        self.assertFalse(tree.xpath('//details[@data-sc-section="team.add_player"]'))
+        self.assertFalse(tree.xpath('//details[@data-pk-section="team.add_player"]'))
         self._login_cadmin()
         text, tree = self._players_tab()
         self._assert_no_legacy(text, tree)
-        self.assertTrue(tree.xpath('//details[@data-sc-section="team.add_player"]//form[@data-sc-player-add]'))
+        self.assertTrue(tree.xpath('//details[@data-pk-section="team.add_player"]//form[@data-sc-player-add]'))

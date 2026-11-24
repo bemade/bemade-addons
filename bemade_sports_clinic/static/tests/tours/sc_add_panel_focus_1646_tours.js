@@ -20,7 +20,7 @@ function assert(condition, message) {
     }
 }
 
-const ADD = 'button[data-sc-list-add-toggle][aria-controls="sc_note_add"]';
+const ADD = 'button[data-pk-list-add-toggle][aria-controls="sc_note_add"]';
 const PANEL = "details#sc_note_add";
 
 tours.add("sc_1646_notes_laptop", {

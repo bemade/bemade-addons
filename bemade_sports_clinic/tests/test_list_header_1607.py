@@ -4,8 +4,8 @@ right, no list action left in the app bar. Synthetic fixtures only.
 Acceptance criteria covered here:
 
 * UC-H1 The app bar carries no page action on any shell page (no
-  ``o_sc_appbar_action`` / action slot): only the app-wide items.
-* UC-H2 One list header (``.o_sc_list_header``) right above each list: its
+  ``o_pk_appbar_action`` / action slot): only the app-wide items.
+* UC-H2 One list header (``.o_pk_list_header``) right above each list: its
   « + Ajouter » always reads « Add » (« Ajouter »), its accessible name is the
   full action (``aria-label``), and it reaches the SAME target as before —
   a link (players « Create a player », events « New event » on the list's
@@ -50,9 +50,9 @@ class ListHeader1607Common(Clinic1540Common):
 
     @staticmethod
     def _headers(tree, section=None):
-        xpath = '//div[contains(concat(" ", @class, " "), " o_sc_list_header ")]'
+        xpath = '//div[contains(concat(" ", @class, " "), " o_pk_list_header ")]'
         if section:
-            xpath += '[@data-sc-section="%s"]' % section
+            xpath += '[@data-pk-section="%s"]' % section
         return tree.xpath(xpath)
 
     def _header(self, tree, section):
@@ -61,7 +61,7 @@ class ListHeader1607Common(Clinic1540Common):
         return headers[0]
 
     def _add(self, header):
-        adds = header.xpath('.//*[contains(concat(" ", @class, " "), " o_sc_list_add ")]')
+        adds = header.xpath('.//*[contains(concat(" ", @class, " "), " o_pk_list_add ")]')
         self.assertEqual(len(adds), 1)
         add = adds[0]
         self.assertEqual(' '.join(add.text_content().split()), 'Add')
@@ -69,28 +69,28 @@ class ListHeader1607Common(Clinic1540Common):
 
     @staticmethod
     def _sorts(header):
-        return {a.get('data-sc-sort'): a for a in header.xpath('.//a[@role="menuitemradio"]')}
+        return {a.get('data-pk-sort'): a for a in header.xpath('.//a[@role="menuitemradio"]')}
 
     @staticmethod
     def _checked(header):
-        return header.xpath('.//a[@role="menuitemradio"][@aria-checked="true"]/@data-sc-sort')
+        return header.xpath('.//a[@role="menuitemradio"][@aria-checked="true"]/@data-pk-sort')
 
     def assertNoAppBarAction(self, tree):
-        bar = tree.xpath('//header[contains(@class, "o_sc_appbar")]')[0]
-        self.assertFalse(bar.xpath('.//*[contains(@class, "o_sc_appbar_action")]'))
-        self.assertFalse(bar.xpath('.//*[@data-sc-action]'))
-        self.assertFalse(bar.xpath('.//*[@data-sc-sheet-open]'))
+        bar = tree.xpath('//header[contains(@class, "o_pk_appbar")]')[0]
+        self.assertFalse(bar.xpath('.//*[contains(@class, "o_pk_appbar_action")]'))
+        self.assertFalse(bar.xpath('.//*[@data-sc-action or @data-pk-action]'))
+        self.assertFalse(bar.xpath('.//*[@data-pk-sheet-open]'))
 
     def assertPanelFollows(self, header, panel_id):
         add = self._add(header)
         self.assertEqual(add.tag, 'button')
         self.assertEqual(add.get('aria-controls'), panel_id)
-        self.assertEqual(add.get('data-sc-list-add-toggle'), '1')
+        self.assertEqual(add.get('data-pk-list-add-toggle'), '1')
         panel = header.getnext()
         self.assertIsNotNone(panel)
         self.assertEqual(panel.tag, 'details')
         self.assertEqual(panel.get('id'), panel_id)
-        self.assertIn('o_sc_list_add_panel', panel.get('class'))
+        self.assertIn('o_pk_list_add_panel', panel.get('class'))
         return add, panel
 
 
@@ -106,7 +106,7 @@ class TestListHeader1607(ListHeader1607Common):
                     '/my/sc/timesheets', '/my/player?player_id=%s' % self.player.id):
             _text, tree = self._get(url)
             self.assertNoAppBarAction(tree)
-            self.assertNotIn('o_sc_appbar_action', _text, url)
+            self.assertNotIn('o_pk_appbar_action', _text, url)
 
     # -- UC-H2 / UC-H3: players --------------------------------------------
     def test_players_header_add_and_sort(self):
@@ -117,25 +117,25 @@ class TestListHeader1607(ListHeader1607Common):
         # Task 1655: the inline create panel (was a link to /my/player/create).
         self.assertEqual((add.tag, add.get('aria-controls')), ('button', 'sc_player_add'))
         self.assertEqual(add.get('aria-label'), 'Create a player')
-        self.assertEqual(add.get('data-sc-action'), 'players.create')
-        self.assertTrue(header.xpath('.//*[contains(@class, "o_sc_list_header_count")]'))
+        self.assertEqual(add.get('data-pk-action'), 'players.create')
+        self.assertTrue(header.xpath('.//*[contains(@class, "o_pk_list_header_count")]'))
         sorts = self._sorts(header)
         self.assertEqual(sorted(sorts), ['name', 'status'])
         path, query = _q(sorts['name'].get('href'))
         self.assertEqual((path, query), ('/my/players', {'first_name': 'Pat', 'sort': 'name'}))
         self.assertEqual(len(self._checked(header)), 1)
-        self.assertEqual(header.xpath('.//*[@data-sc-section="players.sort"]//button/@aria-controls'),
+        self.assertEqual(header.xpath('.//*[@data-pk-section="players.sort"]//button/@aria-controls'),
                          ['sc_players_sort'])
         # The header sits right above the list.
         # Task 1655: the (closed) inline create panel, then the list.
-        self.assertEqual(header.getnext().get('data-sc-section'), 'players.add')
-        self.assertEqual(header.getnext().getnext().get('data-sc-section'), 'players.list')
+        self.assertEqual(header.getnext().get('data-pk-section'), 'players.add')
+        self.assertEqual(header.getnext().getnext().get('data-pk-section'), 'players.list')
 
     def test_players_header_coach_has_no_add(self):
         self._login_coach()
         _text, tree = self._get('/my/players')
         header = self._header(tree, 'players.header')
-        self.assertFalse(header.xpath('.//*[contains(@class, "o_sc_list_add")]'))
+        self.assertFalse(header.xpath('.//*[contains(@class, "o_pk_list_add")]'))
         self.assertTrue(self._sorts(header))
 
     # -- events ------------------------------------------------------------
@@ -145,28 +145,28 @@ class TestListHeader1607(ListHeader1607Common):
         header = self._header(tree, 'events.header')
         add = self._add(header)
         self.assertEqual(add.get('href'), '/my/event/create?organization_id=%s' % self.org.id)
-        self.assertEqual((add.get('aria-label'), add.get('data-sc-action')), ('New event', 'events.create'))
+        self.assertEqual((add.get('aria-label'), add.get('data-pk-action')), ('New event', 'events.create'))
         self.assertEqual(sorted(self._sorts(header)), ['assigned', 'date', 'date_desc', 'name', 'team'])
         self.assertEqual(self._checked(header), ['name'])
         _path, query = _q(self._sorts(header)['team'].get('href'))
         self.assertEqual(query, {'no_default_dates': '1', 'organization_id': str(self.org.id), 'sortby': 'team'})
-        form = tree.xpath('//form[@data-sc-section="events.filters"]')[0]
+        form = tree.xpath('//form[@data-pk-section="events.filters"]')[0]
         self.assertFalse(form.xpath('.//select[@name="sortby"]'))
         self.assertEqual(form.xpath('.//input[@type="hidden"][@name="sortby"]/@value'), ['name'])
-        self.assertEqual(form.xpath('.//fieldset[@data-sc-section="events.group"]//select/@name'), ['group_by'])
-        self.assertIn(header.getnext().get('data-sc-section'), ('events.list', None))
+        self.assertEqual(form.xpath('.//fieldset[@data-pk-section="events.group"]//select/@name'), ['group_by'])
+        self.assertIn(header.getnext().get('data-pk-section'), ('events.list', None))
         # The calendar: the add above it, no sort.
         _text, tree = self._get('/my/events/calendar')
         header = self._header(tree, 'events.header')
         self.assertEqual(self._add(header).get('href'), '/my/event/create')
         self.assertFalse(self._sorts(header))
-        self.assertEqual(header.getnext().get('data-sc-section'), 'calendar')
+        self.assertEqual(header.getnext().get('data-pk-section'), 'calendar')
 
     def test_events_coach_no_add(self):
         self._login_coach()
         _text, tree = self._get('/my/events')
         header = self._header(tree, 'events.header')
-        self.assertFalse(header.xpath('.//*[contains(@class, "o_sc_list_add")]'))
+        self.assertFalse(header.xpath('.//*[contains(@class, "o_pk_list_add")]'))
 
     # -- activities ----------------------------------------------------------
     def test_activities_header_add(self):
@@ -176,13 +176,13 @@ class TestListHeader1607(ListHeader1607Common):
         header = self._header(tree, 'activities.header')
         add = self._add(header)
         self.assertEqual(add.tag, 'a')
-        self.assertEqual((add.get('aria-label'), add.get('data-sc-action')), ('Add Activity', 'activity.add'))
+        self.assertEqual((add.get('aria-label'), add.get('data-pk-action')), ('Add Activity', 'activity.add'))
         path, query = _q(add.get('href'))
         self.assertEqual((path, query['model'], query['res_id']),
                          ('/my/activity/create', 'sports.team', str(self.team_a.id)))
         # Above the lists: the tabs, then the header, then the tab panels.
         following = header.getnext()
-        self.assertTrue(following.get('data-sc-tab-panel') or following.get('data-sc-section') == 'activities.list',
+        self.assertTrue(following.get('data-pk-tab-panel') or following.get('data-pk-section') == 'activities.list',
                         following.attrib)
         # The plain « my activities » list has nothing to add to.
         _text, tree = self._get('/my/activities')
@@ -194,14 +194,14 @@ class TestListHeader1607(ListHeader1607Common):
         _text, tree = self._get('/my/clinic/%s?patient_id=%s' % (self.clinic.id, self.player.id))
         header = self._header(tree, 'clinic.worklist.header')
         add = self._add(header)
-        self.assertEqual((add.tag, add.get('data-sc-sheet-open')), ('button', 'sc_clinic_add_sheet'))
-        self.assertEqual((add.get('aria-label'), add.get('data-sc-action')), ('Add a patient', 'clinic.add'))
+        self.assertEqual((add.tag, add.get('data-pk-sheet-open')), ('button', 'sc_clinic_add_sheet'))
+        self.assertEqual((add.get('aria-label'), add.get('data-pk-action')), ('Add a patient', 'clinic.add'))
         self.assertEqual(header.getnext().tag, 'owl-component')
         self.assertTrue(tree.xpath('//dialog[@id="sc_clinic_add_sheet"]'))
-        injuries = tree.xpath('//section[@data-sc-section="clinic.dossier.injuries"]')[0]
+        injuries = tree.xpath('//section[@data-pk-section="clinic.dossier.injuries"]')[0]
         add, _panel = self.assertPanelFollows(self._header(injuries, 'injury.new.header'), 'sc_clinic_injury_add')
         self.assertEqual(add.get('aria-label'), 'Add Injury')
-        notes = tree.xpath('//section[@data-sc-section="clinic.dossier.notes"]')[0]
+        notes = tree.xpath('//section[@data-pk-section="clinic.dossier.notes"]')[0]
         add, panel = self.assertPanelFollows(self._header(notes, 'notes.add.header'), 'sc_note_add')
         self.assertEqual(add.get('aria-label'), 'Add Treatment Note')
         # Docked open on the clinic, as before.
@@ -211,20 +211,20 @@ class TestListHeader1607(ListHeader1607Common):
     def test_event_timesheets_header(self):
         self._login_tp()
         _text, tree = self._get('/my/event/%s' % self.event.id)
-        section = tree.xpath('//section[@data-sc-section="event.timesheets"]')[0]
+        section = tree.xpath('//section[@data-pk-section="event.timesheets"]')[0]
         header = self._header(section, 'event.timesheets.header')
         add = self._add(header)
-        self.assertEqual((add.tag, add.get('data-sc-sheet-open')), ('button', 'sc_ts_add_sheet'))
-        self.assertEqual((add.get('aria-label'), add.get('data-sc-action')), ('Add My Timesheet', 'timesheet.add'))
-        self.assertEqual(header.getparent().get('data-sc-fragment'), 'sports.event:%s:ts-head' % self.event.id)
+        self.assertEqual((add.tag, add.get('data-pk-sheet-open')), ('button', 'sc_ts_add_sheet'))
+        self.assertEqual((add.get('aria-label'), add.get('data-pk-action')), ('Add My Timesheet', 'timesheet.add'))
+        self.assertEqual(header.getparent().get('data-pk-fragment'), 'sports.event:%s:ts-head' % self.event.id)
         # The list follows the header holder.
-        self.assertIn('o_sc_list', header.getparent().getnext().get('class'))
+        self.assertIn('o_pk_list', header.getparent().getnext().get('class'))
 
     def test_event_coach_has_no_timesheets_section(self):
         self._login_coach()
         _text, tree = self._get('/my/event/%s' % self.event.id)
-        self.assertFalse(tree.xpath('//section[@data-sc-section="event.timesheets"]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-action="timesheet.add"]'))
+        self.assertFalse(tree.xpath('//section[@data-pk-section="event.timesheets"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-action="timesheet.add"]'))
 
     # -- team ----------------------------------------------------------------
     def test_team_roster_header(self):
@@ -232,7 +232,7 @@ class TestListHeader1607(ListHeader1607Common):
         _text, tree = self._get('/my/team?team_id=%s&tab=players&add=1' % self.team_a.id)
         header = self._header(tree, 'team.roster.header')
         add, panel = self.assertPanelFollows(header, 'sc_add_player')
-        self.assertEqual((add.get('aria-label'), add.get('data-sc-action')), ('Add a player', 'team.add_player'))
+        self.assertEqual((add.get('aria-label'), add.get('data-pk-action')), ('Add a player', 'team.add_player'))
         # Task 1655: ?add=1 opens the inline create panel.
         self.assertEqual((add.get('aria-expanded'), panel.get('open')), ('true', 'open'))
         sorts = self._sorts(header)
@@ -240,7 +240,7 @@ class TestListHeader1607(ListHeader1607Common):
         self.assertEqual(self._checked(header), ['status'])
         _path, query = _q(sorts['number'].get('href'))
         self.assertEqual(query, {'team_id': str(self.team_a.id), 'tab': 'players', 'sort': 'number'})
-        self.assertEqual(panel.getnext().get('data-sc-section'), 'team.roster')
+        self.assertEqual(panel.getnext().get('data-pk-section'), 'team.roster')
         _text, tree = self._get('/my/team?team_id=%s&sort=number' % self.team_a.id)
         self.assertEqual(self._checked(self._header(tree, 'team.roster.header')), ['number'])
 
@@ -258,7 +258,7 @@ class TestListHeader1607(ListHeader1607Common):
     def test_team_activities_header(self):
         self._login_tp()
         _text, tree = self._get('/my/team?team_id=%s&tab=activities' % self.team_a.id)
-        panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')
+        panel = tree.xpath('//section[@data-pk-tab-panel="activities"]')
         if panel:
             add, _panel = self.assertPanelFollows(self._header(panel[0], 'activity.add.header'), 'sc_activity_add')
             self.assertEqual(add.get('aria-label'), 'Add Activity')
@@ -268,7 +268,7 @@ class TestListHeader1607(ListHeader1607Common):
         self._login_tp()
         _text, tree = self._get('/my/teams?search=PC&sort=alpha')
         header = self._header(tree, 'teams.header')
-        self.assertFalse(header.xpath('.//*[contains(@class, "o_sc_list_add")]'))
+        self.assertFalse(header.xpath('.//*[contains(@class, "o_pk_list_add")]'))
         sorts = self._sorts(header)
         self.assertIn('activity', sorts)
         self.assertIn('alpha', sorts)
@@ -286,45 +286,45 @@ class TestListHeader1607(ListHeader1607Common):
             ('activities', 'activity.add.header', 'sc_activity_add', 'Add Activity'),
         )
         for tab, section, panel_id, label in expected:
-            panel = tree.xpath('//section[@data-sc-tab-panel="%s"]' % tab)[0]
+            panel = tree.xpath('//section[@data-pk-tab-panel="%s"]' % tab)[0]
             add, _details = self.assertPanelFollows(self._header(panel, section), panel_id)
             self.assertEqual(add.get('aria-label'), label, tab)
             self.assertEqual(add.get('aria-expanded'), 'false', tab)
         # Task 1644: the Documents « + Ajouter » opens a sheet (like the
         # injury card's « Add documents »), not an inline panel.
-        panel = tree.xpath('//section[@data-sc-tab-panel="documents"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="documents"]')[0]
         add = self._add(self._header(panel, 'documents.upload.header'))
-        self.assertEqual(add.get('data-sc-sheet-open'), 'sc_documents_upload')
+        self.assertEqual(add.get('data-pk-sheet-open'), 'sc_documents_upload')
         self.assertEqual(add.get('aria-label'), 'Upload a document')
         self.assertEqual(len(panel.xpath('.//dialog[@id="sc_documents_upload"]//form[@data-sc-doc-upload]')), 1)
         self.assertFalse(tree.xpath('//details[@id="sc_documents_upload"]'))
-        contacts = tree.xpath('//section[@data-sc-section="player.info.emergency_contacts"]')[0]
+        contacts = tree.xpath('//section[@data-pk-section="player.info.emergency_contacts"]')[0]
         add, _details = self.assertPanelFollows(self._header(contacts, 'contact.add.header'), 'sc_contact_add')
         self.assertEqual(add.get('aria-label'), 'Add Emergency Contact')
 
     def test_coach_reports_an_injury(self):
         self._login_coach()
         _text, tree = self._get('/my/player?player_id=%s' % self.player.id)
-        panel = tree.xpath('//section[@data-sc-tab-panel="injuries"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="injuries"]')[0]
         add, _details = self.assertPanelFollows(self._header(panel, 'injury.new.header'), 'sc_new_injury')
         self.assertEqual(add.get('aria-label'), 'Report Injury')
 
     def test_injury_card_documents_header(self):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=injuries&injury=%s' % (self.player.id, self.injury.id))
-        docs = tree.xpath('//section[@data-sc-section="injury.documents"]')[0]
+        docs = tree.xpath('//section[@data-pk-section="injury.documents"]')[0]
         header = self._header(docs, 'injury.documents.header')
         add = self._add(header)
-        self.assertEqual(add.get('data-sc-sheet-open'), 'sc_injury_%s_documents_add' % self.injury.id)
-        self.assertEqual((add.get('aria-label'), add.get('data-sc-action')), ('Add documents', 'injury.documents.add'))
-        self.assertFalse(docs.xpath('.//*[contains(@class, "o_sc_edit_card_head")]//button'))
+        self.assertEqual(add.get('data-pk-sheet-open'), 'sc_injury_%s_documents_add' % self.injury.id)
+        self.assertEqual((add.get('aria-label'), add.get('data-pk-action')), ('Add documents', 'injury.documents.add'))
+        self.assertFalse(docs.xpath('.//*[contains(@class, "o_pk_edit_card_head")]//button'))
 
     # -- notepad / timesheets ---------------------------------------------------
     def test_notepad_header(self):
         # Task 1667: the quick-note form is always shown — no header toggle.
         self._login_tp()
         _text, tree = self._get('/my/notepad')
-        self.assertFalse(tree.xpath('//*[@data-sc-section="notepad.header"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="notepad.header"]'))
         panel = tree.xpath('//section[@id="sc_notepad_add"]')[0]
         self.assertEqual(panel.xpath('.//form/@action'), ['/my/notepad/add'])
 
@@ -332,16 +332,16 @@ class TestListHeader1607(ListHeader1607Common):
         self._login_tp()
         _text, tree = self._get('/my/sc/timesheets?team_id=%s&sortby=state' % self.team_a.id)
         header = self._header(tree, 'timesheets.header')
-        self.assertFalse(header.xpath('.//*[contains(@class, "o_sc_list_add")]'))
+        self.assertFalse(header.xpath('.//*[contains(@class, "o_pk_list_add")]'))
         sorts = self._sorts(header)
         self.assertEqual(sorted(sorts), ['date', 'date_desc', 'org', 'state', 'team'])
         self.assertEqual(self._checked(header), ['state'])
         _path, query = _q(sorts['date_desc'].get('href'))
         self.assertEqual(query, {'team_id': str(self.team_a.id), 'sortby': 'date_desc'})
-        form = tree.xpath('//form[@data-sc-section="timesheets.filters"]')[0]
+        form = tree.xpath('//form[@data-pk-section="timesheets.filters"]')[0]
         self.assertFalse(form.xpath('.//select[@name="sortby"]'))
         self.assertEqual(form.xpath('.//input[@type="hidden"][@name="sortby"]/@value'), ['state'])
-        self.assertEqual(form.xpath('.//fieldset[@data-sc-section="timesheets.group"]//select/@name'), ['group_by'])
+        self.assertEqual(form.xpath('.//fieldset[@data-pk-section="timesheets.group"]//select/@name'), ['group_by'])
 
 
 @tagged('post_install', '-at_install')
@@ -356,12 +356,12 @@ class TestListHeaderFragment1607(FragmentsMixin, ListHeader1607Common):
         url = '/my/event/%s' % self.event.id
         self.event.sudo().assigned_staff_ids = [Command.clear()]
         _text, tree = self._get(url)
-        section = tree.xpath('//section[@data-sc-section="event.timesheets"]')
+        section = tree.xpath('//section[@data-pk-section="event.timesheets"]')
         self.assertTrue(section, 'the section holder is there for an editing therapist')
-        self.assertFalse(section[0].xpath('.//*[@data-sc-action="timesheet.add"]'))
+        self.assertFalse(section[0].xpath('.//*[@data-pk-action="timesheet.add"]'))
         self.event.sudo().assigned_staff_ids = [Command.set([self.tp.id])]
         answer = self._fragments(url, [self._ekey('ts-head'), self._ekey('ts-title'), self._ekey('ts-add')])
-        self.assertIn('data-sc-action="timesheet.add"', answer['fragments'][self._ekey('ts-head')])
+        self.assertIn('data-pk-action="timesheet.add"', answer['fragments'][self._ekey('ts-head')])
         self.assertIn('My Timesheets', answer['fragments'][self._ekey('ts-title')])
         self.assertIn('sc_ts_add_sheet', answer['fragments'][self._ekey('ts-add')])
         self.assertFragmentMatchesPage(url, self._ekey('ts-head'))
@@ -375,7 +375,7 @@ class TestListHeaderI18n1607(ListHeader1607Common):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):
@@ -392,7 +392,7 @@ class TestListHeaderI18n1607(ListHeader1607Common):
         self._login_tp()
         _text, tree = self._fr('/my/players')
         header = self._header(tree, 'players.header')
-        add = header.xpath('.//*[contains(@class, "o_sc_list_add")]')[0]
+        add = header.xpath('.//*[contains(@class, "o_pk_list_add")]')[0]
         self.assertEqual(' '.join(add.text_content().split()), 'Ajouter')
         self.assertEqual(add.get('aria-label'), 'Créer un joueur')
         labels = [' '.join(a.text_content().split()) for a in header.xpath('.//a[@role="menuitemradio"]')]
@@ -405,4 +405,4 @@ class TestListHeaderI18n1607(ListHeader1607Common):
         header = self._header(tree, 'events.header')
         self.assertIn('Trier les événements', header.text_content())
         self.assertIn('Grouper par', ' '.join(tree.xpath(
-            '//fieldset[@data-sc-section="events.group"]/legend/text()')))
+            '//fieldset[@data-pk-section="events.group"]/legend/text()')))

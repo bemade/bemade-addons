@@ -1,5 +1,5 @@
 /*
- * Task 1655 — the inline « create a player » panel (inert outside .o_sc_app).
+ * Task 1655 — the inline « create a player » panel (inert outside .o_pk_app).
  *
  * form[data-sc-player-add]: once a first AND a last name are typed, the
  * existence check (GET /my/app/player-check, 300 ms after the last key; a
@@ -18,9 +18,9 @@
  *   next to « Create » — the panel stays open with every typed value; only
  *   a success leaves the page (the new player's page).
  */
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 // Task 1658: the greyed button + reason line are the shared form guard's.
-import { guardFlash, guardRefresh } from "@bemade_sports_clinic/js/sc_form_guard";
+import { guardFlash, guardRefresh } from "@bemade_portal_kit/js/pk_form_guard";
 
 const DEBOUNCE_MS = 300;
 const timers = new WeakMap();
@@ -134,7 +134,7 @@ function refreshSubmit(form) {
     // Task 1674: only similar players found — « Create » stays enabled, the
     // reason line asks to check them first.
     if (!busy && !reason && form.dataset.scCheckedNear === "1") {
-        const line = form.querySelector("[data-sc-guard-reason]");
+        const line = form.querySelector("[data-pk-guard-reason]");
         if (line) {
             line.textContent = reasons(form).near || "";
             line.hidden = !line.textContent;
@@ -166,7 +166,7 @@ function showError(form, message, field) {
             ec.open = true;
         }
         const note = document.createElement("p");
-        note.className = "o_sc_field_message o_sc_field_error";
+        note.className = "o_pk_field_message o_pk_field_error";
         note.setAttribute("role", "alert");
         note.dataset.scPlayerAddFieldError = field;
         note.textContent = message;
@@ -240,7 +240,7 @@ function schedule(form) {
 
 function playerForm(target) {
     const form = target && target.closest && target.closest("form[data-sc-player-add]");
-    return form && form.closest(".o_sc_app") ? form : null;
+    return form && form.closest(".o_pk_app") ? form : null;
 }
 
 document.addEventListener("input", (ev) => {
@@ -274,11 +274,11 @@ async function create(form) {
     clearErrors(form);
     const data = Object.fromEntries(new FormData(form).entries());
     try {
-        const result = await scFetch(form.getAttribute("action"), { method: "POST", data, toast: false, timeout: 30000 });
+        const result = await pkFetch(form.getAttribute("action"), { method: "POST", data, toast: false, timeout: 30000 });
         if (result && result.redirect) {
             // Task 1672: the panel resets before the page changes (back on
             // the team page, reopening it shows an empty form).
-            form.dispatchEvent(new CustomEvent("sc:create-success", { bubbles: true }));
+            form.dispatchEvent(new CustomEvent("pk:create-success", { bubbles: true }));
             window.location.assign(result.redirect);
             return;
         }
@@ -374,7 +374,7 @@ function showAccepted(form) {
 // Task 1672: the check's first content, to put back on a reset.
 const checkHints = new WeakMap();
 
-document.addEventListener("sc:form-reset", (ev) => {
+document.addEventListener("pk:form-reset", (ev) => {
     const form = playerForm(ev.target);
     if (!form) {
         return;
@@ -402,7 +402,7 @@ document.addEventListener("sc:form-reset", (ev) => {
 
 // A panel re-opened with typed values (a refused create): check at once.
 function boot() {
-    for (const form of document.querySelectorAll(".o_sc_app form[data-sc-player-add]")) {
+    for (const form of document.querySelectorAll(".o_pk_app form[data-sc-player-add]")) {
         const region = form.querySelector("[data-sc-player-check]");
         if (region && !checkHints.has(region) && !region.querySelector("[data-sc-check-results]")) {
             checkHints.set(region, region.innerHTML);

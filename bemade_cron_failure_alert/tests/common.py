@@ -8,7 +8,7 @@ from odoo.tools.misc import mute_logger
 from odoo.addons.bemade_cron_failure_alert.models.ir_cron import (
     PARAM_CHANNEL,
     PARAM_ENABLED,
-    PARAM_USER,
+    PARAM_USERS,
 )
 
 FAILING_CODE = 'raise UserError("Synthetic failure for the alert test")'
@@ -30,6 +30,7 @@ class CronAlertCase(common.TransactionCase):
                 "name": "Cron Watcher",
                 "login": "cron.watcher.%s" % secrets.token_hex(4),
                 "email": "cron.watcher@example.com",
+                "lang": "en_US",
                 "group_ids": [(6, 0, [cls.env.ref("base.group_user").id])],
             }
         )
@@ -55,12 +56,22 @@ class CronAlertCase(common.TransactionCase):
         self.env.invalidate_all()
 
     def _configure(self, enabled=True, user=True, channel=True):
+        """Set the General Settings alert options.
+
+        ``user``: True for ``alert_user``, a ``res.users`` recordset for those
+        users, False for none. ``channel``: True for ``channel``, False for none.
+        """
+        if user is True:
+            user = self.alert_user
         icp = self.env["ir.config_parameter"].sudo()
         icp.set_param(PARAM_ENABLED, enabled or False)
-        icp.set_param(PARAM_USER, user and self.alert_user.id or False)
+        icp.set_param(PARAM_USERS, ",".join(str(i) for i in user.ids) if user else False)
         icp.set_param(PARAM_CHANNEL, channel and self.channel.id or False)
 
-    def _run_cron(self, cron=None):
+    def _run_cron(self, cron=None, quiet=True):
+        """Run the job once. Its failure is on purpose, so the module's own
+        warning about it is muted unless ``quiet`` is False (a test that
+        checks that warning with ``assertLogs``)."""
         cron = cron or self.cron
         cron._trigger()
         self.env.flush_all()
@@ -73,6 +84,7 @@ class CronAlertCase(common.TransactionCase):
         with (
             self.enter_registry_test_mode(),
             mute_logger("odoo.addons.base.models.ir_cron"),
+            mute_logger(*(["odoo.addons.bemade_cron_failure_alert.models.ir_cron"] if quiet else [])),
             self.registry.cursor() as cr,
         ):
             self.registry["ir.cron"]._process_job(cr, job)

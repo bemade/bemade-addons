@@ -1,6 +1,6 @@
 {
     "name": "Activity Done: Assigned By",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Productivity/Discuss",
     "summary": "Show who assigned an activity, when, and its deadline in the "
     "chatter message posted when it is marked as done.",

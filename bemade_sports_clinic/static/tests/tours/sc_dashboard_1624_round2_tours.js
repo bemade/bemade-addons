@@ -67,10 +67,10 @@ function typeAndLeave(input, value) {
     input.dispatchEvent(new FocusEvent("blur")); // headless: blur() fires no event without window focus
 }
 
-const TODAY = 'section[data-sc-instance="today"]';
-const TODO = 'section[data-sc-instance="todo"]';
-const WATCH = 'section[data-sc-instance="watch"]';
-const FOLLOWED = 'section[data-sc-instance="followed"]';
+const TODAY = 'section[data-pk-dash-instance="today"]';
+const TODO = 'section[data-pk-dash-instance="todo"]';
+const WATCH = 'section[data-pk-dash-instance="watch"]';
+const FOLLOWED = 'section[data-pk-dash-instance="followed"]';
 const OVERDUE = `${TODO} details[data-sc-todo="activities_overdue"]`;
 const RETURNS = `${TODO} details[data-sc-todo="returns"]`;
 
@@ -78,10 +78,10 @@ tours.add("sc_1624_dashboard_round2", {
     steps: () => [
         {
             content: "The clinics row and the first event card do not touch",
-            trigger: `${TODAY} [data-sc-section="home.clinic_teaser"] + .o_sc_dw_events .o_sc_event_row`,
+            trigger: `${TODAY} [data-pk-section="home.clinic_teaser"] + .o_sc_dw_events .o_sc_event_row`,
             run() {
                 window.__sc1624r2NoReload = true;
-                const clinics = document.querySelector(`${TODAY} [data-sc-section="home.clinic_teaser"]`);
+                const clinics = document.querySelector(`${TODAY} [data-pk-section="home.clinic_teaser"]`);
                 const gap = this.anchor.getBoundingClientRect().top - clinics.getBoundingClientRect().bottom;
                 assert(gap >= 4, `gap ${gap}`);
                 noHorizontalScroll();
@@ -108,12 +108,12 @@ tours.add("sc_1624_dashboard_round2", {
         },
         {
             content: "An event card's « Details »: the card stays put",
-            trigger: 'section[data-sc-instance="coverage"] .o_sc_event_row button[data-sc-row-expand][aria-expanded="false"]',
+            trigger: 'section[data-pk-dash-instance="coverage"] .o_sc_event_row button[data-pk-row-expand][aria-expanded="false"]',
             async run() {
                 const toggle = this.anchor;
                 await clickKeepsTop(toggle, "event details");
                 assert(toggle.getAttribute("aria-expanded") === "true", "expanded (⌃)");
-                const region = document.getElementById(toggle.dataset.scRowExpand);
+                const region = document.getElementById(toggle.dataset.pkRowExpand);
                 assert(region && !region.hidden && region.querySelector('[data-sc-ev-field="staff"]'), "details shown");
                 await clickKeepsTop(toggle, "event details (fold)");
                 assert(region.hidden && toggle.getAttribute("aria-expanded") === "false", "folded (⌄)");
@@ -133,10 +133,10 @@ tours.add("sc_1624_dashboard_round2", {
                 await waitFor(() => card.querySelector(field), "the quick field");
                 const input = card.querySelector(field);
                 assert(input.min, "min = today");
-                assert(card.querySelector(".o_sc_overdue_flag"), "« Passed » before");
+                assert(card.querySelector(".o_pk_overdue_flag"), "« Passed » before");
                 typeAndLeave(input, shift(input.min, 7));
                 await waitFor(
-                    () => !line.querySelector(`[data-sc-player-id="${id}"] .o_sc_link_row .o_sc_overdue_flag`),
+                    () => !line.querySelector(`[data-sc-player-id="${id}"] .o_pk_link_row .o_pk_overdue_flag`),
                     "« Passed » gone"
                 );
                 await waitFor(
@@ -148,10 +148,10 @@ tours.add("sc_1624_dashboard_round2", {
         },
         {
             content: "Follow from « Players to watch »: the card joins « Players I follow »",
-            trigger: `${WATCH} .o_sc_player_row button[data-sc-row-expand]`,
+            trigger: `${WATCH} .o_sc_player_row button[data-pk-row-expand]`,
             async run() {
                 const followed = document.querySelector(FOLLOWED);
-                assert(followed.querySelector(":scope > .o_sc_dw_body > .o_sc_empty"), "empty at first");
+                assert(followed.querySelector(":scope > .o_pk_dash_body > .o_pk_empty"), "empty at first");
                 const row = this.anchor.closest(".o_sc_player_row");
                 const id = row.dataset.scPlayerId;
                 this.anchor.click();
@@ -159,21 +159,21 @@ tours.add("sc_1624_dashboard_round2", {
                 await waitFor(() => row.querySelector(`${toggle}[data-sc-followed="0"]`), "the follow toggle");
                 row.querySelector(toggle).click();
                 await waitFor(
-                    () => document.querySelector(`${FOLLOWED} [data-sc-fragment-item="p${id}"]`),
+                    () => document.querySelector(`${FOLLOWED} [data-pk-fragment-item="p${id}"]`),
                     "the card in « Players I follow »"
                 );
-                const count = document.querySelector(`${FOLLOWED} [data-sc-dw-count]`);
+                const count = document.querySelector(`${FOLLOWED} [data-pk-dash-count]`);
                 assert(count && count.textContent.includes("1"), "the count");
-                assert(!document.querySelector(`${FOLLOWED} > .o_sc_dw_body > .o_sc_empty`), "no empty state");
+                assert(!document.querySelector(`${FOLLOWED} > .o_pk_dash_body > .o_pk_empty`), "no empty state");
                 // Unfollow (from the same card).
                 await waitFor(() => row.querySelector(`${toggle}[data-sc-followed="1"]`), "followed");
                 row.querySelector(toggle).click();
                 await waitFor(
-                    () => !document.querySelector(`${FOLLOWED} [data-sc-fragment-item]`),
+                    () => !document.querySelector(`${FOLLOWED} [data-pk-fragment-item]`),
                     "the card leaves « Players I follow »"
                 );
-                await waitFor(() => document.querySelector(`${FOLLOWED} > .o_sc_dw_body > .o_sc_empty`), "the empty state");
-                assert(!document.querySelector(`${FOLLOWED} [data-sc-dw-count]`), "no count");
+                await waitFor(() => document.querySelector(`${FOLLOWED} > .o_pk_dash_body > .o_pk_empty`), "the empty state");
+                assert(!document.querySelector(`${FOLLOWED} [data-pk-dash-count]`), "no count");
                 assert(window.__sc1624r2NoReload, "the page reloaded");
                 noHorizontalScroll();
             },

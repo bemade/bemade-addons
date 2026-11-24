@@ -60,7 +60,7 @@ class MedicalCards1630Common(CardPills1634Common):
             self.assertIn(':', node.get('title'), (where, key))
             self.assertFalse(node.xpath('ancestor::a | ancestor::button'), (where, key))
             # Inside the row's read fragment (refreshed with the #1634 rows).
-            self.assertTrue(node.xpath('ancestor::*[starts-with(@data-sc-fragment, "sports.patient:%s:row-")]'
+            self.assertTrue(node.xpath('ancestor::*[starts-with(@data-pk-fragment, "sports.patient:%s:row-")]'
                                        % self.player.id), (where, key))
         self.assertEqual(bool(pills['allergy'].xpath('.//*[@data-sc-med-epipen]')), epipen, where)
         self.assertFalse(pills['medical_alert'].xpath('.//*[@data-sc-med-epipen]'), where)
@@ -75,7 +75,7 @@ class MedicalCards1630Common(CardPills1634Common):
                              '/my/player?player_id=%s&tab=info' % self.player.id, (where, key))
             sheets = row.getroottree().xpath('//dialog[@id="%s"]' % sheet_id)
             self.assertEqual(len(sheets), 1, (where, key))
-            self.assertFalse(sheets[0].xpath('ancestor::*[@data-sc-fragment]'), (where, key))
+            self.assertFalse(sheets[0].xpath('ancestor::*[@data-pk-fragment]'), (where, key))
 
     def _all_rows(self, tree, player):
         return tree.xpath('//*[contains(@class, "o_sc_player_row")][@data-sc-player-id="%s"]' % player.id)
@@ -102,7 +102,7 @@ class TestMedicalCardPills1630(MedicalCards1630Common):
         for login in (self._login_tp, self._login_coach):
             login()
             tree = self._page(self.team_url)
-            rows = tree.xpath('//*[@data-sc-section="team.watchlist"]//*[contains(@class, "o_sc_player_row")]'
+            rows = tree.xpath('//*[@data-pk-section="team.watchlist"]//*[contains(@class, "o_sc_player_row")]'
                               '[@data-sc-player-id="%s"]' % self.player.id)
             self.assertEqual(len(rows), 1, login.__name__)
             self._assert_red(rows[0], (login.__name__, 'watch'), epipen=False)

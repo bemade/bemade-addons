@@ -33,12 +33,12 @@ function typeAndLeave(input, value) {
 }
 
 const CARD = "details.o_sc_injury_item[open]";
-const DETAILS = `${CARD} section[data-sc-edit-card="injury-details"]`;
+const DETAILS = `${CARD} section[data-pk-edit-card="injury-details"]`;
 // Task 1675: the Notes section holds one edit card per note.
-const NOTES = `${CARD} section[data-sc-section="injury.notes"]`;
-const NOTES_EXT = `${NOTES} [data-sc-edit-card="injury-notes-external"]`;
-const NOTES_INT = `${NOTES} [data-sc-edit-card="injury-notes-internal"]`;
-const DOCS = `${CARD} section[data-sc-section="injury.documents"]`;
+const NOTES = `${CARD} section[data-pk-section="injury.notes"]`;
+const NOTES_EXT = `${NOTES} [data-pk-edit-card="injury-notes-external"]`;
+const NOTES_INT = `${NOTES} [data-pk-edit-card="injury-notes-internal"]`;
+const DOCS = `${CARD} section[data-pk-section="injury.documents"]`;
 const ADD_SHEET = 'dialog[id$="_documents_add"]';
 
 function el(selector) {
@@ -46,7 +46,7 @@ function el(selector) {
 }
 
 function editShown(section) {
-    return !el(`${section} [data-sc-edit-view="edit"]`).hidden;
+    return !el(`${section} [data-pk-edit-view="edit"]`).hidden;
 }
 
 function setFiles(input, files) {
@@ -84,57 +84,58 @@ tours.add("sc_1616_card_sections", {
         },
         {
             content: "The Details pencil edits Details only",
-            trigger: `${DETAILS} button[data-sc-edit-toggle]`,
+            trigger: `${CARD} > summary button[data-pk-edit-toggle][data-pk-edit-for="injury-details"]`, // task 1736: the top-bar pencil
             run: "click",
         },
         {
             content: "Details in edit mode, Notes still reading",
-            trigger: `${DETAILS}[data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden])`,
+            trigger: `${DETAILS}[data-pk-edit-open] [data-pk-edit-view="edit"]:not([hidden])`,
             run() {
                 assert(!editShown(NOTES), "Notes opened too");
                 // Task 1631: status in the header pill, consent + visibility
                 // as pills in Details (outside the pencil).
-                assert(el(`${DETAILS} .o_sc_autosave[data-sc-field="predicted_resolution_date"]`), "dates in Details");
-                assert(!el(`${DETAILS} .o_sc_autosave[data-sc-field="stage"]`), "status still in Details");
-                assert(el(`${DETAILS} .o_sc_injury_flags [data-sc-pill-key="consent"]`), "no consent pill");
-                assert(!el(`${DETAILS} .o_sc_autosave[data-sc-field="external_notes"]`), "notes in Details");
+                assert(el(`${DETAILS} .o_pk_autosave[data-pk-autosave-field="predicted_resolution_date"]`), "dates in Details");
+                assert(!el(`${DETAILS} .o_pk_autosave[data-pk-autosave-field="stage"]`), "status still in Details");
+                assert(el(`${DETAILS} .o_sc_injury_flags [data-pk-pill-key="consent"]`), "no consent pill");
+                assert(!el(`${DETAILS} .o_pk_autosave[data-pk-autosave-field="external_notes"]`), "notes in Details");
             },
         },
         {
             content: "Details « Done »",
-            trigger: `${DETAILS} [data-sc-edit-done]`,
+            trigger: `${DETAILS} [data-pk-edit-done]`,
             run: "click",
         },
         {
             content: "The external-note pencil edits that note only",
-            trigger: `${DETAILS}:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `${DETAILS}:not([data-pk-edit-open]) [data-pk-edit-view="read"]:not([hidden])`,
             run() {
-                el(`${NOTES_EXT} button[data-sc-edit-toggle]`).click();
+                el(`${NOTES_EXT} button[data-pk-edit-toggle]`).click();
             },
         },
         {
             content: "External note in edit mode; internal note and Details reading",
-            trigger: `${NOTES_EXT}[data-sc-edit-open] .o_sc_autosave[data-sc-field="external_notes"]`,
+            trigger: `${NOTES_EXT}[data-pk-edit-open] .o_pk_autosave[data-pk-autosave-field="external_notes"]`,
             run() {
                 assert(!editShown(DETAILS), "Details opened too");
                 assert(!editShown(NOTES_INT), "the internal note opened too");
-                el(`${NOTES_INT} button[data-sc-edit-toggle]`).click();
+                el(`${NOTES_INT} button[data-pk-edit-toggle]`).click();
             },
         },
         {
             content: "The internal-note pencil opens the internal note too",
-            trigger: `${NOTES_INT}[data-sc-edit-open] .o_sc_autosave[data-sc-field="internal_notes"]`,
+            trigger: `${NOTES_INT}[data-pk-edit-open] .o_pk_autosave[data-pk-autosave-field="internal_notes"]`,
         },
         {
             // Task 1676: no bottom « Done » — each group closes with its ✓,
             // the card with its summary.
             content: "The ✓ of each open note closes it, the summary closes the card",
-            trigger: `${NOTES_INT}[data-sc-edit-open] button[data-sc-edit-toggle][data-sc-edit-toggle-done]`,
+            trigger: `${NOTES_INT}[data-pk-edit-open] button[data-pk-edit-toggle][data-pk-edit-toggle-done]`,
             run() {
                 assert(!el(`${CARD} [data-sc-injury-done]`), "the bottom « Done » is back");
-                el(`${NOTES_INT} button[data-sc-edit-toggle]`).click();
-                el(`${NOTES_EXT} button[data-sc-edit-toggle]`).click();
-                el(`${CARD} > summary`).click();
+                el(`${NOTES_INT} button[data-pk-edit-toggle]`).click();
+                el(`${NOTES_EXT} button[data-pk-edit-toggle]`).click();
+                // Task 1736 (deliberate update): only the chevron folds the card.
+                el(`${CARD} > summary button[data-sc-injury-toggle]`).click();
             },
         },
         {
@@ -142,7 +143,7 @@ tours.add("sc_1616_card_sections", {
             trigger: "details.o_sc_injury_item:not([open])",
             run() {
                 assert(!document.querySelector(`${CARD}`), "a card is still open");
-                assert(!document.querySelector('[data-sc-edit-card^="injury-notes-"][data-sc-edit-open]'),
+                assert(!document.querySelector('[data-pk-edit-card^="injury-notes-"][data-pk-edit-open]'),
                     "the Notes group stayed in edit mode");
             },
         },
@@ -154,12 +155,12 @@ tours.add("sc_1616_documents_upload", {
     steps: () => [
         {
             content: "« + Ajouter » in the card's Documents list header",
-            trigger: `${DOCS} .o_sc_list_header button.o_sc_list_add[data-sc-action="injury.documents.add"]`,
+            trigger: `${DOCS} .o_pk_list_header button.o_pk_list_add[data-pk-action="injury.documents.add"]`,
             run: "click",
         },
         {
             content: "A file over 10 MB is flagged and blocks the upload",
-            trigger: `${ADD_SHEET}[open] .o_sc_dropzone`,
+            trigger: `${ADD_SHEET}[open] .o_pk_dropzone`,
             run() {
                 window.__sc1616NoReload = "1";
                 // Review fixes 2026-10-18 b: the shared category / description
@@ -190,14 +191,14 @@ tours.add("sc_1616_documents_upload", {
                 this.anchor.click();
                 const sheet = el(`${ADD_SHEET}[open]`);
                 assert(sheet.querySelector("[data-sc-file-error]").hidden, "error still shown");
-                const names = [...sheet.querySelectorAll("[data-sc-file-list] .o_sc_file_name")].map((n) => n.textContent);
+                const names = [...sheet.querySelectorAll("[data-sc-file-list] .o_pk_file_name")].map((n) => n.textContent);
                 assert(JSON.stringify(names) === JSON.stringify(["Synthetic small.pdf"]), `left: ${names}`);
                 assert(sheet.querySelector('input[type="file"]').files.length === 1, "input not rebuilt");
             },
         },
         {
             content: "Review fixes 2026-10-18: choosing again ADDS (a, then b + a duplicate)",
-            trigger: `${ADD_SHEET}[open] .o_sc_dropzone`,
+            trigger: `${ADD_SHEET}[open] .o_pk_dropzone`,
             run() {
                 const input = this.anchor.querySelector('input[type="file"]');
                 const a = new File(["synthetic a"], "Synthetic a.pdf", { type: "application/pdf", lastModified: 1 });
@@ -208,7 +209,7 @@ tours.add("sc_1616_documents_upload", {
                 ]);
                 const sheet = el(`${ADD_SHEET}[open]`);
                 assert(sheet.querySelector("[data-sc-file-error]").hidden, "error still shown");
-                const names = [...sheet.querySelectorAll("[data-sc-file-list] .o_sc_file_name")].map((n) => n.textContent);
+                const names = [...sheet.querySelectorAll("[data-sc-file-list] .o_pk_file_name")].map((n) => n.textContent);
                 assert(
                     JSON.stringify(names) === JSON.stringify(["Synthetic small.pdf", "Synthetic a.pdf", "Synthetic b.pdf"]),
                     `accumulated list: ${names}`
@@ -234,7 +235,7 @@ tours.add("sc_1616_documents_upload", {
             content: "Back on the open card: both documents listed",
             trigger: `${DOCS} .o_sc_injury_doc_list`,
             run() {
-                const names = [...document.querySelectorAll(`${DOCS} .o_sc_doc_row .o_sc_row_title`)].map(
+                const names = [...document.querySelectorAll(`${DOCS} .o_sc_doc_row .o_pk_row_title`)].map(
                     (node) => node.textContent.trim()
                 );
                 for (const name of ["Synthetic small.pdf", "Synthetic a.pdf", "Synthetic b.pdf"]) {
@@ -244,12 +245,12 @@ tours.add("sc_1616_documents_upload", {
         },
         {
             content: "Re-file one: its pencil",
-            trigger: `${DOCS} .o_sc_injury_doc button[data-sc-action="documents.edit"]`,
+            trigger: `${DOCS} .o_sc_injury_doc button[data-pk-action="documents.edit"]`,
             run: "click",
         },
         {
             content: "Rename it and leave the field",
-            trigger: `${DOCS} .o_sc_injury_doc[data-sc-edit-open] .o_sc_autosave[data-sc-field="name"] input`,
+            trigger: `${DOCS} .o_sc_injury_doc[data-pk-edit-open] .o_pk_autosave[data-pk-autosave-field="name"] input`,
             run() {
                 window.__sc1616NoReload = "1";
                 typeAndLeave(this.anchor, "Synthetic X-ray report");
@@ -257,11 +258,11 @@ tours.add("sc_1616_documents_upload", {
         },
         {
             content: "Its row follows (read fragment) — no reload",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(
                     () =>
-                        [...document.querySelectorAll(`${DOCS} .o_sc_doc_row .o_sc_row_title`)].some(
+                        [...document.querySelectorAll(`${DOCS} .o_sc_doc_row .o_pk_row_title`)].some(
                             (node) => node.textContent.trim() === "Synthetic X-ray report"
                         ),
                     "row renamed"

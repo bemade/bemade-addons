@@ -78,10 +78,10 @@ function checkAll(root) {
     const groups = {
         "training recommendation": ".team-digest .card-body > .text-muted .fa-heartbeat + span",
         "Retour prévu": ".team-digest .card-body > .text-muted .fa-clock-o + span",
-        "Dépassé": ".team-digest .o_sc_overdue",
+        "Dépassé": ".team-digest .o_pk_overdue",
         "Show details": ".team-digest .o_sc_card_summary .o_sc_summary_more",
         "injury meta": ".team-digest .o_sc_injury_detail .text-muted",
-        "snapshot line": '[data-sc-section="digest.snapshot"]',
+        "snapshot line": '[data-pk-section="digest.snapshot"]',
     };
     const failures = [];
     for (const [label, selector] of Object.entries(groups)) {
@@ -106,9 +106,9 @@ tours.add("sc_1728_digest_contrast", {
     steps: () => [
         {
             content: "The day's digest renders in the shell",
-            trigger: '.o_sc_app [data-sc-section="digest.body"] .team-digest .card',
+            trigger: '.o_pk_app [data-pk-section="digest.body"] .team-digest .card',
             run() {
-                const root = document.querySelector(".o_sc_app");
+                const root = document.querySelector(".o_pk_app");
                 OPEN_DETAILS(root);
                 checkAll(root);
             },
@@ -116,7 +116,7 @@ tours.add("sc_1728_digest_contrast", {
     ],
 });
 
-const ROW = '[data-sc-section="digest.history"] details[data-sc-digest-row]';
+const ROW = '[data-pk-section="digest.history"] details[data-sc-digest-row]';
 
 tours.add("sc_1728_digest_history_contrast", {
     steps: () => [
@@ -127,7 +127,7 @@ tours.add("sc_1728_digest_history_contrast", {
         },
         {
             content: "The inline body reads in the dark theme",
-            trigger: `${ROW}[open] .o_sc_lazy_body .team-digest .card`,
+            trigger: `${ROW}[open] .o_pk_lazy_body .team-digest .card`,
             run() {
                 const row = document.querySelector(`${ROW}[open]`);
                 OPEN_DETAILS(row);

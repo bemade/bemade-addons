@@ -185,8 +185,34 @@ class SaleOrderLine(models.Model):
     def _timesheet_service_generation(self):
         super()._timesheet_service_generation()
         visit_lines = self.filtered(lambda line: line.visit_id)
-        for index, line in enumerate(visit_lines):
-            task_ids = line.get_section_line_ids().mapped("task_id")
+        # Service lines added later to a confirmed order, under a visit that
+        # has no task yet (a visit added after confirmation): the visit gets
+        # its task now, on its first service line, as it would have at
+        # confirmation.
+        new_service_lines = self.filtered(
+            lambda line: not line.display_type and line.task_id
+        )
+        parent_sections = new_service_lines._get_parent_visit_sections()
+        late_visit_lines = (
+            self.env["sale.order.line"]
+            .union(*parent_sections)
+            .filtered(lambda section: not section.visit_id.task_id)
+            - visit_lines
+        )
+        # A service line added later under a visit that already has its task
+        # keeps its own task (unchanged behaviour) but shares the visit's work
+        # order number instead of taking the next visit's one.
+        for line, section in zip(new_service_lines, parent_sections):
+            visit_task = section.visit_id.task_id
+            if section not in visit_lines and visit_task and not line.task_id.parent_id:
+                line.task_id.work_order_number = visit_task.work_order_number
+        for line in visit_lines | late_visit_lines:
+            section_lines = line.get_section_line_ids()
+            if line in late_visit_lines:
+                # Only the lines being processed now: tasks that already exist
+                # under the section keep their place and number.
+                section_lines &= self
+            task_ids = section_lines.mapped("task_id")
             if not task_ids:
                 continue
             if len(set([task.project_id for task in task_ids])) > 1:
@@ -194,12 +220,49 @@ class SaleOrderLine(models.Model):
                 return
             project_id = task_ids[0].project_id
             line.visit_id.task_id = line._generate_task_for_visit_line(
-                project_id, index + 1, sum(task_ids.mapped("allocated_hours"))
+                project_id,
+                line._get_visit_position(),
+                sum(task_ids.mapped("allocated_hours")),
             )
-            task_ids.write({"parent_id": line.visit_id.task_id.id})
-        (self.mapped("task_id") | self.visit_ids.task_id).filtered(
+            task_ids.write(
+                {
+                    "parent_id": line.visit_id.task_id.id,
+                    "work_order_number": line.visit_id.task_id.work_order_number,
+                }
+            )
+        visit_tasks = (visit_lines | late_visit_lines).visit_ids.task_id
+        (self.mapped("task_id") | visit_tasks).filtered(
             "is_fsm"
         ).synchronize_name_fsm()
+
+    def _get_parent_visit_sections(self):
+        """Return, for each line, the visit section it sits under (the closest
+        section above it when that section is a visit's), or an empty record.
+
+        The result has one entry per line, in order (empty records included),
+        so it can be zipped with ``self``; its distinct sections are obtained
+        with ``.filtered(...)`` or set operators.
+        """
+        result = []
+        for line in self:
+            section = self.env["sale.order.line"]
+            for order_line in line.order_id.order_line.sorted(
+                lambda l: (l.sequence, l.id)
+            ):
+                if order_line == line:
+                    break
+                if order_line.display_type == "line_section":
+                    section = order_line
+            result.append(section if section.visit_id else section.browse())
+        return result
+
+    def _get_visit_position(self):
+        """1-based position of this visit section among the order's visits."""
+        self.ensure_one()
+        visit_sections = self.order_id.order_line.filtered("visit_id").sorted(
+            lambda l: (l.sequence, l.id)
+        )
+        return list(visit_sections).index(self) + 1
 
     def _generate_task_for_visit_line(
         self, project, visit_no: int, allocated_hours: int

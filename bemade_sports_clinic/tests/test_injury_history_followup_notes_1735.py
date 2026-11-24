@@ -8,7 +8,7 @@ Acceptance criteria:
   notes under « All » and « Internal », never under « External »; each one
   carries a « Follow-up note » chip (tone distinct from Internal / External),
   its author and its text, and counts as an internal entry
-  (``data-sc-scope="internal"``).
+  (``data-pk-scope="internal"``).
 * UC-2 A treatment note linked to ANOTHER injury, or to no injury, is absent.
 * UC-3 A coach never sees treatment notes, whatever ``?scope=`` says (the
   coach holds no treatment-note ACL: the controller never queries them).
@@ -78,8 +78,8 @@ class TestInjuryHistoryFollowupNotes1735(History1581Common):
         self._login_tp()
         tree = self._fragment(self.notes_url)
         classes = {chip.text_content().strip(): chip.get('class')
-                   for chip in tree.xpath('//li//*[contains(@class, "o_sc_chip")]')}
-        self.assertIn('o_sc_chip_green', classes['Follow-up note'])
+                   for chip in tree.xpath('//li//*[contains(@class, "o_pk_chip")]')}
+        self.assertIn('o_pk_chip_green', classes['Follow-up note'])
         self.assertNotEqual(classes['Follow-up note'], classes['Internal'])
         self.assertNotEqual(classes['Follow-up note'], classes['External'])
 
@@ -124,12 +124,12 @@ class TestInjuryHistoryFollowupNotes1735(History1581Common):
         self._login_tp()
         tree = self._fragment(url)
         self.assertEqual([e['body'] for e in self._entries(tree)], ['Synthetic note on the other injury'])
-        self.assertFalse(tree.xpath('//*[contains(@class, "o_sc_empty")]'))
+        self.assertFalse(tree.xpath('//*[contains(@class, "o_pk_empty")]'))
         self.env['sports.treatment.note'].sudo().search(
             [('injury_id', '=', self.other_injury.id)]).unlink()
         tree = self._fragment(url)
         self.assertFalse(self._entries(tree))
-        self.assertEqual(tree.xpath('//*[contains(@class, "o_sc_empty")]/text()'), ['No note history yet.'])
+        self.assertEqual(tree.xpath('//*[contains(@class, "o_pk_empty")]/text()'), ['No note history yet.'])
 
 
 @tagged('post_install', '-at_install')

@@ -35,19 +35,19 @@ async function waitFor(check, message, timeout = 8000) {
 
 // The switch ROW (the visible label) of the input ``input`` within ``scope``.
 function row(scope, input) {
-    return `${scope} label.o_sc_switch:has(${input})`;
+    return `${scope} label.o_pk_switch:has(${input})`;
 }
 
 function assertSwitchLayout(label) {
     // One line: the label on the left, the switch on the right, 44 px tall.
-    const text = label.querySelector(".o_sc_switch_label").getBoundingClientRect();
-    const track = label.querySelector(".o_sc_switch_track").getBoundingClientRect();
+    const text = label.querySelector(".o_pk_switch_label").getBoundingClientRect();
+    const track = label.querySelector(".o_pk_switch_track").getBoundingClientRect();
     assert(track.left >= text.left, "the switch is not right of its label");
     assert(label.getBoundingClientRect().height >= 43, "the row is under 44 px");
 }
 
-const DONE_SCOPE = "#sc_done_buttons";
-const DONE = 'input[role="switch"][name="sc_show_done_buttons"]';
+const DONE_SCOPE = "#pk_done_buttons";
+const DONE = 'input[role="switch"][name="pk_show_done_buttons"]';
 
 tours.add("sc_1726_switch_pref", {
     steps: () => [
@@ -71,14 +71,14 @@ tours.add("sc_1726_switch_pref", {
     ],
 });
 
-const FILTERS = 'form[data-sc-section="events.filters"]';
+const FILTERS = 'form[data-pk-section="events.filters"]';
 const CANCELLED = 'input[role="switch"][name="show_cancelled"]';
 
 tours.add("sc_1726_switch_filter", {
     steps: () => [
         {
             content: "Open the filters",
-            trigger: 'form[data-sc-section="events.filters"] details.o_sc_disclosure > summary',
+            trigger: 'form[data-pk-section="events.filters"] details.o_pk_disclosure > summary',
             run() {
                 this.anchor.closest("details").open = true;
             },
@@ -99,7 +99,7 @@ tours.add("sc_1726_switch_filter", {
     ],
 });
 
-const NA_SCOPE = ".o_sc_date_na";
+const NA_SCOPE = ".o_pk_date_na";
 const NA = 'input[role="switch"][name="injury_date_na"]';
 // The date input is rendered by the OWL field, so its disabled state is
 // the proof that the field took the toggle. aria-checked alone is not:
@@ -136,14 +136,14 @@ tours.add("sc_1726_switch_autosave", {
     ],
 });
 
-const CONDITION = 'dialog[open] [data-sc-section="medical.medical_alert"]';
+const CONDITION = 'dialog[open] [data-pk-section="medical.medical_alert"]';
 const NONE = 'input[role="switch"][data-sc-med-set="medical_none_confirmed"]';
 
 tours.add("sc_1726_switch_fetch", {
     steps: () => [
         {
             content: "The Medical alert pill",
-            trigger: '[data-sc-section="player.medical"] button[data-sc-med-pill="medical_alert"]',
+            trigger: '[data-pk-section="player.medical"] button[data-sc-med-pill="medical_alert"]',
             run() {
                 window.__sc1726NoReload = true;
                 this.anchor.click();

@@ -47,7 +47,7 @@ class TestClinicKiosk(HttpCase):
         # The kiosk renders fr_CA by default (#1433): the route tests below
         # assert FRENCH, which requires the terms to be loaded.
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'])
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'])
 
         cls.org = env['res.partner'].create({'name': 'KK Org', 'is_company': True})
         cls.team = env['sports.team'].create({'name': 'KK Team', 'parent_id': cls.org.id})

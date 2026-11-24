@@ -186,7 +186,7 @@ class TestEventOrgTeamFilter1597(Org1597Common):
         self.assertIn(str(self.org2.id), values)
         # Task 1608 (deliberate update): every team option of the tags field
         # carries its organization (group key; '' for a team without one).
-        teams_card = form.xpath('.//*[@data-sc-section="event.form.teams"]')[0]
+        teams_card = form.xpath('.//*[@data-pk-section="event.form.teams"]')[0]
         props = json.loads(teams_card.xpath('.//owl-component/@props')[0])
         orgs = {opt[0]: opt[3] for opt in props['options']}
         self.assertEqual(orgs[str(self.team_a.id)], str(self.org.id))
@@ -256,7 +256,7 @@ class TestEventOrgTeamFilter1597(Org1597Common):
         self._login_tp()
         _text, tree = self._get('/my/events?no_default_dates=1&organization_id=%s' % self.org.id)
         # Task 1607 (deliberate update): « + Ajouter » is in the list header.
-        self.assertEqual(tree.xpath('//div[contains(@class, "o_sc_list_header")]//a[@data-sc-action="events.create"]/@href'),
+        self.assertEqual(tree.xpath('//div[contains(@class, "o_pk_list_header")]//a[@data-pk-action="events.create"]/@href'),
                          ['/my/event/create?organization_id=%s' % self.org.id])
 
 

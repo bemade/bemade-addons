@@ -1,6 +1,6 @@
 {
     "name": "Bemade Warn Supplier Overdue",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.2",
     "summary": "Warn supplier when overdue on purchase order confirmation",
     "description": """
 Warn supplier when overdue on purchase order confirmation

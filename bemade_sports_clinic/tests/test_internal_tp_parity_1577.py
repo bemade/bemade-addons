@@ -99,7 +99,7 @@ class TestInternalTpParity1577(Parity1577Common):
         self._login_itp()
         _text, tree = self._get('/my/injury/edit?injury_id=%s' % self.injury.id)
         self.assertIsNotNone(self._shell(tree))
-        self.assertFalse(tree.xpath('//*[@data-sc-section="injury.stage.readonly"]'),
+        self.assertFalse(tree.xpath('//*[@data-pk-section="injury.stage.readonly"]'),
                          "the therapist gets the stage control, not the read-only chip")
         # Task 1616: the injury page is the open card.
         self.assertTrue(tree.xpath('//dialog[@id="sc_delete_injury_sheet_%s"]//form' % self.injury.id))
@@ -108,7 +108,7 @@ class TestInternalTpParity1577(Parity1577Common):
             self.assertIn('"%s"' % name, props, name)
         # Task 1631: the status and visibility are pill dropdowns (editable).
         for name in ('stage', 'hidden_from_coaches'):
-            self.assertTrue(tree.xpath('//*[@data-sc-pill-select][@data-sc-field="%s"]' % name), name)
+            self.assertTrue(tree.xpath('//*[@data-pk-pill-select][@data-pk-field="%s"]' % name), name)
 
     def test_injury_save_writes_tp_fields(self):
         self._login_itp()

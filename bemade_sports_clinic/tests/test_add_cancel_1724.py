@@ -3,11 +3,11 @@
 Acceptance criteria:
 
 * AC-1 Every inline add panel opened from a list header
-  (``details.o_sc_list_add_panel``: activity, emergency contact, injury,
+  (``details.o_pk_list_add_panel``: activity, emergency contact, injury,
   note, player add — team page and players list —, player request, medical
-  list items) has a ``button[data-sc-list-add-cancel]`` « Cancel » next to
+  list items) has a ``button[data-pk-list-add-cancel]`` « Cancel » next to
   its submit (type=button, never submits). Bottom-sheet adds (documents,
-  timesheet, clinic patient) already had « Cancel » (sc_sheet).
+  timesheet, clinic patient) already had « Cancel » (pk_sheet).
 * AC-2 Browser: « Annuler » closes the panel, clears its fields and its
   device draft, the focus goes back to « + Ajouter »; reopened, the panel
   is empty (activity panel + the note panel, phone and laptop).
@@ -28,9 +28,9 @@ class TestAddCancel1724(PlayerAdd1655Common):
         panels = tree.xpath('//details[@id="%s"]' % panel_id)
         self.assertEqual(len(panels), 1, panel_id)
         panel = panels[0]
-        self.assertIn('o_sc_list_add_panel', panel.get('class'), panel_id)
-        buttons = panel.xpath('.//form//*[contains(concat(" ", @class, " "), " o_sc_form_actions ")]'
-                              '/button[@data-sc-list-add-cancel]')
+        self.assertIn('o_pk_list_add_panel', panel.get('class'), panel_id)
+        buttons = panel.xpath('.//form//*[contains(concat(" ", @class, " "), " o_pk_form_actions ")]'
+                              '/button[@data-pk-list-add-cancel]')
         self.assertEqual(len(buttons), 1, panel_id)
         self.assertEqual(buttons[0].get('type'), 'button', panel_id)
         # Next to the submit.
@@ -56,15 +56,16 @@ class TestAddCancel1724(PlayerAdd1655Common):
         # Every header-toggled panel of the player info tab (medical lists
         # included) carries one.
         _text, tree = self._get(player + '&tab=info')
-        panels = tree.xpath('//details[contains(concat(" ", @class, " "), " o_sc_list_add_panel ")]')
+        panels = tree.xpath('//details[contains(concat(" ", @class, " "), " o_pk_list_add_panel ")]')
         self.assertTrue(panels)
         for panel in panels:
-            self.assertEqual(len(panel.xpath('.//button[@data-sc-list-add-cancel]')), 1, panel.get('id'))
+            self.assertEqual(len(panel.xpath('.//button[@data-pk-list-add-cancel]')), 1, panel.get('id'))
 
     def test_french(self):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        # Task 5369: « Annuler » is the kit's (pk_list_add_cancel).
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

@@ -440,13 +440,17 @@ class SportsEvent(models.Model):
         login sharing its partner (one person, several logins). ONE
         definition: the events page's « missing timesheets » segment
         (AccessControlMixin._prepare_events_domain) and the dashboard's
-        « Feuilles de temps manquantes » (task 1624 review round 1). The
-        callers add the date bounds and the cancelled filter."""
+        « Feuilles de temps manquantes » (task 1624 review round 1). Task
+        1742 (owner 2026-11-02): an event counts once it has STARTED — never
+        a later one today (or tomorrow's, after 20:00 in Québec: the list
+        used to bound by the server's UTC date). The callers add the lower
+        date bound and the cancelled filter."""
         user = user or self.env.user
         shared = self.env['res.users'].sudo().search(
             [('partner_id', '=', user.partner_id.id)]).ids or [user.id]
         return [
             ('assigned_staff_ids', 'in', shared),
+            ('date_start', '<=', fields.Datetime.now()),
             '!', ('timesheet_ids.user_id', 'in', shared),
         ]
 

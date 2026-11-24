@@ -1,31 +1,33 @@
 /*
  * Task 1677 — the medical popups' structured lists (sc_medical_sheets;
- * controllers/app_critical_items.py). Inert outside .o_sc_app.
+ * controllers/app_critical_items.py). Inert outside .o_pk_app.
  *
  * - form[data-sc-med-add] (the list header's « + Ajouter » panel) adds an
  *   item; the panel is reset and closed after a successful add (#1672);
- * - an item card's edit view (its pencil, sc_app_ui.js; the pencil turns
+ * - an item card's edit view (its pencil, the kit's pk_edit_cards.js; the pencil turns
  *   into the ✓ that closes it, #1676): each [data-sc-med-item-field] input
  *   is saved on change; [data-sc-med-item-delete] (the trash can) removes
- *   the item;
+ *   the item — task 1736: once confirmed (pkConfirm: it cannot be undone);
  * - [data-sc-med-set] inputs (the EpiPen card, « none known ») save one
  *   field of the player; the EpiPen note shows only while EpiPen is ticked.
  *
- * Each answer is announced as an « sc:saved » of the player (its
+ * Each answer is announced as an « pk:saved » of the player (its
  * ``refresh`` patterns): the pills, the popup's head pill, the list (a
  * « list » fragment — the open cards keep their state), the cards follow in
  * place, without a reload.
  */
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
-import { resetAddPanel } from "@bemade_sports_clinic/js/sc_list_header";
+import { _t } from "@web/core/l10n/translation";
+import { pkConfirm } from "@bemade_portal_kit/js/pk_confirm";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
+import { resetAddPanel } from "@bemade_portal_kit/js/pk_list_header";
 
 function sheetOf(el) {
-    return el && el.closest && el.closest(".o_sc_app .o_sc_med_sheet");
+    return el && el.closest && el.closest(".o_pk_app .o_sc_med_sheet");
 }
 
 function announce(sheet, result) {
     document.dispatchEvent(
-        new CustomEvent("sc:saved", {
+        new CustomEvent("pk:saved", {
             detail: {
                 model: "sports.patient",
                 recordId: Number(sheet.dataset.scPatient),
@@ -67,7 +69,7 @@ function revert(input) {
         }
     } else if (input.type === "checkbox") {
         input.checked = input.defaultChecked;
-        // Task 1726: a switch's aria-checked follows (sc_switch.js).
+        // Task 1726: a switch's aria-checked follows (pk_switch.js).
         input.setAttribute("aria-checked", input.checked ? "true" : "false");
     } else {
         input.value = input.defaultValue;
@@ -116,7 +118,7 @@ document.addEventListener(
         button.disabled = true;
         showError(form, "");
         try {
-            const result = await scFetch("/my/app/medical/item/add", { method: "POST", data, toast: false });
+            const result = await pkFetch("/my/app/medical/item/add", { method: "POST", data, toast: false });
             if (document.activeElement && form.contains(document.activeElement)) {
                 document.activeElement.blur();
             }
@@ -141,7 +143,7 @@ async function saveItemField(input) {
     const field = input.dataset.scMedItemField;
     showError(card, "");
     try {
-        const result = await scFetch(`/my/app/medical/item/${card.dataset.scMedItem}/save`, {
+        const result = await pkFetch(`/my/app/medical/item/${card.dataset.scMedItem}/save`, {
             method: "POST",
             data: { [field]: inputValue(input) },
             toast: false,
@@ -171,13 +173,13 @@ async function savePlayerField(input) {
     if (field === "allergy_epipen" || field === "allergy_epipen_state") {
         syncEpipenNote(sheet, epipenOn);
     }
-    if (input.type === "checkbox" && input.closest("[data-sc-fragment]")) {
+    if (input.type === "checkbox" && input.closest("[data-pk-fragment]")) {
         // A focused element pins its read fragment (#1641).
         input.blur();
     }
     showError(holder, "");
     try {
-        const result = await scFetch(`/my/app/medical/${sheet.dataset.scPatient}/set`, {
+        const result = await pkFetch(`/my/app/medical/${sheet.dataset.scPatient}/set`, {
             method: "POST",
             data: { field, value },
             toast: false,
@@ -240,10 +242,21 @@ document.addEventListener("click", async (ev) => {
     }
     ev.preventDefault();
     const card = button.closest("[data-sc-med-item]");
+    // Task 1736 (owner 2026-11-01): a permanent delete asks first.
+    const nameInput = card && card.querySelector('[data-sc-med-item-field="name"]');
+    const ok = await pkConfirm({
+        title: _t("Delete this item?"),
+        message: (nameInput && nameInput.value) || "",
+        confirm: _t("Delete"),
+        cancel: _t("Cancel"),
+    });
+    if (!ok || !button.isConnected) {
+        return;
+    }
     button.disabled = true;
     button.blur(); // a focused element pins its read fragment (#1641)
     try {
-        const result = await scFetch(`/my/app/medical/item/${button.dataset.scMedItemDelete}/delete`, {
+        const result = await pkFetch(`/my/app/medical/item/${button.dataset.scMedItemDelete}/delete`, {
             method: "POST",
             toast: false,
         });

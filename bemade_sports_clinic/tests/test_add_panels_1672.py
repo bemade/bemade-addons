@@ -25,7 +25,7 @@ Acceptance criteria:
   shown once — the reason under « Create » only points at it (« Check the
   existing player above »).
 * AC-4 Browser, the injury add panel (player page): a title tap keeps it
-  open; after a create success (« sc:create-success ») the panel resets
+  open; after a create success (« pk:create-success ») the panel resets
   (fields empty, closed) and reopens empty.
 
 Real phone taps stay UNVERIFIED until /dev-review.
@@ -99,7 +99,7 @@ class TestAddPanelsAddenda1672(PlayerAdd1655Common):
     def _french_site(self):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

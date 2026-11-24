@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 5201 (kit P6): the installable app is bemade_portal_kit_pwa's. Fit
+    Crew keeps its own wording on the install and offline pages (health
+    data, teams and players) through the pages' slots; the name, colours
+    and icons are the company's app fields (models/sc_app_pwa.py).
+-->
+<odoo>
+    <template id="sc_pwa_install_texts" name="Sports Clinic App: install page wording"
+              inherit_id="bemade_portal_kit_pwa.pk_app_install">
+        <xpath expr="//t[@name='pk_install_promise']" position="replace">
+            <t name="pk_install_promise">Full screen, an icon on your home screen, instant opening. Health data is never stored on the device.</t>
+        </xpath>
+        <xpath expr="//t[@name='pk_install_footnote']" position="replace">
+            <t name="pk_install_footnote">Without a connection the app only shows an offline page: no team or player data is kept on the device.</t>
+        </xpath>
+    </template>
+
+    <template id="sc_pwa_offline_texts" name="Sports Clinic App: offline page wording"
+              inherit_id="bemade_portal_kit_pwa.pk_app_offline">
+        <xpath expr="//t[@name='pk_offline_message']" position="replace">
+            <t name="pk_offline_message">Le Fit Crew needs a connection to show teams and players. Your drafts stay on this device and come back when you return to the page.</t>
+        </xpath>
+    </template>
+</odoo>

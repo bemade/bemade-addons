@@ -3,8 +3,9 @@
     <!-- ================================================================
          Shared bits
          ================================================================ -->
+    <!-- The pills of the stock portal; in the app, the shell's nav replaces them. -->
     <template id="portal_student_nav" name="Homeschool: student navigation">
-        <ul class="nav nav-pills mb-3 o_hs_noprint">
+        <ul t-if="not pk_app_shell" class="nav nav-pills mb-3 o_hs_noprint">
             <li class="nav-item">
                 <a
           t-attf-class="nav-link #{'active' if page_name == 'homeschool_day' else ''}"
@@ -53,10 +54,16 @@
     </template>
 
     <!-- ================================================================
+         Pages. Each one draws itself on ``hs_layout``: the app's shell
+         (homeschool_portal.hs_app_layout) when the kit's switch is on for the
+         user, else the stock portal layout (controllers/portal.py, _hs_render).
+         ================================================================ -->
+
+    <!-- ================================================================
          Home: one card per student
          ================================================================ -->
     <template id="portal_home" name="Homeschool: my students">
-        <t t-call="portal.portal_layout">
+        <t t-call="{{ hs_layout or 'portal.portal_layout' }}">
             <div class="o_hs_portal">
                 <h3 class="mb-3">
                     <t t-if="homeschool_role == 'student'">My school</t>
@@ -70,7 +77,7 @@
                         <div class="card h-100">
                             <div class="card-body">
                                 <h5 class="card-title mb-3"><t t-out="s.name" /></h5>
-                                <div class="d-flex flex-wrap gap-2">
+                                <div class="d-flex flex-wrap gap-2 o_hs_card_links">
                                     <a
                     t-attf-href="/my/homeschool/#{s.id}/day"
                     class="btn btn-primary"
@@ -100,7 +107,7 @@
          Day
          ================================================================ -->
     <template id="portal_day" name="Homeschool: day">
-        <t t-call="portal.portal_layout">
+        <t t-call="{{ hs_layout or 'portal.portal_layout' }}">
             <div class="o_hs_portal o_hs_day">
                 <t t-call="homeschool_portal.portal_student_nav" />
                 <div
@@ -375,7 +382,7 @@
          Week
          ================================================================ -->
     <template id="portal_week" name="Homeschool: week">
-        <t t-call="portal.portal_layout">
+        <t t-call="{{ hs_layout or 'portal.portal_layout' }}">
             <div class="o_hs_portal o_hs_week">
                 <t t-call="homeschool_portal.portal_student_nav" />
                 <div
@@ -496,7 +503,7 @@
     </template>
 
     <template id="portal_traces" name="Homeschool: traces">
-        <t t-call="portal.portal_layout">
+        <t t-call="{{ hs_layout or 'portal.portal_layout' }}">
             <div class="o_hs_portal o_hs_traces">
                 <t t-call="homeschool_portal.portal_student_nav" />
                 <div
@@ -551,7 +558,7 @@
     </template>
 
     <template id="portal_trace" name="Homeschool: trace">
-        <t t-call="portal.portal_layout">
+        <t t-call="{{ hs_layout or 'portal.portal_layout' }}">
             <div class="o_hs_portal o_hs_trace">
                 <t t-call="homeschool_portal.portal_student_nav" />
                 <div t-if="submitted" class="alert alert-success" role="alert">
@@ -643,7 +650,7 @@
     </template>
 
     <template id="portal_submit" name="Homeschool: hand in a trace">
-        <t t-call="portal.portal_layout">
+        <t t-call="{{ hs_layout or 'portal.portal_layout' }}">
             <div class="o_hs_portal o_hs_submit">
                 <t t-call="homeschool_portal.portal_student_nav" />
                 <h3 class="mb-3">Hand in a trace</h3>
@@ -748,7 +755,7 @@
          Reading log
          ================================================================ -->
     <template id="portal_reading" name="Homeschool: reading log">
-        <t t-call="portal.portal_layout">
+        <t t-call="{{ hs_layout or 'portal.portal_layout' }}">
             <div class="o_hs_portal o_hs_reading">
                 <t t-call="homeschool_portal.portal_student_nav" />
                 <h3 class="mb-3">Reading log</h3>
@@ -790,7 +797,7 @@
     </template>
 
     <template id="portal_book" name="Homeschool: book">
-        <t t-call="portal.portal_layout">
+        <t t-call="{{ hs_layout or 'portal.portal_layout' }}">
             <div class="o_hs_portal o_hs_book">
                 <t t-call="homeschool_portal.portal_student_nav" />
                 <div

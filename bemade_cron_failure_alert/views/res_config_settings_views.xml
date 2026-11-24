@@ -18,10 +18,13 @@
                     <div class="content-group" invisible="not cron_failure_alert">
                         <div class="row mt16">
                             <label
-                for="cron_failure_alert_user_id"
+                for="cron_failure_alert_user_ids"
                 class="col-lg-4 o_light_label"
               />
-                            <field name="cron_failure_alert_user_id" />
+                            <field
+                name="cron_failure_alert_user_ids"
+                widget="many2many_avatar_user"
+              />
                         </div>
                         <div class="row">
                             <label

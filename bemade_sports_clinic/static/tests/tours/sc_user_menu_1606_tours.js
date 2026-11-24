@@ -21,8 +21,8 @@ function assert(condition, message) {
 }
 
 function menuSteps(where) {
-    const toggle = `button[data-sc-user-menu-toggle][aria-controls="sc_user_menu_${where}"]`;
-    const popup = `#sc_user_menu_${where}`;
+    const toggle = `button[data-pk-user-menu-toggle][aria-controls="pk_user_menu_${where}"]`;
+    const popup = `#pk_user_menu_${where}`;
     const settings = `${popup}:not([hidden]) a[role="menuitem"][href$="/my/app/settings"]`;
     const signOut = `${popup}:not([hidden]) a[role="menuitem"][href^="/web/session/logout"]`;
     return [
@@ -45,7 +45,7 @@ function menuSteps(where) {
                 const first = document.querySelector(settings);
                 assert(first, "« Paramètres » not shown");
                 assert(document.activeElement === first, "focus is not on « Paramètres »");
-                assert(document.querySelector(`${popup} [data-sc-user-menu-head]`).textContent
+                assert(document.querySelector(`${popup} [data-pk-user-menu-head]`).textContent
                     .includes("PC TP"), "the user's name is missing");
                 const rect = document.querySelector(popup).getBoundingClientRect();
                 assert(rect.left >= 0 && rect.right <= window.innerWidth + 0.5,
@@ -100,7 +100,7 @@ function menuSteps(where) {
             content: "A tap outside closes it",
             trigger: settings,
             run() {
-                document.querySelector("main#sc_content").click();
+                document.querySelector("main#pk_content").click();
             },
         },
         {
@@ -133,7 +133,7 @@ function menuSteps(where) {
         },
         {
             content: "The settings page, in French, its menu item current",
-            trigger: `html[lang="fr-CA"] main #sc_language button[value="fr_CA"][aria-pressed="true"]`,
+            trigger: `html[lang="fr-CA"] main #pk_language button[value="fr_CA"][aria-pressed="true"]`,
             run() {
                 assert(document.querySelector(`${popup} a[href$="/my/app/settings"][aria-current="page"]`),
                     "« Paramètres » not marked current");
@@ -144,13 +144,13 @@ function menuSteps(where) {
         },
         {
             content: "Switch to English",
-            trigger: 'main #sc_language button[name="lang"][value="en_US"]',
+            trigger: 'main #pk_language button[name="lang"][value="en_US"]',
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "Back on « Paramètres », now in English",
-            trigger: 'html[lang="en-US"] main #sc_language button[value="en_US"][aria-pressed="true"]',
+            trigger: 'html[lang="en-US"] main #pk_language button[value="en_US"][aria-pressed="true"]',
         },
     ];
 }
@@ -162,21 +162,21 @@ function menuSteps(where) {
  * bubble, fully in view.
  */
 function placementSteps() {
-    const toggle = 'header.o_sc_appbar button[data-sc-user-menu-toggle][aria-controls="sc_user_menu_bar"]';
+    const toggle = 'header.o_pk_appbar button[data-pk-user-menu-toggle][aria-controls="pk_user_menu_bar"]';
     return [
         {
             content: "1638: one user menu, at the top right of the app bar",
             trigger: toggle,
             run() {
-                assert(document.querySelectorAll("[data-sc-user-menu-popup]").length === 1,
+                assert(document.querySelectorAll("[data-pk-user-menu-popup]").length === 1,
                     "more than one user menu in the DOM");
-                assert(document.querySelectorAll("button[data-sc-user-menu-toggle]").length === 1,
+                assert(document.querySelectorAll("button[data-pk-user-menu-toggle]").length === 1,
                     "more than one user-menu trigger");
-                assert(!document.querySelector(".o_sc_rail [data-sc-user-menu-toggle]"),
+                assert(!document.querySelector(".o_pk_rail [data-pk-user-menu-toggle]"),
                     "the rail still holds a user menu");
-                const rail = document.querySelector(".o_sc_rail");
+                const rail = document.querySelector(".o_pk_rail");
                 assert(rail && rail.getClientRects().length, "the rail should show at laptop width");
-                const bar = document.querySelector("header.o_sc_appbar");
+                const bar = document.querySelector("header.o_pk_appbar");
                 const barRect = bar.getBoundingClientRect();
                 const button = document.querySelector(toggle);
                 const rect = button.getBoundingClientRect();
@@ -190,7 +190,7 @@ function placementSteps() {
                 assert(visible[visible.length - 1].contains(button), "the avatar is not last in the bar");
                 assert(bar.scrollWidth <= bar.clientWidth + 0.5,
                     `the app bar overflows: ${bar.scrollWidth} > ${bar.clientWidth}`);
-                const title = document.querySelector(".o_sc_appbar_title").getBoundingClientRect();
+                const title = document.querySelector(".o_pk_appbar_title").getBoundingClientRect();
                 assert(title.width >= 120, `the title is squeezed to ${title.width}px`);
             },
         },
@@ -203,7 +203,7 @@ function placementSteps() {
             content: "1638: the popup drops down, right-aligned under the bubble, in view",
             trigger: `${toggle}[aria-expanded="true"]`,
             run() {
-                const popup = document.querySelector("#sc_user_menu_bar");
+                const popup = document.querySelector("#pk_user_menu_bar");
                 assert(!popup.hidden, "the popup did not open");
                 const rect = popup.getBoundingClientRect();
                 const button = document.querySelector(toggle).getBoundingClientRect();
@@ -213,13 +213,13 @@ function placementSteps() {
                 assert(rect.left >= 0 && rect.right <= window.innerWidth + 0.5,
                     `the menu overflows the screen: ${rect.left}-${rect.right} / ${window.innerWidth}`);
                 assert(rect.bottom <= window.innerHeight + 0.5, "the menu leaves the screen");
-                const head = popup.querySelector("[data-sc-user-menu-head]").textContent;
+                const head = popup.querySelector("[data-pk-user-menu-head]").textContent;
                 assert(head.includes("PC TP"), "the name is missing from the menu head");
             },
         },
         {
             content: "Escape closes it",
-            trigger: `#sc_user_menu_bar:not([hidden]) a[role="menuitem"]`,
+            trigger: `#pk_user_menu_bar:not([hidden]) a[role="menuitem"]`,
             run: "press Escape",
         },
         {
@@ -234,20 +234,20 @@ tours.add("sc_1606_menu_phone", {
     steps: () => [
         {
             content: "360 px: the avatar fits next to the clock and search, the title keeps room",
-            trigger: 'header.o_sc_appbar button[aria-controls="sc_user_menu_bar"]',
+            trigger: 'header.o_pk_appbar button[aria-controls="pk_user_menu_bar"]',
             run() {
-                const bar = document.querySelector("header.o_sc_appbar");
+                const bar = document.querySelector("header.o_pk_appbar");
                 assert(bar.scrollWidth <= bar.clientWidth + 0.5,
                     `the app bar overflows: ${bar.scrollWidth} > ${bar.clientWidth}`);
                 assert(document.documentElement.scrollWidth <= window.innerWidth + 0.5,
                     "the page scrolls sideways");
-                const title = document.querySelector(".o_sc_appbar_title").getBoundingClientRect();
+                const title = document.querySelector(".o_pk_appbar_title").getBoundingClientRect();
                 assert(title.width >= 80, `the title is squeezed to ${title.width}px`);
-                const avatar = document.querySelector('button[aria-controls="sc_user_menu_bar"]')
+                const avatar = document.querySelector('button[aria-controls="pk_user_menu_bar"]')
                     .getBoundingClientRect();
                 assert(avatar.right <= window.innerWidth, "the avatar is off screen");
                 assert(avatar.height >= 44, `tap target ${avatar.height}px tall`);
-                assert(document.querySelectorAll("[data-sc-user-menu-popup]").length === 1,
+                assert(document.querySelectorAll("[data-pk-user-menu-popup]").length === 1,
                     "more than one user menu in the DOM");
             },
         },
@@ -258,18 +258,18 @@ tours.add("sc_1606_menu_phone", {
 tours.add("sc_1606_sign_out", {
     steps: () => [
         {
-            trigger: "button[data-sc-user-menu-toggle]",
+            trigger: "button[data-pk-user-menu-toggle]",
             run: "click",
         },
         {
             content: "« Se déconnecter »",
-            trigger: '[data-sc-user-menu-popup]:not([hidden]) a[role="menuitem"][href^="/web/session/logout"]',
+            trigger: '[data-pk-user-menu-popup]:not([hidden]) a[role="menuitem"][href^="/web/session/logout"]',
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "Signed out: the login page",
-            trigger: 'form.oe_login_form, form[action="/web/login"], .oe_website_login_container, body:not(:has(.o_sc_app))',
+            trigger: 'form.oe_login_form, form[action="/web/login"], .oe_website_login_container, body:not(:has(.o_pk_app))',
         },
     ],
 });

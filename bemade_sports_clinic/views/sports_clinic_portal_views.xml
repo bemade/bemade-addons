@@ -881,7 +881,7 @@
                     <div t-if="is_injured" class="text-muted small d-flex align-items-center mb-1">
                         <i class="fa fa-clock-o" title="Estimated Return"></i>
                         <span class="ms-1 d-none d-md-inline">Predicted return:</span>
-                        <span t-if="player.predicted_return_date and player.predicted_return_overdue" class="ms-1 o_sc_overdue"><span t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
+                        <span t-if="player.predicted_return_date and player.predicted_return_overdue" class="ms-1 o_pk_overdue"><span t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/><t t-call="bemade_portal_kit.pk_overdue_flag"/></span>
                         <span t-elif="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"></span>
                         <span t-else="" class="ms-1">—</span>
                     </div>
@@ -1066,7 +1066,7 @@
                         <div class="mb-2 small">
                             <i class="fa fa-calendar-check-o me-1" aria-hidden="true"/>
                             <span class="fw-bold">Predicted return: </span>
-                            <span t-if="predicted_return_overdue" class="o_sc_overdue"><span t-out="predicted_return_date" t-options="{'widget': 'date'}"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
+                            <span t-if="predicted_return_overdue" class="o_pk_overdue"><span t-out="predicted_return_date" t-options="{'widget': 'date'}"/><t t-call="bemade_portal_kit.pk_overdue_flag"/></span>
                             <span t-else="" t-out="predicted_return_date" t-options="{'widget': 'date'}"/>
                         </div>
                     </t>
@@ -1516,7 +1516,7 @@
                                      id is suffixed with team.id so a page rendering
                                      more than one team block keeps unique ids.
                                      Task 1385 (CR-D4): UI text is English source;
-                                     French is supplied by i18n/fr_CA.po (owner
+                                     French is supplied by i18n/fr.po (owner
                                      standard). -->
                                 <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                                     <strong>Team announcement</strong>
@@ -2425,7 +2425,7 @@
                                             </tr>
                                             <tr t-if="player.predicted_return_date">
                                                 <td><strong>Predicted Return Date:</strong></td>
-                                                <td t-if="player.predicted_return_overdue" class="o_sc_overdue"><t t-esc="player.predicted_return_date"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></td>
+                                                <td t-if="player.predicted_return_overdue" class="o_pk_overdue"><t t-esc="player.predicted_return_date"/><t t-call="bemade_portal_kit.pk_overdue_flag"/></td>
                                                 <td t-else="" t-esc="player.predicted_return_date"/>
                                             </tr>
                                             <tr t-if="player.return_date">
@@ -2678,16 +2678,7 @@
                                             <input type="hidden" name="return_url" t-att-value="activities_tab_return"/>
                                             <input type="hidden" name="team_id" t-if="team_context_id" t-att-value="team_context_id"/>
                                             <div class="row g-3">
-                                                <div class="col-md-4">
-                                                    <label class="form-label">Activity Type <span class="text-danger">*</span></label>
-                                                    <select name="activity_type_id" class="form-select" required="required">
-                                                        <t t-foreach="activity_types" t-as="atype">
-                                                            <option t-att-value="atype.id"
-                                                                    t-att-selected="'selected' if (default_activity_type and atype.id == default_activity_type.id) else None"
-                                                                    t-esc="atype.name"/>
-                                                        </t>
-                                                    </select>
-                                                </div>
+                                                <!-- Task 1739: no type choice (all To-Do, set by the server). -->
                                                 <div class="col-md-4">
                                                     <label class="form-label">Summary <span class="text-danger">*</span></label>
                                                     <input type="text" name="summary" class="form-control" required="required"

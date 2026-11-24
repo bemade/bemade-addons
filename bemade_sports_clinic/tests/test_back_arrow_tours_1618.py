@@ -1,7 +1,7 @@
 """Task 1618 — laptop: the back arrow next to the breadcrumb on every
 sub-page (owner review 2026-10-18 reversed the « only when it adds
 something » rule; static/tests/tours/sc_back_arrow_1618_tours.js,
-static/src/js/sc_app_nav.js). Synthetic fixtures only.
+bemade_portal_kit/static/src/js/pk_app_nav.js). Synthetic fixtures only.
 
 Acceptance criteria:
 

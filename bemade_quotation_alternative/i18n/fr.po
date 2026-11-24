@@ -1,0 +1,142 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_quotation_alternative
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 18:33+0000\n"
+"PO-Revision-Date: 2026-11-19 18:33+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: bemade_quotation_alternative
+#: model_terms:ir.ui.view,arch_db:bemade_quotation_alternative.sale_order_duplication_wizard_form_view
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: bemade_quotation_alternative
+#: model_terms:ir.ui.view,arch_db:bemade_quotation_alternative.view_sale_order_form_inherit
+msgid "Créer Alternative"
+msgstr "Créer Alternative"
+
+#. module: bemade_quotation_alternative
+#: model_terms:ir.ui.view,arch_db:bemade_quotation_alternative.view_sale_order_form_inherit
+msgid "Créer une alternative de ce devis avec sélection des lignes"
+msgstr "Créer une alternative de ce devis avec sélection des lignes"
+
+#. module: bemade_quotation_alternative
+#: model_terms:ir.ui.view,arch_db:bemade_quotation_alternative.sale_order_duplication_wizard_form_view
+msgid "Duplicate"
+msgstr "Dupliquer"
+
+#. module: bemade_quotation_alternative
+#: model:ir.actions.act_window,name:bemade_quotation_alternative.sale_order_duplication_wizard_action
+#: model_terms:ir.ui.view,arch_db:bemade_quotation_alternative.sale_order_duplication_wizard_form_view
+msgid "Duplicate Sale Order"
+msgstr "Dupliquer la commande"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_duplication_wizard__create_uid
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_line_duplication_wizard__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_duplication_wizard__create_date
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_line_duplication_wizard__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order__display_name
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_duplication_wizard__display_name
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_line_duplication_wizard__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_duplication_wizard__duplicate_all_lines
+msgid "Duplicate All Lines?"
+msgstr "Dupliquer toutes les lignes?"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_line_duplication_wizard__to_duplicate
+msgid "Duplicate?"
+msgstr "Dupliquer?"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order__id
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_duplication_wizard__id
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_line_duplication_wizard__id
+msgid "ID"
+msgstr "ID"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_duplication_wizard__write_uid
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_line_duplication_wizard__write_uid
+msgid "Last Updated by"
+msgstr "Mis à jour par"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_duplication_wizard__write_date
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_line_duplication_wizard__write_date
+msgid "Last Updated on"
+msgstr "Mis à jour le"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_duplication_wizard__lines_to_duplicate
+msgid "Lines to Duplicate"
+msgstr "Lignes à dupliquer"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_duplication_wizard__new_quot
+msgid "New Quotation Name"
+msgstr "Nom du nouveau devis"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_duplication_wizard__note
+msgid "Note"
+msgstr "Note"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_duplication_wizard__original_order_id
+msgid "Original Order"
+msgstr "Commande d'origine"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_duplication_wizard__purpose
+msgid "Purpose"
+msgstr "Objet"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_line_duplication_wizard__sale_order_line_id
+msgid "Sale Order Line"
+msgstr "Ligne de commande"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model,name:bemade_quotation_alternative.model_sale_order
+#: model:ir.model,website_form_label:bemade_quotation_alternative.model_sale_order
+msgid "Sales Order"
+msgstr "Commande client"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model.fields,field_description:bemade_quotation_alternative.field_sale_order_line_duplication_wizard__wizard_id
+msgid "Wizard"
+msgstr "Assistant"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model,name:bemade_quotation_alternative.model_sale_order_duplication_wizard
+msgid "Wizard for duplicating a sale order"
+msgstr "Assistant de duplication d'une commande client"
+
+#. module: bemade_quotation_alternative
+#: model:ir.model,name:bemade_quotation_alternative.model_sale_order_line_duplication_wizard
+msgid "Wizard for selecting sale order lines to duplicate"
+msgstr "Assistant de sélection des lignes de commande à dupliquer"

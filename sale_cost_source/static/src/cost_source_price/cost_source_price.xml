@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="sale_cost_source.CostSourceWrapper">
+        <span
+            t-if="costSourceExplanation"
+            class="o_cost_source_price d-inline-flex align-items-center justify-content-end w-100"
+            data-tooltip-template="sale_cost_source.CostSourceTooltip"
+            t-att-data-tooltip-info="costSourceTooltipInfo"
+            data-tooltip-position="left"
+        >
+            <i
+                t-attf-class="fa fa-info-circle me-1 o_cost_source_icon o_cost_source_{{ costSourceExplanation.level }}"
+            />
+            <t t-call="{{ inner }}" />
+        </span>
+        <t t-else="" t-call="{{ inner }}" />
+    </t>
+
+    <t t-name="sale_cost_source.CostSourcePriceField">
+        <t t-call="sale_cost_source.CostSourceWrapper">
+            <t t-set="inner" t-value="'web.FloatField'" />
+        </t>
+    </t>
+
+    <t t-name="sale_cost_source.CostSourceMonetaryField">
+        <t t-call="sale_cost_source.CostSourceWrapper">
+            <t t-set="inner" t-value="'web.MonetaryField'" />
+        </t>
+    </t>
+
+    <t t-name="sale_cost_source.CostSourceTooltip">
+        <div class="o_cost_source_tooltip" t-if="x">
+            <div class="fw-bold mb-1">
+                <t t-esc="x.title" />
+                <span
+                    t-attf-class="badge ms-1 #{x.level === 'firm' ? 'text-bg-success' : x.level === 'indicative' ? 'text-bg-info' : x.level === 'estimated' ? 'text-bg-warning' : 'text-bg-danger'}"
+                    t-esc="x.level_label"
+                />
+                <span t-if="x.unit_cost" class="ms-1"><t t-esc="x.unit_cost" /></span>
+            </div>
+            <div t-foreach="x.warnings" t-as="w" t-key="w_index" class="o_cost_source_banner text-bg-warning">
+                <i class="fa fa-warning me-1" /><t t-esc="w" />
+            </div>
+            <ul class="ps-3 mb-1">
+                <li t-foreach="x.evidence" t-as="e" t-key="e_index"><t t-esc="e" /></li>
+            </ul>
+            <div t-foreach="x.notes" t-as="n" t-key="n_index" class="small fst-italic">
+                <i class="fa fa-sticky-note-o me-1" /><t t-esc="n" />
+            </div>
+        </div>
+    </t>
+</templates>

@@ -35,7 +35,7 @@ _TOUR_ITEMS = {
     "3": {
         "subject": "Tour Message C",
         "email_from": "third@example.com",
-        "date": "2026-08-13 17:00:00",
+        "date": "2026-01-15 17:00:00",
     },
 }
 

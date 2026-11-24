@@ -559,7 +559,7 @@ class TestOrgStaffFrCA1415(TransactionCase):
     def test_fr_ca_labels(self):
         env = self.env
         env["res.lang"]._activate_lang("fr_CA")
-        env["ir.module.module"]._load_module_terms(["bemade_sports_clinic"], ["fr_CA"], overwrite=True)
+        env["ir.module.module"]._load_module_terms(["bemade_portal_kit", "bemade_sports_clinic"], ["fr_CA"], overwrite=True)
         fr = env(context=dict(env.context, lang="fr_CA"))
         source = dict(fr["sports.team.staff"]._fields["source"]._description_selection(fr))
         self.assertEqual(source, {"manual": "Manuel", "org": "Organisation", "temp": "Accès temporaire", "event": "Couverture d'événement"})

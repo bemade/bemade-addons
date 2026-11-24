@@ -6,7 +6,7 @@ A proposal is a plain, JSON-serializable dict the app shell shows as a sheet
 after a save (``propose`` in the save route's answer) — never a blocking
 step: the triggering field is already saved. « Apply » posts the ticked
 changes to ``/my/app/apply-proposal``, which re-validates them and writes
-them through the normal save paths (``SAVE_REGISTRY``)::
+them through the normal save paths (the save specs, ``sc_save_specs()``)::
 
     {
         'kind': 'retour_prevu' | 'align_injuries' | 'last_resolved' | …,

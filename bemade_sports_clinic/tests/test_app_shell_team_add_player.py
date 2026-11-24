@@ -48,9 +48,9 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
         self._switch(True)
 
     def _card(self, tree):
-        panel = tree.xpath('//section[@data-sc-tab-panel="players"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="players"]')[0]
         # Task 1655: the shared inline create panel (same id, sc_add_player).
-        cards = panel.xpath('./details[@id="sc_add_player"][@data-sc-section="team.add_player"]')
+        cards = panel.xpath('./details[@id="sc_add_player"][@data-pk-section="team.add_player"]')
         self.assertEqual(len(cards), 1)
         return cards[0]
 
@@ -67,7 +67,7 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
         for name in ('first_name', 'last_name', 'date_of_birth', 'team_ids', 'context_team_id'):
             self.assertIn(name, names)
         self.assertEqual(form.xpath('.//input[@name="team_ids"]/@value'), [str(self.team_a.id)])
-        self.assertFalse(tree.xpath('//header//*[@data-sc-action="team.add_player"]'))
+        self.assertFalse(tree.xpath('//header//*[@data-pk-action="team.add_player"]'))
 
     # -- UC-AP2 ----------------------------------------------------------
     def test_search_results(self):
@@ -138,7 +138,7 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
     def test_coach_request_inline(self):
         self._login_coach()
         _text, tree = self._get(self.url)
-        panel = tree.xpath('//section[@data-sc-tab-panel="players"]')[0]
-        self.assertFalse(panel.xpath('./details[@data-sc-section="team.add_player"]'))
-        form = panel.xpath('./details[@data-sc-section="team.request_add"]//form')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="players"]')[0]
+        self.assertFalse(panel.xpath('./details[@data-pk-section="team.add_player"]'))
+        form = panel.xpath('./details[@data-pk-section="team.request_add"]//form')[0]
         self.assertEqual(form.get('action'), '/my/team/%s/player/request_add' % self.team_a.id)

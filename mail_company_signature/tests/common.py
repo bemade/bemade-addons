@@ -21,6 +21,7 @@ class CompanySignatureCommon(MailCommon):
                 "job_title": "Intégrateur",
                 "work_phone": "514-555-0100 poste 12",
                 "mobile_phone": "514-555-0199",
+                "signature_show_mobile": True,
                 "work_email": "full@example.com",
             },
         )

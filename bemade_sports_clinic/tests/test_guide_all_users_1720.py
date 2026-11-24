@@ -18,7 +18,7 @@ the tests needing it skip cleanly when it is not installed, as in #1685):
 """
 from odoo.tests import tagged
 
-from odoo.addons.bemade_sports_clinic.models.sc_help_article import SC_HELP_HOME_PARAM
+HELP_HOME_PARAM = "bemade_portal_kit.help_home_url"  # task 5200: the kit's parameter
 from odoo.addons.bemade_sports_clinic.tests.test_guide_public_view_1685 import TestGuidePublicView1685
 
 
@@ -64,16 +64,16 @@ class TestGuideAllUsers1720(TestGuidePublicView1685):
 
     # -- AC-3 ------------------------------------------------------------
     def test_help_links_rewritten(self):
-        Help = self.env['sc.help.article'].sudo()
+        Help = self.env['portal.kit.help'].sudo()
         self.env['ir.config_parameter'].sudo().set_param(
-            SC_HELP_HOME_PARAM, '/knowledge/article/%s' % self.root.id)
+            HELP_HOME_PARAM, '/knowledge/article/%s' % self.root.id)
         Help.create({'key': 'players', 'url': '/knowledge/article/%s' % self.section.id})
         Help.create({'key': 'teams', 'url': 'https://guide.example.com/teams'})
-        links = Help._sc_help_links()
+        links = Help.pk_help_links()
         self.assertEqual(links['home'], '/my/guide/%s' % self.root.id)
         self.assertEqual(links['map']['players'], '/my/guide/%s' % self.section.id)
         self.assertEqual(links['map']['teams'], 'https://guide.example.com/teams')
-        help_ = Help._sc_help_for('sc_app_players')
+        help_ = Help.pk_help_for('sc_app_players')
         self.assertEqual(help_['url'], '/my/guide/%s' % self.section.id)
         self.assertIn('/my/guide/%s' % self.section.id, help_['map_json'])
 
@@ -98,6 +98,8 @@ class TestGuideUrlNoKnowledge1720(TestGuidePublicView1685):
         super(TestGuidePublicView1685, self).setUp()
 
     def test_https_unchanged(self):
-        Help = self.env['sc.help.article']
-        self.assertEqual(Help._sc_guide_url('https://guide.example.com/a'), 'https://guide.example.com/a')
-        self.assertEqual(Help._sc_guide_url('/knowledge/article/12#s'), '/my/guide/12#s')
+        Help = self.env['portal.kit.help']
+        self.assertEqual(self.env["portal.kit"]._pk_help_url('https://guide.example.com/a'), 'https://guide.example.com/a')
+        installed = self.env['ir.module.module']._get('website_knowledge').state == 'installed'
+        self.assertEqual(self.env["portal.kit"]._pk_help_url('/knowledge/article/12#s'),
+                         '/my/guide/12#s' if installed else False)

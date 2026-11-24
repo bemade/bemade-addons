@@ -4,7 +4,7 @@ Acceptance criteria covered here:
 
 * UC-S1 (AC1) Switch OFF (prod, the default): ``/my/home`` and ``/my/teams``
   render today's templates — the legacy markers are there, no
-  ``data-sc-app-shell`` marker anywhere.
+  ``data-pk-app-shell`` marker anywhere.
 * UC-S2 (AC2/AC4) Switch ON (staging): a coach gets the phone tabs without
   « Clinique », a therapist gets « Clinique »; both get « Réservations » only
   when the bookings card is enabled; the website/portal header and footer are
@@ -12,7 +12,7 @@ Acceptance criteria covered here:
 * UC-S3 (AC3) A sub-page renders the back chevron + context line AND the
   crumb row (task 1579: the screen width decides which one shows — the
   former ``sc_nav_mode`` setting is gone).
-* UC-S4 (AC2) The theme attribute follows ``sc_theme`` (dark by default)
+* UC-S4 (AC2) The theme attribute follows ``pk_theme`` (dark by default)
   when the theme choice is enabled (task 1602: forced dark otherwise).
 * UC-S5 The stock portal home stays reachable from the shell
   (``/my/home?classic=1``).
@@ -26,8 +26,8 @@ from odoo.tests import tagged
 from odoo.addons.bemade_sports_clinic.controllers.app_shell import AppShellMixin
 from odoo.addons.bemade_sports_clinic.tests.portal_cov_common import PortalCovCommon
 
-SWITCH = 'bemade_sports_clinic.app_shell_enabled'
-THEME_CHOICE = 'bemade_sports_clinic.sc_theme_choice_enabled'
+SWITCH = 'bemade_portal_kit.enabled'
+THEME_CHOICE = 'bemade_portal_kit.theme_choice_enabled'
 
 
 class AppShellCommon(PortalCovCommon):
@@ -51,12 +51,12 @@ class AppShellCommon(PortalCovCommon):
     @staticmethod
     def _nav_keys(tree, container_class):
         return tree.xpath(
-            "//nav[contains(concat(' ', @class, ' '), ' %s ')]//a/@data-sc-nav-key"
+            "//nav[contains(concat(' ', @class, ' '), ' %s ')]//a/@data-pk-nav-key"
             % container_class)
 
     @staticmethod
     def _shell(tree):
-        nodes = tree.xpath('//*[@data-sc-app-shell]')
+        nodes = tree.xpath('//*[@data-pk-app-shell]')
         return nodes[0] if nodes else None
 
 
@@ -72,10 +72,10 @@ class TestAppShellSwitch1538(AppShellCommon):
             self.assertIn('o_portal_my_home', text)
             self.assertIn('portal_sports_category', text)
             self.assertIsNone(self._shell(tree))
-            self.assertNotIn('data-sc-app-shell', text)
+            self.assertNotIn('data-pk-app-shell', text)
             text, tree = self._get('/my/teams')
             self.assertIn('o_sc_teams_sort', text)
-            self.assertNotIn('data-sc-app-shell', text)
+            self.assertNotIn('data-pk-app-shell', text)
 
     def test_switch_on_plain_user_keeps_stock_portal(self):
         self._switch(True)
@@ -91,12 +91,12 @@ class TestAppShellSwitch1538(AppShellCommon):
         text, tree = self._get('/my/home')
         self.assertIsNotNone(self._shell(tree))
         self.assertNotIn('o_portal_my_home', text)
-        self.assertEqual(self._nav_keys(tree, 'o_sc_tabs'),
+        self.assertEqual(self._nav_keys(tree, 'o_pk_tabs'),
                          ['teams', 'players', 'activities', 'more'])
-        self.assertNotIn('clinic', self._nav_keys(tree, 'o_sc_rail_nav'))
+        self.assertNotIn('clinic', self._nav_keys(tree, 'o_pk_rail_nav'))
         # Task 1624 (deliberate update): the home is the configurable
         # dashboard — « My teams » left it (still under « Teams »).
-        self.assertTrue(tree.xpath('//section[@data-sc-widget="indicators"]'))
+        self.assertTrue(tree.xpath('//section[@data-pk-dash-widget="indicators"]'))
         self.assertNotIn('PC Team B', text)
 
     def test_switch_on_tp_tabs_with_clinic(self):
@@ -105,18 +105,18 @@ class TestAppShellSwitch1538(AppShellCommon):
         _text, tree = self._get('/my/home')
         # Owner review 2026-10-10: « Clinic » left the phone tabs for
         # « More »; the laptop rail keeps it.
-        self.assertEqual(self._nav_keys(tree, 'o_sc_tabs'),
+        self.assertEqual(self._nav_keys(tree, 'o_pk_tabs'),
                          ['teams', 'players', 'notepad', 'activities', 'more'])
-        self.assertIn('clinic', self._nav_keys(tree, 'o_sc_rail_nav'))
+        self.assertIn('clinic', self._nav_keys(tree, 'o_pk_rail_nav'))
         # The therapist-only home section.
-        self.assertTrue(tree.xpath('//*[@data-sc-section="home.clinic_teaser"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="home.clinic_teaser"]'))
 
     def test_coach_home_has_no_clinic_teaser(self):
         self._switch(True)
         self._login_coach()
         _text, tree = self._get('/my/home')
-        self.assertFalse(tree.xpath('//*[@data-sc-section="home.clinic_teaser"]'))
-        self.assertTrue(tree.xpath('//*[@data-sc-section="home.team_status"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="home.clinic_teaser"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="home.team_status"]'))
 
     def test_bookings_only_when_enabled(self):
         self._switch(True)
@@ -124,15 +124,15 @@ class TestAppShellSwitch1538(AppShellCommon):
             login()
             with patch.object(AppShellMixin, '_sc_booking_enabled', return_value=False):
                 _text, tree = self._get('/my/home')
-                self.assertNotIn('bookings', self._nav_keys(tree, 'o_sc_rail_nav'))
+                self.assertNotIn('bookings', self._nav_keys(tree, 'o_pk_rail_nav'))
                 _text, tree = self._get('/my/app/more')
-                self.assertFalse(tree.xpath('//a[@data-sc-nav-key="bookings"]'))
+                self.assertFalse(tree.xpath('//a[@data-pk-nav-key="bookings"]'))
             with patch.object(AppShellMixin, '_sc_booking_enabled', return_value=True):
                 _text, tree = self._get('/my/home')
-                self.assertIn('bookings', self._nav_keys(tree, 'o_sc_rail_nav'))
-                self.assertNotIn('bookings', self._nav_keys(tree, 'o_sc_tabs'))
+                self.assertIn('bookings', self._nav_keys(tree, 'o_pk_rail_nav'))
+                self.assertNotIn('bookings', self._nav_keys(tree, 'o_pk_tabs'))
                 _text, tree = self._get('/my/app/more')
-                self.assertTrue(tree.xpath('//a[@data-sc-nav-key="bookings"]'))
+                self.assertTrue(tree.xpath('//a[@data-pk-nav-key="bookings"]'))
 
     def test_no_website_or_portal_header_footer(self):
         # Legacy page carries the frontend header/footer ...
@@ -156,10 +156,10 @@ class TestAppShellSwitch1538(AppShellCommon):
         self.assertIn('PC Team A', text)
         # Task 1592 (deliberate update): a team row is a link row now (its
         # activity clock is its own link); the team id is on the main link.
-        rows = tree.xpath('//*[contains(@class, "o_sc_entity_row")]//a[@data-sc-team-id]')
+        rows = tree.xpath('//*[contains(@class, "o_pk_entity_row")]//a[@data-sc-team-id]')
         self.assertTrue(rows)
         # Sticky sort (task 1401) survives in the shell.
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_sort")]'))
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_sort")]'))
 
     # -- UC-S3 -----------------------------------------------------------
     def test_sub_page_renders_back_and_crumbs(self):
@@ -168,9 +168,9 @@ class TestAppShellSwitch1538(AppShellCommon):
         self._switch(True)
         self._login_coach()
         _text, tree = self._get('/my/team?team_id=%s' % self.team_a.id)
-        self.assertTrue(tree.xpath('//a[contains(@class, "o_sc_back")]'))
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_appbar_context")]'))
-        crumbs = tree.xpath('//nav[contains(@class, "o_sc_crumbs")]')
+        self.assertTrue(tree.xpath('//a[contains(@class, "o_pk_back")]'))
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_appbar_context")]'))
+        crumbs = tree.xpath('//nav[contains(@class, "o_pk_crumbs")]')
         self.assertTrue(crumbs)
         self.assertTrue(crumbs[0].xpath('.//a[@href="/my/teams"]'))
         self.assertIsNone(self._shell(tree).get('data-sc-nav'))
@@ -179,20 +179,20 @@ class TestAppShellSwitch1538(AppShellCommon):
         self._switch(True)
         self._login_coach()
         _text, tree = self._get('/my/home')
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_logo")]'))
-        self.assertFalse(tree.xpath('//a[contains(@class, "o_sc_back")]'))
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_logo")]'))
+        self.assertFalse(tree.xpath('//a[contains(@class, "o_pk_back")]'))
 
     # -- UC-S4 -----------------------------------------------------------
     def test_theme_attribute_follows_preference(self):
         self._switch(True)
         self._theme_choice(True)
         self._login_tp()
-        self.assertEqual(self.tp.sc_theme, 'dark')
+        self.assertEqual(self.tp.pk_theme, 'dark')
         _text, tree = self._get('/my/home')
-        self.assertEqual(self._shell(tree).get('data-sc-theme'), 'dark')
-        self.tp.sc_theme = 'light'
+        self.assertEqual(self._shell(tree).get('data-pk-theme'), 'dark')
+        self.tp.pk_theme = 'light'
         _text, tree = self._get('/my/home')
-        self.assertEqual(self._shell(tree).get('data-sc-theme'), 'light')
+        self.assertEqual(self._shell(tree).get('data-pk-theme'), 'light')
 
     # -- UC-S5 -----------------------------------------------------------
     def test_classic_home_reachable(self):

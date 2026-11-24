@@ -458,7 +458,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'success': kw.get('success'),
         }
         # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_clinics_values(values))
         return self._sc_render('bemade_sports_clinic.portal_my_clinics',
                                'bemade_sports_clinic.sc_app_clinics', values)
@@ -543,7 +543,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'success': kw.get('success'),
         })
         # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_clinic_values(event, values, dict(kw, patient=patient)))
         return self._sc_render('bemade_sports_clinic.portal_clinic_detail',
                                'bemade_sports_clinic.sc_app_clinic', values)
@@ -974,14 +974,14 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'subtitle': subtitle,
                 'url': '/my/clinic/%s' % clinic.id,
                 'chip': summary or env._("%(count)s on the list", count=count),
-                'tone': 'ghost' if summary or not count else 'mauve',
+                'tone': 'ghost' if summary or not count else 'secondary',
             })
         return {
             'sc_clinic_segments': [(key, labels[key], _url(time_filter=key))
                                    for key in CLINIC_TIME_FILTERS],
             'sc_clinic_mine_url': _url(mine='0' if mine else '1'),
             'sc_clinic_rows': rows,
-            'sc_flash': {
+            'pk_flash': {
                 'success': {
                     'patient_removed': env._("Patient removed from the clinic."),
                 }.get(values.get('success')),
@@ -1047,7 +1047,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         file), laptop = two panes; the worklist is the live component
         (initial data rendered into its props — no fetch before first
         paint); the dossier reuses the P2 building blocks (status pair
-        through SAVE_REGISTRY, note cards with server autosave, the device
+        through the save specs, note cards with server autosave, the device
         draft note form posting to /my/injury/note/add with event_id)."""
         env = request.env
         selected = values['selected_patient']
@@ -1161,7 +1161,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # kiosk sign-in may appear on the NEXT poll.
             'sc_resolve_teams': self._creatable_teams(event),
             'sc_resolve_groups': self._addable_patients(event),
-            'sc_flash': self._sc_clinic_flash(kw),
+            'pk_flash': self._sc_clinic_flash(kw),
             **self._sc_injury_card_options(),
         }
 

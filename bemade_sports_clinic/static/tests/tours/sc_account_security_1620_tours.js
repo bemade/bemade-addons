@@ -49,8 +49,8 @@ function reloadIfRestored() {
 }
 
 const FORM = ".o_customer_address_fill form.address_autoformat";
-const CONTACT = `${FORM} section[data-sc-edit-card="account-contact"]`;
-const ADDRESS = `${FORM} section[data-sc-edit-card="account-address"]`;
+const CONTACT = `${FORM} section[data-pk-edit-card="account-contact"]`;
+const ADDRESS = `${FORM} section[data-pk-edit-card="account-address"]`;
 
 async function waitFor(check, message, timeout = 8000) {
     const start = Date.now();
@@ -71,17 +71,17 @@ function setValue(el, value) {
 }
 
 function readText(card) {
-    return document.querySelector(`${card} [data-sc-edit-view="read"]`).textContent;
+    return document.querySelector(`${card} [data-pk-edit-view="read"]`).textContent;
 }
 
 // Review fixes 2026-10-18 b: two pencil cards; round 2 (1018c): each field
 // autosaves on its own, « Done » closes the card.
 function fieldBox(card, name) {
-    return document.querySelector(`${card} [name="${name}"]`).closest(".o_sc_field");
+    return document.querySelector(`${card} [name="${name}"]`).closest(".o_pk_field");
 }
 
 function stateOf(card, name) {
-    return fieldBox(card, name).dataset.scState || "";
+    return fieldBox(card, name).dataset.pkState || "";
 }
 
 function waitState(card, name, state) {
@@ -93,7 +93,7 @@ tours.add("sc_1620_account", {
     steps: () => [
         {
             content: "Paramètres → Mon compte",
-            trigger: '#sc_account a[href$="/my/account"]',
+            trigger: '#pk_account a[href$="/my/account"]',
             run(helpers) {
                 reloadIfRestored();
                 return helpers.click();
@@ -102,28 +102,28 @@ tours.add("sc_1620_account", {
         },
         {
             content: "The shell page: two read cards, no company, no save / cancel",
-            trigger: `.o_sc_app ${CONTACT} [data-sc-edit-view="read"]`,
+            trigger: `.o_pk_app ${CONTACT} [data-pk-edit-view="read"]`,
             run() {
                 window.__sc1018bNoReload = "1";
-                assert(document.querySelector("a[data-sc-back]"), "no back arrow");
+                assert(document.querySelector("a[data-pk-back]"), "no back arrow");
                 assert(!document.querySelector("header#top"), "website header shown");
                 assert(readText(CONTACT).includes("PC Coach"), "name not in the read view");
                 assert(readText(ADDRESS).includes("Testville"), "city not in the read view");
                 assert(!document.querySelector('[name="company_name"], [name="vat"], #save_address'),
                     "company fields or a page-level save");
-                assert(!document.querySelector("[data-sc-account-save], [data-sc-account-cancel]"),
+                assert(!document.querySelector("[data-pk-account-save], [data-pk-account-cancel]"),
                     "a card save / cancel is left");
-                assert(document.querySelector(`${CONTACT} [data-sc-edit-view="edit"]`).hidden, "edit open");
+                assert(document.querySelector(`${CONTACT} [data-pk-edit-view="edit"]`).hidden, "edit open");
                 noOverflow();
             },
         },
         {
             content: "Address pencil: the province select is as tall as the inputs",
-            trigger: `${ADDRESS} button[data-sc-edit-toggle]`,
+            trigger: `${ADDRESS} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
-            trigger: `${ADDRESS}[data-sc-edit-open] select[name="state_id"]`,
+            trigger: `${ADDRESS}[data-pk-edit-open] select[name="state_id"]`,
             run() {
                 const h = (sel) => document.querySelector(`${ADDRESS} ${sel}`).getBoundingClientRect().height;
                 const city = h('input[name="city"]');
@@ -131,7 +131,7 @@ tours.add("sc_1620_account", {
                 const state = h('select[name="state_id"]');
                 assert(Math.abs(state - country) <= 2, `province ${state}px vs country ${country}px`);
                 assert(Math.abs(state - city) <= 4, `province ${state}px vs input ${city}px`);
-                assert(document.querySelector(`${ADDRESS} button[data-sc-edit-done]`), "no Done");
+                assert(document.querySelector(`${ADDRESS} button[data-pk-edit-done]`), "no Done");
                 noOverflow();
             },
         },
@@ -142,7 +142,7 @@ tours.add("sc_1620_account", {
                 setValue(this.anchor, "Synthetic City");
                 await waitState(ADDRESS, "city", "saved");
                 const label = fieldBox(ADDRESS, "city").querySelector("label");
-                const state = label.querySelector("[data-sc-account-state]");
+                const state = label.querySelector("[data-pk-account-state]");
                 assert(state && !state.hidden && state.textContent.trim(), "no visible save state in the label");
                 noOverflow();
             },
@@ -153,16 +153,16 @@ tours.add("sc_1620_account", {
             async run() {
                 setValue(this.anchor, "");
                 await waitState(ADDRESS, "street", "saved");
-                assert(!document.querySelector(`${ADDRESS} [data-sc-account-errors] h5`), "an address error");
+                assert(!document.querySelector(`${ADDRESS} [data-pk-account-errors] h5`), "an address error");
             },
         },
         {
             content: "« Done » closes the card: the read view shows the new city, no reload",
-            trigger: `${ADDRESS} button[data-sc-edit-done]`,
+            trigger: `${ADDRESS} button[data-pk-edit-done]`,
             run: "click",
         },
         {
-            trigger: `${ADDRESS}:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `${ADDRESS}:not([data-pk-edit-open]) [data-pk-edit-view="read"]:not([hidden])`,
             async run() {
                 // Task 1625: wait for BOTH — the city can already show from
                 // the city's own (earlier) refresh while the street-clear
@@ -176,12 +176,12 @@ tours.add("sc_1620_account", {
         },
         {
             content: "Contact pencil",
-            trigger: `${CONTACT} button[data-sc-edit-toggle]`,
+            trigger: `${CONTACT} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "An email the server refuses (the browser accepts it): error on the field and in the card",
-            trigger: `${CONTACT}[data-sc-edit-open] input[name="email"]`,
+            trigger: `${CONTACT}[data-pk-edit-open] input[name="email"]`,
             async run() {
                 setValue(this.anchor, "coach@localhost");
                 await waitState(CONTACT, "email", "error");
@@ -189,12 +189,12 @@ tours.add("sc_1620_account", {
         },
         {
             content: "The core error, inside the card being edited",
-            trigger: `${CONTACT} [data-sc-account-errors] h5`,
+            trigger: `${CONTACT} [data-pk-account-errors] h5`,
             run() {
                 assert(document.querySelector(`${FORM} input[name="email"]`).classList.contains("is-invalid"),
                     "email not flagged");
-                assert(!document.querySelector(`${ADDRESS} [data-sc-account-errors] h5`), "error in the other card");
-                assert(document.querySelector(`${CONTACT}[data-sc-edit-open]`), "card closed on error");
+                assert(!document.querySelector(`${ADDRESS} [data-pk-account-errors] h5`), "error in the other card");
+                assert(document.querySelector(`${CONTACT}[data-pk-edit-open]`), "card closed on error");
             },
         },
         {
@@ -203,7 +203,7 @@ tours.add("sc_1620_account", {
             async run() {
                 setValue(this.anchor, "pc.coach@example.com");
                 await waitState(CONTACT, "email", "saved");
-                assert(!document.querySelector(`${CONTACT} [data-sc-account-errors] h5`), "error left");
+                assert(!document.querySelector(`${CONTACT} [data-pk-account-errors] h5`), "error left");
                 assert(!this.anchor.classList.contains("is-invalid"), "email still flagged");
             },
         },
@@ -221,11 +221,11 @@ tours.add("sc_1620_account", {
         },
         {
             content: "« Done »: the read view shows the new phone",
-            trigger: `${CONTACT} button[data-sc-edit-done]`,
+            trigger: `${CONTACT} button[data-pk-edit-done]`,
             run: "click",
         },
         {
-            trigger: `${CONTACT}:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `${CONTACT}:not([data-pk-edit-open]) [data-pk-edit-view="read"]:not([hidden])`,
             async run() {
                 await waitFor(() => readText(CONTACT).replace(/\D/g, "").includes("5145550177"),
                     "read view refreshed");
@@ -235,18 +235,18 @@ tours.add("sc_1620_account", {
         },
         {
             content: "Back → Paramètres",
-            trigger: "a[data-sc-back]",
+            trigger: "a[data-pk-back]",
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "On Paramètres",
-            trigger: '#sc_account a[href$="/my/security"]',
+            trigger: '#pk_account a[href$="/my/security"]',
         },
     ],
 });
 
-const PW = '#sc_security_password form[action="/my/security"]';
+const PW = '#pk_security_password form[action="/my/security"]';
 
 function passwordSteps(old, next) {
     return [
@@ -273,7 +273,7 @@ tours.add("sc_1620_security", {
     steps: () => [
         {
             content: "Paramètres → Sécurité",
-            trigger: '#sc_account a[href$="/my/security"]',
+            trigger: '#pk_account a[href$="/my/security"]',
             run(helpers) {
                 reloadIfRestored();
                 return helpers.click();
@@ -282,9 +282,9 @@ tours.add("sc_1620_security", {
         },
         {
             content: "The shell page",
-            trigger: `.o_sc_app .o_portal_security_body ${PW}`,
+            trigger: `.o_pk_app .o_portal_security_body ${PW}`,
             run() {
-                assert(document.querySelector("a[data-sc-back]"), "no back arrow");
+                assert(document.querySelector("a[data-pk-back]"), "no back arrow");
                 assert(document.querySelector("#portal_revoke_all_sessions_popup"), "no « log out everywhere »");
                 noOverflow();
             },
@@ -307,44 +307,44 @@ tours.add("sc_1620_security", {
         ...passwordSteps("not-the-password", "pc-coach-tour-1620"),
         {
             content: "The core error, in the shell",
-            trigger: '.o_sc_app [data-sc-error-for="old"]',
+            trigger: '.o_pk_app [data-pk-error-for="old"]',
         },
         ...passwordSteps("pc-coach", "pc-coach-tour-1620"),
         {
             content: "Changed",
-            trigger: '.o_sc_app [data-sc-section="security.password.done"]',
+            trigger: '.o_pk_app [data-pk-section="security.password.done"]',
         },
         {
             content: "Open « Delete account »",
-            trigger: 'button[data-sc-sheet-open="sc_deactivate_account_sheet"]',
+            trigger: 'button[data-pk-sheet-open="pk_deactivate_account_sheet"]',
             run: "click",
         },
         {
             content: "The sheet asks for the password and the login",
-            trigger: 'dialog#sc_deactivate_account_sheet[open] input[name="password"]',
+            trigger: 'dialog#pk_deactivate_account_sheet[open] input[name="password"]',
             run() {
-                assert(document.querySelector('dialog#sc_deactivate_account_sheet[open] input[name="validation"]'),
+                assert(document.querySelector('dialog#pk_deactivate_account_sheet[open] input[name="validation"]'),
                     "no login confirmation");
             },
         },
         {
             content: "Cancel",
-            trigger: "dialog#sc_deactivate_account_sheet[open] .o_sc_form_actions [data-sc-sheet-close]",
+            trigger: "dialog#pk_deactivate_account_sheet[open] .o_pk_form_actions [data-pk-sheet-close]",
             run: "click",
         },
         {
             content: "Closed",
-            trigger: "dialog#sc_deactivate_account_sheet:not([open]):not(:visible)",
+            trigger: "dialog#pk_deactivate_account_sheet:not([open]):not(:visible)",
         },
         {
             content: "Back → Paramètres",
-            trigger: "a[data-sc-back]",
+            trigger: "a[data-pk-back]",
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "On Paramètres",
-            trigger: '#sc_account a[href$="/my/account"]',
+            trigger: '#pk_account a[href$="/my/account"]',
         },
     ],
 });

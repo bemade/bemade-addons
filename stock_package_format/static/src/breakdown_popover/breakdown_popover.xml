@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <!-- Called by stock's popover_widget (stock.popoverContent) with the JSON
+         of product.package_format_breakdown as props. -->
+    <t t-name="stock_package_format.BreakdownPopover">
+        <table
+      t-if="props.rows and props.rows.length or props.loose"
+      class="table table-sm mb-0"
+    >
+            <thead>
+                <tr>
+                    <th>Format</th>
+                    <th class="text-end">Packages</th>
+                    <th class="text-end">Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr t-foreach="props.rows" t-as="row" t-key="row_index">
+                    <td>
+                        <t t-out="row.label" />
+                        <span t-if="row.opened" class="text-muted"> (opened)</span>
+                    </td>
+                    <td class="text-end" t-out="row.count" />
+                    <td class="text-end" t-out="row.qty" />
+                </tr>
+                <tr t-if="props.loose">
+                    <td>Loose</td>
+                    <td />
+                    <td class="text-end" t-out="props.loose" />
+                </tr>
+            </tbody>
+        </table>
+        <span t-else="" class="text-muted" t-out="props.empty" />
+    </t>
+</templates>

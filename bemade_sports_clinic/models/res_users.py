@@ -147,40 +147,15 @@ class User(models.Model):
         copy=False,
     )
 
-    # Task 1538: portal app shell preference (self-writable; set from
-    # « Plus › Apparence » and the app-bar theme toggle through /my/app/pref,
-    # which accepts this field only). Task 1579 removed the navigation-mode
-    # setting: the screen width decides (back + context on a phone, the
-    # breadcrumb trail on a laptop).
-    sc_theme = fields.Selection(
-        selection=[
-            ("dark", "Dark"),
-            ("light", "Light"),
-        ],
-        string="Portal App Theme",
-        default="dark",
-        required=True,
-        copy=False,
-    )
+    # Task 1538 / 5200 (kit P5): the app's theme is the kit's
+    # ``pk_theme`` (« Paramètres › Apparence », the app-bar toggle); Fit
+    # Crew's default stays dark. The « Terminé » buttons preference is the
+    # kit's ``pk_show_done_buttons``.
+    pk_theme = fields.Selection(default="dark")
 
-    # Task 1676: « Afficher les boutons Terminé » (Paramètres). Off by
-    # default: the edit cards' « Done » buttons are hidden and the head
-    # pencil turns into a ✓ that closes the card (it does in both modes).
-    sc_show_done_buttons = fields.Boolean(
-        string="Show « Done » buttons",
-        default=False,
-        copy=False,
-    )
-
-    # Task 1624: the app dashboard's layout (models/sc_dashboard.py) —
-    # {"v": 2, "instances": [...]} (round 2: each with its zone). Not
-    # self-writable: only the validated « Configurer » path
-    # (sc.dashboard._sc_layout_save, sudo) writes it.
-    sc_dashboard_layout = fields.Json(
-        string="App Dashboard Layout",
-        groups="base.group_system",
-        copy=False,
-    )
+    # Task 1624 / 5202 (kit P7): the app dashboard's layout is the kit's
+    # ``pk_dashboard_layout`` (bemade_portal_kit_dashboard; the former column
+    # moved in place by the 19.0.1.148.0 pre-migration).
 
     # Task 1624, review round 1 (owner 2026-10-29): the players this user
     # follows (« Suivre », the dashboard's « Joueurs que je suis »). A
@@ -249,8 +224,6 @@ class User(models.Model):
             "teams_sort_mode",
             "roster_sort_mode",
             "players_sort_mode",
-            "sc_theme",
-            "sc_show_done_buttons",
         ]
 
     @property
@@ -261,8 +234,6 @@ class User(models.Model):
             "teams_sort_mode",
             "roster_sort_mode",
             "players_sort_mode",
-            "sc_theme",
-            "sc_show_done_buttons",
         ]
 
     def _sc_backend_link_recipient(self):
@@ -275,30 +246,33 @@ class User(models.Model):
         return not self.share and not (set(self._sc_app_roles()) - {"internal"})
 
     def _sc_app_roles(self):
-        """The user's portal-app role SET (task 1538) — see
-        ``models/sc_app_roles.py`` for the model and the registries.
+        """The user's portal-app role SET (task 1538) — the kit's
+        ``_pk_roles()`` (task 5196). See ``models/sc_app_roles.py`` for the
+        clinic's roles and registries."""
+        return self._pk_roles()
 
-        Resolved from group membership and from the staff rows the user's
-        partner holds (sudo: a portal user cannot read every staff row, and
-        only the role keys leave this method)."""
-        self.ensure_one()
-        roles = set()
-        for role, xmlids in sc_app_roles.ROLE_GROUPS.items():
-            if any(self.has_group(xmlid) for xmlid in xmlids):
-                roles.add(role)
-        wanted = {
-            staff_role
-            for staff_roles in sc_app_roles.ROLE_STAFF_ROLES.values()
-            for staff_role in staff_roles
+    def _pk_extra_roles(self):
+        """The clinic roles held through a staff row (``staff_roles`` in
+        ``portal.kit._pk_roles``): head_coach, head_therapist, doctor.
+
+        Read from the staff rows the user's partner holds (sudo: a portal
+        user cannot read every staff row, and only the role keys leave this
+        method). Per user, never cached."""
+        roles = set(super()._pk_extra_roles())
+        staff_map = {
+            role: frozenset(spec['staff_roles'])
+            for role, spec in self.env['portal.kit'].pk_roles().items()
+            if spec.get('staff_roles')
         }
+        wanted = set().union(*staff_map.values()) if staff_map else set()
         held = set()
         if wanted and self.partner_id:
             held = set(self.env["sports.team.staff"].sudo().search([
                 ("partner_id", "=", self.partner_id.id),
                 ("role", "in", sorted(wanted)),
             ]).mapped("role"))
-        for role, staff_roles in sc_app_roles.ROLE_STAFF_ROLES.items():
-            if held & set(staff_roles):
+        for role, staff_roles in staff_map.items():
+            if held & staff_roles:
                 roles.add(role)
         return frozenset(roles)
 

@@ -14,10 +14,8 @@ Acceptance criteria covered here (AC6, with AC1 / AC3 / AC5 in a browser):
 * UC-B4 (AC3) Announcement draft: type -> leave -> return -> « Brouillon
   restauré » with the text -> Publier -> the draft is gone and EXACTLY ONE
   history row was created; logout clears the device drafts.
-* UC-B5 (AC5) The install page renders its per-device steps.
-* UC-B6 (AC1) Kill switch: a service worker registered while the switch is
-  on unregisters itself once the switch is off — task 1543: the new "/"
-  registration AND an old P1b "/my/" one of the same script.
+* UC-B5 / UC-B6 (the install page, the service worker kill switch): task
+  5201 (kit P6), bemade_portal_kit_pwa's tours (tests/test_pk_pwa_tours.py).
 
 Visual layout, both themes at both widths, a real install and real offline
 behaviour stay UNVERIFIED here — the dev-review click-through covers them.
@@ -34,7 +32,7 @@ class _TourCommon(AppShellCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.env['ir.config_parameter'].sudo().set_param(
-            'bemade_sports_clinic.app_shell_enabled', 'True')
+            'bemade_portal_kit.enabled', 'True')
         cls.team_url = '/my/team?team_id=%s' % cls.team_a.id
 
 
@@ -61,9 +59,6 @@ class TestAppShellToursPhone1542(_TourCommon):
         self.start_tour(self.team_url, 'sc_1542_logout_clears_drafts', login='pc.tp@example.com')
         self.team_a.invalidate_recordset()
         self.assertFalse(self.team_a.announcement)
-
-    def test_install_page(self):
-        self.start_tour('/my/app/install', 'sc_1542_install_page', login='pc.coach@example.com')
 
 
 @tagged('post_install', '-at_install')
@@ -96,12 +91,7 @@ class TestAppShellToursLaptop1542(_TourCommon):
     def test_prefs_theme_and_crumbs(self):
         self._theme_choice(True)  # task 1602: the toggle is hidden otherwise
         self.start_tour('/my/home', 'sc_1542_prefs', login='pc.coach@example.com')
-        self.assertEqual(self.coach.sc_theme, 'light')
+        self.assertEqual(self.coach.pk_theme, 'light')
 
     def test_team_tabs_internal_therapist(self):
         self.start_tour(self.team_url, 'sc_1542_team_tabs', login='t1542.admin@example.com')
-
-    def test_sw_kill_switch(self):
-        self.start_tour('/my/home', 'sc_1542_sw_kill_switch', login='t1542.admin@example.com')
-        self.assertFalse(self.env['ir.config_parameter'].sudo().get_param(
-            'bemade_sports_clinic.app_shell_enabled'))

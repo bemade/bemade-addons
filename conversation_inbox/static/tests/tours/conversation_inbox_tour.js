@@ -68,6 +68,17 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
     // Paging: the Next/Previous wiring over sequence-window paging.
     // --------------------------------------------------------------
     {
+      // The test browser runs in UTC, which would hide the bug. Odoo's
+      // web client renders every datetime in luxon's default zone, so
+      // switching it is what a Toronto user's browser looks like. The
+      // rows below are re-fetched and re-rendered after this point.
+      content: "View the inbox from a Toronto browser",
+      trigger: ".o_conversation_inbox",
+      run() {
+        window.luxon.Settings.defaultZone = "America/Toronto";
+      },
+    },
+    {
       content: "Page forward",
       trigger: ".o_conversation_inbox button:contains('Next'):not(:disabled)",
       run: "click",
@@ -75,6 +86,11 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
     {
       content: "Page 2 shows its own item",
       trigger: ".o_conversation_inbox_list .card-header:contains('Tour Message C')",
+    },
+    {
+      // 2026-01-15 17:00:00 UTC in winter (EST, UTC-5): 12:00, not 17:00.
+      content: "A winter message shows Toronto standard time, not UTC",
+      trigger: `.o_inbox_row:has(.card-header:contains('Tour Message C')) .o_inbox_row_date:contains('12:00'):not(:contains('17:00'))`,
     },
     {
       content: "Page back",
@@ -86,9 +102,23 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
       trigger: ".o_conversation_inbox_list .card-header:contains('Tour Message A')",
     },
     {
+      // 2026-08-14 09:00:00 UTC in summer (EDT, UTC-4): 05:00, not 09:00.
+      content: "A summer message shows Toronto daylight time, not UTC",
+      trigger: `.o_inbox_row:has(.card-header:contains('Tour Message A')) .o_inbox_row_date:contains('05:00'):not(:contains('09:00'))`,
+    },
+    {
       // Tour Message B has no Date: its row shows an empty date, never "false".
       content: "A dateless message is listed without the text 'false'",
-      trigger: `.o_inbox_row:has(.card-header:contains('Tour Message B')):not(:contains('false'))`,
+      trigger: `.o_inbox_row:has(.card-header:contains('Tour Message B')):not(:contains('false')):not(:contains('Invalid'))`,
+      run() {
+        const row = [...document.querySelectorAll(".o_inbox_row")].find((el) =>
+          el.textContent.includes("Tour Message B")
+        );
+        const cell = row && row.querySelector(".o_inbox_row_date");
+        if (!cell || cell.textContent.trim() !== "") {
+          throw new Error("The dateless message must have an empty date cell");
+        }
+      },
     },
     // --------------------------------------------------------------
     // Row actions are on the collapsed row: no message was opened, so no

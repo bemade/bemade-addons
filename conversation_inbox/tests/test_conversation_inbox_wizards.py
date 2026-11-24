@@ -12,8 +12,10 @@
 import base64
 from unittest.mock import patch
 
+from odoo.addons.conversation_base.tools import mime
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase
+from odoo.tests.common import new_test_user
 
 
 class InboxWizardTestMixin:
@@ -272,6 +274,86 @@ class TestConversationInboxReplyWizard(InboxWizardTestMixin, TransactionCase):
         self.assertEqual(wizard.subject, "Fwd: Need a quote")
         self.assertEqual(wizard.forwarded_filenames, "spec.pdf")
         self.assertIn("Forwarded message", wizard.body)
+
+    # -- the quoted Date line ----------------------------------------
+
+    def _quoted_date_body(self, header, action_type="reply", lang="fr_CA",
+                          tz="America/Toronto"):
+        """Open the composer as a user with the given language and zone,
+        feeding the date the way production does: the aware datetime
+        ``mime.parse_date`` returns for an RFC822 ``Date`` header."""
+        self.env["res.lang"]._activate_lang(lang)
+        user = self.env["res.users"].search([("login", "=", "quoted_date_user")])
+        user = user or new_test_user(
+            self.env, login="quoted_date_user", groups="base.group_user"
+        )
+        user.write({"lang": lang, "tz": tz})
+        date = mime.parse_date(header) if header else False
+        fetch_patch, normalize_patch = self._mock_fetch_normalize(
+            external_id="ext-date", date=date
+        )
+        with fetch_patch, normalize_patch:
+            wizard = (
+                self.env["conversation.inbox.reply.wizard"]
+                .with_user(user)
+                .with_context(
+                    lang=lang,
+                    default_transport_id=self.transport.id,
+                    default_external_id="ext-date",
+                    default_action_type=action_type,
+                )
+                .create({})
+            )
+        return str(wizard.body)
+
+    def test_quoted_date_is_in_the_users_zone_with_a_zone_name(self):
+        body = self._quoted_date_body("Sun, 01 Nov 2026 18:10:20 -0500")
+        self.assertIn("<b>Date:</b> 2026-11-01 18:10:20 HNE<br", body)
+        self.assertNotIn("-05:00", body)
+        self.assertNotIn("23:10", body)
+
+    def test_quoted_date_in_english_names_the_zone_in_english(self):
+        body = self._quoted_date_body(
+            "Sun, 01 Nov 2026 18:10:20 -0500", lang="en_US"
+        )
+        # The language's own 12-hour format, same instant.
+        self.assertIn("06:10:20 PM EST", body)
+
+    def test_quoted_date_of_a_forward_follows_daylight_saving(self):
+        body = self._quoted_date_body(
+            "Fri, 14 Aug 2026 09:00:00 -0400", action_type="forward"
+        )
+        self.assertIn("2026-08-14 09:00:00 HAE", body)
+        winter = self._quoted_date_body("Sun, 01 Nov 2026 18:10:20 -0500")
+        self.assertIn("HNE", winter)
+
+    def test_quoted_date_of_a_foreign_offset_is_converted_to_the_users_zone(self):
+        body = self._quoted_date_body("Mon, 02 Nov 2026 00:10:20 +0100")
+        self.assertIn("2026-11-01 18:10:20 HNE", body)
+        self.assertNotIn("+01:00", body)
+
+    def test_quoted_date_without_a_zone_abbreviation_shows_the_offset(self):
+        body = self._quoted_date_body(
+            "Sun, 01 Nov 2026 18:10:20 -0500", tz="Europe/Paris"
+        )
+        self.assertIn("2026-11-02 00:10:20 +0100", body)
+
+    def test_quoted_date_of_a_user_without_a_zone_is_labelled_utc(self):
+        body = self._quoted_date_body(
+            "Sun, 01 Nov 2026 18:10:20 -0500", tz=False
+        )
+        self.assertIn("2026-11-01 23:10:20 TU", body)
+
+    def test_quoted_date_of_an_unreadable_header_is_empty(self):
+        for header in (None, "not a date"):
+            body = self._quoted_date_body(header)
+            self.assertIn("<b>Date:</b> <br", body)
+            for junk in ("False", "None", "Invalid", "NaN"):
+                self.assertNotIn(junk, body)
+
+    def test_format_stub_date_never_leaks_a_raw_value(self):
+        wizard = self.env["conversation.inbox.reply.wizard"]
+        self.assertEqual(wizard._format_stub_date(object()), "")
 
     def test_subject_prefix_is_not_stacked_on_a_reply_to_a_reply(self):
         fetch_patch, normalize_patch = self._mock_fetch_normalize(

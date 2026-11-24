@@ -29,7 +29,7 @@ class _ListHeaderTourMixin:
     def setUpClass(cls):
         super().setUpClass()
         cls.env['ir.config_parameter'].sudo().set_param(
-            'bemade_sports_clinic.app_shell_enabled', 'True')
+            'bemade_portal_kit.enabled', 'True')
 
     def test_players(self):
         self.start_tour('/my/players', 'sc_1607_players', login='pc.tp@example.com')

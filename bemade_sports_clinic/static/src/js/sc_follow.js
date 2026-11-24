@@ -1,29 +1,38 @@
 /*
  * Task 1624, review round 1 (owner 2026-10-29) — « Suivre / Ne plus suivre »
  * a player (template sc_follow_toggle: the player cards' « Details » and the
- * player page header). Inert outside .o_sc_app.
+ * player page header). Inert outside .o_pk_app.
  *
  * The toggle is a small form posting to /my/player/<id>/follow (the no-JS
  * fallback). Here it is saved with fetch, no reload: on success every toggle
  * of that player on the page flips (a player may be listed in several
- * sections); on a refusal nothing moves (scFetch shows the error toast).
+ * sections); on a refusal nothing moves (pkFetch shows the error toast).
  * Round 2: then the « Joueurs que je suis » sections refresh (read fragments).
  */
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
-import { requestRefresh } from "@bemade_sports_clinic/js/sc_fragments";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
+import { requestRefresh } from "@bemade_portal_kit/js/pk_fragments";
 
 // Task 1624 review round 2 (owner 2026-10-29): every « Joueurs que je suis »
 // section of the page (a LIST read fragment per instance, each with its own
 // scope) follows a toggle in place — the card added or dropped, the count
 // and the empty state — without a reload.
-const FOLLOWED_SECTIONS = "sc.dashboard:followed:*";
+const FOLLOWED_SECTIONS = "pk.dashboard:followed:*";
 
 function setFollowed(playerId, followed) {
-    for (const button of document.querySelectorAll(`.o_sc_app [data-sc-follow="${playerId}"]`)) {
+    for (const button of document.querySelectorAll(`.o_pk_app [data-sc-follow="${playerId}"]`)) {
         button.dataset.scFollowed = followed ? "1" : "0";
         button.setAttribute("aria-pressed", followed ? "true" : "false");
-        button.classList.toggle("o_sc_btn_primary", followed);
-        button.classList.toggle("o_sc_btn_ghost", !followed);
+        // Task 1736: the top-bar ★ (an icon button) keeps its look — the
+        // star fills (CSS on data-sc-followed); its title says the action.
+        if (button.classList.contains("o_sc_follow_icon")) {
+            const title = followed ? button.dataset.scFollowOn : button.dataset.scFollowOff;
+            if (title) {
+                button.setAttribute("title", title);
+            }
+        } else {
+            button.classList.toggle("o_pk_btn_primary", followed);
+            button.classList.toggle("o_pk_btn_ghost", !followed);
+        }
         for (const label of button.querySelectorAll("[data-sc-follow-label]")) {
             label.hidden = (label.dataset.scFollowLabel === "on") !== followed;
         }
@@ -37,7 +46,7 @@ function setFollowed(playerId, followed) {
 document.addEventListener("submit", async (ev) => {
     const form = ev.target;
     if (!(form instanceof HTMLFormElement) || !form.classList.contains("o_sc_follow_form")
-            || !form.closest(".o_sc_app")) {
+            || !form.closest(".o_pk_app")) {
         return;
     }
     ev.preventDefault();
@@ -48,7 +57,7 @@ document.addEventListener("submit", async (ev) => {
     const follow = button.dataset.scFollowed !== "1";
     button.disabled = true;
     try {
-        const answer = await scFetch(form.getAttribute("action"), {
+        const answer = await pkFetch(form.getAttribute("action"), {
             method: "POST",
             data: { follow: follow ? "1" : "0" },
         });
@@ -56,13 +65,13 @@ document.addEventListener("submit", async (ev) => {
             setFollowed(button.dataset.scFollow, Boolean(answer.followed));
             // A focused card waits in a list refresh: let go of it, so an
             // unfollow from inside « Joueurs que je suis » drops it at once.
-            if (button.closest("[data-sc-fragment-item]")) {
+            if (button.closest("[data-pk-fragment-item]")) {
                 button.blur();
             }
             requestRefresh([FOLLOWED_SECTIONS], { immediate: true });
         }
     } catch {
-        // scFetch already showed the error toast; the toggle stays as is.
+        // pkFetch already showed the error toast; the toggle stays as is.
     } finally {
         button.disabled = false;
     }
