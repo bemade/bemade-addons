@@ -21,7 +21,8 @@ Acceptance criteria
    preferring one without a deck quest of its own today and the one practised least
    today. A subject with a single unlocked deck keeps its deck quest.
 4. **Practice-time quest** (``minutes``, « Pratique {target} minutes aujourd'hui »):
-   drawn every practice day when ``practice_minutes_goal > 0``, target = that goal; it is
+   drawn on some practice days when ``practice_minutes_goal > 0`` (UC-29, owner
+   2026-11-24: not every day; these tests force it), target = that goal; it is
    one of the day's ``practice_quests_per_day`` quests and asks for no session (it is
    outside the session total). Progress = the learner's practice minutes today (whole
    minutes, floor): over today's sessions, the sum of each answer's gap since the
@@ -79,7 +80,8 @@ class NoExtra(random.Random):
 
 
 def session_total(quests):
-    return sum(quests.mapped("sessions"))
+    """The day's sessions, counted distinct (UC-29: a challenge is done in the others' sessions)."""
+    return quests._distinct_sessions()
 
 
 class BiggerDayCase(PracticeCase):
@@ -99,6 +101,10 @@ class BiggerDayCase(PracticeCase):
         (self.grammar | self.homophones).unit_ids.action_unlock(self.student)
         self.fractions.unit_ids.filtered(lambda u: u.sequence <= 3).action_unlock(self.student)
         self.english.unit_ids.filtered(lambda u: u.sequence <= 3).action_unlock(self.student)
+
+    def always_minutes(self):
+        """The practice-time quest on every day (UC-29 draws it on some days only)."""
+        self.patch(type(self.Quest), "_minutes_quest_today", lambda *args: True)
 
     def bigger(self, student=None, **kw):
         vals = dict(practice_quests_per_day=5, practice_sessions_min=8, practice_sessions_max=12)
@@ -174,6 +180,7 @@ class TestBiggerDraw(BiggerDayCase):
         (self.t7 | self.t3).action_unlock(other)
         (self.grammar | self.homophones | self.english).unit_ids.action_unlock(other)
         self.bigger(practice_minutes_goal=12, practice_subject_quests=True)
+        self.always_minutes()
         mine = self.Quest._draw(self.student, MONDAY)
         theirs = self.Quest._draw(other, MONDAY)
         self.assertEqual(len(mine), 5)
@@ -244,6 +251,7 @@ class TestMinutesQuest(BiggerDayCase):
     def setUp(self):
         super().setUp()
         self.bigger(practice_minutes_goal=12)
+        self.always_minutes()
 
     def backdate(self, session, gaps):
         """Spread ``session``'s attempts: answer k received ``gaps[k]`` seconds after the previous."""
@@ -254,7 +262,7 @@ class TestMinutesQuest(BiggerDayCase):
             moment += timedelta(seconds=gap)
             attempt.received_at = moment
 
-    def test_drawn_every_day_one_of_the_quests(self):
+    def test_one_of_the_quests_on_its_days(self):
         for quests in self.simulate(10):
             minutes = quests.filtered(lambda q: q.kind == "minutes")
             self.assertEqual(len(minutes), 1)
@@ -341,6 +349,7 @@ class TestMinutesCard(PracticeHttpCase):
     def setUp(self):
         super().setUp()
         self.student.write({"practice_quests_per_day": 4, "practice_minutes_goal": 15})
+        self.patch(type(self.env["homeschool.practice.quest"]), "_minutes_quest_today", lambda *args: True)
         Session = self.env["homeschool.practice.session"]
         t7 = self.deck.unit_ids.filtered(lambda u: u.sequence == 7)
         s = Session._start(self.student, self.deck, kind="unit", unit=t7)
@@ -441,10 +450,13 @@ class TestRamp(BiggerDayCase):
             self.assertEqual(len(quests), 3, (w, quests.mapped("label")))
             self.assertTrue(vol["sessions_min"] <= session_total(quests) <= vol["sessions_max"], (w, quests.mapped("label")))
             minutes = quests.filtered(lambda q: q.kind == "minutes")
-            self.assertEqual(minutes.target if minutes else 0, vol["minutes"])
+            self.assertTrue(minutes.target == vol["minutes"] if minutes else True, "some days only (UC-29)")
+            if not vol["minutes"]:
+                self.assertFalse(minutes)
 
     def test_full_volume_bigger_quests(self):
         self.student.practice_ramp_weeks = 0
+        self.always_minutes()  # the days with the practice-time quest (UC-29: some days)
         surprise_days = 0
         days = self.simulate(45, seed=9)
         for quests in days:

@@ -49,7 +49,8 @@ class FixedRng(random.Random):
 
 
 def session_total(quests):
-    return sum(quests.mapped("sessions"))
+    """The day's sessions, counted distinct (UC-29: a challenge is done in the others' sessions)."""
+    return quests._distinct_sessions()
 
 
 @tagged("post_install", "-at_install")

@@ -4,7 +4,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     "name": "Homeschool Practice",
-    "version": "19.0.1.9.0",
+    "version": "19.0.1.9.1",
     "category": "Education",
     "summary": "Short, frequent retrieval practice with game mechanics and family-defined rewards, "
     "touch-first (iPad).",
@@ -67,8 +67,8 @@ and the portal API never returns it.
 Game mechanics
 --------------
 * XP and levels for effort and progress. XP is never earned for speed.
-* Daily quests (by default 3 a day, together 3 to 5 sessions, varied); the learner
-  chooses the order. A deck may get a quest every day until the learner has
+* Daily quests (by default 3 a day, together 3 to 5 distinct sessions, varied: a
+  session that counts for several quests counts once); the learner chooses the order. A deck may get a quest every day until the learner has
   mastered it (« Une quête chaque jour jusqu'à la maîtrise »: the times tables);
   the other slots rotate among the unlocked decks, least recently quested first,
   never a deck twice a day. About one day in three, « surprise lessons » open a
@@ -78,7 +78,8 @@ Game mechanics
 * The size of the day is set per learner: how many quests, the range of
   sessions the day asks for, optional subject quests (« 3 séances de math »:
   any deck of the subject counts) and an optional practice-time quest
-  (« Pratique 15 minutes aujourd'hui »). Practice time counts each answer's
+  (« Pratique 15 minutes aujourd'hui », on some days only, more often after light
+  days, never three days in a row). Practice time counts each answer's
   gap since the previous one, capped at a minute, so an idle screen does not
   count; the learner sees the day's minutes on that quest card only, never
   inside a session. A bigger day makes the quests bigger, not more numerous,
