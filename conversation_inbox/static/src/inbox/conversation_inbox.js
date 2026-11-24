@@ -477,7 +477,7 @@ export class ConversationInboxAction extends Component {
   /**
    * Hide: remove the row from the list only. The message stays in the real
    * mailbox and returns on the next browse (an already-filed conversation
-   * is archived server-side). Distinct from Archive/Delete, which act on
+   * is hidden for you only, never closed for others). Distinct from Archive/Delete, which act on
    * the mailbox itself.
    */
   async onHide(item) {
