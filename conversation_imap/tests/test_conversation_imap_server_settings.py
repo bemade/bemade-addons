@@ -9,7 +9,7 @@
 #   7. The form still opens for an ordinary user.
 from odoo.exceptions import AccessError
 from odoo.fields import Command
-from odoo.tests import Form, TransactionCase
+from odoo.tests import Form, HttpCase, TransactionCase, tagged
 from odoo.tools import mute_logger
 
 CHANGES = {
@@ -148,3 +148,31 @@ class TestImapServerSettings(TransactionCase):
             self.assertEqual(form.imap_host, "imap.example.com")
             form.name = "Renamed in form"
         self.assertEqual(self.shared.name, "Renamed in form")
+
+
+@tagged("post_install", "-at_install")
+class TestImapSharedSettingsTour(HttpCase):
+    def test_plain_user_is_refused_on_shared_account(self):
+        self.env["res.users"].with_context(no_reset_password=True).create(
+            {
+                "name": "Tour Plain",
+                "login": "tour_plain",
+                "password": "tour_plain",
+                "group_ids": [Command.link(self.env.ref("base.group_user").id)],
+            }
+        )
+        transport = self.env["conversation.transport"].create(
+            {
+                "name": "Tour Shared Box",
+                "provider": "imap",
+                "login": "tour@example.com",
+                "imap_host": "imap.example.com",
+            }
+        )
+        self.start_tour(
+            f"/odoo/conversation.transport/{transport.id}",
+            "imap_shared_settings_locked",
+            login="tour_plain",
+        )
+        transport.invalidate_recordset()
+        self.assertEqual(transport.imap_host, "imap.example.com")
