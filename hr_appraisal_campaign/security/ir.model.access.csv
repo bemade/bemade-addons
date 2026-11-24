@@ -1,0 +1,22 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_campaign_scale_user,campaign scale user,model_hr_appraisal_campaign_scale,base.group_user,1,0,0,0
+access_campaign_scale_hr,campaign scale hr,model_hr_appraisal_campaign_scale,hr_appraisal.group_hr_appraisal_user,1,1,1,1
+access_campaign_scale_level_user,campaign scale level user,model_hr_appraisal_campaign_scale_level,base.group_user,1,0,0,0
+access_campaign_scale_level_hr,campaign scale level hr,model_hr_appraisal_campaign_scale_level,hr_appraisal.group_hr_appraisal_user,1,1,1,1
+access_campaign_section_user,campaign section user,model_hr_appraisal_campaign_section,base.group_user,1,0,0,0
+access_campaign_section_hr,campaign section hr,model_hr_appraisal_campaign_section,hr_appraisal.group_hr_appraisal_user,1,1,1,1
+access_campaign_threshold_user,campaign threshold user,model_hr_appraisal_campaign_threshold,base.group_user,1,0,0,0
+access_campaign_threshold_hr,campaign threshold hr,model_hr_appraisal_campaign_threshold,hr_appraisal.group_hr_appraisal_user,1,1,1,1
+access_campaign_criterion_user,campaign criterion user,model_hr_appraisal_campaign_criterion,base.group_user,1,0,0,0
+access_campaign_criterion_hr,campaign criterion hr,model_hr_appraisal_campaign_criterion,hr_appraisal.group_hr_appraisal_user,1,1,1,1
+access_campaign_criterion_level_user,campaign criterion level user,model_hr_appraisal_campaign_criterion_level,base.group_user,1,0,0,0
+access_campaign_criterion_level_hr,campaign criterion level hr,model_hr_appraisal_campaign_criterion_level,hr_appraisal.group_hr_appraisal_user,1,1,1,1
+access_campaign_user,campaign user,model_hr_appraisal_campaign,base.group_user,1,0,0,0
+access_campaign_hr,campaign hr,model_hr_appraisal_campaign,hr_appraisal.group_hr_appraisal_user,1,1,1,1
+access_campaign_line_user,campaign line user,model_hr_appraisal_campaign_line,base.group_user,1,1,0,0
+access_campaign_line_hr,campaign line hr,model_hr_appraisal_campaign_line,hr_appraisal.group_hr_appraisal_user,1,1,1,1
+access_campaign_line_level_user,campaign line level user,model_hr_appraisal_campaign_line_level,base.group_user,1,0,0,0
+access_campaign_line_level_hr,campaign line level hr,model_hr_appraisal_campaign_line_level,hr_appraisal.group_hr_appraisal_user,1,1,1,1
+access_campaign_calibration_log_cal,campaign calibration log calibration,model_hr_appraisal_campaign_calibration_log,group_campaign_calibration,1,0,0,0
+access_campaign_calibration_log_hr,campaign calibration log hr,model_hr_appraisal_campaign_calibration_log,hr_appraisal.group_hr_appraisal_user,1,0,0,0
+access_campaign_remark_log_hr,campaign remark log hr,model_hr_appraisal_campaign_remark_log,hr_appraisal.group_hr_appraisal_user,1,0,0,0
