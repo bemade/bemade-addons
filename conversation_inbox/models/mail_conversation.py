@@ -18,23 +18,24 @@ class MailConversation(models.Model):
     @api.model
     def action_dismiss(self, transport_id, external_id):
         """GTD **hide** (the viewer's "Hide" button; RPC name unchanged) --
-        remove an inbox item from the list. It never touches the real
+        remove an inbox item from *my* list. It never touches the real
         mailbox (use ``archive_item`` / ``trash_item`` for that): the
         message stays in the mailbox and comes back on the next browse.
         Ingest-on-action means nothing is persisted until a human files an
         item (AC5) -- so if this ``external_id`` was never captured,
         hiding it is a pure client-side action (the item simply isn't
         filed). If it *was* already captured (e.g. the user replied to it
-        earlier, then comes back to hide it), archive that *conversation*
-        instead of silently doing nothing.
+        earlier, then comes back to hide it), hide that *conversation* for
+        the current user only, as the triage list's Hide does: its state
+        is untouched and colleagues still see it.
 
-        :return: True if an existing conversation was archived, False if
-            this was a no-op (item was never filed).
+        :return: True if an existing conversation was hidden for the
+            current user, False if this was a no-op (item was never filed).
         """
         transport = self.env["conversation.transport"].browse(transport_id)
         conversation = self._find_captured(transport, external_id)
         if conversation:
-            conversation.action_archive()
+            conversation.action_triage_hide()
         return bool(conversation)
 
     @api.model

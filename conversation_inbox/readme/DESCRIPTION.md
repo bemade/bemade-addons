@@ -23,8 +23,10 @@ it.
   forward** (composer only offered on `sendable` transports), **route
   through an alias** (feeds the raw envelope into the ordinary mail
   gateway), and **hide** (formerly "Dismiss"; the RPC is still
-  `action_dismiss`). Hide removes the row from the list only: it archives an
-  already-filed *conversation*, and is otherwise a pure client-side no-op --
+  `action_dismiss`). Hide removes the row from the list only: for an
+  already-filed *conversation* it hides it for you alone, as the triage
+  list's Hide does (its state is unchanged and colleagues still see it),
+  and is otherwise a pure client-side no-op --
   the message stays in the real mailbox and returns on the next browse.
 - **Search box** next to the account selector, shown for transports with
   `searchable` set (tick it on the account's form). Type a word -- a name, an
