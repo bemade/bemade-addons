@@ -1,37 +1,25 @@
-"""Ticket emails go out from the ticket team's inbox.
+"""Ticket emails: the signature shows the ticket team's address.
 
 Acceptance criteria:
-- A reply on a ticket by an internal user WITHOUT "Send emails as" goes out
-  as "User Name (Team)" <team send-as inbox>, Reply-To the same.
-- A user WITH their own, different send-as: the team's inbox wins.
-- Team "Send as" empty: the team's own alias.
-- A message authored by the customer is left untouched.
+- An internal user's reply on a ticket: the signature shows the team's
+  signature email address instead of the user's personal address, whoever
+  writes (it wins over the user's own setting).
+- From and Reply-To are the same as without the addon setting.
+- Team signature address empty: the team's own alias.
 - A team without any inbox: the user's own rule applies.
-- The customer's reply to that inbox (In-Reply-To) lands on the same ticket.
+- Messages authored by the customer are left untouched.
 """
+
+from markupsafe import Markup
 
 from odoo import Command
 from odoo.tests import tagged
-from odoo.tools import formataddr
 
 from odoo.addons.mail.tests.common import MailCommon
 
-REPLY_TEMPLATE = """Return-Path: {return_path}
-To: {to}
-cc: {cc}
-From: {email_from}
-Subject: {subject}
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Date: {date}
-Message-ID: {msg_id}
-{extra}
-Thanks, it works now.
-"""
-
 
 @tagged("post_install", "-at_install")
-class TestTicketSendAs(MailCommon):
+class TestTicketSignature(MailCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -44,6 +32,8 @@ class TestTicketSendAs(MailCommon):
                 "login": "desk_agent",
                 "email": "desk.agent@example.com",
                 "group_ids": [Command.set(groups)],
+                "signature": '<p>Desk Agent</p><p><a href="mailto:desk.agent@example.com">'
+                "desk.agent@example.com</a></p>",
             }
         )
         cls.agent_sendas = cls.env["res.users"].create(
@@ -52,6 +42,7 @@ class TestTicketSendAs(MailCommon):
                 "login": "desk_buyer",
                 "email": "desk.buyer@example.com",
                 "group_ids": [Command.set(groups)],
+                "signature": "<p>Desk Buyer - Desk.Buyer@Example.com</p>",
             }
         )
         cls.customer = cls.env["res.partner"].create(
@@ -87,9 +78,10 @@ class TestTicketSendAs(MailCommon):
                 "alias_defaults": "{'team_id': %s}" % cls.team.id,
             }
         )
-        cls.team.mail_send_as_alias_id = cls.sac_alias
-        cls.agent_sendas.mail_send_as_alias_id = cls.other_team.alias_id
         cls.sac_email = "sac-test@%s" % cls.alias_domain
+        cls.care_email = "care-test@%s" % cls.alias_domain
+        cls.buying_email = "buying-test@%s" % cls.alias_domain
+        cls.agent_sendas.mail_send_as_alias_id = cls.other_team.alias_id
         cls.ticket = cls.env["helpdesk.ticket"].create(
             {"name": "Desk ticket", "team_id": cls.team.id, "partner_id": cls.customer.id}
         )
@@ -113,63 +105,57 @@ class TestTicketSendAs(MailCommon):
         self.assertEqual(len(mail), 1)
         return message, mail
 
-    def test_agent_without_send_as_uses_team_inbox(self):
-        message, mail = self._reply(self.agent)
-        expected = formataddr(("Desk Agent (Care Test)", self.sac_email))
-        self.assertEqual(message.email_from, expected)
-        self.assertEqual(message.reply_to, expected)
-        self.assertEqual(mail.email_from, expected)
-        self.assertEqual(mail.reply_to, expected)
+    def test_from_and_reply_to_unchanged(self):
+        before, before_mail = self._reply(self.agent)
+        self.team.mail_send_as_alias_id = self.sac_alias
+        after, after_mail = self._reply(self.agent)
+        self.assertEqual(after.email_from, self.agent.email_formatted)
+        self.assertEqual(after.email_from, before.email_from)
+        self.assertEqual(after.reply_to, before.reply_to)
+        self.assertEqual(after_mail.email_from, before_mail.email_from)
+        self.assertEqual(after_mail.reply_to, before_mail.reply_to)
+        self.assertNotIn(self.sac_email, after_mail.reply_to or "")
 
-    def test_team_inbox_wins_over_user_send_as(self):
-        message, mail = self._reply(self.agent_sendas)
-        expected = formataddr(("Desk Buyer (Care Test)", self.sac_email))
-        self.assertEqual(message.email_from, expected)
-        self.assertEqual(mail.reply_to, expected)
+    def test_agent_signature_shows_team_address(self):
+        self.team.mail_send_as_alias_id = self.sac_alias
+        _message, mail = self._reply(self.agent)
+        self.assertIn('href="mailto:%s"' % self.sac_email, mail.body_html)
+        self.assertIn(">%s</a>" % self.sac_email, mail.body_html)
+        self.assertNotIn("mailto:desk.agent@example.com", mail.body_html)
+        self.assertIn("desk.agent@example.com", self.agent.signature)
 
-    def test_team_send_as_empty_uses_team_alias(self):
+    def test_team_address_wins_over_user_setting(self):
+        self.team.mail_send_as_alias_id = self.sac_alias
+        _message, mail = self._reply(self.agent_sendas)
+        self.assertIn("Desk Buyer - %s" % self.sac_email, mail.body_html)
+        self.assertNotIn(self.buying_email, mail.body_html)
+
+    def test_team_address_empty_uses_team_alias(self):
         self.team.mail_send_as_alias_id = False
-        message, _mail = self._reply(self.agent)
-        self.assertEqual(
-            message.email_from,
-            formataddr(("Desk Agent (Care Test)", "care-test@%s" % self.alias_domain)),
+        _message, mail = self._reply(self.agent)
+        self.assertIn('href="mailto:%s"' % self.care_email, mail.body_html)
+
+    def test_team_without_inbox_falls_back_on_user_rule(self):
+        ticket = self.env["helpdesk.ticket"].create(
+            {"name": "Quiet ticket", "team_id": self.no_alias_team.id, "partner_id": self.customer.id}
         )
+        _message, mail = self._reply(self.agent_sendas, ticket=ticket)
+        self.assertIn("Desk Buyer - %s" % self.buying_email, mail.body_html)
+        _message, mail = self._reply(self.agent, ticket=ticket)
+        self.assertIn('href="mailto:desk.agent@example.com"', mail.body_html)
 
     def test_customer_message_untouched(self):
+        body = Markup(
+            '<p>My machine is down.</p><div data-o-mail-quote="1">-- <br>'
+            "<p>desk.customer@example.com</p></div>"
+        )
         message = self.ticket.message_post(
-            body="My machine is down.",
+            body=body,
             author_id=self.customer.id,
             email_from=self.customer.email_formatted,
             message_type="comment",
             subtype_xmlid="mail.mt_comment",
         )
         self.assertEqual(message.email_from, self.customer.email_formatted)
-
-    def test_team_without_inbox_falls_back_on_user_rule(self):
-        ticket = self.env["helpdesk.ticket"].create(
-            {"name": "Quiet ticket", "team_id": self.no_alias_team.id, "partner_id": self.customer.id}
-        )
-        message, _mail = self._reply(self.agent_sendas, ticket=ticket)
-        self.assertEqual(
-            message.email_from,
-            formataddr(("Desk Buyer (Buying Test)", "buying-test@%s" % self.alias_domain)),
-        )
-        message, _mail = self._reply(self.agent, ticket=ticket)
-        self.assertEqual(message.email_from, self.agent.email_formatted)
-
-    def test_customer_reply_lands_on_ticket(self):
-        message, _mail = self._reply(self.agent)
-        self.format_and_process(
-            REPLY_TEMPLATE,
-            self.customer.email_formatted,
-            self.sac_email,
-            subject="Re: Desk ticket",
-            extra="In-Reply-To: %s\nReferences: %s\n" % (message.message_id, message.message_id),
-            target_model="helpdesk.ticket",
-        )
-        self.assertEqual(
-            self.env["helpdesk.ticket"].search_count([("name", "=", "Re: Desk ticket")]), 0
-        )
-        reply = self.ticket.message_ids.filtered(lambda m: m.subject == "Re: Desk ticket")
-        self.assertEqual(len(reply), 1)
-        self.assertEqual(reply.parent_id, message)
+        self.assertIn("desk.customer@example.com", message.body)
+        self.assertNotIn(self.care_email, message.body)

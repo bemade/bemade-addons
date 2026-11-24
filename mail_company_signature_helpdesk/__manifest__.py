@@ -2,7 +2,7 @@
     "name": "Mail Company Signature - Helpdesk",
     "version": "19.0.1.0.0",
     "category": "Helpdesk",
-    "summary": "Ticket emails always go out from the ticket team's inbox, "
+    "summary": "Ticket emails show the ticket team's address in the signature, "
     "whoever writes them.",
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",

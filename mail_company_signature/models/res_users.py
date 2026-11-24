@@ -1,4 +1,8 @@
+import re
 from contextlib import contextmanager
+
+import lxml.html
+from markupsafe import Markup
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
@@ -40,16 +44,17 @@ class ResUsers(models.Model):
     )
     mail_send_as_alias_id = fields.Many2one(
         "mail.alias",
-        string="Send emails as",
+        string="Signature email address",
         domain="[('alias_name', '!=', False), ('alias_domain_id', '!=', False)]",
         ondelete="set null",
         copy=False,
-        help="Team inbox this user's emails go out from. When set, an email "
-        "the user sends from their own address goes out as \"Name (Team)\" "
-        "<team inbox> with replies to the team inbox, and the {{work_email}} "
-        "placeholder of the company signature shows the team inbox. Emails "
-        "sent from another address (a template using purchasing@ for example) "
-        "are not changed.",
+        help="Team inbox shown as the email address in this user's signature "
+        "on outgoing emails, instead of their personal address (so customers "
+        "and suppliers write to the team). The stored signature is not "
+        "changed: the personal address is replaced when the email is "
+        "rendered, and the {{work_email}} placeholder of the company "
+        "signature shows this address. The sender (From) and Reply-To of the "
+        "emails are not changed.",
     )
     signature_is_generated = fields.Boolean(
         groups="base.group_system",
@@ -281,20 +286,115 @@ class ResUsers(models.Model):
         return "%s / %s" % (french, english)
 
     # ------------------------------------------------------------------
-    # Send as a team inbox
+    # Signature email address (outgoing emails)
     # ------------------------------------------------------------------
-    def _mail_send_as_own_emails(self):
-        """Normalized addresses that count as "this user's own" sender."""
+    def _mail_signature_email(self, record=None):
+        """Address shown in this user's signature on emails about ``record``.
+
+        False when the signature keeps the user's own address. Internal users
+        only. Overridden by bridges (helpdesk: the ticket team's inbox).
+        """
         self.ensure_one()
         user = self.sudo()
-        return {
-            email
-            for email in (
-                user.email_normalized,
-                email_normalize(user.mail_send_as_alias_id.alias_full_name or ""),
-            )
-            if email
-        }
+        if user.share:
+            return False
+        return email_normalize(user.mail_send_as_alias_id.alias_full_name or "") or False
+
+    def _mail_signature_personal_emails(self):
+        """The user's personal addresses, as they may appear in a signature:
+        email, login (when it is an address) and employee work emails."""
+        self.ensure_one()
+        user = self.sudo()
+        employees = (
+            self.env["hr.employee"]
+            .sudo()
+            .with_context(active_test=False)
+            .search([("user_id", "=", user.id)])
+        )
+        candidates = [user.email, user.login, *employees.mapped("work_email")]
+        return {email for email in map(email_normalize, filter(None, candidates)) if email}
+
+    def _mail_signature_replace_emails(self, html, address):
+        """``html`` with the user's personal addresses (mailto links and
+        text, any case) replaced by ``address``."""
+        self.ensure_one()
+        if not html or not address:
+            return html
+        emails = self._mail_signature_personal_emails() - {address.lower()}
+        if not emails:
+            return html
+        pattern = re.compile(
+            r"(?<![\w.+%%-])(?:%s)(?![\w-])(?!\.\w)"
+            % "|".join(re.escape(email) for email in sorted(emails, key=len, reverse=True)),
+            re.IGNORECASE,
+        )
+        result = pattern.sub(address, str(html))
+        return Markup(result) if isinstance(html, Markup) else result
+
+    def _mail_outgoing_signature(self, record=None):
+        """The signature as it goes out on an email about ``record``: the
+        stored signature with the personal address replaced by the signature
+        email address, when one applies. The stored signature is unchanged."""
+        self.ensure_one()
+        signature = self.sudo().signature
+        address = self._mail_signature_email(record)
+        if not address or not signature:
+            return signature
+        return self._mail_signature_replace_emails(signature, address)
+
+    @api.model
+    def _mail_signature_rewrite_html(self, html, users, record=None):
+        """Replace, in ``html``, every copy of a stored signature of ``users``
+        by its outgoing version. Only the signature fragments change; the
+        rest of ``html`` is left as is."""
+        if not html or "@" not in html:
+            return html
+        result = str(html)
+        for user in users.sudo():
+            signature = str(user.signature or "")
+            if not signature or signature not in result:
+                continue
+            outgoing = str(user._mail_outgoing_signature(record) or "")
+            if outgoing != signature:
+                result = result.replace(signature, outgoing)
+        if result == str(html):
+            return html
+        return Markup(result) if isinstance(html, Markup) else result
+
+    @api.model
+    def _mail_signature_rewrite_blocks(self, html, user, record=None):
+        """Replace the user's personal addresses inside the signature block
+        the web client adds to a message body (full composer: a
+        ``data-o-mail-quote`` element starting with "--")."""
+        if not html or "data-o-mail-quote" not in html or not user:
+            return html
+        address = user._mail_signature_email(record)
+        if not address:
+            return html
+        emails = user._mail_signature_personal_emails() - {address}
+        if not emails or not any(email in str(html).lower() for email in emails):
+            return html
+        root = lxml.html.fragment_fromstring(str(html), create_parent="div")
+        changed = False
+        for element in root.xpath("//*[@data-o-mail-quote]"):
+            if element.xpath("ancestor::*[@data-o-mail-quote]"):
+                continue
+            if not (element.text_content() or "").lstrip().startswith("--"):
+                continue
+            before = lxml.html.tostring(element, encoding="unicode")
+            after = user._mail_signature_replace_emails(before, address)
+            if after == before:
+                continue
+            new_element = lxml.html.fragment_fromstring(after)
+            new_element.tail = element.tail
+            element.getparent().replace(element, new_element)
+            changed = True
+        if not changed:
+            return html
+        result = (root.text or "") + "".join(
+            lxml.html.tostring(child, encoding="unicode") for child in root
+        )
+        return Markup(result) if isinstance(html, Markup) else result
 
     # ------------------------------------------------------------------
     # Guards

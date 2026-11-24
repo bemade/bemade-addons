@@ -46,31 +46,39 @@ existing consumer (chatter email, full composer, templates) uses it unchanged.
 The inline chatter composer shows a read-only preview of the signature with a
 one-click "Remove signature" toggle for the current message.
 
-Send emails as a team inbox
----------------------------
+Signature email address
+-----------------------
 
-"Send emails as" on the user form (Settings > Users, next to the signature)
-picks a team inbox: any email alias with a domain, for example the
-`purchasing@` alias of a helpdesk team. When it is set:
+"Signature email address" on the user form (Settings > Users, next to the
+signature) picks a team inbox: any email alias with a domain, for example the
+`purchasing@` alias of a helpdesk team. Customers and suppliers then see the
+team inbox in the user's signature instead of the personal address. When it is
+set:
 
-* every email the user sends from their own address goes out as
-  "User Name (Team)" <team inbox>, with Reply-To the team inbox: chatter
-  "Send message", the full composer, templates whose sender is the user
-  (`{{ user.email_formatted }}`), `mail.template.send_mail` and code calling
-  `message_post`. "Team" is the name of the alias's parent record (the
-  helpdesk team, sales team...), else the alias local part. A Reply-To that
-  is a document's own alias (a project alias, for example) is kept;
-* an email whose sender is another fixed address (a template sending from
-  `finance@...`) is not changed; nor are incoming emails, messages from
-  OdooBot or from users without the setting;
+* in the signature that goes out with the user's emails, the personal address
+  (user email, login when it is an address, employee work email; `mailto:`
+  links and visible text, any case) is replaced by the team inbox. This works
+  with hand-written signatures too, whatever the company signature policy:
+  * the signature the notification layout appends (chatter "Send message",
+    replies, `message_post`), including the layout signing with the record's
+    responsible (`mail.mail_notification_layout_with_responsible_signature`);
+  * the signature block the full composer puts in the message body;
+  * signatures embedded by email templates (`user.signature`,
+    `object.user_id.signature`, `object.write_uid.signature`...): each copy
+    of the stored signature of a user with the setting (or of the current
+    user, or of a user field of the record) is replaced at rendering time;
+* only the signature changes: the same address elsewhere in the body is kept,
+  and the stored signature itself is not modified;
 * `{{work_email}}` in the company signature shows the team inbox instead of
   the employee's work email; the signature is regenerated when the setting
   changes;
-* a reply sent to the team inbox that answers such an email (In-Reply-To /
-  References) lands on the same document, even when the inbox is the alias of
-  another model (core would read it as a forward and open, for example, a new
-  ticket). Other recipients of the reply are routed as usual.
+* the sender (From) and Reply-To of the emails are NOT changed, nor is the
+  routing of incoming replies. Portal users and users without the setting are
+  not affected.
 
-The team inbox must be on a domain the outgoing mail server may send from.
-`mail_company_signature_helpdesk` adds the helpdesk rule (ticket emails
-always go out from the ticket team's inbox).
+Known limit: the signature preview under the chatter composer shows the stored
+signature (with the personal address); the email that goes out carries the
+team inbox.
+
+`mail_company_signature_helpdesk` adds the helpdesk rule (ticket emails show
+the ticket team's address in the signature).

@@ -64,19 +64,13 @@ msgstr "Copier le HTML de la signature"
 #. module: mail_company_signature
 #: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee__display_name
 #: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee_public__display_name
-#: model:ir.model.fields,field_description:mail_company_signature.field_mail_alias__display_name
-#: model:ir.model.fields,field_description:mail_company_signature.field_mail_message__display_name
+#: model:ir.model.fields,field_description:mail_company_signature.field_mail_render_mixin__display_name
 #: model:ir.model.fields,field_description:mail_company_signature.field_mail_thread__display_name
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_company__display_name
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_users__display_name
 msgid "Display Name"
 msgstr "Nom d'affichage"
-
-#. module: mail_company_signature
-#: model:ir.model,name:mail_company_signature.model_mail_alias
-msgid "Email Aliases"
-msgstr "Alias de courriel"
 
 #. module: mail_company_signature
 #: model:ir.actions.server,name:mail_company_signature.ir_cron_expire_company_notice_ir_actions_server
@@ -120,14 +114,13 @@ msgstr ""
 #. module: mail_company_signature
 #: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee__id
 #: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee_public__id
-#: model:ir.model.fields,field_description:mail_company_signature.field_mail_alias__id
-#: model:ir.model.fields,field_description:mail_company_signature.field_mail_message__id
+#: model:ir.model.fields,field_description:mail_company_signature.field_mail_render_mixin__id
 #: model:ir.model.fields,field_description:mail_company_signature.field_mail_thread__id
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_company__id
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__id
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_users__id
 msgid "ID"
-msgstr "ID"
+msgstr ""
 
 #. module: mail_company_signature
 #: model:ir.model.fields,help:mail_company_signature.field_res_company__company_signature_notice_until
@@ -141,14 +134,14 @@ msgstr ""
 " soit effacé."
 
 #. module: mail_company_signature
+#: model:ir.model,name:mail_company_signature.model_mail_render_mixin
+msgid "Mail Render Mixin"
+msgstr "Rendu de mail Mixin"
+
+#. module: mail_company_signature
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_users__company_signature_manual
 msgid "Manage own signature"
 msgstr "Gère sa propre signature"
-
-#. module: mail_company_signature
-#: model:ir.model,name:mail_company_signature.model_mail_message
-msgid "Message"
-msgstr "Message"
 
 #. module: mail_company_signature
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_users__personal_signature_backup
@@ -190,11 +183,6 @@ msgid "Restore personal signature"
 msgstr "Restaurer la signature personnelle"
 
 #. module: mail_company_signature
-#: model:ir.model.fields,field_description:mail_company_signature.field_res_users__mail_send_as_alias_id
-msgid "Send emails as"
-msgstr "Envoyer les courriels en tant que"
-
-#. module: mail_company_signature
 #: model:ir.model.fields,help:mail_company_signature.field_res_users__signature_is_generated
 msgid ""
 "Set when the current signature was produced by the company template rather "
@@ -233,6 +221,11 @@ msgid "Signature Is Generated"
 msgstr "Signature générée"
 
 #. module: mail_company_signature
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_users__mail_send_as_alias_id
+msgid "Signature email address"
+msgstr "Adresse dans la signature"
+
+#. module: mail_company_signature
 #. odoo-javascript
 #: code:addons/mail_company_signature/static/src/composer_patch.xml:0
 msgid "Signature removed for this message"
@@ -249,19 +242,20 @@ msgstr ""
 #. module: mail_company_signature
 #: model:ir.model.fields,help:mail_company_signature.field_res_users__mail_send_as_alias_id
 msgid ""
-"Team inbox this user's emails go out from. When set, an email the user sends"
-" from their own address goes out as \"Name (Team)\" <team inbox> with "
-"replies to the team inbox, and the {{work_email}} placeholder of the company"
-" signature shows the team inbox. Emails sent from another address (a "
-"template using purchasing@ for example) are not changed."
+"Team inbox shown as the email address in this user's signature on outgoing "
+"emails, instead of their personal address (so customers and suppliers write "
+"to the team). The stored signature is not changed: the personal address is "
+"replaced when the email is rendered, and the {{work_email}} placeholder of "
+"the company signature shows this address. The sender (From) and Reply-To of "
+"the emails are not changed."
 msgstr ""
-"Boîte d'équipe depuis laquelle partent les courriels de cet utilisateur. Si "
-"elle est définie, un courriel que l'utilisateur envoie depuis sa propre "
-"adresse part comme « Nom (Équipe) » <boîte d'équipe>, les réponses vont à la"
-" boîte d'équipe, et la variable {{work_email}} de la signature de "
-"l'entreprise affiche la boîte d'équipe. Les courriels envoyés depuis une "
-"autre adresse (un modèle qui utilise purchasing@ par exemple) ne sont pas "
-"modifiés."
+"Boîte d'équipe affichée comme adresse courriel dans la signature de cet "
+"utilisateur sur les courriels envoyés, à la place de son adresse personnelle"
+" (pour que les clients et fournisseurs écrivent à l'équipe). La signature "
+"enregistrée n'est pas modifiée : l'adresse personnelle est remplacée au "
+"moment du rendu du courriel, et la variable {{work_email}} de la signature "
+"de l'entreprise affiche cette adresse. L'expéditeur (De) et l'adresse de "
+"réponse (Répondre à) des courriels ne changent pas."
 
 #. module: mail_company_signature
 #: model_terms:ir.ui.view,arch_db:mail_company_signature.res_config_settings_view_form

@@ -12,6 +12,7 @@
         "data/ir_cron.xml",
         "views/res_config_settings_views.xml",
         "views/res_users_views.xml",
+        "views/mail_templates.xml",
         "views/hr_employee_views.xml",
     ],
     "assets": {
