@@ -37,9 +37,16 @@ export default [
   {
     id: "close",
     title: "Fermer le message",
-    narration:
-      "On referme le message. Le serveur du compte est resté tel qu'il était.",
+    narration: "On referme le message.",
     selector: ".modal .modal-footer .btn-primary",
+    action: "click",
+  },
+  {
+    id: "discard",
+    title: "Annuler la modification",
+    narration:
+      "On annule la modification : le serveur du compte est resté tel qu'il était.",
+    selector: ".o_form_button_cancel",
     action: "click",
   },
 ];
