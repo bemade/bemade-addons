@@ -8,6 +8,8 @@ These run a real browser; they prove the widget mounts and saves, not the full U
 the click-through at review remains required.
 """
 
+from unittest.mock import patch
+
 from odoo.tests import HttpCase, tagged
 
 from .common import CampaignCase
@@ -18,13 +20,19 @@ class TestWordPictureTour(HttpCase, CampaignCase):
     def test_self_evaluation_tour(self):
         appraisal = self.launch()
         self.employee_user.lang = "en_US"
+        # a company module may chain a step after the self-evaluation: not in this tour
+        appraisal_class = type(self.env["hr.appraisal"])
+        with patch.object(appraisal_class, "_campaign_after_self_eval_steps", lambda rec: False):
+            self._run_tour(appraisal)
+        self.assertEqual(appraisal.campaign_step, "manager_eval")
+        self.assertEqual(appraisal.campaign_line_ids.sudo().mapped("employee_grade"), [3] * self.n_criteria)
+
+    def _run_tour(self, appraisal):
         self.start_tour(
             f"/odoo/action-hr_appraisal.open_view_hr_appraisal_tree/{appraisal.id}",
             "hr_appraisal_campaign_self_evaluation_tour",
             login="hac_emp",
         )
-        self.assertEqual(appraisal.campaign_step, "manager_eval")
-        self.assertEqual(appraisal.campaign_line_ids.sudo().mapped("employee_grade"), [3] * self.n_criteria)
 
 
 @tagged("post_install", "-at_install")

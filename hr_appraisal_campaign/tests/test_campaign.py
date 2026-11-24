@@ -69,10 +69,16 @@ class TestCampaign(CampaignCase):
         todo = appraisal.activity_ids.filtered(lambda a: a.user_id == self.employee_user)
         self.assertEqual(len(todo), 1)
         self.assertEqual(str(todo.date_deadline), "2026-12-01")
-        # in the employee's language (French)
-        self.assertEqual(todo.summary, "Complétez votre auto-évaluation")
+        # in the employee's language (French); through the wording hook, which a company
+        # module may override (e.g. several languages)
+        Campaign = self.env["hr.appraisal.campaign"]
+        self.assertIn("Complétez votre auto-évaluation", todo.summary)
+        self.assertEqual(todo.summary, Campaign._campaign_render_text(
+            lambda env: env._("Complete your self-evaluation"), self.employee_user))
         colleague_todo = (self.campaign.appraisal_ids - appraisal).activity_ids
-        self.assertEqual(colleague_todo.summary, "Complete your self-evaluation")
+        self.assertIn("Complete your self-evaluation", colleague_todo.summary)
+        self.assertEqual(colleague_todo.summary, Campaign._campaign_render_text(
+            lambda env: env._("Complete your self-evaluation"), self.colleague_user))
         self.set_self(appraisal, [3] * self.n_criteria)
         mails = self.env["mail.mail"].sudo().search_count([("subject", "ilike", "appraisal")])
         appraisal.with_user(self.employee_user).action_campaign_submit_self()
