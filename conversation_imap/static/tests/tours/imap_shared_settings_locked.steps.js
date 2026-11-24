@@ -49,4 +49,12 @@ export default [
     selector: ".o_form_button_cancel",
     action: "click",
   },
+  {
+    id: "clean",
+    title: "Vérifier que rien n'a changé",
+    narration: "Le formulaire n'a plus aucune modification en attente.",
+    selector:
+      ".o_form_view:not(:has(.o_form_status_indicator_buttons:not(.invisible)))",
+    action: "assert",
+  },
 ];
