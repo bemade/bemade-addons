@@ -885,11 +885,16 @@ msgstr ""
 #. module: homeschool_practice
 #: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_quest__sessions
 msgid ""
-"How many sessions the quest asks for (the learner's day range; 0 for the "
-"practice-time quest)."
+"How many sessions of its own the quest asks for: the deck, subject and "
+"surprise quests share the learner's day range (a subject quest: beyond its "
+"subject's deck quests); a challenge: its own size, done in those sessions; 0 "
+"for the practice-time quest."
 msgstr ""
-"Combien de séances la quête demande (selon l’intervalle de la journée de "
-"l’élève ; 0 pour la quête de temps de pratique)."
+"Combien de séances bien à elle la quête demande : les quêtes de paquet, de "
+"matière et de leçons surprises se partagent l’intervalle de la journée de "
+"l’élève (une quête de matière : en plus des quêtes de paquet de sa matière) ; "
+"un défi : sa propre taille, réussie dans ces séances ; 0 pour la quête de "
+"temps de pratique."
 
 #. module: homeschool_practice
 #: model:homeschool.practice.badge.template,name:homeschool_practice.badge_xp_day_100

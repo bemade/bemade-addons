@@ -27,3 +27,4 @@ from . import test_uc25_geometry_deck
 from . import test_uc26_add_sub_deck
 from . import test_uc27_learner_today
 from . import test_uc28_bigger_days
+from . import test_uc29_distinct_sessions
