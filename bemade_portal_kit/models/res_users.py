@@ -48,3 +48,39 @@ class ResUsers(models.Model):
         e.g. a staff row). Extend with ``super()``; per user, never cached."""
         self.ensure_one()
         return frozenset()
+
+    # ------------------------------------------------------------------
+    # Task 5516 (kit 1.17): notification preferences
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _pk_kind_default(kind, user):
+        return kind['default_internal'] if not user.share else kind['default']
+
+    def _pk_notification_mode(self, kind):
+        """The user's mode for notification kind ``kind`` (a key): their
+        stored choice when the kind still allows it, else the kind's
+        ``default_internal`` (internal users) or ``default`` (share users);
+        ``'off'`` for an unknown kind."""
+        self.ensure_one()
+        spec = self.env['portal.kit'].pk_notification_kind(kind)
+        if not spec:
+            return 'off'
+        pref = self.env['portal.kit.notification.pref'].sudo().search(
+            [('user_id', '=', self.id), ('kind', '=', kind)], limit=1)
+        if pref and pref.mode in spec['modes']:
+            return pref.mode
+        return self._pk_kind_default(spec, self)
+
+    def _pk_notification_users(self, kind, mode):
+        """The users of ``self`` whose mode for ``kind`` is ``mode`` (one
+        query for the stored rows)."""
+        spec = self.env['portal.kit'].pk_notification_kind(kind)
+        if not spec:
+            return self if mode == 'off' else self.browse()
+        stored = {
+            pref.user_id.id: pref.mode
+            for pref in self.env['portal.kit.notification.pref'].sudo().search(
+                [('user_id', 'in', self.ids), ('kind', '=', kind)])
+            if pref.mode in spec['modes']
+        }
+        return self.filtered(lambda user: stored.get(user.id, self._pk_kind_default(spec, user)) == mode)

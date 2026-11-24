@@ -98,6 +98,31 @@
                 </form>
             </section>
 
+            <!-- Task 5516 (kit 1.17): one segmented control per kind of
+                 notification of the app (portal.kit._pk_notification_kinds);
+                 a plain POST to /my/app/notify-pref. No kind: no section. -->
+            <t t-set="pk_notify_rows" t-value="request.env['portal.kit'].pk_notification_rows()"/>
+            <section t-if="pk_notify_rows" class="o_pk_section" id="pk_notifications" data-pk-section="settings.notifications">
+                <t t-call="bemade_portal_kit.pk_section_header">
+                    <t t-set="title">Notifications</t>
+                </t>
+                <p class="o_pk_meta">What we send you by e-mail.</p>
+                <div t-foreach="pk_notify_rows" t-as="pk_notify_row" class="o_pk_card o_pk_notify_row">
+                    <strong class="o_pk_notify_label" t-out="pk_notify_row['label']"/>
+                    <form method="post" action="/my/app/notify-pref" class="o_pk_segmented o_pk_segmented_full"
+                          t-att-data-pk-notify-pref="pk_notify_row['key']" data-pk-no-dirty="1">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="kind" t-att-value="pk_notify_row['key']"/>
+                        <input type="hidden" name="redirect" value="/my/app/settings#pk_notifications"/>
+                        <t t-foreach="pk_notify_row['modes']" t-as="pk_notify_mode">
+                            <button type="submit" name="mode" t-att-value="pk_notify_mode[0]"
+                                    t-att-aria-pressed="'true' if pk_notify_mode[0] == pk_notify_row['current'] else 'false'"
+                                    t-out="pk_notify_mode[1]"/>
+                        </t>
+                    </form>
+                </div>
+            </section>
+
             <t name="pk_settings_extra"/>
 
             <!-- The edit cards' « Done » buttons (default hidden: the pencil

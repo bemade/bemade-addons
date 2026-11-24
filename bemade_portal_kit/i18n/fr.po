@@ -1653,3 +1653,46 @@ msgstr "%s a modifié ce champ pendant votre saisie."
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
 msgid "Zip code"
 msgstr "Code postal"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/models/portal_kit.py:0
+msgid "Daily digest"
+msgstr "Résumé quotidien"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/models/portal_kit.py:0
+msgid "Each message"
+msgstr "Chaque message"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_notification_pref__mode
+msgid "Mode"
+msgstr "Mode"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/models/portal_kit.py:0
+msgid "Never"
+msgstr "Jamais"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Notifications"
+msgstr "Notifications"
+
+#. module: bemade_portal_kit
+#: model:ir.model.constraint,message:bemade_portal_kit.constraint_portal_kit_notification_pref_pk_user_kind_unique
+msgid "One notification preference per user and kind."
+msgstr "Une seule préférence d'avis par utilisateur et par type."
+
+#. module: bemade_portal_kit
+#: model:ir.model,name:bemade_portal_kit.model_portal_kit_notification_pref
+msgid "Portal Kit Notification Preference"
+msgstr "Préférence d'avis du portail"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "What we send you by e-mail."
+msgstr "Ce que nous vous envoyons par courriel."

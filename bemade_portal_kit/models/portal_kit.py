@@ -26,6 +26,10 @@ Hooks (extend them with ``super()`` in an ``_inherit = 'portal.kit'``)
   in-app help), ``_pk_search_providers()`` / ``_pk_search_placeholder()``
   (the app bar's search). The switch: ``_pk_shell_enabled()`` /
   ``_pk_shell_active(user)``.
+* ``_pk_notification_kinds()`` ``[{key, label, modes, default,
+  default_internal, app?, sequence?, enabled?}]`` (task 5516, kit 1.17:
+  the kinds of notification each user chooses a mode for, read through
+  ``pk_notification_kinds(app)``; the kit registers none)
 
 Each hook is built ONCE per registry (``tools.ormcache``) and frozen: the
 result is shared by every user and request of the database, so a hook holds
@@ -191,6 +195,25 @@ class PortalKit(models.AbstractModel):
             'theme_colors': {'light': '#ffffff', 'dark': '#020617'},
         }
 
+
+    @api.model
+    def _pk_notification_kinds(self):
+        """Task 5516 (kit 1.17): the kinds of notification a user chooses a
+        mode for (« Settings › Notifications »)::
+
+            [{'key': 'chat.direct',          # unique, stored on the rows
+              'label': _lt('Direct messages'),
+              'modes': ('each', 'digest', 'off'),  # a subset, in order
+              'default': 'each',             # share (portal) users
+              'default_internal': 'off',     # internal users
+              'app': None,                   # shared, or one app's
+              'sequence': 10,
+              'enabled': callable(kit, app) -> bool}]  # optional gate
+
+        The kit registers none and sends nothing: the addon that registers
+        a kind sends its notices, asking ``res.users._pk_notification_mode``
+        / ``_pk_notification_users``. Extend with ``super()``."""
+        return []
 
     # ------------------------------------------------------------------
     # Task 5200 (P5): the switch, the preferences, the account, help, search
@@ -438,6 +461,53 @@ class PortalKit(models.AbstractModel):
         return (home or '').strip()
 
     # ------------------------------------------------------------------
+    # Task 5516 (kit 1.17): notification preferences
+    # ------------------------------------------------------------------
+    @api.model
+    def pk_notification_kinds(self, app=None):
+        """The notification kinds of ``app`` (default: the current app):
+        the shared ones and the app's own, by sequence, those whose
+        ``enabled(kit, app)`` gate answers False left out. Read-only."""
+        app = self._pk_resolve_app(app)
+        kinds = pk_app_scoped(self._pk_get_notification_kinds(), app, lambda kind: kind['key'])
+        kinds = [kind for kind in kinds if not kind.get('enabled') or kind['enabled'](self, app)]
+        return sorted(kinds, key=lambda kind: kind.get('sequence', 10))
+
+    @api.model
+    def pk_notification_kind(self, key):
+        """The kind ``key`` (any app; the first declared), or None."""
+        for kind in self._pk_get_notification_kinds():
+            if kind['key'] == key:
+                return kind
+        return None
+
+    @api.model
+    def pk_notification_mode_labels(self):
+        """``{mode: label}`` in the request language."""
+        return {
+            'each': _("Each message"),
+            'digest': _("Daily digest"),
+            'off': _("Never"),
+        }
+
+    @api.model
+    def pk_notification_rows(self, user=None, app=None):
+        """« Settings › Notifications »: one row per kind of ``app``
+        (default: the current app) for ``user`` (default: the current
+        user): ``{key, label, modes: [(mode, label)], current}``."""
+        user = user or self.env.user
+        labels = self.pk_notification_mode_labels()
+        rows = []
+        for kind in self.pk_notification_kinds(app):
+            rows.append({
+                'key': kind['key'],
+                'label': str(kind['label']),
+                'modes': [(mode, labels.get(mode, mode)) for mode in kind['modes']],
+                'current': user._pk_notification_mode(kind['key']),
+            })
+        return rows
+
+    # ------------------------------------------------------------------
     # Cached, frozen registries (one per database registry)
     # ------------------------------------------------------------------
     @api.model
@@ -450,6 +520,13 @@ class PortalKit(models.AbstractModel):
                 spec['pwa'] = pk_freeze(spec['pwa'])
             apps[app] = pk_freeze(spec)
         return pk_freeze(apps)
+
+    @api.model
+    @tools.ormcache()
+    def _pk_get_notification_kinds(self):
+        """Every app's kinds, one per (app, key), frozen (task 5516)."""
+        kinds = _by_key(self._pk_notification_kinds(), lambda kind: (kind.get('app') or None, kind['key']))
+        return tuple(pk_freeze(dict(kind, modes=tuple(kind['modes']))) for kind in kinds.values())
 
     @api.model
     @tools.ormcache()
