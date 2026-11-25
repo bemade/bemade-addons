@@ -9,9 +9,12 @@ name: tests
 #
 # The install job and the shards run on Bemade's self-hosted runners (scale set
 # arc-bemade-addons, odoo-ci/arc-bemade-addons-values.yaml): the image carries
-# Odoo Enterprise, so it is pulled inside the cluster, and the database handed
-# from the install job to the shards is encrypted before it becomes an
-# artifact of this public repository.
+# Odoo Enterprise, so it is pulled inside the cluster, and the database goes
+# from the install job to the shards on a volume there (/ci-handoff). It never
+# becomes an artifact of this public repository: the dump holds Odoo Enterprise
+# views and assets, and anyone can download an artifact. No secret is involved,
+# so fork pull requests run the same way once a maintainer approves the run.
+# An approved run can read the Enterprise source: review the code first.
 
 on:
   pull_request:
@@ -63,6 +66,8 @@ jobs:
           POSTGRES_DB: odoo
     outputs:
       shards: ${{ steps.plan.outputs.shards }}
+      handoff: ${{ steps.handoff.outputs.file }}
+      handoff-sha256: ${{ steps.handoff.outputs.sha256 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -137,27 +142,24 @@ jobs:
             --test-tags "$(cat /tmp/odoo-db/install-tags)" \
             --http-interface=127.0.0.1 \
             --stop-after-init 2>&1 | tee test-output.log
-      - name: Dump and encrypt the database
-        env:
-          # The dump holds Odoo Enterprise views and assets, and artifacts of a
-          # public repository can be downloaded by anyone: never upload it in
-          # clear. Unset on fork pull requests, which cannot pull the image anyway.
-          CI_ARTIFACT_KEY: ${{ secrets.CI_ARTIFACT_KEY }}
+      - name: Dump the database for the shards
+        id: handoff
         run: |
-          : "${CI_ARTIFACT_KEY:?CI_ARTIFACT_KEY is not set; refusing to upload the database unencrypted}"
+          mountpoint -q /ci-handoff
           DATA_DIR=$(python3 -c "from odoo.tools import config; config.parse_config([]); print(config['data_dir'])" | tail -1)
           psql -Atc 'select version()'
           pg_dump --version
           pg_dump -Fc -f /tmp/odoo-db/db.dump ${PGDATABASE}
           tar -C "${DATA_DIR}" -cf /tmp/odoo-db/data-dir.tar .
-          mkdir -p /tmp/odoo-db-upload
-          tar -C /tmp/odoo-db -cf - . \
-            | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:CI_ARTIFACT_KEY -out /tmp/odoo-db-upload/odoo-db.tar.enc
-      - uses: actions/upload-artifact@v4
-        with:
-          name: odoo-db
-          path: /tmp/odoo-db-upload/odoo-db.tar.enc
-          retention-days: 1
+          # A folder per attempt: re-running only failed shards reuses the
+          # outputs, and the folder, of the attempt that ran this job. Old
+          # folders are removed after two days.
+          DIR="/ci-handoff/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${DIR}"
+          tar -C /tmp/odoo-db -cf /tmp/odoo-db.tar .
+          cp /tmp/odoo-db.tar "${DIR}/odoo-db.tar"
+          echo "file=${DIR}/odoo-db.tar" >> "${GITHUB_OUTPUT}"
+          echo "sha256=$(sha256sum < /tmp/odoo-db.tar | cut -d' ' -f1)" >> "${GITHUB_OUTPUT}"
 
   test:
     needs: install
@@ -184,17 +186,18 @@ jobs:
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
         run: bash .github/ci/prepare.sh
-      - uses: actions/download-artifact@v4
-        with:
-          name: odoo-db
-          path: /tmp/odoo-db-upload
       - name: Restore the database
         env:
-          CI_ARTIFACT_KEY: ${{ secrets.CI_ARTIFACT_KEY }}
+          HANDOFF: ${{ needs.install.outputs.handoff }}
+          HANDOFF_SHA256: ${{ needs.install.outputs.handoff-sha256 }}
         run: |
+          mountpoint -q /ci-handoff
           mkdir -p /tmp/odoo-db
-          openssl enc -d -aes-256-cbc -pbkdf2 -pass env:CI_ARTIFACT_KEY -in /tmp/odoo-db-upload/odoo-db.tar.enc \
-            | tar -C /tmp/odoo-db -xf -
+          # Every run mounts the volume: check a local copy against the job
+          # output before using it.
+          cp "${HANDOFF}" /tmp/odoo-db.tar
+          echo "${HANDOFF_SHA256}  /tmp/odoo-db.tar" | sha256sum --check --strict -
+          tar -C /tmp/odoo-db -xf /tmp/odoo-db.tar
           DATA_DIR=$(python3 -c "from odoo.tools import config; config.parse_config([]); print(config['data_dir'])" | tail -1)
           oca_wait_for_postgres
           psql -Atc 'select version()'
