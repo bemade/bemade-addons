@@ -36,6 +36,8 @@ import time
 
 from odoo.tests import HttpCase, TransactionCase, tagged
 
+from .common import NoClusterMixin
+
 SECRET_PARAM = "odoo_herd_portal.log_token_secret"
 VIEWER_URL_PARAM = "odoo_herd_portal.log_viewer_url"
 
@@ -134,7 +136,7 @@ def _common_fixtures(cls):
 
 
 @tagged("post_install", "-at_install", "odoo_herd_portal")
-class TestLogTokenMint(TransactionCase):
+class TestLogTokenMint(NoClusterMixin, TransactionCase):
     """Token mint / verify / tamper / expiry (a, b, c)."""
 
     @classmethod
@@ -235,7 +237,7 @@ class TestLogTokenMint(TransactionCase):
 
 
 @tagged("post_install", "-at_install", "odoo_herd_portal")
-class TestLogViewerPage(HttpCase):
+class TestLogViewerPage(NoClusterMixin, HttpCase):
     """Portal route: IDOR guard + no-leak rendering (d, e, f)."""
 
     @classmethod
