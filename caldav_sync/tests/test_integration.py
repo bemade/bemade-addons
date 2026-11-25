@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import caldav
 
+from odoo.exceptions import UserError
 from odoo.fields import Command
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
@@ -367,11 +368,62 @@ class TestCalDAVIntegration(TransactionCase, CaldavTestCommon):
         # Poll the server
         self.env["calendar.event"].poll_caldav_server()
 
-        # Verify the event was deleted from Odoo
+        # Verify the event is gone from the calendar, archived (recoverable)
         orphaned_event = self.env["calendar.event"].search([("id", "=", event_id)])
         self.assertFalse(
             orphaned_event,
-            "Orphaned event should be deleted from Odoo after polling",
+            "Orphaned event should be removed from the Odoo calendar after polling",
+        )
+        archived = self.env["calendar.event"].with_context(active_test=False).browse(
+            event_id
+        )
+        self.assertTrue(archived.exists(), "it is archived, not deleted")
+        self.assertFalse(archived.active)
+
+    def test_poll_keeps_event_that_never_reached_server(self):
+        """An event whose push failed (server down, refused) is missing on the
+        server but was never there: the poll must keep it in Odoo."""
+        start = datetime.now() + timedelta(days=12)
+        with patch.object(
+            type(self.env["calendar.event"]),
+            "_create_in_icalendar",
+            side_effect=Exception("server down"),
+        ):
+            event = (
+                self.env["calendar.event"]
+                .with_user(self.test_user)
+                .create(
+                    {
+                        "name": "Never pushed",
+                        "start": start,
+                        "stop": start + timedelta(hours=1),
+                        "partner_ids": [Command.set([self.test_user.partner_id.id])],
+                    }
+                )
+            )
+        self.assertIsNone(self._find_server_event_by_uid(event.caldav_uid))
+        self.env["calendar.event"].poll_caldav_server()
+        self.assertTrue(event.exists())
+        self.assertTrue(event.active, "an event never pushed must not be removed")
+
+    def test_series_deleted_on_server_is_archived_and_can_come_back(self):
+        """A series deleted on the server is archived in Odoo; if it comes
+        back on the server with the same UID, it is imported again."""
+        uid = "series-deleted-then-back"
+        self._put_series(uid, "FREQ=WEEKLY;COUNT=4", "20261001T000000Z")
+        self.env["calendar.event"].poll_caldav_server()
+        events = self.env["calendar.event"].search([("caldav_uid", "=", uid)])
+        self.assertEqual(len(events), 4)
+
+        self._find_server_event_by_uid(uid).delete()
+        self.env["calendar.event"].poll_caldav_server()
+        self.assertFalse(events.filtered("active"), "archived, not active")
+        self.assertEqual(len(events.exists()), 4, "archived, not deleted")
+
+        self._put_series(uid, "FREQ=WEEKLY;COUNT=4", "20261001T000000Z")
+        self.env["calendar.event"].poll_caldav_server()
+        self.assertEqual(
+            self.env["calendar.event"].search_count([("caldav_uid", "=", uid)]), 4
         )
 
     def test_event_with_attendees_syncs(self):
@@ -1033,13 +1085,15 @@ class TestCalDAVIntegration(TransactionCase, CaldavTestCommon):
         base_event = odoo_events.filtered(lambda e: e.is_base_event)
         if base_event:
             base_event = base_event[0]
-            # Change from daily to weekly - this triggers _rewrite_recurrence
-            base_event.with_context(caldav_no_sync=False).write(
-                {
-                    "rrule_type": "weekly",
-                    "recurrence_update": "all_events",
-                }
-            )
+            # The series was created on the server, which is the master of its
+            # schedule: changing its rule from Odoo is refused.
+            with self.assertRaises(UserError):
+                base_event.with_context(caldav_no_sync=False).write(
+                    {
+                        "rrule_type": "weekly",
+                        "recurrence_update": "all_events",
+                    }
+                )
 
     def test_get_ical_recurrence_id_with_timezone(self):
         """Test _get_ical_recurrence_id returns correct timezone-aware datetime."""
@@ -1087,3 +1141,299 @@ class TestCalDAVIntegration(TransactionCase, CaldavTestCommon):
             self.assertIsNotNone(
                 recurrence_id.tzinfo, "Recurrence ID should be timezone-aware"
             )
+
+    # ------------------------------------------------------------------
+    # A change made on the server must never delete the series (2026-11):
+    # an UNTIL datetime compared to Odoo's date looked like a rule change,
+    # Odoo rewrote the series, deleted it on the server while doing so, and
+    # the next poll then deleted it in Odoo as an orphan.
+    # ------------------------------------------------------------------
+
+    def _put_series(self, uid, rrule, last_modified, summary="Series", moved=False):
+        start = (datetime.now() + timedelta(days=14)).replace(
+            hour=13, minute=30, second=0, microsecond=0
+        )
+        first = start.strftime("%Y%m%dT%H%M%S")
+        end = start.replace(hour=14).strftime("%Y%m%dT%H%M%S")
+        ics = (
+            "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//test//test//EN\n"
+            f"BEGIN:VEVENT\nUID:{uid}\nSUMMARY:{summary}\n"
+            f"DTSTAMP:20261001T000000Z\nLAST-MODIFIED:{last_modified}\n"
+            f"DTSTART;TZID=Europe/Zurich:{first}\nDTEND;TZID=Europe/Zurich:{end}\n"
+            f"RRULE:{rrule}\nEND:VEVENT\n"
+        )
+        if moved:
+            # The second occurrence moved one hour later, as Infomaniak does it.
+            second = start + timedelta(days=7)
+            ics += (
+                f"BEGIN:VEVENT\nUID:{uid}\nSUMMARY:{summary}\n"
+                f"DTSTAMP:20261001T000000Z\nLAST-MODIFIED:{last_modified}\n"
+                "RECURRENCE-ID;TZID=Europe/Zurich:"
+                f"{second.strftime('%Y%m%dT%H%M%S')}\n"
+                "DTSTART;TZID=Europe/Zurich:"
+                f"{second.replace(hour=14).strftime('%Y%m%dT%H%M%S')}\n"
+                "DTEND;TZID=Europe/Zurich:"
+                f"{second.replace(hour=15).strftime('%Y%m%dT%H%M%S')}\n"
+                "END:VEVENT\n"
+            )
+        self._get_calendar().save_event(ics + "END:VCALENDAR\n")
+
+    def _assert_series_survives_server_change(self, uid, rrule, rrule2=None, **kw):
+        until_end = (datetime.now() + timedelta(days=200)).strftime(
+            "%Y%m%dT225959Z"
+        )
+        rrule = rrule.format(until=until_end)
+        rrule2 = (rrule2 or rrule).format(until=until_end)
+        self._put_series(uid, rrule, "20261001T000000Z")
+        self.env["calendar.event"].poll_caldav_server()
+        self.assertTrue(
+            self.env["calendar.event"].search_count([("caldav_uid", "=", uid)])
+        )
+        changed = (datetime.utcnow() + timedelta(hours=1)).strftime("%Y%m%dT%H%M%SZ")
+        self._put_series(uid, rrule2, changed, summary="Series changed", **kw)
+        for _poll in range(2):
+            self.env["calendar.event"].poll_caldav_server()
+            self.assertIsNotNone(
+                self._find_server_event_by_uid(uid),
+                "A change made on the server must not delete the series there",
+            )
+            self.assertTrue(
+                self.env["calendar.event"].search_count([("caldav_uid", "=", uid)]),
+                "A change made on the server must not delete the series in Odoo",
+            )
+
+    def test_server_title_change_keeps_series_with_until(self):
+        self._assert_series_survives_server_change(
+            "keep-until-title", "FREQ=MONTHLY;BYMONTHDAY=30;UNTIL={until}"
+        )
+
+    def test_server_moved_occurrence_keeps_series_with_until(self):
+        self._assert_series_survives_server_change(
+            "keep-until-moved", "FREQ=WEEKLY;UNTIL={until}", moved=True
+        )
+
+    def test_server_rule_change_keeps_series_with_count(self):
+        self._assert_series_survives_server_change(
+            "keep-count-rule", "FREQ=WEEKLY;COUNT=6", rrule2="FREQ=WEEKLY;COUNT=12"
+        )
+
+    def _put_series_with_override(self, uid, summary, location, last_modified):
+        """A weekly series of 5 whose 3rd occurrence was changed on its own
+        on the server ("Special", 15:00, Room A). The override comes first in
+        the file, as servers do not guarantee the order."""
+        start = (datetime.now() + timedelta(days=14)).replace(
+            hour=13, minute=0, second=0, microsecond=0
+        )
+        third = start + timedelta(days=14)
+        fmt = "%Y%m%dT%H%M%S"
+        ics = (
+            "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//test//test//EN\n"
+            f"BEGIN:VEVENT\nUID:{uid}\nSUMMARY:Special\nLOCATION:Room A\n"
+            "DTSTAMP:20261001T000000Z\nLAST-MODIFIED:20261001T000000Z\n"
+            f"RECURRENCE-ID;TZID=Europe/Zurich:{third.strftime(fmt)}\n"
+            f"DTSTART;TZID=Europe/Zurich:{third.replace(hour=15).strftime(fmt)}\n"
+            f"DTEND;TZID=Europe/Zurich:{third.replace(hour=16).strftime(fmt)}\n"
+            "END:VEVENT\n"
+            f"BEGIN:VEVENT\nUID:{uid}\nSUMMARY:{summary}\nLOCATION:{location}\n"
+            f"DTSTAMP:20261001T000000Z\nLAST-MODIFIED:{last_modified}\n"
+            f"DTSTART;TZID=Europe/Zurich:{start.strftime(fmt)}\n"
+            f"DTEND;TZID=Europe/Zurich:{start.replace(hour=14).strftime(fmt)}\n"
+            "RRULE:FREQ=WEEKLY;COUNT=5\nEND:VEVENT\nEND:VCALENDAR\n"
+        )
+        self._get_calendar().save_event(ics)
+
+    def test_server_series_change_reaches_every_occurrence(self):
+        """Changing the title or location of the series on the server changes
+        every occurrence in Odoo, not only the first one, except the one that
+        was changed on its own on the server."""
+        uid = "series-title-all-occurrences"
+        self._put_series_with_override(uid, "Weekly", "Room A", "20261001T000000Z")
+        self.env["calendar.event"].poll_caldav_server()
+        events = self.env["calendar.event"].search(
+            [("caldav_uid", "=", uid)], order="start"
+        )
+        self.assertEqual(len(events), 5)
+        self.assertEqual(events.mapped("name").count("Special"), 1)
+
+        changed = (datetime.utcnow() + timedelta(hours=1)).strftime("%Y%m%dT%H%M%SZ")
+        self._put_series_with_override(uid, "Weekly renamed", "Room B", changed)
+        server_before = self._find_server_event_by_uid(uid).data
+        self.env["calendar.event"].poll_caldav_server()
+
+        events = self.env["calendar.event"].search(
+            [("caldav_uid", "=", uid)], order="start"
+        )
+        self.assertEqual(len(events), 5, "The series must not be rebuilt")
+        special = events.filtered(lambda event: event.name == "Special")
+        self.assertEqual(len(special), 1, "The override keeps its own title")
+        self.assertEqual(special.location, "Room A", "and its own location")
+        others = events - special
+        self.assertEqual(set(others.mapped("name")), {"Weekly renamed"})
+        self.assertEqual(set(others.mapped("location")), {"Room B"})
+        self.assertEqual(
+            self._find_server_event_by_uid(uid).data,
+            server_before,
+            "The poll must not write to the server",
+        )
+
+    def _create_odoo_series(self, name, count=6):
+        start = (datetime.now() + timedelta(days=14)).replace(
+            hour=9, minute=0, second=0, microsecond=0
+        )
+        event = (
+            self.env["calendar.event"]
+            .with_user(self.test_user)
+            .create(
+                {
+                    "name": name,
+                    "start": start,
+                    "stop": start + timedelta(hours=1),
+                    "user_id": self.test_user.id,
+                    "partner_ids": [Command.set([self.test_user.partner_id.id])],
+                    "recurrency": True,
+                    "rrule_type": "weekly",
+                    "end_type": "count",
+                    "count": count,
+                    ["mon", "tue", "wed", "thu", "fri", "sat", "sun"][
+                        start.weekday()
+                    ]: True,
+                    "event_tz": "Europe/Zurich",
+                }
+            )
+        )
+        return event.recurrence_id.base_event_id
+
+    def _assert_all_on_server_and_kept(self, name_like, expected):
+        """Every active Odoo event matching name_like is on the server, and a
+        poll keeps all of them."""
+        events = self.env["calendar.event"].search([("name", "like", name_like)])
+        self.assertEqual(len(events), expected)
+        for uid in set(events.mapped("caldav_uid")):
+            self.assertIsNotNone(
+                self._find_server_event_by_uid(uid),
+                f"{uid} must be on the server",
+            )
+        self.env["calendar.event"].poll_caldav_server()
+        self.assertEqual(
+            self.env["calendar.event"].search_count([("name", "like", name_like)]),
+            expected,
+            "The poll must not delete events that Odoo pushed",
+        )
+
+    def test_odoo_this_and_following_keeps_both_series(self):
+        """'This and following events' splits the series in two: both halves
+        must be on the server and survive the next poll."""
+        base = self._create_odoo_series("Split series")
+        third = base.recurrence_id.calendar_event_ids.sorted("start")[2]
+        third.write({"name": "Split series B", "recurrence_update": "future_events"})
+        self._assert_all_on_server_and_kept("Split series", 6)
+
+    def test_odoo_break_recurrence_keeps_events(self):
+        """Turning a series into a single event in Odoo must leave that event
+        on the server and in Odoo after the next poll."""
+        base = self._create_odoo_series("Broken series")
+        base.write({"recurrency": False, "recurrence_update": "all_events"})
+        remaining = self.env["calendar.event"].search_count(
+            [("name", "=", "Broken series")]
+        )
+        self.assertTrue(remaining)
+        self._assert_all_on_server_and_kept("Broken series", remaining)
+
+    def test_odoo_break_recurrence_drops_rule_on_server(self):
+        """Unticking 'Recurrent' with 'all events' leaves one event: the server
+        must lose the rule and the overrides, or the poll brings the other
+        occurrences back (test B7)."""
+        base = self._create_odoo_series("Single again", count=2)
+        base.write({"name": "Single again", "location": "Room", "recurrence_update": "self_only"})
+        base.write({"recurrency": False, "recurrence_update": "all_events"})
+        event = self.env["calendar.event"].search([("name", "=", "Single again")])
+        self.assertEqual(len(event), 1)
+        self.assertFalse(event.recurrence_id)
+
+        server_event = self._find_server_event_by_uid(event.caldav_uid)
+        self.assertIsNotNone(server_event)
+        vevents = [
+            c for c in server_event.icalendar_instance.subcomponents if c.name == "VEVENT"
+        ]
+        self.assertEqual(len(vevents), 1, "No override may stay on the server")
+        self.assertIsNone(vevents[0].get("rrule"), "The rule must be removed")
+
+        # The poll must not rebuild the series, even when it reads the server
+        # copy as newer than Odoo's.
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE calendar_event SET write_date = write_date - interval '1 hour' WHERE id = %s",
+            [event.id],
+        )
+        self.env.invalidate_all()
+        self.env["calendar.event"].poll_caldav_server()
+        events = self.env["calendar.event"].search([("name", "=", "Single again")])
+        self.assertEqual(len(events), 1)
+        self.assertFalse(events.recurrence_id)
+
+    def test_odoo_rule_change_recreates_series_on_server(self):
+        """Changing the rule of a series in Odoo rebuilds it: it is deleted
+        from the server and must be created there again, not lost."""
+        start = (datetime.now() + timedelta(days=14)).replace(
+            hour=9, minute=0, second=0, microsecond=0
+        )
+        event = (
+            self.env["calendar.event"]
+            .with_user(self.test_user)
+            .create(
+                {
+                    "name": "Odoo series",
+                    "start": start,
+                    "stop": start + timedelta(hours=1),
+                    "user_id": self.test_user.id,
+                    "partner_ids": [Command.set([self.test_user.partner_id.id])],
+                    "recurrency": True,
+                    "rrule_type": "weekly",
+                    "end_type": "count",
+                    "count": 4,
+                    ["mon", "tue", "wed", "thu", "fri", "sat", "sun"][
+                        start.weekday()
+                    ]: True,
+                    "event_tz": "Europe/Zurich",
+                }
+            )
+        )
+        base = event.recurrence_id.base_event_id
+        old_uid = base.caldav_uid
+        self.assertIsNotNone(self._find_server_event_by_uid(old_uid))
+
+        base.write({"count": 8, "recurrence_update": "all_events"})
+
+        new_uid = base.caldav_uid
+        server_event = self._find_server_event_by_uid(new_uid)
+        self.assertIsNotNone(
+            server_event, "The rewritten series must exist on the server"
+        )
+        rrule = server_event.icalendar_component.get("rrule")
+        self.assertEqual(rrule.get("count"), [8])
+        if new_uid != old_uid:
+            self.assertIsNone(self._find_server_event_by_uid(old_uid))
+        self.assertEqual(
+            self.env["calendar.event"].search_count(
+                [("recurrence_id", "=", base.recurrence_id.id)]
+            ),
+            8,
+        )
+        # The next poll keeps it: the series is on the server, not an orphan.
+        self.env["calendar.event"].poll_caldav_server()
+        self.assertEqual(
+            self.env["calendar.event"].search_count([("caldav_uid", "=", new_uid)]),
+            8,
+        )
+
+    def test_unchanged_until_rule_is_not_a_change(self):
+        until_end = (datetime.now() + timedelta(days=200)).strftime(
+            "%Y%m%dT225959Z"
+        )
+        uid = "same-until-rule"
+        self._put_series(uid, f"FREQ=WEEKLY;UNTIL={until_end}", "20261001T000000Z")
+        self.env["calendar.event"].poll_caldav_server()
+        base = self.env["calendar.event"]._get_existing_instance(uid, None)
+        component = self._find_server_event_by_uid(uid).icalendar_component
+        recurrency_vals = base._get_recurrency_values_from_ical_event(component)
+        self.assertEqual(base._get_recurrence_changes(recurrency_vals), {})

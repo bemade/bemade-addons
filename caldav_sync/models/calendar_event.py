@@ -1,7 +1,7 @@
 import logging
 import re
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING, Any
 
 import caldav
@@ -9,11 +9,12 @@ import icalendar.cal
 import markdown2 as md2
 from caldav.lib.error import NotFoundError
 from dateutil.rrule import rrulestr
-from icalendar import Event, vCalAddress, vDate, vDatetime, vRecur, vText
+from icalendar import Event, vCalAddress, vDate, vDatetime, vRecur, vText, vUri
 from markdownify import markdownify as md
 from pytz import timezone, utc
 
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 
 from odoo.addons.calendar.models.calendar_recurrence import MAX_RECURRENT_EVENT
 
@@ -100,6 +101,39 @@ def _parse_rrule_string(rrule_str: str) -> dict[str, Any]:
     return result
 
 
+# Properties that carry a video call link by definition: whatever URL they hold
+# is the meeting link. CONFERENCE is RFC 7986; the X- ones are what Google
+# Calendar and Outlook/Exchange put in the events they serve.
+VIDEOCALL_PROPERTIES = (
+    "CONFERENCE",
+    "X-GOOGLE-CONFERENCE",
+    "X-MICROSOFT-SKYPETEAMSMEETINGURL",
+    "X-MICROSOFT-ONLINEMEETINGEXTERNALLINK",
+    "X-INFOMANIAK-MEET-ROOM-URL",
+)
+# Links that are video calls wherever they appear (URL, LOCATION, DESCRIPTION,
+# X-ALT-DESC...): kMeet, Google Meet, Teams, Zoom, Jitsi, Webex and Odoo's own
+# Discuss meeting route.
+VIDEOCALL_URL_RE = re.compile(
+    r"https?://(?:"
+    r"(?:[\w-]+\.)*(?:kmeet\.infomaniak\.com|meet\.google\.com"
+    r"|teams\.microsoft\.com|teams\.live\.com|zoom\.us|meet\.jit\.si|webex\.com)"
+    r"|[^\s<>\"'\[\]]+/calendar/join_videocall"
+    r")[^\s<>\"'\[\]]*",
+    re.IGNORECASE,
+)
+ANY_URL_RE = re.compile(r"https?://[^\s<>\"'\[\]]+", re.IGNORECASE)
+# Label of the line Odoo appends to DESCRIPTION when it exports a video call
+# link, for clients that only show the description. The line is stripped again
+# on import so the description does not grow by one line per round trip.
+VIDEOCALL_DESCRIPTION_LABEL = "Video call"
+
+
+def _clean_url(url: str) -> str:
+    """Drop the punctuation a URL picks up from the prose around it."""
+    return url.rstrip(".,;:!?)")
+
+
 def _extract_vcal_email(vcal_address):
     email_regex = re.compile(r"[a-z0-9.\-+_]+@[a-z0-9.\-+_]+\.[a-z]+")
     res = email_regex.search(str(vcal_address))
@@ -124,6 +158,26 @@ class CalendarEvent(models.Model):
     caldav_user_ids = fields.Many2many(
         comodel_name="res.users",
         compute="_compute_caldav_users",
+    )
+    # Created from the CalDAV server (not in Odoo). The server is the master of
+    # its date and time: they cannot be changed from Odoo.
+    caldav_imported = fields.Boolean(
+        string="Imported from CalDAV",
+        copy=False,
+        readonly=True,
+    )
+    # Set once the event is known to be on the CalDAV server (pushed, or seen
+    # by a poll). Only those are taken as deleted on the server when they are
+    # missing there: one that never reached it is kept, not wiped from Odoo.
+    caldav_on_server = fields.Boolean(
+        string="On the CalDAV server",
+        copy=False,
+        readonly=True,
+    )
+    caldav_date_locked = fields.Boolean(
+        compute="_compute_caldav_date_locked",
+        help="Date and time can only be changed in the external calendar "
+        "this meeting was created in.",
     )
     is_base_event = fields.Boolean(compute="_compute_is_base_event")
     differs_from_base_event = fields.Boolean(compute="_compute_differs_from_base_event")
@@ -186,6 +240,16 @@ class CalendarEvent(models.Model):
                 or not event.follow_recurrence
             )
 
+    @api.depends("caldav_imported", "recurrence_id.base_event_id.caldav_imported")
+    def _compute_caldav_date_locked(self):
+        # Occurrences of an imported series are created by copy_data() and do
+        # not carry the flag themselves: take it from the series.
+        for event in self:
+            event.caldav_date_locked = (
+                event.caldav_imported
+                or event.recurrence_id.base_event_id.caldav_imported
+            )
+
     @api.depends("recurrency", "recurrence_id", "recurrence_id.base_event_id")
     def _compute_is_base_event(self):
         for rec in self:
@@ -225,9 +289,39 @@ class CalendarEvent(models.Model):
         events.with_context(**ctx)._recompute_caldav_ids()
         if not self.env.context.get("caldav_no_sync"):
             events._to_sync()._sync_create_to_caldav()
-        return events
+        # Hand the records back with the caller's context: with caldav_no_sync
+        # left on them, the caller's next write would silently not be pushed.
+        return events.with_env(self.env)
+
+    def _is_import_from_server(self) -> bool:
+        """Whether we are applying the CalDAV server's state to Odoo (poll).
+
+        Odoo's own machinery may then archive, detach or rewrite events (e.g.
+        when the server changed a recurrence rule). None of that may reach the
+        server: it already holds the truth, and pushing it back used to delete
+        whole series there (and, on the next poll, in Odoo too).
+        """
+        return bool(self.env.context.get("caldav_from_server"))
+
+    def _mark_caldav_on_server(self):
+        """Record that these events are on the CalDAV server, with their whole
+        series. Plain SQL: write_date must not move, it is compared with the
+        server's LAST-MODIFIED to tell which side changed last."""
+        events = self | self.recurrence_id.calendar_event_ids
+        ids = tuple(event_id for event_id in events.ids if event_id)
+        if not ids:
+            return
+        events.flush_recordset(["caldav_on_server"])
+        self.env.cr.execute(
+            "UPDATE calendar_event SET caldav_on_server = TRUE "
+            "WHERE id IN %s AND caldav_on_server IS NOT TRUE",
+            [ids],
+        )
+        events.invalidate_recordset(["caldav_on_server"])
 
     def _sync_create_to_caldav(self):
+        if self._is_import_from_server():
+            return
         for event in self:
             for user in event.caldav_user_ids:
                 client = user._get_caldav_client()
@@ -239,12 +333,72 @@ class CalendarEvent(models.Model):
                         event.with_context(caldav_no_sync=True).write(
                             {"caldav_uid": caldav_uid}
                         )
+                    event._mark_caldav_on_server()
                 except Exception as e:
                     _logger.error(
                         f"Failed to sync event to CalDAV server: {e}", exc_info=True
                     )
 
+    # The date and time fields of calendar.event, as the form, the calendar
+    # view (drag and drop, resize) and the API write them.
+    # The recurrence fields too: changing the rule moves the occurrences.
+    CALDAV_LOCKED_DATE_FIELDS = (
+        "start",
+        "stop",
+        "start_date",
+        "stop_date",
+        "allday",
+        "duration",
+        "recurrency",
+        "rrule_type",
+        "rrule_type_ui",
+        "interval",
+        "count",
+        "end_type",
+        "until",
+        "month_by",
+        "day",
+        "weekday",
+        "byday",
+        "mon",
+        "tue",
+        "wed",
+        "thu",
+        "fri",
+        "sat",
+        "sun",
+    )
+
+    def _check_caldav_date_lock(self, vals):
+        """Refuse a date/time change on a meeting that was created in the
+        external calendar: that calendar is the master of its schedule, and a
+        change made in Odoo would be overwritten or diverge from it.
+
+        The import itself (caldav_no_sync in the context) is not affected.
+        """
+        if self.env.context.get("caldav_no_sync"):
+            return
+        names = [name for name in self.CALDAV_LOCKED_DATE_FIELDS if name in vals]
+        if not names:
+            return
+        for event in self.filtered("caldav_date_locked"):
+            for name in names:
+                field = self._fields[name]
+                new = field.convert_to_record(
+                    field.convert_to_cache(vals[name], event), event
+                )
+                if new != event[name]:
+                    raise UserError(
+                        self.env._(
+                            "The date and time of “%(name)s” cannot be changed in "
+                            "Odoo: this meeting was created in the external "
+                            "calendar.",
+                            name=event.name,
+                        )
+                    )
+
     def write(self, vals):
+        self._check_caldav_date_lock(vals)
         # Capture state before write for future_events sync handling
         is_future_events_update = vals.get("recurrence_update") == "future_events"
         old_base_events = {}
@@ -270,12 +424,16 @@ class CalendarEvent(models.Model):
             for event in self._to_sync():
                 # Remove old version from CalDAV (it was part of old recurrence)
                 event._sync_unlink_to_caldav()
-                # Sync the new base event (self after split)
-                event._sync_write_to_caldav()
+                # The split event still holds the old series' UID: give it the
+                # new series' one, or pushing it would overwrite the old series.
+                event.recurrence_id.calendar_event_ids._recompute_caldav_ids()
+                # The new series (self after split) is not on the server yet:
+                # create it there, an update alone would find nothing.
+                event._sync_upsert_to_caldav()
                 # Sync the old base event (its recurrence was truncated)
                 old_base = old_base_events.get(event.id)
-                if old_base:
-                    old_base._sync_write_to_caldav()
+                if old_base and old_base.exists():
+                    old_base._sync_upsert_to_caldav()
             return res
 
         # Normal sync for other write operations
@@ -286,6 +444,8 @@ class CalendarEvent(models.Model):
         return res
 
     def _sync_write_to_caldav(self):
+        if self._is_import_from_server():
+            return
         ical_event_data = self._create_event_data()
         for user in self.caldav_user_ids:
             client = user._get_caldav_client()
@@ -295,6 +455,7 @@ class CalendarEvent(models.Model):
             if not base_event:
                 _logger.debug(f"Failed to find base event for {self} on CalDAV server.")
                 return
+            self._mark_caldav_on_server()
             if self.recurrence_id:
                 tz = timezone(self.event_tz or self.env.user.tz or "UTC")
                 start = utc.localize(self.start).astimezone(tz)
@@ -311,18 +472,19 @@ class CalendarEvent(models.Model):
                 ):
                     # Event differs from base, update or create its subcomponent
                     # identified by its recurrence-id
-                    if not base_event:
-                        _logger.debug(
-                            f"Failed to find base event for {self} on CalDAV server."
-                        )
-                        return
                     index = self._get_subcomponent_index_for_recurrence(base_event)
                     if index:
                         ical_event = base_event.icalendar_instance.subcomponents[index]
                         self._update_ical_event_values(ical_event, ical_event_data)
                     else:
                         base_event.icalendar_instance.add_component(
-                            Event(**ical_event_data)
+                            Event(
+                                **{
+                                    key: value
+                                    for key, value in ical_event_data.items()
+                                    if value is not None
+                                }
+                            )
                         )
                     base_event.save()
             else:
@@ -336,6 +498,17 @@ class CalendarEvent(models.Model):
     ):
         if event:
             self._update_ical_event_values(event.icalendar_component, ical_event_data)  # pyright: ignore[reportAttributeAccessIssue]
+            if not self.recurrence_id:
+                # A single event has no occurrences: drop the ones the server
+                # still holds from a former series.
+                instance = event.icalendar_instance
+                instance.subcomponents = [
+                    component
+                    for component in instance.subcomponents
+                    if not (
+                        component.name == "VEVENT" and component.get("recurrence-id")
+                    )
+                ]
             event.save()
         else:
             calendar.add_event(**ical_event_data)
@@ -346,7 +519,12 @@ class CalendarEvent(models.Model):
         sequence = (ical_event.get("sequence") or 0) + 1
         event_data.update(sequence=sequence)
         for key, value in event_data.items():
-            ical_event[key] = value
+            if value is None:
+                # The property no longer applies (e.g. the video call was removed
+                # in Odoo): drop it, or the next poll would bring it back.
+                ical_event.pop(key, None)
+            else:
+                ical_event[key] = value
 
     def _get_caldav_base_event_by_uid(
         self, calendar: caldav.Calendar, uid: str
@@ -379,6 +557,8 @@ class CalendarEvent(models.Model):
                 return index
 
     def _sync_unlink_to_caldav(self):
+        if self._is_import_from_server():
+            return
         delete_all = self.env.context.get("caldav_delete_all", False)
         if self.caldav_uid:
             for user in self.caldav_user_ids:
@@ -408,6 +588,9 @@ class CalendarEvent(models.Model):
 
     def _matches_caldav_start(self, caldav_event: caldav.Event) -> bool:
         event_start = caldav_event.icalendar_component.get("dtstart").dt  # pyright: ignore[reportAttributeAccessIssue]
+        if not isinstance(event_start, datetime):
+            # All-day event (DTSTART;VALUE=DATE): a date has no time nor tzinfo.
+            return self.start.date() == event_start
         tz = event_start.tzinfo
         if tz:
             self_start = utc.localize(self.start).astimezone(tz)
@@ -440,12 +623,14 @@ class CalendarEvent(models.Model):
         recurrence = self.recurrence_id
         detached_events = super()._break_recurrence(future) | self
         # detached_events are already removed from the CalDAV server in
-        # calendar.recurrence._detach_events. We now need to reinitialize them.
-        for event in detached_events:
-            event._sync_write_to_caldav()
-        if future:
-            # When future=True, the base event needs to re-sync its recurrence values
-            recurrence.base_event_id._sync_write_to_caldav()
+        # calendar.recurrence._detach_events. Odoo deletes the other ones right
+        # after (calendar.event.write): only self stays, now a single event.
+        # Create it again on the server, an update alone would find nothing.
+        for event in self:
+            event._sync_upsert_to_caldav()
+        if future and recurrence.exists() and recurrence.base_event_id:
+            # The rest of the series stays: push its truncated rule.
+            recurrence.base_event_id._sync_upsert_to_caldav()
         return detached_events - self
 
     def _rewrite_recurrence(self, values, time_values, recurrence_values):
@@ -455,16 +640,43 @@ class CalendarEvent(models.Model):
         on is_base_event, so we preemptively sync the deletion here.
 
         Because this method is usually called with caldav_no_sync=True in the context
-        to avoid looping, we manually call _sync_write_to_caldav once the operation is
-        completed.
+        to avoid looping, we push the rebuilt series once the operation is
+        completed. It was just deleted from the server, so it must be created
+        there again: an update alone finds nothing and the series is lost.
         """
+        base_event = self.recurrence_id.base_event_id or self
         for event in self.recurrence_id.calendar_event_ids:
             event.with_context(caldav_delete_all=True)._sync_unlink_to_caldav()
         res = super()._rewrite_recurrence(values, time_values, recurrence_values)
-        for event in self.recurrence_id.calendar_event_ids:
+        # Odoo keeps the base event and gives it a new recurrence; self may be
+        # an occurrence that is now archived.
+        for event in base_event.recurrence_id.calendar_event_ids:
             event._recompute_caldav_ids()
-        self._sync_write_to_caldav()
+        base_event._sync_upsert_to_caldav()
         return res
+
+    def _sync_upsert_to_caldav(self):
+        """Update the event on the server, or create it there if it is missing."""
+        if self._is_import_from_server():
+            return
+        self.ensure_one()
+        for user in self.caldav_user_ids:
+            try:
+                client = user._get_caldav_client()
+                calendar = client.calendar(url=user.caldav_calendar_url)
+                existing = self._get_caldav_base_event_by_uid(calendar, self.caldav_uid)
+                if existing:
+                    self._update_base_caldav_event(
+                        calendar, existing, self._create_event_data()
+                    )
+                else:
+                    self._create_in_icalendar(calendar)
+                self._mark_caldav_on_server()
+            except Exception as e:
+                _logger.error(
+                    f"Failed to push rewritten series {self} to CalDAV server: {e}",
+                    exc_info=True,
+                )
 
     def _to_sync(self):
         """Determine which records in self we need to synchronize with the
@@ -500,6 +712,11 @@ class CalendarEvent(models.Model):
             self._add_event_recurrence(event_data)
         elif self.recurrence_id:
             self._add_event_recurrence_id(event_data)
+        else:
+            # A single event may have been a series on the server (series
+            # broken in Odoo): drop its rule, or the next poll brings the
+            # other occurrences back. create_ical() skips None values.
+            event_data.update(rrule=None, exdate=None, rdate=None)
         return event_data
 
     def _add_event_header_info(self, event_data: dict) -> None:
@@ -514,12 +731,34 @@ class CalendarEvent(models.Model):
         if self.name:
             event_data["summary"] = vText(self.name)
         # TODO: Consider using X-ALT-DESC to stick HTML into the iCal event desc.
-        if self.description and self._html_to_text(self.description):
-            event_data["description"] = vText(self._html_to_text(self.description))
+        description = (
+            self._html_to_text(self.description) if self.description else ""
+        ).strip()
+        videocall_url = (self.videocall_location or "").strip()
+        if videocall_url and videocall_url not in description:
+            # Most clients (Infomaniak/kMeet, Google, Outlook) ignore CONFERENCE
+            # and URL but always show the description.
+            line = f"{VIDEOCALL_DESCRIPTION_LABEL}: {videocall_url}"
+            description = f"{description}\n\n{line}" if description else line
+        # None removes a property the server still has (see
+        # _update_ical_event_values); create_ical() skips it.
+        event_data["description"] = vText(description) if description else None
         if self.location:
             event_data["location"] = vText(self.location)
-        if self.videocall_location:
-            event_data["conference"] = self.videocall_location
+        if videocall_url:
+            # vUri, not vText: vText escapes "," and ";", which breaks Teams links.
+            # (params set afterwards: icalendar 5's vUri() takes no params=)
+            conference = vUri(videocall_url)
+            conference.params.update({"VALUE": "URI", "FEATURE": "VIDEO"})
+            event_data["conference"] = conference
+            event_data["url"] = vUri(videocall_url)
+        else:
+            event_data["conference"] = None
+            event_data["url"] = None
+        # Free/busy: Odoo show_as <-> iCalendar TRANSP (RFC 5545 3.8.2.7).
+        event_data["transp"] = vText(
+            "TRANSPARENT" if self.show_as == "free" else "OPAQUE"
+        )
         event_data["sequence"] = 0
 
     def _add_event_dates(self, event_data: dict) -> None:
@@ -539,6 +778,12 @@ class CalendarEvent(models.Model):
         event_data["created"] = vDatetime(
             utc.localize(self.create_date).astimezone(event_tz)
         )
+        if self.allday:
+            # All-day start/stop are not UTC in Odoo, they only carry the dates.
+            # iCalendar wants DATE values with an exclusive DTEND.
+            event_data["dtstart"] = vDate(self.start.date())
+            event_data["dtend"] = vDate(self.stop.date() + timedelta(days=1))
+            return
         event_data["dtstart"] = vDatetime(utc.localize(self.start).astimezone(event_tz))
         event_data["dtend"] = vDatetime(utc.localize(self.stop).astimezone(event_tz))
 
@@ -554,8 +799,44 @@ class CalendarEvent(models.Model):
         if self.recurrence_id:
             rrule = str(self.recurrence_id._get_rrule())
             rrule_dict = _parse_rrule_string(rrule)
+            until = rrule_dict.get("UNTIL")
+            if isinstance(until, datetime) and until.tzinfo is None:
+                # Odoo gives the end of the last day on the local clock. RFC 5545
+                # wants UNTIL in UTC when DTSTART has a time zone, and a date
+                # when DTSTART is a date: a floating UNTIL makes the next poll
+                # fail to parse the rule.
+                if self.allday:
+                    rrule_dict["UNTIL"] = until.date()
+                else:
+                    tz = timezone(self.event_tz or self.env.user.tz or "UTC")
+                    rrule_dict["UNTIL"] = tz.localize(until).astimezone(utc)
             if rrule_dict:
                 event_data["rrule"] = vRecur(**rrule_dict)
+
+    @api.model
+    def _get_rrule_with_utc_until(self, rrule: vRecur, dtstart) -> vRecur:
+        """Read a floating UNTIL on the clock of a timezone-aware DTSTART and
+        give it in UTC, as RFC 5545 requires. Some clients (and Odoo itself,
+        before) write it floating; dateutil then refuses the whole rule and the
+        poll stopped for every user."""
+        untils = rrule.get("until")
+        tz = getattr(dtstart, "tzinfo", None)
+        if not untils or not isinstance(dtstart, datetime) or tz is None:
+            return rrule
+        untils = untils if isinstance(untils, list) else [untils]
+        fixed = []
+        for until in untils:
+            if isinstance(until, datetime) and until.tzinfo is None:
+                local = (
+                    tz.localize(until)
+                    if hasattr(tz, "localize")
+                    else until.replace(tzinfo=tz)
+                )
+                until = local.astimezone(utc)
+            fixed.append(until)
+        rrule = vRecur(rrule)
+        rrule["UNTIL"] = fixed
+        return rrule
 
     def _add_event_attendees(self, event_data: dict) -> None:
         """Add the attendee information to the "organizer" and "attendee"
@@ -628,12 +909,16 @@ class CalendarEvent(models.Model):
         :param user: The res.user record for whom to synchronize events.
         """
         _logger.info(f"Polling CalDAV server for user {user.name}")
+        # Everything below applies the server's state to Odoo: nothing may be
+        # written to or deleted from the server (see _is_import_from_server).
+        self = self.with_context(caldav_from_server=True)
         calendar = user._get_caldav_client().calendar(url=user.caldav_calendar_url)
         events = calendar.events()
         synced_events = self.env["calendar.event"]
         for caldav_event in events:
             ical_event = caldav_event.icalendar_instance
             synced_events |= self._sync_event_from_ical(ical_event, user)
+        synced_events.exists()._mark_caldav_on_server()
 
         # TODO: check if this fails when the user is deleting someone else's event
         # TODO: check if we should send updates to invitees
@@ -645,6 +930,21 @@ class CalendarEvent(models.Model):
             ]
         )
         orphaned_events = orphaned_events._to_sync()
+        # Missing on the server only means "deleted there" for an event that
+        # was there. One that never got there (push refused, server down, or
+        # older than this check) is kept: wiping it would lose it for good.
+        never_on_server = orphaned_events.filtered(
+            lambda event: not event.caldav_on_server
+        )
+        if never_on_server:
+            _logger.warning(
+                "CalDAV: %s event(s) of %s are not on the server and never were: "
+                "kept in Odoo (ids %s)",
+                len(never_on_server),
+                user.name,
+                never_on_server.ids,
+            )
+        orphaned_events -= never_on_server
         if orphaned_events:
             base_orphans = orphaned_events.filtered(
                 lambda ev: ev.recurrence_id and ev.is_base_event
@@ -657,19 +957,24 @@ class CalendarEvent(models.Model):
                         pass
                 except NotFoundError:
                     # There are no more events with this UID, so we need to clear
-                    # out the whole recurrence chain from the Odoo side.
+                    # out the whole recurrence chain from the Odoo side. Archive,
+                    # do not delete: a mistake must stay recoverable in Odoo.
                     ctx = {"caldav_no_sync": True}
                     recurrence = base_orphan.recurrence_id
-                    recurrence.calendar_event_ids.with_context(**ctx).with_user(
-                        user
-                    ).unlink()
-                    recurrence.exists().with_context(**ctx).with_user(user).unlink()
-            # Clearing a recurrence above already removed its occurrences, and
+                    recurrence.calendar_event_ids.filtered("active").with_context(
+                        **ctx
+                    ).with_user(user).write({"active": False})
+                    # Free the UID (unique on the recurrence): if the series
+                    # comes back on the server it is imported again.
+                    recurrence.sudo().caldav_uid = False
+            # Clearing a recurrence above already archived its occurrences, and
             # occurrences that differ from their base event are in this set too,
-            # so drop whatever is already gone rather than unlinking it twice.
-            (orphaned_events - base_orphans).exists().with_context(
-                caldav_no_sync=True
-            ).with_user(user).unlink()
+            # so skip whatever is already archived.
+            (orphaned_events - base_orphans).exists().filtered(
+                "active"
+            ).with_context(caldav_no_sync=True).with_user(user).write(
+                {"active": False}
+            )
 
     @api.model
     def _sync_event_from_ical(self, ical_event: icalendar.cal.Event, user: User):
@@ -681,10 +986,15 @@ class CalendarEvent(models.Model):
         :param user: The res.user record for whom to synchronize the event.
         :return: The calendar.event records that were synchronized.
         """
+        self = self.with_context(caldav_from_server=True)
         synced_events = self.env["calendar.event"]
         event_components = [
             component for component in ical_event.walk() if component.name == "VEVENT"
         ]
+        # The series (no RECURRENCE-ID) first: what it changes is copied to its
+        # occurrences, then the occurrences changed one by one on the server
+        # get their own values back from their component.
+        event_components.sort(key=lambda component: "recurrence-id" in component)
         for component in event_components:
             uid = str(component.get("uid"))
             recurrence_id = (
@@ -695,6 +1005,12 @@ class CalendarEvent(models.Model):
 
             existing_instance = self._get_existing_instance(uid, recurrence_id)
             outdated = self._get_outdated(component, existing_instance, synced_events)
+            if outdated and self._is_legacy_allday_import(component, existing_instance):
+                # Imported before all-day events were supported: stored as a 24h
+                # meeting from UTC midnight (shown 01:00 -> 01:00 the next day).
+                # Its Odoo copy looks newer than the server's, so it would never
+                # be fixed; let the server's version through once.
+                outdated = False
             owned = (
                 existing_instance and existing_instance.partner_id == user.partner_id
             )
@@ -719,9 +1035,9 @@ class CalendarEvent(models.Model):
 
                 new_event = self.with_context(
                     caldav_no_sync=True, caldav_keep_ids=True
-                ).create(values | recurrency_vals)
+                ).create(values | recurrency_vals | {"caldav_imported": True})
                 self.env["calendar.event"].flush_model()
-                if new_event.recurrency:
+                if new_event.recurrence_id:
                     synced_events |= new_event.recurrence_id.calendar_event_ids
                 else:
                     synced_events |= new_event
@@ -729,20 +1045,87 @@ class CalendarEvent(models.Model):
             elif outdated or not owned:
                 pass
             else:
-                changed_vals = existing_instance._get_recurrence_changes(
+                recurrence_changes = existing_instance._get_recurrence_changes(
                     recurrency_vals
-                ) | existing_instance._get_value_changes(values)
+                )
+                changed_vals = recurrence_changes | existing_instance._get_value_changes(
+                    values
+                )
                 if changed_vals:
+                    series_writes = []
+                    if (
+                        recurrence_id is None
+                        and existing_instance.recurrence_id
+                        # A rule change rebuilds or breaks the series: Odoo then
+                        # replaces its occurrences itself.
+                        and not recurrence_changes
+                    ):
+                        # Read before the base event changes: it is the reference.
+                        series_writes = existing_instance._get_series_writes(
+                            changed_vals
+                        )
                     existing_instance.with_context(
                         caldav_no_sync=True,
                         caldav_keep_ids=True,
                     ).write(changed_vals)
+                    for occurrences, vals in series_writes:
+                        occurrences.exists().with_context(
+                            caldav_no_sync=True,
+                            caldav_keep_ids=True,
+                        ).write(vals)
 
-            if existing_instance.recurrency and existing_instance.is_base_event:
+            # recurrence_id, not recurrency (see _get_existing_instance): an
+            # event left with recurrency but no series must count as seen.
+            if existing_instance.recurrence_id and existing_instance.is_base_event:
                 synced_events |= existing_instance.recurrence_id.calendar_event_ids
             else:
                 synced_events |= existing_instance
         return synced_events
+
+    # What the server's series (VEVENT without RECURRENCE-ID) holds for all its
+    # occurrences, unlike the date and time that are each occurrence's own.
+    CALDAV_SERIES_SHARED_FIELDS = (
+        "name",
+        "description",
+        "location",
+        "videocall_location",
+        "partner_ids",
+    )
+
+    def _get_series_writes(self, changed_vals: dict) -> list:
+        """The writes that carry a change of the server's series to the other
+        occurrences of self's recurrence (self being its base event).
+
+        Only the occurrences that still have the base event's current value
+        follow; one changed on its own keeps it. Must be called before self
+        is written.
+
+        :param changed_vals: The values about to be written on self.
+        :return: A list of (occurrences, values) to write.
+        """
+        self.ensure_one()
+        others = self.recurrence_id.calendar_event_ids - self
+        writes = []
+        for field in self.CALDAV_SERIES_SHARED_FIELDS:
+            if field not in changed_vals:
+                continue
+            current = self[field]
+            followers = others.filtered(lambda event: event[field] == current)
+            if followers:
+                writes.append((followers, {field: changed_vals[field]}))
+        return writes
+
+    @api.model
+    def _is_legacy_allday_import(self, component, existing_instance) -> bool:
+        """Whether the server holds an all-day event (DATE DTSTART) whose Odoo
+        copy is not all-day. Odoo exports its own all-day events as DATE and
+        stores them as allday, so this only matches the old import."""
+        dtstart = component.get("dtstart")
+        if not dtstart or len(existing_instance) != 1:
+            return False
+        value = dtstart.dt
+        is_date = isinstance(value, date) and not isinstance(value, datetime)
+        return is_date and not existing_instance.allday
 
     @api.model
     def _get_ical_series_end(self, component, stop):
@@ -796,24 +1179,27 @@ class CalendarEvent(models.Model):
                 ]
             )
         else:
-            instance = self.env["calendar.event"].search(
+            # The series comes first: an occurrence detached from it keeps the
+            # UID (e.g. one left past UNTIL by the import). Taken for the
+            # master, it was turned into a second series with the same UID and
+            # the poll crashed on the unique constraint, for every user.
+            series_base = (
+                self.env["calendar.recurrence"]
+                .search([("base_event_id.caldav_uid", "=", uid)], limit=1)
+                .base_event_id
+            )
+            if series_base:
+                return series_base
+            # recurrence_id, not recurrency: Odoo leaves recurrency set on the
+            # event that remains when a series is turned into a single event.
+            # Missed here, it was imported again as a copy and the original
+            # deleted as an orphan.
+            return self.env["calendar.event"].search(
                 [
                     ("caldav_uid", "=", uid),
-                    ("recurrency", "=", False),
+                    ("recurrence_id", "=", False),
                 ]
             )
-            if instance:
-                return instance
-            else:
-                return (
-                    self.env["calendar.recurrence"]
-                    .search(
-                        [
-                            ("base_event_id.caldav_uid", "=", uid),
-                        ]
-                    )
-                    .base_event_id
-                )
 
         if len(instance) == 1:
             return instance
@@ -859,6 +1245,7 @@ class CalendarEvent(models.Model):
 
         if not rrule or not isinstance(rrule, vRecur):
             return {}
+        rrule = self._get_rrule_with_utc_until(rrule, component.get("dtstart").dt)
         until = rrule.get("until")
         if until and isinstance(until, list):
             until = until[0].astimezone(utc)
@@ -915,14 +1302,39 @@ class CalendarEvent(models.Model):
             return {"recurrence_update": "all_events", "recurrency": False}
         if recurrency_vals and not self.recurrence_id:
             return recurrency_vals
+        # Only the bound that applies is meaningful: Odoo keeps count=1 on a
+        # series that ends on a date, and no date on one that ends by count.
+        ignored = {"end_date": {"count"}, "count": {"until"}}.get(
+            recurrency_vals.get("end_type"), set()
+        )
+        # follow_recurrence is not part of the rule: Odoo sets it to False on
+        # an occurrence moved by hand, the server's master always "follows".
+        # Writing it with recurrence_update makes Odoo rewrite the whole series.
+        ignored = ignored | {"follow_recurrence"}
         changed_fields = {
             key: recurrency_vals[key]
             for key in recurrency_vals.keys()
-            if hasattr(self, key) and recurrency_vals[key] != getattr(self, key)
+            if key not in ignored
+            and hasattr(self, key)
+            and self._normalize_recurrence_value(key, recurrency_vals[key])
+            != getattr(self, key)
         }
         if len(changed_fields) == 1 and "recurrence_update" in changed_fields:
             return {}
         return changed_fields
+
+    @api.model
+    def _normalize_recurrence_value(self, key, value):
+        """Bring a value parsed from an RRULE to what Odoo stores, so an
+        unchanged rule compares equal. UNTIL comes as a timezone-aware
+        datetime (e.g. 20270630T225959Z) while the field is a date."""
+        if key == "until" and isinstance(value, datetime):
+            if value.tzinfo:
+                # Odoo stores the UTC date of UNTIL (calendar.recurrence
+                # _rrule_parse): compare on that same day.
+                value = value.astimezone(utc)
+            return value.date()
+        return value
 
     def _get_value_changes(self, values: dict) -> dict:
         """Compare the values from an iCalendar event to those already
@@ -979,7 +1391,11 @@ class CalendarEvent(models.Model):
         :return: True if the iCalendar component is outdated, False otherwise.
         """
         outdated = False
-        last_modified = component.get("dtstamp") and component.get("dtstamp").dt
+        # LAST-MODIFIED is bumped on every change to the event. DTSTAMP is not:
+        # servers such as Infomaniak keep the creation time there, so an event
+        # moved on the server would always look older than its Odoo copy.
+        stamp = component.get("last-modified") or component.get("dtstamp")
+        last_modified = stamp and stamp.dt
         if (
             existing_instance
             and last_modified
@@ -1006,27 +1422,50 @@ class CalendarEvent(models.Model):
                             or updating an existing one (False).
         :return: The dictionary of values to construct a calendar.event."""
         start = component.get("dtstart") and component.decoded("dtstart")
-        if isinstance(start, datetime):
-            start = start.astimezone(utc).replace(tzinfo=None)
         end = component.get("dtend") and component.decoded("dtend")
-        if isinstance(end, datetime):
-            end = end.astimezone(utc).replace(tzinfo=None)
+        # A DATE (not DATE-TIME) DTSTART is an all-day event. Odoo stores those as
+        # allday with start at 08:00 and stop at 18:00 on the last day, not as UTC
+        # midnights, which the calendar would shift into the next day.
+        allday = isinstance(start, date) and not isinstance(start, datetime)
+        if allday:
+            if isinstance(end, datetime):
+                # Some clients pair a DATE DTSTART with a DATE-TIME DTEND. Read it
+                # as the exclusive end date: midnight ends the previous day, any
+                # other time still covers that day.
+                end = end.date() + timedelta(days=0 if end.time() == time(0) else 1)
+            # DTEND is exclusive for all-day events and may be omitted (one day).
+            last_day = (end - timedelta(days=1)) if end else start
+            start = datetime.combine(start, time(8))
+            end = datetime.combine(max(last_day, start.date()), time(18))
+        else:
+            if isinstance(start, datetime):
+                start = start.astimezone(utc).replace(tzinfo=None)
+            if isinstance(end, datetime):
+                end = end.astimezone(utc).replace(tzinfo=None)
 
         # Get attendees regardless of creation/update
         attendee_ids = self._get_attendee_partners(component, user.partner_id.email)
 
+        videocall_url = self._get_ical_videocall_url(component)
+        description = self._strip_videocall_line(
+            self._extract_component_text(component, "description"), videocall_url
+        )
+
         # Basic values that apply to both creation and updates
         values = {
             "name": str(component.get("summary")),
+            "allday": allday,
             "start": start,
             "stop": end,
-            "description": self._text_to_html(
-                self._extract_component_text(component, "description")
-            ),
+            "description": self._text_to_html(description),
             "location": self._extract_component_text(component, "location"),
-            "videocall_location": self._extract_component_text(component, "conference"),
+            "videocall_location": videocall_url or False,
             "caldav_uid": str(component.get("uid")),
             "partner_ids": [(6, 0, attendee_ids.ids)],
+            # TRANSP defaults to OPAQUE (busy) when absent, per RFC 5545.
+            "show_as": "free"
+            if str(component.get("transp") or "OPAQUE").upper() == "TRANSPARENT"
+            else "busy",
         }
 
         # Only set user_id and partner_id during creation
@@ -1188,6 +1627,49 @@ class CalendarEvent(models.Model):
         val = component.get(subcomponent_name)
         text = str(val) if val else ""
         return text
+
+    @api.model
+    def _get_ical_videocall_url(self, component: icalendar.cal.Component) -> str:
+        """Find the video call link of an iCalendar event, wherever the
+        source put it.
+
+        In order: the properties made for it (CONFERENCE, Google's and
+        Microsoft's X- properties); then a kMeet / Meet / Teams / Zoom /
+        Jitsi / Webex / Odoo Discuss link in any other property (URL,
+        LOCATION, DESCRIPTION, X-ALT-DESC...); then the line Odoo itself
+        appends to DESCRIPTION on export, which may hold any URL.
+
+        :return: The link, or an empty string if the event has none.
+        """
+        props = [
+            (name.upper(), str(value))
+            for name, value in component.property_items(recursive=False)
+            if name.upper() not in ("BEGIN", "END")
+        ]
+        for name, value in props:
+            if name in VIDEOCALL_PROPERTIES and (match := ANY_URL_RE.search(value)):
+                return _clean_url(match.group(0))
+        for _name, value in props:
+            if match := VIDEOCALL_URL_RE.search(value):
+                return _clean_url(match.group(0))
+        description = self._extract_component_text(component, "description")
+        label = re.escape(VIDEOCALL_DESCRIPTION_LABEL)
+        if match := re.search(
+            rf"^\s*{label}\s*:\s*(https?://\S+)\s*$", description, re.MULTILINE
+        ):
+            return _clean_url(match.group(1))
+        return ""
+
+    @api.model
+    def _strip_videocall_line(self, description: str, videocall_url: str) -> str:
+        """Remove the video call line Odoo appends to DESCRIPTION on export,
+        so it is not imported into the Odoo description (where it would be
+        appended again on the next export)."""
+        if not description or not videocall_url:
+            return description
+        label = re.escape(VIDEOCALL_DESCRIPTION_LABEL)
+        pattern = rf"^\s*{label}\s*:\s*{re.escape(videocall_url)}\s*$"
+        return re.sub(pattern, "", description, flags=re.MULTILINE).strip()
 
     @api.model
     def _text_to_html(self, text):
