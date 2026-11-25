@@ -44,6 +44,7 @@ from odoo import Command, fields
 from odoo.modules.module import get_module_path
 from odoo.tests import tagged
 
+from odoo.addons.bemade_portal_kit.tools import pk_safe_return_url
 from odoo.addons.bemade_sports_clinic.models import sc_app_nav
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_i18n_1538 import TestAppShellI18n1538
 from odoo.addons.bemade_sports_clinic.tests.test_internal_tp_parity_1577 import Parity1577Common
@@ -85,15 +86,15 @@ class Nav1579Common(Parity1577Common):
     def _nav(self, url):
         """(back hrefs, [(crumb href, label)], current crumb, context line)."""
         _text, tree = self._get(url)
-        back = tree.xpath('//a[contains(concat(" ", @class, " "), " o_sc_back ")]/@href')
-        trail = tree.xpath('//nav[contains(concat(" ", @class, " "), " o_sc_crumbs ")]')
+        back = tree.xpath('//a[contains(concat(" ", @class, " "), " o_pk_back ")]/@href')
+        trail = tree.xpath('//nav[contains(concat(" ", @class, " "), " o_pk_crumbs ")]')
         crumbs, current = [], None
         if trail:
             crumbs = [(a.get('href'), a.text_content().strip())
                       for a in trail[0].xpath('./ol/li/a')]
             last = trail[0].xpath('./ol/li[@aria-current="page"]')
             current = last[0].text_content().strip() if last else None
-        context = tree.xpath('//*[contains(@class, "o_sc_appbar_context")]')
+        context = tree.xpath('//*[contains(@class, "o_pk_appbar_context")]')
         return back, crumbs, current, (context[0].text_content().strip() if context else None)
 
 
@@ -110,7 +111,8 @@ class TestAppShellNav1579(Nav1579Common):
             and 't-call="bemade_sports_clinic.sc_app_layout"' in (view.arch_db or '')
         }
         self.assertIn('sc_app_player', pages)
-        self.assertFalse(pages - set(sc_app_nav.PAGES), 'pages without a registry entry')
+        registered = set(self.env['portal.kit'].pk_pages(app=sc_app_nav.SC_APP))
+        self.assertFalse(pages - registered, 'pages without a registry entry')
         # And every shell page a controller renders.
         root = os.path.join(get_module_path('bemade_sports_clinic'), 'controllers')
         rendered = set()
@@ -118,26 +120,27 @@ class TestAppShellNav1579(Nav1579Common):
             if name.endswith('.py'):
                 with open(os.path.join(root, name), encoding='utf-8') as handle:
                     rendered |= set(re.findall(r"'bemade_sports_clinic\.(sc_app_\w+)'", handle.read()))
-        rendered -= {'sc_app_offline'}  # standalone page, no app layout
+        rendered -= {'sc_app_search_results'}  # task 1650: a fragment, not a page
         self.assertIn('sc_app_team', rendered)
-        self.assertFalse(rendered - set(sc_app_nav.PAGES), 'rendered pages without an entry')
+        self.assertFalse(rendered - registered, 'rendered pages without an entry')
 
     def test_every_sub_page_declares_a_parent(self):
-        self.assertTrue(sc_app_nav.TOP_LEVEL <= set(sc_app_nav.PAGES))
-        orphans = [key for key, page in sc_app_nav.PAGES.items()
+        pages = self.env['portal.kit'].pk_pages(app=sc_app_nav.SC_APP)
+        self.assertTrue(sc_app_nav.TOP_LEVEL <= set(pages))
+        orphans = [key for key, page in pages.items()
                    if key not in sc_app_nav.TOP_LEVEL and not page.has_parent]
         self.assertFalse(orphans, 'shell pages without a parent')
 
     # -- UC-N2 / UC-N4 ---------------------------------------------------
     def test_top_level_page_has_logo_no_back_no_trail(self):
         _text, tree = self._get('/my/teams')
-        self.assertTrue(tree.xpath('//a[contains(@class, "o_sc_logo")]'))
+        self.assertTrue(tree.xpath('//a[contains(@class, "o_pk_logo")]'))
         back, crumbs, current, _context = self._nav('/my/teams')
         self.assertEqual((back, crumbs, current), ([], [], None))
 
     def test_sub_page_renders_back_and_accessible_trail(self):
         _text, tree = self._get(self.team_url)
-        nav = tree.xpath('//nav[contains(@class, "o_sc_crumbs")]')
+        nav = tree.xpath('//nav[contains(@class, "o_pk_crumbs")]')
         self.assertEqual(len(nav), 1)
         self.assertTrue(nav[0].get('aria-label'))
         self.assertTrue(nav[0].xpath('./ol/li'))
@@ -171,23 +174,20 @@ class TestAppShellNav1579(Nav1579Common):
         back, crumbs, _current, _context = self._nav(
             '/my/player?player_id=%s&return_url=%%2Fmy%%2Fhome' % self.player.id)
         self.assertEqual(back, [HOME])
-        self.assertEqual(crumbs, [(HOME, 'Home')])
+        self.assertEqual(crumbs, [(HOME, 'Dashboard')])
 
     def test_injury_pages_keep_the_player_context(self):
+        # Task 1616: the injury page and its documents page are the injury's
+        # open card on the player page — same team context, same crumbs.
         player_url = '/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id)
-        back, crumbs, current, context = self._nav(
-            '/my/injury/edit?injury_id=%s&team_id=%s' % (self.injury.id, self.team_a.id))
-        self.assertEqual(back, [player_url])
-        self.assertEqual(crumbs, [('/my/teams', 'Teams'), (self.players_tab, 'PC Team A'),
-                                  (player_url, self.player_name)])
-        self.assertEqual(current, 'Sprain')
-        self.assertEqual(context, self.player_name)
-        injury_url = '/my/injury/edit?injury_id=%s&team_id=%s' % (self.injury.id, self.team_a.id)
-        back, crumbs, _current, context = self._nav(
-            '/my/injury/documents?injury_id=%s&team_id=%s' % (self.injury.id, self.team_a.id))
-        self.assertEqual(back, [injury_url])
-        self.assertEqual(crumbs[-1], (injury_url, 'Sprain'))
-        self.assertEqual(context, 'Sprain')
+        for old in ('/my/injury/edit?injury_id=%s&team_id=%s', '/my/injury/documents?injury_id=%s&team_id=%s'):
+            back, crumbs, current, context = self._nav(old % (self.injury.id, self.team_a.id))
+            self.assertEqual(back, [self.players_tab], old)
+            self.assertEqual(crumbs, [('/my/teams', 'Teams'), (self.players_tab, 'PC Team A')], old)
+            self.assertEqual(current, self.player_name, old)
+            resp = self.url_open(old % (self.injury.id, self.team_a.id), allow_redirects=False)
+            self.assertIn('%s&tab=injuries&injury=%s#injury-%s' % (player_url, self.injury.id, self.injury.id),
+                          resp.headers.get('Location', ''))
 
     def test_clinic_and_event_pages(self):
         back, crumbs, current, _context = self._nav('/my/clinic/%s' % self.clinic.id)
@@ -208,20 +208,22 @@ class TestAppShellNav1579(Nav1579Common):
             self.assertEqual(back, ['/my/players'], bad)
 
     def test_match_url_validator(self):
-        env = self.env(user=self.coach)
+        kit = self.env(user=self.coach)['portal.kit']
+        # Task 5391: the coach's lookups are the clinic app's.
+        self.assertEqual(kit._pk_app(), sc_app_nav.SC_APP)
         for bad in ('https://evil.example/my/home', '//evil.example/my/home',
                     'javascript:alert(1)', '/\\evil.example', '/my/home\tx',
                     '/web/login', '/my/account', 'my/home', '',
                     '/my/player?player_id=%s' % self.player_c.id,
                     '/my/team?team_id=%s' % self.team_unstaffed.id,
                     '/my/team?team_id=999999999', '/my/team?team_id=abc'):
-            self.assertIsNone(sc_app_nav.match_url(env, bad), bad)
-        key, values = sc_app_nav.match_url(env, '/my/team?team_id=%s&tab=players' % self.team_a.id)
+            self.assertIsNone(kit.pk_match_url(bad), bad)
+        key, values = kit.pk_match_url('/my/team?team_id=%s&tab=players' % self.team_a.id)
         self.assertEqual((key, values['team']), ('sc_app_team', self.team_a))
-        self.assertEqual(sc_app_nav.match_url(env, HOME)[0], 'sc_app_home')
+        self.assertEqual(kit.pk_match_url(HOME)[0], 'sc_app_home')
 
     def test_one_safe_return_url_validator(self):
-        safe = sc_app_nav.safe_return_url
+        safe = pk_safe_return_url
         self.assertEqual(safe('/my/teams', 'x'), '/my/teams')
         for bad in (None, 42, 'https://evil', '//evil', '/\\evil', '/a\nb', 'javascript:x'):
             self.assertEqual(safe(bad, 'fb'), 'fb', bad)
@@ -233,7 +235,7 @@ class TestAppShellNav1579(Nav1579Common):
     def test_digest_chain(self):
         _text, tree = self._get(self.team_url)
         history_url = '/my/team/%s/digest-history' % self.team_a.id
-        links = tree.xpath('//*[@data-sc-section="team.recent_changes"]'
+        links = tree.xpath('//*[@data-pk-section="team.recent_changes"]'
                            '//a[@data-sc-action="team.digest_history"]/@href')
         self.assertEqual(links, [history_url])
         self.assertFalse(tree.xpath('//dialog[@id="sc_digest_history_sheet"]'))
@@ -292,6 +294,6 @@ class TestAppShellNavFr1579(TestAppShellI18n1538):
         self.assertIn('>Équipes</a>', text)
         self.assertIn('aria-label="Fil d\'Ariane"', text.replace('&#39;', "'"))
         text = self._fr('/my/player?player_id=%s&return_url=%%2Fmy%%2Fhome' % self.player.id)
-        self.assertIn('>Accueil</a>', text)
+        self.assertIn('>Tableau de bord</a>', text)  # #1623: breadcrumb root renamed
         text = self._fr('/my/team/%s/digest-history' % self.team_a.id)
         self.assertIn('Historique des sommaires', text)

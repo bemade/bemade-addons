@@ -1,0 +1,13 @@
+{
+  "stepsFile": "../../static/tests/tours/addressed_only_settings.steps.js",
+  "startPath": "/odoo/action-base_setup.action_general_configuration",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "voice": "fr_FR-siwis-medium",
+  "lang": "fr_CA",
+  "title": "Choisir les types de documents où les abonnés ne reçoivent un courriel que s'ils sont adressés",
+  "introNarration": "Pour éviter d'inonder les boîtes courriel de vos employés, voyons comment choisir les types de documents où un abonné interne ne reçoit un courriel que si le message lui est adressé.",
+  "outroTitle": "C'est fait",
+  "outroNarration": "Les autres messages arrivent dans la boîte de réception d'Odoo. Vos clients continuent de recevoir leurs courriels comme avant.",
+  "stepOverrides": {}
+}

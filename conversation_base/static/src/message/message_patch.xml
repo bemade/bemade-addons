@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Message.notification" t-inherit-mode="extension">
+        <xpath expr="//div[@t-if]" position="attributes">
+            <attribute
+        name="t-if"
+      >message.thread?.eq(props.thread) and message.notification_ids.length > 0 and !hideConversationDeliveryIcon</attribute>
+        </xpath>
+    </t>
+</templates>

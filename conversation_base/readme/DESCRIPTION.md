@@ -72,6 +72,15 @@ model. Those are delivered by later epics.
   Odoo's notification pipeline.
 - A new `ir.rule` scopes `conversation.transport` to each user's own
   (`user_id = uid`) plus shared (`user_id` falsy) transports.
+- Mailbox permissions on shared (ownerless) transports: archive and mark read
+  stay open to every user who can see the account; `trash_item` needs the
+  "Delete shared mail" group, and only a Conversations manager can switch
+  `mailbox_writable` on (create, write, or clearing the owner of a writable
+  personal account). Likewise only a manager can set or change the owner of
+  a shared account whose write-back is on (a member could otherwise take it
+  over as a personal account and gain delete rights). Settings administrators hold both groups by implication.
+  Personal accounts stay under their owner's control. Delete always moves to
+  the mailbox Trash.
 
 - Triage facets: stored computed `unanswered`, `unanswered_since`,
   `last_message_date` (default order, newest activity first) and `unassigned`

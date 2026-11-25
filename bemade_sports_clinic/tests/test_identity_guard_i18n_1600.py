@@ -19,6 +19,7 @@ cookie). Synthetic fixtures only.
 from odoo import Command, fields
 from odoo.exceptions import ValidationError
 from odoo.tests import tagged
+from odoo.tools.translate import code_translations
 
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_i18n_1538 import TestAppShellI18n1538
 
@@ -65,6 +66,8 @@ class TestIdentityGuardI18n1600(TestAppShellI18n1538):
         }, allow_redirects=False)
         text = self._text('/my/player/edit?patient_id=%s' % self.player.id)
         self.assertIn("Confirmez la correction d'identité.", text)
+        # Task 1716: Dana is on another team — the plain twin refusal (was
+        # the generic « demandez à un responsable », review 2026-10-23).
         with self.assertRaisesRegex(ValidationError, 'Un autre joueur a déjà ce nom et cette date de naissance.'):
             self.player.with_user(self.tp).with_context(lang='fr_CA', sc_identity_confirmed=True).write(
                 {'first_name': 'Dana', 'last_name': 'Synthetic', 'date_of_birth': '2010-01-02'})
@@ -111,13 +114,16 @@ class TestIdentityGuardI18n1600(TestAppShellI18n1538):
         self.assertIn("Le joueur ne fait plus partie d'aucune de vos équipes.", text)
 
     def test_owl_strings_served_in_french(self):
-        resp = self.url_open('/web/webclient/translations?lang=fr_CA&mods=bemade_sports_clinic')
+        # Task 5382 (kit P4c3): the confirm banner is the kit's; the clinic
+        # sends its own detail line in the 428 payload (a server text).
+        resp = self.url_open('/web/webclient/translations?lang=fr_CA&mods=bemade_portal_kit')
         messages = {
             m['id']: m['string']
-            for m in resp.json()['modules']['bemade_sports_clinic']['messages']}
+            for m in resp.json()['modules']['bemade_portal_kit']['messages']}
         for source, french in (('To confirm', 'À confirmer'),
-                               ("The change will be noted in the player's file.",
-                                'La modification sera notée au dossier du joueur.'),
                                ('Confirm', 'Confirmer'),
                                ('Cancel', 'Annuler')):
             self.assertEqual(messages.get(source), french, source)
+        server = code_translations.get_python_translations('bemade_sports_clinic', 'fr_CA')
+        source = "The change will be noted in the player's file."
+        self.assertEqual(server.get(source), 'La modification sera notée au dossier du joueur.', source)

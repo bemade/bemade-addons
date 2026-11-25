@@ -1,0 +1,163 @@
+// Task 1624 — the app dashboard (configurable widget sections) and its
+// « Configurer » page. Everything scoped under .o_pk_app.
+//
+// Task 5357 (kit P3b2): the generic rules (only o_pk_* classes, data-pk-*
+// attributes, generic elements) moved to bemade_portal_kit (pk_components /
+// pk_pages.scss, loaded first); this file keeps the clinic's own.
+//
+// Task 5202 (kit P7): the dashboard's frame, zones and configure sheet are
+// bemade_portal_kit_dashboard's (pk_dashboard.scss); this file keeps the
+// clinic's widget bodies.
+
+.o_pk_app {
+    // Task 5202: the body box is the kit's (o_pk_dash_body); the clinics
+    // row of « Aujourd'hui » sits flush in it.
+    .o_pk_dash_body > .o_sc_dw_clinics > .o_pk_entity_row {
+        margin: 0;
+    }
+
+    .o_sc_dw_more {
+        margin: 0;
+
+        > .o_pk_list {
+            margin-top: 6px;
+        }
+
+        > summary {
+            min-height: 32px;
+        }
+    }
+
+    // Review round 2: the quick « Retour prévu » under a « Retours
+    // dépassés » card.
+    .o_sc_row_quick {
+        border-top: 1px solid var(--pk-line);
+        padding: var(--pk-space-2) var(--pk-space-3);
+        min-width: 0;
+    }
+
+    // Review round 2: event cards = player cards (sc_link_row in a row
+    // group, the shared « Details » expander).
+    .o_sc_dw_events {
+        gap: 6px;
+    }
+
+    .o_sc_dw_ts_add {
+        margin-top: var(--pk-space-1);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+
+        .o_pk_icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    .o_sc_dw_event_details {
+        .o_pk_kv {
+            margin: var(--pk-space-1) 0;
+        }
+
+        .o_sc_dw_event_desc {
+            margin: 0 0 var(--pk-space-1);
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .o_sc_dw_venue .o_pk_row_line_text {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_sc_event_row .o_sc_dw_ts_add {
+        align-self: flex-start;
+    }
+
+    // Review round 1: « À faire » lines fold out into their cards.
+    .o_sc_dw_todo_line {
+        min-width: 0;
+
+        > summary {
+            cursor: pointer;
+            list-style: none;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+
+            .o_pk_icon {
+                transition: transform 0.15s ease;
+            }
+        }
+
+        &[open] > summary .o_pk_icon {
+            transform: rotate(180deg);
+        }
+    }
+
+    .o_sc_dw_todo_head {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .o_sc_dw_todo_body {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 6px 0 var(--pk-space-3);
+        min-width: 0;
+    }
+
+    // Review round 1: « Suivre / Ne plus suivre ».
+    .o_sc_follow {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+
+        .o_pk_icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        &[data-sc-followed="1"] .o_pk_icon {
+            fill: currentColor;
+        }
+    }
+
+    .o_sc_row_detail_follow {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: var(--pk-space-2);
+    }
+
+    .o_sc_hero_top {
+        .o_sc_hero_follow {
+            margin-left: auto;
+            align-self: flex-start;
+        }
+    }
+
+    // (Task 5202: the section itself carried this class before the frame
+    // moved to the kit; its look is kept.)
+    .o_sc_dw_announcements,
+    .o_pk_dash_section_announcements {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+
+        .o_sc_dw_announcement:last-child {
+            border-bottom: 0;
+            padding-bottom: 0;
+        }
+    }
+
+    .o_sc_dw_announcement_team {
+        font-weight: 600;
+        color: var(--pk-accent);
+        text-decoration: none;
+    }
+}

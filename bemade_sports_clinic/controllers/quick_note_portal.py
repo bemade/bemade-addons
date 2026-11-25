@@ -154,7 +154,7 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'success': kw.get('success'),
         })
         # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_notepad_values(values))
         return self._sc_render('bemade_sports_clinic.portal_my_quick_notes',
                                'bemade_sports_clinic.sc_app_notepad', values)
@@ -169,8 +169,11 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         tz = env.user.tz or env.context.get('tz')
 
         def _row(note):
+            # Task 1611: the player chip reads as the pencil card's choice
+            # and its save display (« Last, First », _portal_list_name).
             chips = [label for label in (
-                note.team_id.name, note.patient_id.display_name,
+                note.team_id.name,
+                note.patient_id._portal_list_name() if note.patient_id else '',
                 note.injury_id.display_name, note.event_id.name) if label]
             return {
                 'id': note.id,
@@ -199,7 +202,18 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # scoped pickers the update route validates against).
         def _options(records, label):
             return [('', '—')] + [(rec.id, label(rec)) for rec in records]
+
+        # Task 1648: the narrowing data of the link pickers (a team narrows
+        # the players and events, a player the injuries) — ids only.
+        def _teams(rec):
+            return ','.join(str(i) for i in rec.sudo().team_ids.ids)
+        sc_qn_meta = {
+            'patient_id': {str(p.id): {'teams': _teams(p)} for p in values['patients']},
+            'injury_id': {str(i.id): {'player': str(i.sudo().patient_id.id)} for i in values['injuries']},
+            'event_id': {str(e.id): {'teams': _teams(e)} for e in values['events']},
+        }
         return {
+            'sc_qn_meta': sc_qn_meta,
             'sc_qn_options': {
                 'team_id': _options(values['teams'], lambda r: r.name),
                 'patient_id': _options(values['patients'], lambda r: r._portal_list_name()),
@@ -209,7 +223,7 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_note_rows': [_row(note) for note in values['notes']],
             'sc_archived_rows': [_row(note) for note in values['archived_notes']],
             'sc_quick_note_prefix': self.SC_NOTE_DRAFT_PREFIX,
-            'sc_flash': {'success': success, 'error': error},
+            'pk_flash': {'success': success, 'error': error},
         }
 
     @http.route(['/my/notepad/add'], type='http', auth='user', website=True,
@@ -250,7 +264,14 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def portal_quick_note_archive(self, note_id, **post):
         """Dismiss / mark handled — archiving IS the 'done' concept here."""
         self._check_quick_note_access()
-        self._get_own_note(note_id).write({'active': False})
+        note = self._get_own_note(note_id)
+        note.write({'active': False})
+        # Task 1736 (owner 2026-11-01): the card's archive icon — « Note
+        # archived · Undo » (the toast) instead of the banner.
+        if post.get('sc_undo'):
+            self._pk_offer_undo(request.env._("Note archived."),
+                                '/my/notepad/%s/restore?undo=1' % note.id)
+            return request.redirect('/my/notepad#quick-add')
         return request.redirect('/my/notepad?success=note_archived#quick-add')
 
     @http.route(['/my/notepad/<int:note_id>/restore'], type='http', auth='user',
@@ -258,7 +279,18 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def portal_quick_note_restore(self, note_id, **post):
         """Undo a dismissal — a mis-tapped Dismiss must not lose the thought."""
         self._check_quick_note_access()
-        self._get_own_note(note_id).write({'active': True})
+        note = self._get_own_note(note_id)
+        note.write({'active': True})
+        # Task 1736: the undo toast's « Annuler » — back to the open notes,
+        # on the note.
+        # Task 1741: « Note restored. » is the session toast (as for a
+        # timesheet / a document), not a ?success= banner a « back » to the
+        # URL would show again.
+        if post.get('undo'):
+            request.session['notification'] = {
+                'type': 'success', 'title': '', 'message': request.env._("Note restored."),
+            }
+            return request.redirect('/my/notepad#note-%s' % note.id)
         return request.redirect('/my/notepad?show_archived=1&success=note_restored')
 
     @http.route(['/my/notepad/<int:note_id>/delete'], type='http', auth='user',

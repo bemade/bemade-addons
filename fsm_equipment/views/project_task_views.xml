@@ -11,4 +11,19 @@
             </field>
         </field>
     </record>
+
+    <!-- Every FSM calendar (My Tasks, All Tasks, planning...) inherits this
+         base view, so its popover shows the task's equipment, one
+         equipment per line (see static/src/scss/fsm_equipment.scss). -->
+    <record id="project_task_view_calendar_fsm_equipment" model="ir.ui.view">
+        <field name="name">project.task.view.calendar.fsm.equipment</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="industry_fsm.project_task_view_calendar_fsm"/>
+        <field name="arch" type="xml">
+            <field name="tag_ids" position="after">
+                <field name="equipment_summary" invisible="not equipment_summary"
+                       class="o_fsm_equipment_summary"/>
+            </field>
+        </field>
+    </record>
 </odoo>

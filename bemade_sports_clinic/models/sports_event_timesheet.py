@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
 
@@ -251,7 +251,7 @@ class SportsEventTimesheet(models.Model):
                 if not allow_reset or any(not _side_unlinked(rec) for rec in self):
                     invalid_state_change = True
             if blocked_fields or invalid_state_change:
-                raise ValidationError('Timesheets are read-only once invoiced.')
+                raise ValidationError(_('Timesheets are read-only once invoiced.'))
         res = super().write(vals)
         try:
             self.mapped('event_id')._update_state_from_timesheets()
@@ -261,7 +261,7 @@ class SportsEventTimesheet(models.Model):
 
     def unlink(self):
         if any(rec.state == 'invoiced' for rec in self):
-            raise ValidationError('Invoiced timesheets cannot be deleted.')
+            raise ValidationError(_('Invoiced timesheets cannot be deleted.'))
         return super().unlink()
 
     def action_soft_delete(self):
@@ -274,9 +274,9 @@ class SportsEventTimesheet(models.Model):
         """
         for rec in self:
             if rec.state == 'invoiced':
-                raise ValidationError('Invoiced timesheets cannot be deleted.')
+                raise ValidationError(_('Invoiced timesheets cannot be deleted.'))
             if rec.user_id.id != self.env.user.id:
-                raise ValidationError('You can only delete your own timesheets.')
+                raise ValidationError(_('You can only delete your own timesheets.'))
         self.write({'active': False})
         return True
 
@@ -343,8 +343,8 @@ class SportsEventTimesheet(models.Model):
         for ts in self:
             # Basic ordering constraints
             if ts.coverage_start and ts.coverage_end and ts.coverage_end <= ts.coverage_start:
-                raise ValidationError('Coverage end must be after coverage start.')
+                raise ValidationError(_('Coverage end must be after coverage start.'))
             if ts.travel_start and ts.coverage_start and ts.travel_start > ts.coverage_start:
-                raise ValidationError('Travel start must be on or before coverage start.')
+                raise ValidationError(_('Travel start must be on or before coverage start.'))
             if ts.travel_end and ts.coverage_end and ts.travel_end < ts.coverage_end:
-                raise ValidationError('Travel end must be on or after coverage end.')
+                raise ValidationError(_('Travel end must be on or after coverage end.'))

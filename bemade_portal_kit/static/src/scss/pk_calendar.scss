@@ -1,0 +1,133 @@
+// Copyright 2026 Bemade Inc. (<https://www.bemade.org>)
+// License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
+//
+// Task 5200 (kit P5) — the calendar component (pk_calendar.js /
+// pk_calendar.xml): FullCalendar on the kit's tokens, the assignee dots and
+// the legend. « Today » is tinted with the accent unless a consumer sets
+// --pk-calendar-today on .o_pk_calendar.
+
+.o_pk_app {
+    .o_pk_calendar_detail {
+        margin-top: var(--pk-space-3);
+    }
+
+    // --------------------------------------------------------- calendar
+    .o_pk_calendar {
+        background: var(--pk-surface);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-lg);
+        padding: var(--pk-space-3);
+        min-height: 420px;
+        color: var(--pk-fg);
+
+        --fc-border-color: var(--pk-line);
+        --fc-page-bg-color: var(--pk-surface);
+        --fc-neutral-bg-color: var(--pk-surface-2);
+        --fc-today-bg-color: var(--pk-calendar-today, color-mix(in srgb, var(--pk-accent) 12%, transparent));
+        --fc-event-bg-color: var(--pk-secondary);
+        --fc-event-border-color: var(--pk-secondary);
+        --fc-button-bg-color: var(--pk-surface-2);
+        --fc-button-border-color: var(--pk-line);
+        --fc-button-text-color: var(--pk-fg);
+        --fc-button-active-bg-color: var(--pk-accent);
+        --fc-button-active-border-color: var(--pk-accent);
+        --fc-list-event-hover-bg-color: var(--pk-hover);
+
+        a {
+            color: inherit;
+        }
+
+        .fc-toolbar-title {
+            font-family: var(--pk-font-title);
+            text-transform: uppercase;
+            font-size: var(--pk-title-md);
+        }
+    }
+
+    // The assignee colour dot (one colour, conic slices for several, grey
+    // when unassigned) replaces FullCalendar's own dot; the legend under the
+    // calendar filters on tap (prop staffColors).
+    .o_pk_calendar_dot {
+        display: inline-block;
+        flex: none;
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 50%;
+        vertical-align: middle;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    }
+
+    .o_pk_calendar_dot_none {
+        background: var(--pk-fg-3);
+    }
+
+    // Only on a calendar that opted in (staffColors); the others keep FullCalendar's dot.
+    .o_pk_calendar_staff .o_pk_calendar {
+        .fc-daygrid-event-dot,
+        .fc-list-event-dot {
+            display: none;
+        }
+
+        .fc-daygrid-event .o_pk_calendar_dot {
+            margin: 0 0.25rem 0 0.125rem;
+        }
+
+        .fc-timegrid-event .o_pk_calendar_dot {
+            margin-right: 0.25rem;
+            box-shadow: 0 0 0 1px var(--pk-surface);
+        }
+    }
+
+    .o_pk_calendar_legend {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--pk-space-2);
+        margin-top: var(--pk-space-3);
+
+        .o_pk_calendar_legend_title {
+            color: var(--pk-fg-2);
+            margin-right: var(--pk-space-1);
+        }
+    }
+
+    .o_pk_calendar_legend_item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        min-height: 36px;
+        max-width: 100%;
+        padding: 0.25rem 0.75rem;
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-pill);
+        background: var(--pk-surface);
+        color: var(--pk-fg);
+        font: inherit;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+
+        &.o_pk_calendar_legend_active {
+            border-color: var(--pk-accent);
+            background: var(--pk-bar-active-bg);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--pk-focus);
+            outline-offset: 2px;
+        }
+    }
+
+    button.o_pk_calendar_legend_item {
+        cursor: pointer;
+
+        &:hover {
+            background: var(--pk-hover);
+        }
+    }
+
+    .o_pk_calendar_legend_static {
+        border-style: dashed;
+        color: var(--pk-fg-2);
+    }
+
+}

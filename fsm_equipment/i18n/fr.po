@@ -1,0 +1,511 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* fsm_equipment
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-16 17:56+0000\n"
+"PO-Revision-Date: 2026-11-16 17:56+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_res_partner__is_service_site
+#: model:ir.model.fields,help:fsm_equipment.field_res_users__is_service_site
+msgid "A partner is a service site if it has one or more equipments."
+msgstr ""
+"Un partenaire est un site de service s'il a un ou plusieurs équipements."
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__message_needaction
+msgid "Action Needed"
+msgstr "Nécessite une action"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__activity_ids
+msgid "Activities"
+msgstr "Activités"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "Indicateur d’exception d’activité"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__activity_state
+msgid "Activity State"
+msgstr "Statut de l'activité"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "Icône de type d'activité"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_fsm_equipment__location_notes
+msgid ""
+"Any useful information about physical location (door codes, directions, "
+"etc.)."
+msgstr ""
+"Toute information utile sur l'emplacement physique (codes de porte, "
+"indications, etc.)."
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__message_attachment_count
+msgid "Attachment Count"
+msgstr "Nombre de pièces jointes"
+
+#. module: fsm_equipment
+#: model:ir.ui.menu,name:fsm_equipment.menu_service_client_equipment
+msgid "Client Equipment"
+msgstr "Équipement du client"
+
+#. module: fsm_equipment
+#: model:ir.ui.menu,name:fsm_equipment.menu_service_client
+#: model:ir.ui.menu,name:fsm_equipment.menu_service_client_clients
+msgid "Clients"
+msgstr "Clients"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__code
+msgid "Code"
+msgstr "Code"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment_tag__color
+msgid "Color Index"
+msgstr "Couleur"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__child_ids
+#: model_terms:ir.ui.view,arch_db:fsm_equipment.equipment_view_form
+msgid "Components"
+msgstr "Composants"
+
+#. module: fsm_equipment
+#: model:ir.model,name:fsm_equipment.model_res_partner
+msgid "Contact"
+msgstr "Contact"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__create_uid
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment_tag__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__create_date
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment_tag__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: fsm_equipment
+#: model:ir.ui.menu,name:fsm_equipment.menu_contact_equipment
+msgid "Customer Equipment"
+msgstr "Équipement du client"
+
+#. module: fsm_equipment
+#: model_terms:ir.ui.view,arch_db:fsm_equipment.equipment_view_form
+msgid "Date"
+msgstr "Date"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__description
+msgid "Description"
+msgstr "Description"
+
+#. module: fsm_equipment
+#: model_terms:ir.ui.view,arch_db:fsm_equipment.equipment_view_list_editable
+msgid "Details"
+msgstr "Détails"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__display_name
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment_tag__display_name
+#: model:ir.model.fields,field_description:fsm_equipment.field_project_task__display_name
+#: model:ir.model.fields,field_description:fsm_equipment.field_res_partner__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: fsm_equipment
+#: model:ir.actions.act_window,name:fsm_equipment.action_window_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_project_task__equipment_summary
+#: model_terms:ir.ui.view,arch_db:fsm_equipment.partner_equipment_location_view_form
+#: model_terms:ir.ui.view,arch_db:fsm_equipment.project_task_view_list_equipment
+msgid "Equipment"
+msgstr "Équipement"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_res_partner__equipment_count
+#: model:ir.model.fields,field_description:fsm_equipment.field_res_users__equipment_count
+msgid "Equipment Count"
+msgstr "Nombre d'équipemenets"
+
+#. module: fsm_equipment
+#: model:ir.actions.act_window,name:fsm_equipment.action_window_equipment_tags
+msgid "Equipment Tag"
+msgstr "Étiquette d'équipement"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_project_task__equipment_ids
+msgid "Equipment to Service"
+msgstr "Équipement à désservir"
+
+#. module: fsm_equipment
+#: model_terms:ir.ui.view,arch_db:fsm_equipment.partner_equipment_location_view_form
+msgid "Equipments"
+msgstr "Équipements"
+
+#. module: fsm_equipment
+#: model:ir.model,name:fsm_equipment.model_fsm_equipment_tag
+msgid "Field service equipment category"
+msgstr "Catégorie d'équipement de service sur site"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__message_follower_ids
+msgid "Followers"
+msgstr "Abonnés"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Abonnés (Partenaires)"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_fsm_equipment__activity_type_icon
+msgid "Font awesome icon e.g. fa-tasks"
+msgstr "Icône Font Awesome par ex. fa-tasks"
+
+#. module: fsm_equipment
+#: model_terms:ir.ui.view,arch_db:fsm_equipment.equipment_view_search
+msgid "Has Description"
+msgstr "A une description"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__has_message
+msgid "Has Message"
+msgstr "A un message"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__id
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment_tag__id
+#: model:ir.model.fields,field_description:fsm_equipment.field_project_task__id
+#: model:ir.model.fields,field_description:fsm_equipment.field_res_partner__id
+msgid "ID"
+msgstr "ID"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__activity_exception_icon
+msgid "Icon"
+msgstr "Icône"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_fsm_equipment__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "Icône pour indiquer une activité d'exception."
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_fsm_equipment__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si coché, de nouveaux messages demandent votre attention."
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_fsm_equipment__message_has_error
+#: model:ir.model.fields,help:fsm_equipment.field_fsm_equipment__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si coché, certains messages ont une erreur de livraison."
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__task_ids
+#: model_terms:ir.ui.view,arch_db:fsm_equipment.equipment_view_form
+msgid "Interventions"
+msgstr "Interventions"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__message_is_follower
+msgid "Is Follower"
+msgstr "Est un abonné"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_res_partner__is_service_site
+#: model:ir.model.fields,field_description:fsm_equipment.field_res_users__is_service_site
+msgid "Is Service Site"
+msgstr "Est un site de service"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__write_uid
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment_tag__write_uid
+msgid "Last Updated by"
+msgstr "Mis à jour par"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__write_date
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment_tag__write_date
+msgid "Last Updated on"
+msgstr "Mis à jour le"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__inherited_partner_id
+msgid "Main Equipment Location"
+msgstr "Emplacement principal de l'équipement"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__message_has_error
+msgid "Message Delivery error"
+msgstr "Erreur d'envoi du message"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__message_ids
+msgid "Messages"
+msgstr "Messages"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "Échéance de mon activité"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__name
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment_tag__name
+msgid "Name"
+msgstr "Nom"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "Date limite de l'activité à venir"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__activity_summary
+msgid "Next Activity Summary"
+msgstr "Résumé de l'activité suivante"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__activity_type_id
+msgid "Next Activity Type"
+msgstr "Type d'activités à venir"
+
+#. module: fsm_equipment
+#: model_terms:ir.ui.view,arch_db:fsm_equipment.equipment_view_search
+msgid "No Description"
+msgstr "Aucune description"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Nombre d'actions"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__message_has_error_counter
+msgid "Number of errors"
+msgstr "Nombre d'erreurs"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_fsm_equipment__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Nombre de messages nécessitant une action"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_fsm_equipment__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Nombre de messages avec des erreurs d'envoi"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_project_task__equipment_summary
+msgid "One line per equipment to service: code, name and location notes."
+msgstr ""
+"Une ligne par équipement à entretenir : code, nom et notes d'emplacement."
+
+#. module: fsm_equipment
+#. odoo-python
+#: code:addons/fsm_equipment/models/equipment.py:0
+msgid "Only top-level (root) equipments can be linked to a partner."
+msgstr ""
+"Seuls les équipements de premier niveau (racine) peuvent être liés à un "
+"partenaire."
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_res_partner__owned_equipment_ids
+#: model:ir.model.fields,field_description:fsm_equipment.field_res_users__owned_equipment_ids
+msgid "Owned Equipments"
+msgstr "Équipements possédés"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__parent_id
+msgid "Parent"
+msgstr "Parent"
+
+#. module: fsm_equipment
+#: model_terms:ir.ui.view,arch_db:fsm_equipment.equipment_view_search
+msgid "Parent Only"
+msgstr "Parents seulement"
+
+#. module: fsm_equipment
+#: model_terms:ir.ui.view,arch_db:fsm_equipment.equipment_view_search
+msgid "Partner"
+msgstr "Partenaire"
+
+#. module: fsm_equipment
+#: model:ir.actions.act_window,name:fsm_equipment.act_res_partner_2_equipment
+msgid "Partner Equipment"
+msgstr "Équipement du partenaire"
+
+#. module: fsm_equipment
+#: model:ir.model,name:fsm_equipment.model_fsm_equipment
+msgid "Partner-Owned Equipment"
+msgstr "Équipement appartenant au partenaire"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__partner_id
+msgid "Physical Address"
+msgstr "Adresse physique"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__location_notes
+msgid "Physical Location Notes"
+msgstr "Notes sur l'emplacement physique"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__product_id
+msgid "Product"
+msgstr "Produit"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__rating_ids
+msgid "Ratings"
+msgstr "Évaluations"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__activity_user_id
+msgid "Responsible User"
+msgstr "Utilisateur responsable"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "Erreur d'envoi SMS"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__sequence
+msgid "Sequence"
+msgstr "Séquence"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_res_partner__equipment_ids
+#: model:ir.model.fields,field_description:fsm_equipment.field_res_users__equipment_ids
+msgid "Site Equipment"
+msgstr "Équipement sur site"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_fsm_equipment__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+"Statut basé sur les activités\n"
+"En retard : la date d'échéance est déjà dépassée\n"
+"Aujourd'hui : la date d'activité est aujourd'hui\n"
+"Planifiée : activités futures"
+
+#. module: fsm_equipment
+#: model:ir.model.constraint,message:fsm_equipment.constraint_fsm_equipment_tag_name_uniq
+msgid "Tag name already exists !"
+msgstr "Ce nom d'étiquette existe déjà!"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__tag_ids
+#: model_terms:ir.ui.view,arch_db:fsm_equipment.equipment_view_search
+msgid "Tags"
+msgstr "Étiquettes"
+
+#. module: fsm_equipment
+#: model:ir.model,name:fsm_equipment.model_project_task
+msgid "Task"
+msgstr "Tâche"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_fsm_equipment__product_id
+msgid "The product that represents this equipment, if any."
+msgstr "L'article qui représente cet équipement, le cas échéant."
+
+#. module: fsm_equipment
+#. odoo-python
+#: code:addons/fsm_equipment/models/equipment.py:0
+msgid "Top-level (root) equipments must be linked to a partner."
+msgstr ""
+"Les équipements de premier niveau (racine) doivent être liés à un "
+"partenaire."
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_fsm_equipment__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "Type d'activité d'exception enregistrée."
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_project_task__display_name
+msgid ""
+"Use these keywords in the title to set new tasks:\n"
+"\n"
+"        30h Allocate 30 hours to the task\n"
+"        #tags Set tags on the task\n"
+"        @user Assign the task to a user\n"
+"        ! Set the task a medium priority\n"
+"        !! Set the task a high priority\n"
+"        !!! Set the task a urgent priority\n"
+"\n"
+"        Make sure to use the right format and order e.g. Improve the configuration screen 5h #feature #v16 @Mitchell !"
+msgstr ""
+"Utilisez ces mots-clés dans le titre pour créer de nouvelles tâches :\n"
+"\n"
+"    30h Allouer 30 heures à la tâche  \n"
+"    #tags Ajouter des tags à la tâche  \n"
+"    @user Assigner la tâche à un utilisateur  \n"
+"    ! Définir la tâche comme priorité moyenne  \n"
+"    !! Définir la tâche comme priorité élevée  \n"
+"    !!! Définir la tâche comme priorité urgente  \n"
+"\n"
+"    Veillez à utiliser le bon format et l’ordre correct, par exemple : Améliorer l’écran de configuration 5h #feature #v16 @Mitchell !"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__website_message_ids
+msgid "Website Messages"
+msgstr "Messages du site web"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_fsm_equipment__website_message_ids
+msgid "Website communication history"
+msgstr "Historique de communication du site web"
+
+#. module: fsm_equipment
+#: model:ir.model.fields,help:fsm_equipment.field_res_partner__is_service_site
+#: model:ir.model.fields,help:fsm_equipment.field_res_users__is_service_site
+msgid ""
+"A partner is a service site if they have one or more equipments, site "
+"contacts or work order contacts."
+msgstr ""
+"Un partenaire est un site de service s'il a un ou plusieurs équipements, "
+"contacts de site ou contacts de bon de travail."
+
+#. module: fsm_equipment
+#: model:ir.model.fields,field_description:fsm_equipment.field_fsm_equipment__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr "Activité suivante de l'événement du calendrier"
+
+#. module: fsm_equipment
+#: model:ir.model,website_form_label:fsm_equipment.model_res_partner
+msgid "Create a Customer"
+msgstr "Créer un client"

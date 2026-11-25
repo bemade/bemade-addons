@@ -47,6 +47,31 @@ class Indicator(models.Model):
         minutes = groups[0][0] if groups else 0
         return round((minutes or 0) / 60.0, 2)
 
+    @api.model
+    def record_adult_hours(self, student, any_date, note=None):
+        """Write (or update) the R1-ADULTE value of ``student`` for the ISO week containing
+        ``any_date`` from the blocks' adult-present minutes; the indicator is created in the
+        student's family when it does not exist yet. Returns the value record. Shared by the
+        review's button and « Fermer la semaine »."""
+        company = student.company_id
+        Value = self.env["homeschool.indicator.value"]
+        indicator = self._by_code("R1-ADULTE", company)
+        if not indicator:
+            indicator = self.create({"code": "R1-ADULTE", "name": "Adult-present hours (week)", "unit": "h/week",
+                                     "period": "weekly", "direction": "down", "computed": True,
+                                     "company_id": company.id})
+        hours = self.adult_hours_for_week(student, any_date)
+        existing = Value.search([("indicator_id", "=", indicator.id), ("student_id", "=", student.id),
+                                 ("iso_week", "=", iso_week_label(any_date))], limit=1)
+        vals = {"value": hours}
+        if note:
+            vals["note"] = note
+        if existing:
+            existing.write(vals)
+            return existing
+        monday = any_date - timedelta(days=any_date.weekday())
+        return Value.create(dict(vals, indicator_id=indicator.id, student_id=student.id, date=monday, company_id=company.id))
+
     def missing_for_week(self, any_date, company=None):
         """Weekly indicators (non computed) of ``company`` (default: the current company)
         with no value dated inside the ISO week."""

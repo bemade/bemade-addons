@@ -18,6 +18,7 @@ Acceptance criteria covered here:
 * UC-A5 (AC2) The team page's Activities tab uses the shell list (no legacy
   partial) and its add sheet creates an activity through today's route.
 """
+import json
 from datetime import timedelta
 from urllib.parse import quote
 
@@ -59,23 +60,31 @@ class TestAppShellActivities1539(AppShellCommon):
         self._login_tp()
         text, tree = self._get('/my/activities')
         self.assertIsNotNone(self._shell(tree))
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]/a/@data-pk-tab'),
                          ['all', 'overdue', 'today', 'planned'])
-        overdue = tree.xpath('//section[@data-sc-tab-panel="overdue"]//*[@data-sc-activity-row]'
+        overdue = tree.xpath('//section[@data-pk-tab-panel="overdue"]//*[@data-sc-activity-row]'
                              '/@data-sc-activity-row')
         self.assertEqual(overdue, [str(self.act_player.id)])
-        states = tree.xpath('//section[@data-sc-tab-panel="all"]//*[@data-sc-activity-row="%s"]'
+        states = tree.xpath('//section[@data-pk-tab-panel="all"]//*[@data-sc-activity-row="%s"]'
                             '/@data-sc-activity-state' % self.act_team.id)
         self.assertEqual(states, ['today'])
-        for sheet in ('complete', 'reschedule', 'cancel'):
+        # Task 1736 r1 (deliberate update): no « Reschedule » sheet — the
+        # cards are edited in place (the due date is a field of the pencil).
+        for sheet in ('complete', 'cancel'):
             form = tree.xpath('//dialog[@id="sc_activity_%s_sheet"]//form' % sheet)[0]
             self.assertEqual(form.get('action'), '/my/activity/%s' % sheet)
             self.assertTrue(form.xpath('.//input[@name="csrf_token"]/@value')[0])
             self.assertEqual(form.xpath('.//input[@name="return_url"]/@value'), ['/my/activities'])
+        # Task 1664 (deliberate update): « Réassigner » on « Mes activités » too.
+        # Task 1736 r1 (deliberate update): it is the card's inline assignee
+        # field (no sheet); the details popout sheet is on the page.
         self.assertFalse(tree.xpath('//dialog[@id="sc_activity_reassign_sheet"]'))
+        self.assertTrue(tree.xpath('//dialog[@id="sc_activity_detail_sheet"]'))
+        self.assertTrue(tree.xpath('//*[@data-sc-activity-row="%s"]//owl-component[contains(@props, \'"field": "user_id"\')]'
+                                   % self.act_team.id))
         # ?tab= deep link.
         _text, tree = self._get('/my/activities?tab=planned')
-        self.assertIsNone(tree.xpath('//section[@data-sc-tab-panel="planned"]')[0].get('hidden'))
+        self.assertIsNone(tree.xpath('//section[@data-pk-tab-panel="planned"]')[0].get('hidden'))
 
     def test_cancel_from_sheet_returns(self):
         self._switch(True)
@@ -94,11 +103,14 @@ class TestAppShellActivities1539(AppShellCommon):
         url = '/my/team/activities?team_id=%s' % self.team_a.id
         _text, tree = self._get(url)
         self.assertIsNotNone(self._shell(tree))
-        form = tree.xpath('//dialog[@id="sc_activity_reassign_sheet"]//form')[0]
-        self.assertEqual(form.get('action'), '/my/activity/reassign')
-        options = form.xpath('.//select[@name="new_user_id"]/option/@value')
-        self.assertIn(str(self.coach.id), options)
-        add = tree.xpath('//header//a[@data-sc-action="activity.add"]/@href')
+        # Task 1736 r1 (deliberate update): the reassign sheet became the
+        # card's inline assignee field — the same choices (the coach too).
+        self.assertFalse(tree.xpath('//dialog[@id="sc_activity_reassign_sheet"]'))
+        props = tree.xpath('//*[@data-sc-activity-row="%s"]//owl-component[contains(@props, \'"field": "user_id"\')]/@props'
+                           % self.act_team.id)[0]
+        self.assertIn(str(self.coach.id), [str(o[0]) for o in json.loads(props)['options']])
+        # Task 1607 (deliberate update): « + Ajouter » is in the list header.
+        add = tree.xpath('//div[contains(@class, "o_pk_list_header")]//a[@data-pk-action="activity.add"]/@href')
         self.assertEqual(add, ['/my/activity/create?model=sports.team&res_id=%s&return_url=%s'
                                % (self.team_a.id, quote(url, safe=''))])
         resp = self.url_open('/my/activity/reassign', data={
@@ -122,7 +134,7 @@ class TestAppShellActivities1539(AppShellCommon):
         resp = self.url_open('/my/activity/%s/edit' % self.act_player.id, allow_redirects=False)
         self.assertIn(resp.status_code, (302, 303))
         _text, tree = self._get('/my/activity/%s' % self.act_player.id)
-        self.assertTrue(tree.xpath('//*[@data-sc-section="activity.detail"][@data-sc-edit-card="activity"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="activity.detail"][@data-pk-edit-card="activity"]'))
         form = tree.xpath('//dialog[@id="sc_activity_complete_sheet"]//form')[0]
         self.assertEqual(form.xpath('.//input[@name="return_url"]/@value'),
                          ['/my/player?player_id=%s' % self.player.id])
@@ -135,14 +147,14 @@ class TestAppShellActivities1539(AppShellCommon):
         # assigned to the coach.
         self._login_coach()
         _text, tree = self._get('/my/team?team_id=%s&tab=activities' % self.team_a.id)
-        panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="activities"]')[0]
         self.assertFalse(panel.xpath('.//*[@data-sc-activity-row="%s"]' % self.act_team.id))
         self.act_team.user_id = self.coach
         _text, tree = self._get('/my/team?team_id=%s&tab=activities' % self.team_a.id)
-        panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
-        self.assertFalse(panel.xpath('.//*[contains(@class, "o_sc_legacy")]'))
+        panel = tree.xpath('//section[@data-pk-tab-panel="activities"]')[0]
+        self.assertFalse(panel.xpath('.//*[contains(@class, "o_pk_legacy")]'))
         self.assertTrue(panel.xpath('.//*[@data-sc-activity-row="%s"]' % self.act_team.id))
-        form = panel.xpath('.//details[@data-sc-section="activity.add"]//form')[0]
+        form = panel.xpath('.//details[@data-pk-section="activity.add"]//form')[0]
         self.assertEqual(form.get('action'), '/my/activity/save')
         count = self.env['mail.activity'].search_count([('res_model', '=', 'sports.team')])
         resp = self.url_open('/my/activity/save', data={

@@ -1,0 +1,698 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* zeffy_connector
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-14 12:30+0000\n"
+"PO-Revision-Date: 2026-10-14 12:30+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.res_config_settings_view_form
+msgid "API key"
+msgstr "Clé API"
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_campaign_view_search
+msgid "Active"
+msgstr ""
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__amount
+msgid "Amount"
+msgstr "Montant"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__is_archived
+msgid "Archived in Zeffy"
+msgstr "Archivée dans Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__buyer_email
+msgid "Buyer Email"
+msgstr "Courriel de l'acheteur"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__campaign_id
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_form
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_search
+msgid "Campaign"
+msgstr "Campagne"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__campaign_category
+msgid "Campaign Category"
+msgstr "Catégorie de campagne"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,help:zeffy_connector.field_zeffy_payment__description
+msgid "Campaign title as recorded on the payment."
+msgstr "Titre de la campagne tel qu’enregistré sur le paiement."
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__category
+msgid "Category"
+msgstr "Catégorie"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__city
+msgid "City"
+msgstr "Ville"
+
+#. module: zeffy_connector
+#: model:ir.model,name:zeffy_connector.model_res_company
+msgid "Companies"
+msgstr "Sociétés"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__company_id
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__company_id
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__company_id
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_record_mixin__company_id
+msgid "Company"
+msgstr "Société"
+
+#. module: zeffy_connector
+#: model:ir.model,name:zeffy_connector.model_res_config_settings
+msgid "Config Settings"
+msgstr "Paramètres de configuration"
+
+#. module: zeffy_connector
+#. odoo-python
+#: code:addons/zeffy_connector/models/res_config_settings.py:0
+msgid "Connection to Zeffy succeeded."
+msgstr "Connexion à Zeffy réussie."
+
+#. module: zeffy_connector
+#: model:res.groups,comment:zeffy_connector.group_zeffy_user
+msgid "Consults the campaigns, contacts and payments synchronized from Zeffy."
+msgstr ""
+"Consulte les campagnes, contacts et paiements synchronisés depuis Zeffy."
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__partner_id
+msgid "Contact"
+msgstr ""
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__country_code
+msgid "Country"
+msgstr "Pays"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__create_uid
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__create_uid
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__create_date
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__create_date
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__currency_id
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__currency_id
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__currency_id
+msgid "Currency"
+msgstr "Devise"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__recurring_period_end
+msgid "Current period ends"
+msgstr "Fin de la période en cours"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__payment_date
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_search
+msgid "Date"
+msgstr ""
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__zeffy_deleted
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_search
+msgid "Deleted in Zeffy"
+msgstr "Supprimé dans Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__deleted_at
+msgid "Deleted in Zeffy on"
+msgstr "Supprimée dans Zeffy le"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__description
+msgid "Description"
+msgstr ""
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_res_company__display_name
+#: model:ir.model.fields,field_description:zeffy_connector.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__display_name
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__display_name
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__display_name
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_record_mixin__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: zeffy_connector
+#: model:ir.model.fields.selection,name:zeffy_connector.selection__zeffy_campaign__campaign_type__donation_form
+msgid "Donation form"
+msgstr "Formulaire de don"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__donation_count
+msgid "Donations"
+msgstr "Dons"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__partner_id
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_search
+msgid "Donor"
+msgstr "Donateur"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__donor_type
+msgid "Donor Type"
+msgstr "Type de donateur"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__email
+msgid "Email"
+msgstr "Courriel"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,help:zeffy_connector.field_zeffy_payment__buyer_email
+msgid "Email entered by the buyer on the Zeffy form."
+msgstr "Courriel saisi par l'acheteur sur le formulaire Zeffy."
+
+#. module: zeffy_connector
+#. odoo-python
+#: code:addons/zeffy_connector/models/res_config_settings.py:0
+msgid "Enter a Zeffy API key first."
+msgstr "Saisissez d'abord une clé API Zeffy."
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__first_donation_date
+msgid "First Donation Date"
+msgstr "Date du premier don"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__first_name
+msgid "First Name"
+msgstr "Prénom"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__fund_name
+msgid "Fund"
+msgstr "Fonds"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__fund_code
+msgid "Fund Code"
+msgstr "Code du fonds"
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_contact_view_form
+msgid "Giving"
+msgstr "Dons"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__goal_amount
+msgid "Goal"
+msgstr "Objectif"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_res_company__id
+#: model:ir.model.fields,field_description:zeffy_connector.field_res_config_settings__id
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__id
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__id
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__id
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_record_mixin__id
+msgid "ID"
+msgstr ""
+
+#. module: zeffy_connector
+#: model:ir.model.fields.selection,name:zeffy_connector.selection__zeffy_payment__payment_type__imported
+msgid "Imported"
+msgstr "Importé"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__last_donation_date
+msgid "Last Donation Date"
+msgstr "Date du dernier don"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__last_name
+msgid "Last Name"
+msgstr "Nom"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__write_uid
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__write_uid
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__write_uid
+msgid "Last Updated by"
+msgstr "Dernière modification par"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__write_date
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__write_date
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__write_date
+msgid "Last Updated on"
+msgstr "Dernière modification le"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_res_company__zeffy_last_sync_error
+#: model:ir.model.fields,field_description:zeffy_connector.field_res_config_settings__zeffy_last_sync_error
+msgid "Last Zeffy error"
+msgstr "Dernière erreur Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_res_company__zeffy_last_sync
+#: model:ir.model.fields,field_description:zeffy_connector.field_res_config_settings__zeffy_last_sync
+msgid "Last Zeffy synchronization"
+msgstr "Dernière synchronisation Zeffy"
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.res_config_settings_view_form
+msgid "Last error"
+msgstr "Dernière erreur"
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.res_config_settings_view_form
+msgid "Last synchronization"
+msgstr "Dernière synchronisation"
+
+#. module: zeffy_connector
+#: model:ir.model.fields.selection,name:zeffy_connector.selection__zeffy_payment__payment_type__manual
+msgid "Manual"
+msgstr "Manuel"
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_search
+msgid "Month"
+msgstr "Mois"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__is_recurring
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_form
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_search
+msgid "Monthly giving"
+msgstr "Don mensuel"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__name
+msgid "Name"
+msgstr "Nom"
+
+#. module: zeffy_connector
+#. odoo-python
+#: code:addons/zeffy_connector/models/res_company.py:0
+msgid "No Zeffy API key is configured for %s."
+msgstr "Aucune clé API Zeffy n'est configurée pour %s."
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_contact_view_search
+msgid "Not linked to a contact"
+msgstr "Non lié à un contact"
+
+#. module: zeffy_connector
+#: model:ir.model.fields.selection,name:zeffy_connector.selection__zeffy_payment__refund_status__none
+msgid "Not refunded"
+msgstr "Non remboursé"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,help:zeffy_connector.field_zeffy_campaign__utm_campaign_id
+#: model:ir.model.fields,help:zeffy_connector.field_zeffy_payment__utm_campaign_id
+msgid "Odoo campaign this Zeffy campaign is reported under."
+msgstr "Campagne Odoo sous laquelle cette campagne Zeffy est présentée."
+
+#. module: zeffy_connector
+#: model:ir.model.fields,help:zeffy_connector.field_zeffy_contact__partner_id
+msgid ""
+"Odoo contact this Zeffy contact is linked to. Set automatically on the first"
+" synchronization; change it to correct a wrong match."
+msgstr ""
+"Contact Odoo auquel ce contact Zeffy est lié. Défini automatiquement à la "
+"première synchronisation ; modifiez-le pour corriger un mauvais "
+"rapprochement."
+
+#. module: zeffy_connector
+#: model:ir.model.fields.selection,name:zeffy_connector.selection__zeffy_payment__payment_type__online
+msgid "Online"
+msgstr "En ligne"
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_list
+msgid "PDF"
+msgstr ""
+
+#. module: zeffy_connector
+#: model:ir.model.fields,help:zeffy_connector.field_zeffy_payment__eligible_amount
+msgid "Part of the amount eligible for a tax receipt."
+msgstr "Part du montant admissible à un reçu fiscal."
+
+#. module: zeffy_connector
+#: model:ir.model.fields.selection,name:zeffy_connector.selection__zeffy_payment__refund_status__partial
+msgid "Partially refunded"
+msgstr "Remboursé en partie"
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_form
+msgid "Payment"
+msgstr "Paiement"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__payment_method
+msgid "Payment Method"
+msgstr "Mode de paiement"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__payment_ids
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__payment_ids
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_campaign_view_form
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_contact_view_form
+msgid "Payments"
+msgstr "Paiements"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__phone
+msgid "Phone"
+msgstr "Téléphone"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__zip
+msgid "Postal code"
+msgstr "Code postal"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__state_code
+msgid "Province / state"
+msgstr "Province / État"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__url
+msgid "Public page"
+msgstr "Page publique"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__amount_raised
+msgid "Raised"
+msgstr "Amassé"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__eligible_amount
+msgid "Receipt-eligible amount"
+msgstr "Montant admissible au reçu"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__recurring_interval
+msgid "Recurrence"
+msgstr "Récurrence"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__recurring_status
+msgid "Recurrence status"
+msgstr "État de la récurrence"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__refund_status
+msgid "Refund Status"
+msgstr "Remboursement"
+
+#. module: zeffy_connector
+#: model:ir.model.fields.selection,name:zeffy_connector.selection__zeffy_payment__refund_status__full
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_search
+msgid "Refunded"
+msgstr "Remboursé"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__refunded_amount
+msgid "Refunded Amount"
+msgstr "Montant remboursé"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__payment_type
+msgid "Source"
+msgstr ""
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__status
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__status
+msgid "Status"
+msgstr "État"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__street
+msgid "Street"
+msgstr "Rue"
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.res_config_settings_view_form
+msgid ""
+"Synchronize campaigns, contacts and payments from Zeffy (read-only). The API"
+" key is generated by the Zeffy organization owner in Settings > "
+"Integrations."
+msgstr ""
+"Synchronise les campagnes, contacts et paiements depuis Zeffy (lecture "
+"seule). La clé API est générée par le propriétaire de l'organisme dans "
+"Zeffy, Paramètres > Intégrations."
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.res_config_settings_view_form
+msgid "Synchronize now"
+msgstr "Synchroniser maintenant"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__receipt_url
+msgid "Tax receipt"
+msgstr "Reçu fiscal"
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.res_config_settings_view_form
+msgid "Test connection"
+msgstr "Tester la connexion"
+
+#. module: zeffy_connector
+#: model:ir.model.constraint,message:zeffy_connector.constraint_zeffy_campaign_unique_zeffy_id
+msgid "This Zeffy campaign is already synchronized for this company."
+msgstr "Cette campagne Zeffy est déjà synchronisée pour cette société."
+
+#. module: zeffy_connector
+#: model:ir.model.constraint,message:zeffy_connector.constraint_zeffy_contact_unique_zeffy_id
+msgid "This Zeffy contact is already synchronized for this company."
+msgstr "Ce contact Zeffy est déjà synchronisé pour cette société."
+
+#. module: zeffy_connector
+#: model:ir.model.constraint,message:zeffy_connector.constraint_zeffy_payment_unique_zeffy_id
+msgid "This Zeffy payment is already synchronized for this company."
+msgstr "Ce paiement Zeffy est déjà synchronisé pour cette société."
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_form
+msgid "This payment was deleted in Zeffy."
+msgstr "Ce paiement a été supprimé dans Zeffy."
+
+#. module: zeffy_connector
+#: model:ir.model.fields.selection,name:zeffy_connector.selection__zeffy_campaign__campaign_type__ticketing
+msgid "Ticketing"
+msgstr "Billetterie"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__name
+msgid "Title"
+msgstr "Titre"
+
+#. module: zeffy_connector
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_contact_view_list
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_list
+msgid "Total"
+msgstr ""
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__total_contribution
+msgid "Total Contribution"
+msgstr "Contribution totale"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__tribute_type
+msgid "Tribute Type"
+msgstr "Type d'hommage"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__tribute_name
+msgid "Tribute to"
+msgstr "En hommage à"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__campaign_type
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_campaign_view_search
+msgid "Type"
+msgstr ""
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__utm_campaign_id
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__utm_campaign_id
+msgid "UTM Campaign"
+msgstr "Campagne UTM"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__zeffy_updated
+msgid "Updated in Zeffy"
+msgstr "Modifié dans Zeffy"
+
+#. module: zeffy_connector
+#: model:res.groups,name:zeffy_connector.group_zeffy_user
+msgid "User"
+msgstr "Utilisateur"
+
+#. module: zeffy_connector
+#. odoo-python
+#: code:addons/zeffy_connector/models/res_config_settings.py:0
+#: model:ir.ui.menu,name:zeffy_connector.menu_zeffy_root
+#: model:res.groups.privilege,name:zeffy_connector.res_groups_privilege_zeffy
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_contact_view_form
+#: model_terms:ir.ui.view,arch_db:zeffy_connector.zeffy_payment_view_form
+msgid "Zeffy"
+msgstr ""
+
+#. module: zeffy_connector
+#: model:ir.model.fields,help:zeffy_connector.field_res_company__zeffy_contact_watermark
+msgid "Zeffy 'updated' timestamp up to which contacts were read."
+msgstr ""
+"Horodatage « updated » de Zeffy jusqu'auquel les contacts ont été lus."
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_res_company__zeffy_api_key
+#: model:ir.model.fields,field_description:zeffy_connector.field_res_config_settings__zeffy_api_key
+msgid "Zeffy API key"
+msgstr "Clé API Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.model,name:zeffy_connector.model_zeffy_campaign
+msgid "Zeffy Campaign"
+msgstr "Campagne Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.actions.act_window,name:zeffy_connector.zeffy_campaign_action
+#: model:ir.ui.menu,name:zeffy_connector.menu_zeffy_campaign
+msgid "Zeffy Campaigns"
+msgstr "Campagnes Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__zeffy_checksum
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__zeffy_checksum
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__zeffy_checksum
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_record_mixin__zeffy_checksum
+msgid "Zeffy Checksum"
+msgstr "Somme de contrôle Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.model,name:zeffy_connector.model_zeffy_contact
+msgid "Zeffy Contact"
+msgstr "Contact Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_res_company__zeffy_contact_watermark
+msgid "Zeffy Contact Watermark"
+msgstr "Repère des contacts Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.actions.act_window,name:zeffy_connector.zeffy_contact_action
+#: model:ir.ui.menu,name:zeffy_connector.menu_zeffy_contact
+msgid "Zeffy Contacts"
+msgstr "Contacts Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_campaign__zeffy_id
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_contact__zeffy_id
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__zeffy_id
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_record_mixin__zeffy_id
+msgid "Zeffy ID"
+msgstr "ID Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.model,name:zeffy_connector.model_zeffy_payment
+msgid "Zeffy Payment"
+msgstr "Paiement Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.actions.act_window,name:zeffy_connector.zeffy_payment_action
+#: model:ir.ui.menu,name:zeffy_connector.menu_zeffy_payment
+msgid "Zeffy Payments"
+msgstr "Paiements Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.model,name:zeffy_connector.model_zeffy_record_mixin
+msgid "Zeffy Record"
+msgstr "Enregistrement Zeffy"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__contact_id
+msgid "Zeffy contact"
+msgstr "Contact Zeffy"
+
+#. module: zeffy_connector
+#. odoo-python
+#: code:addons/zeffy_connector/models/zeffy_contact.py:0
+msgid "Zeffy donor"
+msgstr "Donateur Zeffy"
+
+#. module: zeffy_connector
+#. odoo-python
+#: code:addons/zeffy_connector/models/res_config_settings.py:0
+msgid "Zeffy error: %s"
+msgstr "Erreur Zeffy : %s"
+
+#. module: zeffy_connector
+#: model:ir.model.fields,help:zeffy_connector.field_zeffy_payment__zeffy_deleted
+msgid "Zeffy no longer returns this payment."
+msgstr "Zeffy ne retourne plus ce paiement."
+
+#. module: zeffy_connector
+#. odoo-python
+#: code:addons/zeffy_connector/models/res_config_settings.py:0
+msgid ""
+"Zeffy rejected this API key. Generate a new one in Zeffy, Settings > "
+"Integrations."
+msgstr ""
+"Zeffy a refusé cette clé API. Générez-en une nouvelle dans Zeffy, Paramètres"
+" > Intégrations."
+
+#. module: zeffy_connector
+#: model:ir.model.fields,field_description:zeffy_connector.field_zeffy_payment__subscription_id
+msgid "Zeffy subscription"
+msgstr "Abonnement Zeffy"
+
+#. module: zeffy_connector
+#. odoo-python
+#: code:addons/zeffy_connector/models/res_config_settings.py:0
+msgid ""
+"Zeffy synchronization done. Created or updated: %(campaigns)s campaign(s), "
+"%(contacts)s contact(s), %(payments)s payment(s)."
+msgstr ""
+"Synchronisation Zeffy terminée. Créés ou mis à jour : %(campaigns)s "
+"campagne(s), %(contacts)s contact(s), %(payments)s paiement(s)."
+
+#. module: zeffy_connector
+#. odoo-python
+#: code:addons/zeffy_connector/models/res_config_settings.py:0
+msgid "Zeffy synchronization failed: %s"
+msgstr "La synchronisation Zeffy a échoué : %s"
+
+#. module: zeffy_connector
+#: model:ir.actions.server,name:zeffy_connector.ir_cron_zeffy_sync_ir_actions_server
+msgid "Zeffy: synchronize campaigns, contacts and payments"
+msgstr "Zeffy : synchroniser les campagnes, contacts et paiements"

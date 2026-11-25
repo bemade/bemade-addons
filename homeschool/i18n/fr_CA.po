@@ -18,6 +18,12 @@ msgstr ""
 
 #. module: homeschool
 #. odoo-python
+#: code:addons/homeschool/wizards/close_week_wizard.py:0
+msgid "%(code)s: « %(value)s » is not a number."
+msgstr "%(code)s : « %(value)s » n'est pas un nombre."
+
+#. module: homeschool
+#. odoo-python
 #: code:addons/homeschool/models/trace.py:0
 msgid "%s: a trace must be validated before it becomes institutional."
 msgstr "%s : une trace doit être validée avant de devenir institutionnelle."
@@ -44,6 +50,16 @@ msgid "<strong>Blocks without adult minutes:</strong>"
 msgstr "<strong>Blocs sans minutes adulte :</strong>"
 
 #. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_close_week_wizard_form
+msgid "<strong>R3-PARENTS:</strong> Second week in a row below 3 — trigger 5 (decision 0001)"
+msgstr "<strong>R3-PARENTS :</strong> Deuxième semaine d'affilée sous 3 — déclencheur 5 (décision 0001)"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_close_week_wizard_form
+msgid "A blank writes nothing; a 0 is a value; 2,5 and 2.5 are both accepted. R3-PARENTS (the mean of D and M) and R1-ADULTE (adult-present hours) are computed on Next."
+msgstr "Un blanc n'écrit rien ; un 0 est une valeur ; 2,5 et 2.5 sont acceptés. R3-PARENTS (la moyenne de D et M) et R1-ADULTE (heures de présence adulte) sont calculés à « Suivant »."
+
+#. module: homeschool
 #: model:ir.model.constraint,message:homeschool.constraint_homeschool_block_duration_positive
 msgid "A block's planned duration cannot be negative."
 msgstr "La durée prévue d'un bloc ne peut pas être négative."
@@ -53,6 +69,16 @@ msgstr "La durée prévue d'un bloc ne peut pas être négative."
 #: code:addons/homeschool/models/journal_api.py:0
 msgid "A date is required (YYYY-MM-DD)."
 msgstr "Une date est requise (AAAA-MM-JJ)."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__date
+msgid "A day of the week"
+msgstr "Un jour de la semaine"
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_deliverable_answer_lines_range
+msgid "A deliverable's answer lines must be between 0 and 12."
+msgstr "Les lignes de réponse d'un livrable doivent être entre 0 et 12."
 
 #. module: homeschool
 #: model:ir.model.fields,help:homeschool.field_homeschool_deliverable__when
@@ -155,6 +181,7 @@ msgid "Actuals entered without adult minutes: honest blank, to fill."
 msgstr "Réel saisi sans les minutes adulte : un blanc honnête, à remplir."
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__adjustment
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_review__adjustment
 msgid "Adjustment for next week (within the plan's envelope)"
 msgstr "Ajustement pour la semaine prochaine (dans l'enveloppe du plan)"
@@ -192,6 +219,7 @@ msgid "Adult present (min)"
 msgstr "Adulte présent (min)"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__adult_hours
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_review__adult_hours
 msgid "Adult-present hours (week)"
 msgstr "Heures de présence adulte (semaine)"
@@ -255,9 +283,19 @@ msgid "Answer"
 msgstr "Réponse"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__answer_lines
+msgid "Answer lines"
+msgstr "Lignes de réponse"
+
+#. module: homeschool
 #: model:ir.model.fields,help:homeschool.field_homeschool_week_wizard__date
 msgid "Any date in the week to generate."
 msgstr "N'importe quelle date de la semaine à générer."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_close_week_wizard__date
+msgid "Any date in the week under review."
+msgstr "N'importe quelle date de la semaine revue."
 
 #. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__artifact_path
@@ -396,6 +434,11 @@ msgid "Books"
 msgstr "Livres"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__marker
+msgid "Cadence"
+msgstr "Cadence"
+
+#. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__cadence_raw
 msgid "Cadence Raw"
 msgstr "Cadence (brute)"
@@ -416,6 +459,12 @@ msgid "Child"
 msgstr "Enfant"
 
 #. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/wizards/close_week_wizard.py:0
+msgid "Choose the student and a day of the week."
+msgstr "Choisissez l'élève et un jour de la semaine."
+
+#. module: homeschool
 #: model:ir.actions.server,name:homeschool.action_close_day_wizard
 #: model:ir.model,name:homeschool.model_homeschool_close_day_wizard
 #: model:ir.ui.menu,name:homeschool.menu_close_day
@@ -431,6 +480,28 @@ msgid "Close the day — %s"
 msgstr "Fermer la journée — %s"
 
 #. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/wizards/close_week_wizard.py:0
+#: model:ir.actions.server,name:homeschool.action_close_week_wizard
+#: model:ir.model,name:homeschool.model_homeschool_close_week_wizard
+#: model:ir.ui.menu,name:homeschool.menu_close_week
+#: model_terms:ir.ui.view,arch_db:homeschool.view_close_week_wizard_form
+#: model_terms:ir.ui.view,arch_db:homeschool.view_review_form
+msgid "Close the week"
+msgstr "Fermer la semaine"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/wizards/close_week_wizard.py:0
+msgid "Close the week — %s"
+msgstr "Fermer la semaine — %s"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_close_week_wizard_line
+msgid "Close the week: one indicator"
+msgstr "Fermer la semaine : un indicateur"
+
+#. module: homeschool
 #: model_terms:ir.ui.view,arch_db:homeschool.view_close_day_wizard_form
 msgid ""
 "Closing this window with × loses what is typed on this screen only; every "
@@ -438,6 +509,7 @@ msgid ""
 msgstr "Fermer cette fenêtre avec × ne perd que ce qui est tapé sur cet écran ; chaque Suivant a déjà enregistré son bloc."
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__code
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__code
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__code
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_item__code
@@ -618,6 +690,8 @@ msgstr "Réf. couvertes"
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__create_uid
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__create_uid
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_close_day_wizard__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__create_uid
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_day__create_uid
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__create_uid
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__create_uid
@@ -643,6 +717,8 @@ msgstr "Créé par"
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__create_date
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__create_date
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_close_day_wizard__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__create_date
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_day__create_date
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__create_date
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__create_date
@@ -815,6 +891,11 @@ msgid "Days Without Journal"
 msgstr "Jours sans journal"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__days_without_journal
+msgid "Days without a journal entry"
+msgstr "Jours sans entrée de journal"
+
+#. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_day__debrief
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__kind__debrief
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__kind__debrief
@@ -909,6 +990,8 @@ msgstr "Sens"
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__display_name
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__display_name
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_close_day_wizard__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__display_name
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_company_mixin__display_name
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_day__display_name
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__display_name
@@ -974,6 +1057,7 @@ msgid "Done By"
 msgstr "Fait par"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__answer_dose
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_review__answer_dose
 msgid "Dose kept?"
 msgstr "Dose tenue?"
@@ -982,6 +1066,11 @@ msgstr "Dose tenue?"
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__duration_hours
 msgid "Duration Hours"
 msgstr "Durée (heures)"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_day__journal_state__empty
+msgid "Empty"
+msgstr "Vide"
 
 #. module: homeschool
 #: model:ir.model.fields,help:homeschool.field_homeschool_block_template__student_id
@@ -1003,6 +1092,12 @@ msgstr "Anglais"
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__priorite__enrichissement
 msgid "Enrichment"
 msgstr "Enrichissement"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/wizards/close_day_wizard.py:0
+msgid "Enter the minutes (total and with an adult), or click « Skip this block »."
+msgstr "Inscris les minutes (total et avec un adulte), ou clique « Sauter ce bloc »."
 
 #. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__entry_ids
@@ -1249,6 +1344,8 @@ msgstr "Chemin de la source HTML"
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__id
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__id
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_close_day_wizard__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__id
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_company_mixin__id
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_day__id
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__id
@@ -1327,6 +1424,7 @@ msgid "Index"
 msgstr "Position"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__indicator_id
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__indicator_id
 #: model_terms:ir.ui.view,arch_db:homeschool.view_indicator_form
 msgid "Indicator"
@@ -1353,6 +1451,12 @@ msgid "Indicator notes (day)"
 msgstr "Notes d'indicateurs (journée)"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__journal_notes
+#: model_terms:ir.ui.view,arch_db:homeschool.view_close_week_wizard_form
+msgid "Indicator notes from the journal"
+msgstr "Notes d'indicateurs du journal"
+
+#. module: homeschool
 #: model:ir.model,name:homeschool.model_homeschool_indicator_value
 msgid "Indicator value"
 msgstr "Valeur d'indicateur"
@@ -1365,9 +1469,16 @@ msgstr "Valeurs d'indicateurs"
 
 #. module: homeschool
 #: model:ir.actions.act_window,name:homeschool.action_indicator
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__line_ids
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_close_week_wizard__step__indicators
 #: model:ir.ui.menu,name:homeschool.menu_indicators
 msgid "Indicators"
 msgstr "Indicateurs"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__blank_codes
+msgid "Indicators still blank this week"
+msgstr "Indicateurs encore vides cette semaine"
 
 #. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_review__missing_indicator_ids
@@ -1417,6 +1528,11 @@ msgstr "Interne"
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__message_is_follower
 msgid "Is Follower"
 msgstr "Est abonné"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__is_monthly
+msgid "Is Monthly"
+msgstr "Mensuel"
 
 #. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_day__iso_week
@@ -1525,6 +1641,8 @@ msgstr "Dernière preuve le"
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__write_uid
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__write_uid
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_close_day_wizard__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__write_uid
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_day__write_uid
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__write_uid
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__write_uid
@@ -1550,6 +1668,8 @@ msgstr "Dernière mise à jour par"
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__write_date
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__write_date
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_close_day_wizard__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__write_date
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_day__write_date
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__write_date
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__write_date
@@ -1577,9 +1697,19 @@ msgid "Last manual update"
 msgstr "Dernière mise à jour manuelle"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__last_value_label
+msgid "Last value"
+msgstr "Dernière valeur"
+
+#. module: homeschool
 #: model:ir.model,name:homeschool.model_homeschool_trace
 msgid "Learning trace (portfolio artifact)"
 msgstr "Trace d'apprentissage (artefact du portfolio)"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_close_week_wizard_line__value
+msgid "Leave blank when not measured: a blank writes nothing, a zero is a value. 2,5 and 2.5 are both accepted."
+msgstr "Laissez vide si non mesuré : un blanc n'écrit rien, un zéro est une valeur. 2,5 et 2.5 sont acceptés."
 
 #. module: homeschool
 #: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
@@ -1652,6 +1782,7 @@ msgstr "Marquer fait"
 #. module: homeschool
 #: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
 #: model_terms:ir.ui.view,arch_db:homeschool.view_close_day_wizard_form
+#: model_terms:ir.ui.view,arch_db:homeschool.view_close_week_wizard_form
 #: model_terms:ir.ui.view,arch_db:homeschool.view_day_form
 #: model_terms:ir.ui.view,arch_db:homeschool.view_project_form
 #: model_terms:ir.ui.view,arch_db:homeschool.view_trace_form
@@ -1680,6 +1811,7 @@ msgstr "Markdown — tel quel"
 #: model:ir.model.fields,help:homeschool.field_homeschool_close_day_wizard__went_badly
 #: model:ir.model.fields,help:homeschool.field_homeschool_close_day_wizard__went_badly_day
 #: model:ir.model.fields,help:homeschool.field_homeschool_close_day_wizard__went_well_day
+#: model:ir.model.fields,help:homeschool.field_homeschool_close_week_wizard__notes
 #: model:ir.model.fields,help:homeschool.field_homeschool_day__debrief
 #: model:ir.model.fields,help:homeschool.field_homeschool_day__note
 #: model:ir.model.fields,help:homeschool.field_homeschool_journal__notes
@@ -1776,6 +1908,7 @@ msgid "Mode"
 msgstr "Mode"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__week_start
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__weekday__0
 msgid "Monday"
 msgstr "Lundi"
@@ -1786,9 +1919,15 @@ msgid "Monthly"
 msgstr "Mensuelle"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__multi_student
+msgid "Multi Student"
+msgstr "Plusieurs élèves"
+
+#. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__name
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__name
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_close_day_wizard__block_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__name
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_day__name
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__name
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__name
@@ -1815,6 +1954,7 @@ msgstr "Nouvelle journée"
 
 #. module: homeschool
 #: model_terms:ir.ui.view,arch_db:homeschool.view_close_day_wizard_form
+#: model_terms:ir.ui.view,arch_db:homeschool.view_close_week_wizard_form
 msgid "Next"
 msgstr "Suivant"
 
@@ -1827,11 +1967,6 @@ msgstr "Semaine prochaine"
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__student_vote__down
 msgid "No"
 msgstr "Non"
-
-#. module: homeschool
-#: model:ir.model.fields,help:homeschool.field_homeschool_review__answer_dose
-msgid "No adjustment before the 6-week review."
-msgstr "Aucun ajustement avant la revue des 6 semaines."
 
 #. module: homeschool
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__student_vote__none
@@ -1876,6 +2011,7 @@ msgstr "Pas encore"
 #. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__note
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_close_day_wizard__note
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__note
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_day__note
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__note
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__note
@@ -1900,6 +2036,7 @@ msgid "Note Html"
 msgstr "Note (HTML)"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__notes
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__notes
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_review__notes
 msgid "Notes"
@@ -1915,6 +2052,12 @@ msgstr "Notes (journée)"
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_review__notes_html
 msgid "Notes Html"
 msgstr "Notes (HTML)"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/wizards/close_day_wizard.py:0
+msgid "Nothing to close: no incomplete day."
+msgstr "Rien à fermer : aucune journée incomplète."
 
 #. module: homeschool
 #. odoo-python
@@ -2048,6 +2191,11 @@ msgid "Other"
 msgstr "Autre"
 
 #. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_close_week_wizard_form
+msgid "Other week"
+msgstr "Autre semaine"
+
+#. module: homeschool
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__kind__outing
 msgid "Outing"
 msgstr "Sortie"
@@ -2159,6 +2307,12 @@ msgid "Plan"
 msgstr "Planifier"
 
 #. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "Plan %(date)s/%(key)s: answer_lines must be a whole number from 0 to %(max)s, not %(value)r."
+msgstr "Plan %(date)s/%(key)s : answer_lines doit être un nombre entier de 0 à %(max)s, pas %(value)r."
+
+#. module: homeschool
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__status__planned
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_computed__planned
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_override__planned
@@ -2230,6 +2384,7 @@ msgstr "Lien de prérequis entre items du programme"
 
 #. module: homeschool
 #: model_terms:ir.ui.view,arch_db:homeschool.view_close_day_wizard_form
+#: model_terms:ir.ui.view,arch_db:homeschool.view_close_week_wizard_form
 msgid "Previous"
 msgstr "Précédent"
 
@@ -2287,6 +2442,11 @@ msgid "Question"
 msgstr "Question"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__r3_alert
+msgid "R3-PARENTS below 3 two weeks in a row"
+msgstr "R3-PARENTS sous 3 deux semaines d'affilée"
+
+#. module: homeschool
 #: model:ir.model.fields,help:homeschool.field_homeschool_item__project_codes
 msgid "Raw 'projets' column from the CSV."
 msgstr "Colonne « projets » brute du CSV."
@@ -2334,6 +2494,11 @@ msgstr "Noter les heures adulte (R1-ADULTE)"
 #: model:ir.model,name:homeschool.model_homeschool_attachment_mixin
 msgid "Record carrying files"
 msgstr "Enregistrement porteur de fichiers"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__value_id
+msgid "Recorded value"
+msgstr "Valeur enregistrée"
 
 #. module: homeschool
 #: model:ir.model.fields,help:homeschool.field_homeschool_item__source_ref
@@ -2468,6 +2633,8 @@ msgid "Ressource"
 msgstr "Ressource"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__review_id
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_close_week_wizard__step__review
 #: model_terms:ir.ui.view,arch_db:homeschool.view_review_form
 msgid "Review"
 msgstr "Revue"
@@ -2490,6 +2657,11 @@ msgstr ""
 #: model:ir.model.fields,help:homeschool.field_homeschool_project__csv_sequence
 msgid "Row order in the family CSV."
 msgstr "Ordre des lignes dans le CSV de la famille."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_deliverable__answer_lines
+msgid "Ruled lines printed under the deliverable for a written answer (0–12)."
+msgstr "Lignes tracées sous le livrable pour une réponse écrite (0 à 12)."
 
 #. module: homeschool
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__weekday__5
@@ -2587,6 +2759,12 @@ msgid "Social studies"
 msgstr "Univers social"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__answer_cap
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__answer_cap
+msgid "Soft cap — did we stop at the right moments?"
+msgstr "Plafond souple — on a arrêté aux bons moments?"
+
+#. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__source
 msgid "Source"
 msgstr "Source"
@@ -2663,6 +2841,7 @@ msgstr "Statut 3e cycle"
 
 #. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_close_day_wizard__step
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__step
 msgid "Step"
 msgstr "Étape"
 
@@ -2690,6 +2869,7 @@ msgstr "Structure"
 #. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__student_id
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__student_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__student_id
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_day__student_id
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__student_id
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__student_id
@@ -2805,9 +2985,15 @@ msgid "Success criteria"
 msgstr "Critères de réussite"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__week_end
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__weekday__6
 msgid "Sunday"
 msgstr "Dimanche"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_close_week_wizard_form
+msgid "Sunday questions"
+msgstr "Questions du dimanche"
 
 #. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_item__annee_cible
@@ -2866,6 +3052,12 @@ msgid "The attachment is not valid base64: %s"
 msgstr "La pièce jointe n'est pas du base64 valide : %s"
 
 #. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_close_week_wizard__answer_cap
+#: model:ir.model.fields,help:homeschool.field_homeschool_review__answer_cap
+msgid "The cap is no longer a fixed duration: we stop when it makes sense."
+msgstr "Le plafond n'est plus une durée fixe : on arrête quand ça a du sens."
+
+#. module: homeschool
 #: model_terms:ir.ui.view,arch_db:homeschool.view_close_day_wizard_form
 msgid ""
 "The day stays incomplete until they are filled; you can still finish and "
@@ -2909,6 +3101,11 @@ msgstr ""
 #: model:ir.model.fields,help:homeschool.field_homeschool_item_coverage__trace_ids
 msgid "The family's traces evidencing this item."
 msgstr "Les traces de la famille qui attestent cet item."
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_close_week_wizard_form
+msgid "The indicators are already saved; closing this window with × loses the answers typed on this screen only."
+msgstr "Les indicateurs sont déjà enregistrés ; fermer cette fenêtre avec × perd seulement les réponses tapées sur cet écran."
 
 #. module: homeschool
 #. odoo-python
@@ -2974,6 +3171,16 @@ msgstr ""
 "familles dont il suit les élèves."
 
 #. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_close_week_wizard_form
+msgid "The week"
+msgstr "La semaine"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_close_week_wizard__journal_notes
+msgid "The week's journal indicator notes, one line per day: what the counts are tallied from."
+msgstr "Les notes d'indicateurs du journal de la semaine, une ligne par jour : la base des décomptes."
+
+#. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_item_dependency__to_item_id
 msgid "Then"
 msgstr "Puis"
@@ -3026,6 +3233,7 @@ msgid "This week"
 msgstr "Cette semaine"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__threshold
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__threshold
 msgid "Threshold"
 msgstr "Seuil"
@@ -3117,6 +3325,7 @@ msgid "Tuesday"
 msgstr "Mardi"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__unit
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__unit
 msgid "Unit"
 msgstr "Unité"
@@ -3164,6 +3373,7 @@ msgid "Validation"
 msgstr "Validation"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__value
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__value
 msgid "Value"
 msgstr "Valeur"
@@ -3174,9 +3384,10 @@ msgid "Values"
 msgstr "Valeurs"
 
 #. module: homeschool
-#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__answer_cap
-msgid "Visible cap respected?"
-msgstr "Plafond visible respecté?"
+#: model:ir.model.fields,help:homeschool.field_homeschool_close_week_wizard__answer_dose
+#: model:ir.model.fields,help:homeschool.field_homeschool_review__answer_dose
+msgid "Was the planned dose kept this week? Say what changed and why."
+msgstr "La dose prévue a-t-elle été tenue cette semaine? Dites ce qui a changé et pourquoi."
 
 #. module: homeschool
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__weekday__2
@@ -3184,6 +3395,8 @@ msgid "Wednesday"
 msgstr "Mercredi"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard__iso_week
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_close_week_wizard__step__start
 #: model_terms:ir.ui.view,arch_db:homeschool.view_day_search
 msgid "Week"
 msgstr "Semaine"
@@ -3332,6 +3545,11 @@ msgid ""
 msgstr "Minutes entières. Laisser vide si non mesuré : un blanc est honnête, un zéro est une valeur."
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_week_wizard_line__wizard_id
+msgid "Wizard"
+msgstr "Assistant"
+
+#. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__word1
 msgid "Word 1"
 msgstr "Mot 1"
@@ -3378,10 +3596,21 @@ msgstr ""
 "élève auquel vous êtes rattaché."
 
 #. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_close_week_wizard_form
+msgid "blank = not measured"
+msgstr "vide = non mesuré"
+
+#. module: homeschool
 #: model_terms:ir.ui.view,arch_db:homeschool.view_block_kanban
 #: model_terms:ir.ui.view,arch_db:homeschool.view_close_day_wizard_form
 msgid "min"
 msgstr "min"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/wizards/close_week_wizard.py:0
+msgid "monthly"
+msgstr "mensuel"
 
 #. module: homeschool
 #. odoo-python

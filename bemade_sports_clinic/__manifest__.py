@@ -4,21 +4,13 @@
 #    Copyright (C) October 2023 Bemade Inc. (<https://www.bemade.org>).
 #    Author: Marc Durepos (Contact : marc@bemade.org)
 #
-#    This program is under the terms of the Odoo Proprietary License v1.0 (OPL-1)
-#    It is forbidden to publish, distribute, sublicense, or sell copies of the Software
-#    or modified copies of the Software.
-#
-#    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-#    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-#    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-#    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-#    DEALINGS IN THE SOFTWARE.
+#    This program is free software: you can redistribute it and/or modify it under the terms of the
+#    GNU Lesser General Public License as published by the Free Software Foundation, version 3 (LGPL-3).
+#    See https://www.gnu.org/licenses/lgpl-3.0.html.
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.60.0",
+    'version': "19.0.1.149.1",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -83,10 +75,11 @@ Portal app shell (preview)
 --------------------------
 A new Fit Crew app shell for the portal (brand colours and type, phone
 bottom tabs, laptop left rail, dark theme by default, per-user theme)
-behind the system switch Settings > Sports Clinic Portal > New Portal App
-(``bemade_sports_clinic.app_shell_enabled``). Switch off (the default)
+behind the system switch Settings > Portal App > Portal app (the kit's
+``bemade_portal_kit.enabled``, task 5200). Switch off (the default)
 leaves today's portal unchanged. Menus, sections and fields are shown from
-a declarative, multi-role registry (``models/sc_app_roles.py``): a user
+a declarative, multi-role registry (``models/sc_app_roles.py``, on the
+``portal.kit`` hooks of ``bemade_portal_kit``): a user
 holds a set of roles and every entry declares the roles it includes and
 excludes; security stays in the access rules. Back navigation and the
 breadcrumb trail come from one parent registry (``models/sc_app_nav.py``):
@@ -103,7 +96,11 @@ installable app: a ``/my/``-scoped web manifest and service worker (network
 first; no team or player page is ever cached — offline shows a data-free
 page), with « Plus › Installer l'application ». With the switch off, the
 manifest and the service worker answer 404 and any installed worker
-unregisters itself.
+unregisters itself. Task 5201 (kit P6): the installable app is the kit
+addon ``bemade_portal_kit_pwa`` (same URLs, scope and manifest id); the
+clinic fills the company's app fields with the Fit Crew name, colours and
+icons where they are empty (install and upgrade) and brings its start URL,
+shortcuts, offline colours and wording.
 
 P3 puts the therapist surfaces on the shell: the clinic list and clinic
 page, whose waiting list is a LIVE component (20 s poll of
@@ -114,6 +111,30 @@ bundle), timesheets, the notepad and the daily digests; the portal bookings
 pages join through the ``bemade_sports_clinic_bookings`` glue addon. The
 sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
 (SIL OFL 1.1) from its own CSS-only bundle — no off-domain request.
+
+Since the kit's P3b2 (task 5357), the shell's generic styles and the
+``--pk-*`` slots live in ``bemade_portal_kit`` with neutral defaults;
+``sc_tokens.scss`` is Fit Crew's brand file (palette, Teko / DM Sans,
+uppercase titles, dark by default) and the clinic stylesheets keep the
+clinic's own rules (``o_sc_*`` classes, ``data-sc-*`` hooks, the 1024 px
+layouts).
+
+The app dashboard (/my/home) is made of widget sections each user may show,
+hide, reorder, duplicate and limit to some organisations / teams from its
+« Configurer » page (task 5202: the engine, the page frame and the sheet are
+bemade_portal_kit_dashboard's; ``models/sc_dashboard.py`` registers the
+clinic's widgets; the layout is stored per user, versioned). A scope only ever narrows what the user may
+already access. Round 1: Today, Indicators, To do (each line folds out into
+its activity / injury / player cards), Recent changes, Players to watch,
+Players I follow (a personal « Follow » on the player cards and page),
+Announcements, Upcoming coverage (« Upcoming events » for coaches) and, for
+therapists, Missing timesheets.
+
+Instance banner: Settings > Sports Clinic Portal > Instance banner
+(``bemade_sports_clinic.instance_banner``) puts a red strip with that text
+(e.g. « DÉMO ») at the top of every page (login, backend, portal, app
+shell) to mark a non-production instance. Empty, the default, shows
+nothing; PDF reports never carry it.
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",
@@ -122,6 +143,9 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
     "depends": [
         "mail",  # Required for mail.activity functionality
         "portal",
+        "bemade_portal_kit",  # Task 5196: the app shell registries (roles, nav, pages)
+        "bemade_portal_kit_pwa",  # Task 5201: the installable app (manifest, worker, offline / install pages)
+        "bemade_portal_kit_dashboard",  # Task 5202: the configurable dashboard (engine, page frame, configure sheet)
         "contacts",
         "base_setup",  # For res.config.settings base view inheritance
         "phone_validation",  # For phone number formatting in patient contacts
@@ -146,6 +170,9 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "security/ir.model.access.csv",
         "security/sports_clinic_rules.xml",
         "security/sports_clinic_portal_rules.xml",
+        "security/sports_treatment_note_rules.xml",
+        "security/portal_access_sweep_rules.xml",
+        "security/critical_item_rules.xml",
         "security/mail_activity_portal_rules.xml",
         "security/sports_event_rules.xml",
         "security/partner_access.xml",
@@ -153,6 +180,7 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "security/team_digest_rules.xml",
         "security/sports_quick_note_rules.xml",
         "security/sports_clinic_attendance_rules.xml",
+        "security/training_history_rules.xml",
         # Task 1401: personal /my/teams order, own-rows-only rule.
         "security/sports_team_user_rank_rules.xml",
         "data/sports_clinic_data.xml",
@@ -160,6 +188,7 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "data/admin_access_data.xml",
         # "data/project_portal_demo_data.xml",  # Temporarily disabled for clean upgrade
         "data/cron_actions.xml",
+        "data/sc_activity_todo_data.xml",
         "data/data_recycle_model.xml",
         # Must precede sports_team_views.xml: its header button resolves
         # %(action_team_player_removal)d at parse time.
@@ -167,6 +196,11 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "views/sports_team_views.xml",
         "views/sports_patient_injury_views.xml",
         "views/sports_clinic_menus.xml",
+        "data/sc_guide_video_assets.xml",
+        "data/sc_knowledge_public_view.xml",
+        # Task 5200 (kit P5): the in-app help moved to the kit
+        # (portal.kit.help); the clinic's back-end menu entry.
+        "views/sc_app_help_views.xml",
         # Task 1399: attendance report (pivot/graph/list) + the Reports menu.
         # After the menus (parent = sports_clinic_root), before the event views
         # (their smart-button action points at these views' model).
@@ -221,14 +255,22 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "views/res_partner_views.xml",
         "views/team_role_mass_assign_wizard_views.xml",
         "views/patient_merge_wizard_views.xml",
+        "views/patient_duplicate_views.xml",
         "views/res_users_views.xml",
         # Task 1538: the portal app shell (behind the app_shell_enabled
         # switch) — components, layout, then the pages that t-call them.
         "views/sc_components.xml",
         "views/sc_app_layout.xml",
+        "views/instance_banner.xml",
+        "views/sc_app_player_add.xml",
         "views/sc_app_pages.xml",
-        # Task 1542: team page, install page, offline page.
+        # Task 1624: the dashboard (/my/home) widgets (task 5202: the frame
+        # and « Configurer » are bemade_portal_kit_dashboard's).
+        "views/sc_app_dashboard.xml",
+        # Task 1542: team page (task 5201: the install and offline pages are
+        # bemade_portal_kit_pwa's; sc_app_pwa.xml words them for Fit Crew).
         "views/sc_app_team.xml",
+        "views/sc_app_pwa.xml",
         # Task 1539: P2 — players, injuries, notes, documents, activities.
         "views/sc_app_activities.xml",
         "views/sc_app_players.xml",
@@ -297,12 +339,13 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             # Progressive enhancement — the plain select posts without it.
             "bemade_sports_clinic/static/src/scss/portal_widgets.scss",
             "bemade_sports_clinic/static/src/js/portal_patient_combo.js",
-            # Task 1538: portal app shell (tokens + components are scoped
-            # under .o_sc_app — inert outside the shell; the JS only acts on
-            # data-sc-pref forms inside it). Not duplicated in the lazy list.
+            # Task 1538: portal app shell (since task 5357 the brand file +
+            # the clinic's own rules; the generic ones are the kit's), scoped
+            # under .o_pk_app — inert outside the shell; task 5345: the theme
+            # preference script is the kit's, pk_theme_pref.js). Not
+            # duplicated in the lazy list.
             "bemade_sports_clinic/static/src/scss/sc_tokens.scss",
             "bemade_sports_clinic/static/src/scss/sc_components.scss",
-            "bemade_sports_clinic/static/src/js/sc_app_shell.js",
             # Task 1542: P1b — page styles, the one fetch helper, the device
             # draft store, page behaviours (tabs / sheets / lazy rows /
             # toast), the service worker registration + kill switch, and the
@@ -312,28 +355,47 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             "bemade_sports_clinic/static/src/scss/sc_pages.scss",
             # Task 1539: P2 page / component styles.
             "bemade_sports_clinic/static/src/scss/sc_p2.scss",
-            "bemade_sports_clinic/static/src/js/sc_fetch.js",
-            "bemade_sports_clinic/static/src/js/sc_draft_store.js",
-            # Task 1585: tap-to-call / tap-to-email hrefs.
-            "bemade_sports_clinic/static/src/js/sc_contact_href.js",
+            # Task 5197 (kit P2): the shell's 13 generic scripts moved to
+            # bemade_portal_kit (pk_*.js, bundled by the kit, a dependency);
+            # task 5198 (P3a) removed their one-release aliases.
             "bemade_sports_clinic/static/src/js/sc_app_ui.js",
-            "bemade_sports_clinic/static/src/js/sc_app_nav.js",
-            "bemade_sports_clinic/static/src/js/sc_sw_register.js",
-            "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
-            "bemade_sports_clinic/static/src/js/sc_autosave_field.xml",
+            # Task 1660: guide videos on the public Knowledge article pages.
+            "bemade_sports_clinic/static/src/js/sc_guide_video.js",
+            # Task 1652: the red card pills open the medical popups.
+            "bemade_sports_clinic/static/src/js/sc_med_card_pills.js",
+            # Task 1677: the allergy / condition lists and the EpiPen card
+            # of the medical popups.
+            "bemade_sports_clinic/static/src/js/sc_medical_lists.js",
+            # Task 1655: create a player inline (existence check as you type).
+            # Task 5370 (kit P4b): the form guard moved to the kit
+            # (pk_form_guard.js); sc_guard_rules.js is the clinic's own
+            # « assign » rule of the kit's guard.
+            "bemade_sports_clinic/static/src/js/sc_guard_rules.js",
+            "bemade_sports_clinic/static/src/js/sc_player_add.js",
+            # Task 1603: follow-up proposals (the sheet after a save).
+            "bemade_sports_clinic/static/src/js/sc_proposal.js",
+            # Task 1604: quick « Vérifier » / « Résoudre » of an injury.
+            "bemade_sports_clinic/static/src/js/sc_injury_quick.js",
+            "bemade_sports_clinic/static/src/js/sc_injury_card.js",
+            # Task 1624 review round 1: « Suivre » a player (fetch toggle).
+            "bemade_sports_clinic/static/src/js/sc_follow.js",
+            # Task 1624 review round 2: the quick « Retour prévu » (task 5202:
+            # the configure sheet and the scroll anchoring are
+            # bemade_portal_kit_dashboard's).
+            "bemade_sports_clinic/static/src/js/sc_dashboard_live.js",
             # Task 1539: the shell's activity sheets (replaces, in the shell
             # only, the legacy activity partials' inline scripts).
             "bemade_sports_clinic/static/src/js/sc_activities.js",
             # Task 1540: P3 styles, the live clinic waiting list.
             "bemade_sports_clinic/static/src/scss/sc_p3.scss",
+            "bemade_sports_clinic/static/src/scss/sc_dashboard.scss",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml",
-            # Review 2026-09-29: live counters (the home's clinics-today chip).
-            "bemade_sports_clinic/static/src/js/sc_live_count.js",
             # Task 1540: the shared calendar (FullCalendar lazy-loaded from
             # web.fullcalendar_lib) and the event form behaviours.
-            "bemade_sports_clinic/static/src/js/sc_calendar.js",
-            "bemade_sports_clinic/static/src/js/sc_calendar.xml",
+            # Task 5200 (kit P5): the calendar is the kit's (pk_calendar);
+            # the old OWL key stays registered for one release.
+            "bemade_sports_clinic/static/src/js/sc_calendar_alias.js",
             "bemade_sports_clinic/static/src/js/sc_events.js",
         ],
         # Task 1540: the sign-in kiosk's OWN stylesheet bundle, included
@@ -351,6 +413,10 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             "web/static/lib/bootstrap/scss/_maps.scss",
             ("include", "web._assets_bootstrap_frontend"),
             "web/static/src/libs/fontawesome/css/font-awesome.css",
+            # Task 5357 (kit P3b2): the kit's variables and slot mixins
+            # (pk-scale-tokens) before the brand file.
+            "bemade_portal_kit/static/src/scss/pk_variables.scss",
+            "bemade_portal_kit/static/src/scss/pk_tokens.scss",
             "bemade_sports_clinic/static/src/scss/sc_tokens.scss",
             "bemade_sports_clinic/static/src/scss/sc_kiosk.scss",
         ],

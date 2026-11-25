@@ -1,6 +1,6 @@
 {
     "name": "Time Off Alternative Follower",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Extra Tools",
     "summary": "Add Alternative Follower When Receiving Message While On Time Off",
     "author": "Bemade",

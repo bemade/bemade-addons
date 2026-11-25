@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="bemade_llm_stream_view_list" model="ir.ui.view">
+        <field name="name">bemade.llm.stream.list</field>
+        <field name="model">bemade.llm.stream</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="provider_id"/>
+                <field name="model"/>
+                <field name="allow_cloud"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="bemade_llm_stream_view_form" model="ir.ui.view">
+        <field name="name">bemade.llm.stream.form</field>
+        <field name="model">bemade.llm.stream</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <div class="alert alert-warning" role="alert"
+                         invisible="allow_cloud or not provider_id or provider_is_local">
+                        This stream is local only and its provider is not on our infrastructure: every call is refused.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="provider_id"/>
+                            <field name="provider_is_local"/>
+                            <field name="model"/>
+                        </group>
+                        <group>
+                            <field name="temperature"/>
+                            <field name="max_tokens"/>
+                            <field name="allow_cloud"/>
+                            <field name="pseudonymizer"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="What the stream is used for..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="bemade_llm_stream_view_search" model="ir.ui.view">
+        <field name="name">bemade.llm.stream.search</field>
+        <field name="model">bemade.llm.stream</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="provider_id"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_bemade_llm_stream" model="ir.actions.act_window">
+        <field name="name">LLM Streams</field>
+        <field name="res_model">bemade.llm.stream</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

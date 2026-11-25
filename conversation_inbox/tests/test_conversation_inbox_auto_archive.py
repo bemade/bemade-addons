@@ -93,7 +93,7 @@ class AutoArchiveCase(InboxWizardTestMixin, TransactionCase):
         self._capture(
             "link",
             "p-link",
-            res_model_id=self.env["ir.model"]._get_id("mail.conversation"),
+            res_model="mail.conversation",
             res_id=link_target.id,
         )
         fetch_patch, normalize_patch = self._mock_fetch_normalize(
@@ -154,7 +154,7 @@ class TestAutoArchive(AutoArchiveCase):
         self.transport.archive_on_capture = True
 
         def failing(transport, external_id):
-            raise UserError(self.env._("Folder Archive missing on X"))
+            raise UserError("Folder Archive missing on X")  # pylint: disable=translation-required
 
         with patch.object(
             type(self.transport), "_archive_remote", failing

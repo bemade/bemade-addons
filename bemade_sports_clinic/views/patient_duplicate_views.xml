@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Task 1674: « Possible duplicates » (clinic admin). -->
+<odoo>
+    <record id="sports_patient_duplicate_view_list" model="ir.ui.view">
+        <field name="name">sports.patient.duplicate.list</field>
+        <field name="model">sports.patient.duplicate</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" decoration-danger="same_dob">
+                <header>
+                    <button name="action_find_duplicates" type="object" string="Find duplicates"
+                            class="btn-primary" display="always"/>
+                </header>
+                <field name="patient_a_id"/>
+                <field name="dob_a"/>
+                <field name="teams_a"/>
+                <field name="patient_b_id"/>
+                <field name="dob_b"/>
+                <field name="teams_b"/>
+                <field name="kind"/>
+                <field name="same_dob"/>
+                <button name="action_merge" type="object" string="Merge…" icon="fa-compress" class="btn-link"/>
+                <button name="action_dismiss" type="object" string="Not a duplicate" icon="fa-times" class="btn-link"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="sports_patient_duplicate_view_search" model="ir.ui.view">
+        <field name="name">sports.patient.duplicate.search</field>
+        <field name="model">sports.patient.duplicate</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="patient_a_id"/>
+                <field name="patient_b_id"/>
+                <filter name="open" string="To review" domain="[('dismissed', '=', False)]"/>
+                <filter name="dismissed_pairs" string="Not duplicates" domain="[('dismissed', '=', True)]"/>
+                <filter name="same_dob_pairs" string="Same date of birth" domain="[('same_dob', '=', True)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sports_patient_duplicate" model="ir.actions.act_window">
+        <field name="name">Possible duplicates</field>
+        <field name="res_model">sports.patient.duplicate</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No possible duplicate listed.</p>
+            <p>Use « Find duplicates » to look for players entered twice.</p>
+        </field>
+    </record>
+
+    <menuitem id="sports_clinic_patient_duplicate_menu"
+              name="Possible duplicates"
+              parent="sports_clinic_staff_menu"
+              groups="bemade_sports_clinic.group_sports_clinic_admin"
+              action="action_sports_patient_duplicate"
+              sequence="31"/>
+</odoo>

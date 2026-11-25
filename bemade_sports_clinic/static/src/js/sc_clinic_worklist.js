@@ -6,17 +6,20 @@
  *
  * - First paint from props.data (no fetch); then a poll of props.dataUrl
  *   every props.pollSeconds (20 s) while the page is visible, through
- *   scFetch (toast: false). The poll is PAUSED while a row is dragged,
+ *   pkFetch (toast: false). The poll is PAUSED while a row is dragged,
  *   while an action is in flight and while a sheet is open (resolve,
  *   add, kiosk…); an error backs off (x2, up to 5 min) and a success resets
  *   the interval. Rows are replaced only when the server's version hash
  *   changed.
  * - Actions (status, confirm, remove, reorder by drag or up / down) apply
  *   at once (optimistic) and POST to the JSON twins of the attendance routes
- *   (props.actionUrl + state | confirm | remove | reorder; CSRF by scFetch).
+ *   (props.actionUrl + state | confirm | remove | reorder; CSRF by pkFetch).
  *   The answer carries the CURRENT worklist, which replaces the local one
  *   (reconcile); a failure rolls back (to the server's list when the answer
  *   carries it) and shows a toast.
+ * - « Seen » (#1747), once saved, opens that player's file (row.url, the
+ *   legacy redirect's target); « Expected » / « Arrived » stay in place,
+ *   and so does a row the user may not open (no url).
  * - « Remove » asks for a second tap (the row is deleted, not archived).
  * - An unregistered kiosk sign-in (#1418) has no status buttons: « Resolve »
  *   opens the page's resolve sheet, whose three forms (link / create /
@@ -25,7 +28,7 @@
 import { Component, onMounted, onWillUnmount, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/l10n/translation";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 
 const MAX_BACKOFF = 300000;
 const ARM_MS = 4000;
@@ -35,7 +38,7 @@ function clone(data) {
 }
 
 function toast(message) {
-    document.dispatchEvent(new CustomEvent("sc:toast", { detail: { message } }));
+    document.dispatchEvent(new CustomEvent("pk:toast", { detail: { message } }));
 }
 
 export class ScClinicWorklist extends Component {
@@ -101,7 +104,7 @@ export class ScClinicWorklist extends Component {
 
     get paused() {
         return Boolean(
-            this.state.dragId || this.state.pending || document.querySelector("dialog.o_sc_sheet[open]")
+            this.state.dragId || this.state.pending || document.querySelector("dialog.o_pk_sheet[open]")
         );
     }
 
@@ -153,7 +156,7 @@ export class ScClinicWorklist extends Component {
             return;
         }
         try {
-            const data = await scFetch(this.props.dataUrl, { toast: false });
+            const data = await pkFetch(this.props.dataUrl, { toast: false });
             if (!this.paused) {
                 this.apply(data);
             }
@@ -182,7 +185,7 @@ export class ScClinicWorklist extends Component {
         }
         this.state.pending++;
         try {
-            const result = await scFetch(this.props.actionUrl + action, {
+            const result = await pkFetch(this.props.actionUrl + action, {
                 method: "POST",
                 data: fields,
                 toast: false,
@@ -207,16 +210,33 @@ export class ScClinicWorklist extends Component {
         }
     }
 
-    setState(row, value) {
-        if (row.unregistered || row.state === value) {
+    async setState(row, value) {
+        if (row.unregistered) {
             return;
         }
-        this.act("state", { attendance_id: row.id, state: value }, (data) => {
+        // #1747: « Seen » opens that player's file once saved, as the
+        // legacy screen's redirect did (only when the user may open it).
+        const open = value === "seen" && row.url;
+        if (row.state === value) {
+            if (open) {
+                this.open(row.url);
+            }
+            return;
+        }
+        const ok = await this.act("state", { attendance_id: row.id, state: value }, (data) => {
             const target = data.rows.find((r) => r.id === row.id);
             if (target) {
                 target.state = value;
             }
         });
+        if (ok && open) {
+            this.open(row.url);
+        }
+    }
+
+    open(url) {
+        clearTimeout(this.timer); // no poll while the next page loads
+        window.location.assign(url);
     }
 
     confirm(row) {
@@ -298,7 +318,7 @@ registry.category("public_components").add("bemade_sports_clinic.sc_clinic_workl
 // « Resolve » (#1418): point the page's resolve sheet at the clicked row.
 document.addEventListener("click", (ev) => {
     const opener = ev.target.closest && ev.target.closest("[data-sc-resolve-id]");
-    if (!opener || !opener.closest(".o_sc_app")) {
+    if (!opener || !opener.closest(".o_pk_app")) {
         return;
     }
     const sheet = document.getElementById("sc_clinic_resolve_sheet");

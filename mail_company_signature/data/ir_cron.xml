@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="ir_cron_expire_company_notice" model="ir.cron">
+        <field name="name">Email Signatures: Remove Expired Company Notices</field>
+        <field name="model_id" ref="base.model_res_company" />
+        <field name="state">code</field>
+        <field name="code">model._cron_expire_company_signature_notice()</field>
+        <field name="user_id" ref="base.user_root" />
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field
+      name="nextcall"
+      eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d 05:00:00')"
+    />
+    </record>
+</odoo>

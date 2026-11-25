@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Task 1540 / 5200 (kit P5) — see pk_calendar.js. -->
+<templates xml:space="preserve">
+    <t t-name="bemade_portal_kit.PkCalendar">
+        <div class="o_pk_calendar_box" t-att-class="{'o_pk_calendar_staff': props.staffColors}" t-att-data-pk-calendar-ready="state.ready ? '1' : '0'">
+            <p t-if="state.error" class="o_pk_banner o_pk_banner_warn" role="alert" t-esc="errorLabel"/>
+            <div class="o_pk_calendar" t-ref="calendar"/>
+            <!-- The people of the visible range; tap = filter. -->
+            <div t-if="props.staffColors and (state.legend.people.length or state.legend.unassigned or activeMissing)"
+                 class="o_pk_calendar_legend" data-pk-section="calendar.legend"
+                 role="group" t-att-aria-label="legendTitle">
+                <span class="o_pk_calendar_legend_title" t-esc="legendTitle"/>
+                <t t-foreach="state.legend.people" t-as="person" t-key="person.id">
+                    <button type="button" class="o_pk_calendar_legend_item"
+                            t-att-class="{'o_pk_calendar_legend_active': isActive(person)}"
+                            t-att-data-pk-calendar-legend="person.id"
+                            t-att-aria-pressed="isActive(person) ? 'true' : 'false'"
+                            t-att-aria-label="legendLabel(person)" t-att-title="legendLabel(person)"
+                            t-on-click="() => this.filterOn(person)">
+                        <span class="o_pk_calendar_dot" t-attf-style="background: {{ person.color }}"/>
+                        <span t-esc="person.name"/>
+                    </button>
+                </t>
+                <button t-if="activeMissing" type="button" class="o_pk_calendar_legend_item"
+                        data-pk-calendar-legend="all" t-on-click="() => this.filterOn(null)">
+                    <span t-esc="showAllLabel"/>
+                </button>
+                <span t-if="state.legend.unassigned" class="o_pk_calendar_legend_item o_pk_calendar_legend_static"
+                      data-pk-calendar-legend="none">
+                    <span class="o_pk_calendar_dot o_pk_calendar_dot_none"/>
+                    <span t-esc="unassignedLabel"/>
+                </span>
+            </div>
+            <div t-if="state.selected" class="o_pk_card o_pk_calendar_detail" data-pk-calendar-detail="1" role="status">
+                <div class="o_pk_card_head">
+                    <strong t-esc="state.selected.title"/>
+                    <button type="button" class="o_pk_icon_btn" t-on-click="close" aria-label="Close" title="Close">×</button>
+                </div>
+                <p class="o_pk_meta" t-esc="state.selected.when"/>
+                <span t-if="state.selected.cancelled" class="o_pk_chip o_pk_chip_red">Cancelled</span>
+                <dl t-if="state.selected.lines.length" class="o_pk_kv">
+                    <t t-foreach="state.selected.lines" t-as="line" t-key="line.key">
+                        <dt t-esc="line.label"/>
+                        <dd t-if="line.href"><a class="o_pk_contact_link" t-att-href="line.href" t-att-data-pk-calendar-detail-link="line.key" t-esc="line.value"/></dd>
+                        <dd t-else="" t-esc="line.value"/>
+                    </t>
+                </dl>
+            </div>
+        </div>
+    </t>
+</templates>

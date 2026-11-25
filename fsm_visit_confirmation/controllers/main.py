@@ -25,10 +25,8 @@ class CustomerPortalExtended(CustomerPortal):
         base route was singular ``/my/task/<id>``.)"""
         try:
             task = request.env["project.task"].browse(task_id)
-            task.check_access_rights("read")
-            task.check_access_rights("write")
-            task.check_access_rule("read")
-            task.check_access_rule("write")
+            task.check_access("read")
+            task.check_access("write")
         except AccessError:
             task = None
         values = self._get_portal_values(task, access_token=access_token, **kw)
@@ -83,15 +81,8 @@ class CustomerPortalExtended(CustomerPortal):
         # If it's an approval, update the task state directly
         if action == "approve":
             try:
-                # Update task state to approved
-                task.write({"state": "03_approved"})
-
-                # Add a message to the chatter
-                task.message_post(
-                    body=_("Visit approved by customer"),
-                    message_type="comment",
-                    subtype_xmlid="mail.mt_note",
-                )
+                # Mark approved, note it, move to the configured stage
+                task._action_customer_approve()
 
                 # Always redirect to the task portal page with success message
                 redirect_url = "/my/tasks/%s?%s" % (

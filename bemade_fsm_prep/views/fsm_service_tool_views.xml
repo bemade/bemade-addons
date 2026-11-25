@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="fsm_service_tool_view_list" model="ir.ui.view">
+        <field name="name">fsm.service.tool.list</field>
+        <field name="model">fsm.service.tool</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name" />
+                <!-- fixed widths: the default integer column cuts the headers -->
+                <field name="quantity_owned" width="140px" />
+                <field name="return_delay_days" width="160px" />
+                <field name="notes" optional="show" />
+                <field name="active" column_invisible="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="fsm_service_tool_view_form" model="ir.ui.view">
+        <field name="name">fsm.service.tool.form</field>
+        <field name="model">fsm.service.tool</field>
+        <field name="arch" type="xml">
+            <form string="Service Tool">
+                <sheet>
+                    <widget
+            name="web_ribbon"
+            title="Archived"
+            bg_color="text-bg-danger"
+            invisible="active"
+          />
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="e.g. Bin" />
+                        </h1>
+                    </div>
+                    <group>
+                        <field name="quantity_owned" />
+                        <field name="return_delay_days" />
+                        <field name="active" invisible="1" />
+                    </group>
+                    <field name="notes" placeholder="Notes" />
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="fsm_service_tool_view_search" model="ir.ui.view">
+        <field name="name">fsm.service.tool.search</field>
+        <field name="model">fsm.service.tool</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <filter
+          name="inactive"
+          string="Archived"
+          domain="[('active', '=', False)]"
+        />
+            </search>
+        </field>
+    </record>
+
+    <record id="fsm_service_tool_action" model="ir.actions.act_window">
+        <field name="name">Service Tools</field>
+        <field name="res_model">fsm.service.tool</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add a service tool</p>
+            <p>
+                List the tools the team brings to visits, how many the company
+                owns and how many days each one takes to come back. A visit that
+                needs a tool already used by visits planned at the same time
+                (plus that return delay) beyond that quantity shows a warning.
+            </p>
+        </field>
+    </record>
+
+    <menuitem
+    id="fsm_service_tool_menu"
+    name="Service Tools"
+    parent="industry_fsm.fsm_menu_settings"
+    action="fsm_service_tool_action"
+    sequence="40"
+    groups="industry_fsm.group_fsm_user"
+  />
+</odoo>

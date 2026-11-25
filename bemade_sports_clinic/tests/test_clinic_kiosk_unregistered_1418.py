@@ -33,6 +33,8 @@ All fixtures are synthetic: this addon's repository is public.
 import re
 from datetime import date, timedelta
 
+from lxml import html as lxml_html
+
 from odoo import Command, fields
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import HttpCase, tagged
@@ -610,9 +612,15 @@ class TestClinicKioskUnregistered(HttpCase):
             self.assertIn('Listed, Lou', html)
             self.assertIn('Queue, Kim', html)
             self.assertNotIn('Far, Fay', html)
-        # the row carries no dossier link
+        # the row carries no dossier link. Look inside the row's own <li>: a
+        # page-wide match on ?patient=<row.id> compared an attendance id with
+        # patient ids, and failed whenever a listed patient shared the number.
         html = self._page().text
-        self.assertNotIn('?patient=%s' % row.id, html)
+        row_html = lxml_html.fromstring(html).get_element_by_id('attendance-%s' % row.id)
+        self.assertFalse(
+            row_html.xpath('.//a[contains(@href, "?patient=")]'),
+            "the unregistered row has no link to a patient file",
+        )
         # no unregistered row: no resolve blocks rendered at all
         row.unlink()
         html = self._page().text
@@ -637,7 +645,7 @@ class TestClinicKioskUnregisteredFrCA(HttpCase):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'])
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'])
         # With `website` installed the portal language follows the WEBSITE
         # (URL prefix / frontend_lang cookie / website default), not the user's
         # lang — the project CI has it, the addon CI does not. Make fr_CA a

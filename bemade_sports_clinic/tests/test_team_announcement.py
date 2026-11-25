@@ -220,7 +220,7 @@ class TestTeamAnnouncement(TransactionCase):
         team = self.env["sports.team"].new({"announcement": self.ANNOUNCE})
         result = team._onchange_announcement_law25_warning()
         self.assertTrue(result and result.get("warning"))
-        # Title/message are translatable (English source + fr_CA.po), so assert the
+        # Title/message are translatable (English source + fr.po), so assert the
         # warning is present with non-empty text rather than a language-specific token.
         self.assertTrue(result["warning"]["title"])
         self.assertTrue(result["warning"]["message"])
@@ -533,6 +533,24 @@ class TestTeamAnnouncementPortalRoutes(PortalAnnouncementFixtures, HttpCase):
         hist = self._history()
         self.assertEqual(hist.mapped("action"), ["set", "edit", "dismiss"])
         self.assertTrue(all(h.author_id == self.tp_therapist for h in hist))
+
+    def test_route_portal_bad_deadline_gets_clear_message(self):
+        """Task 1640: a 6-digit year (« 202610-10-10 ») or a year before
+        1900 is refused with « Please enter a valid date. », not the generic
+        « Error saving announcement. »; nothing is written."""
+        self._login(self.tp_therapist)
+        for bad in ("202610-10-10", "1899-12-31"):
+            loc = self._post(
+                f"/my/team/{self.team.id}/announcement",
+                announcement=self.ANNOUNCE,
+                announcement_deadline=bad,
+            )
+            self.assertIn("error=Please+enter+a+valid+date.", loc, (bad, loc))
+            self.assertNotIn("Error+saving", loc, loc)
+            self._refresh()
+            self.assertFalse(self.team.announcement, bad)
+            self.assertFalse(self.team.announcement_deadline, bad)
+            self.assertFalse(self._history(), bad)
 
     def test_route_portal_head_therapist_posts(self):
         self._login(self.tp_head)

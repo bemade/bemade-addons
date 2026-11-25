@@ -451,6 +451,7 @@ class TestClinicBreadcrumbs1410(HttpCase):
             'injury_id': self.injury.id, 'patient_id': self.patient.id,
             'name': 'synthetic.txt', 'file_name': 'synthetic.txt',
             'file_content': b'c3ludGhldGlj', 'category': 'other',
+            'created_by_id': self.tp.id,  # task 1432: the uploader deletes
         })
         resp = self.url_open('/my/injury/document/delete/%s' % doc.id, data={
             'csrf_token': token, 'clinic_id': self.clinic.id,
@@ -460,7 +461,8 @@ class TestClinicBreadcrumbs1410(HttpCase):
             resp.headers['Location'],
             '/my/injury/documents?injury_id=%s&clinic_id=%s&success=document_deleted' % (
                 self.injury.id, self.clinic.id))
-        self.assertFalse(doc.exists())
+        doc.invalidate_recordset()
+        self.assertFalse(doc.active)  # task 1432: archived, not unlinked
 
     def test_injury_delete_keeps_clinic(self):
         self._login_tp()

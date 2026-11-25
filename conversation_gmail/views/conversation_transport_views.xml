@@ -38,28 +38,27 @@
             password="True"
             groups="base.group_system"
           />
-                    <!-- google.gmail.mixin's token fields are
-                         groups="base.group_system" (built for a single
-                         admin-configured shared mail server); the
-                         connect widget is scoped to the same group so it
-                         is never shown to a user who cannot see the field
-                         it depends on. See readme: this is a known
-                         limitation against a truly per-user OAuth connect
-                         flow. -->
-                    <field
-            name="google_gmail_refresh_token"
-            invisible="1"
-            groups="base.group_system"
-          />
-                    <div groups="base.group_system">
+                    <!-- The tokens themselves stay administrator-only; the
+                         owner of a personal account only ever sees the
+                         non-secret gmail_connected indicator, and may start
+                         (or restart) the Google consent flow on their own
+                         account. The server enforces ownership. -->
+                    <field name="gmail_connected" invisible="1" />
+                    <div>
                         <button
               name="open_google_gmail_uri"
               type="object"
-              string="Connect to Gmail"
+              string="Connect to Google"
               class="btn-primary"
-              invisible="google_gmail_refresh_token"
+              invisible="gmail_connected"
             />
-                        <span invisible="not google_gmail_refresh_token">
+                        <button
+              name="open_google_gmail_uri"
+              type="object"
+              string="Reconnect"
+              invisible="not gmail_connected"
+            />
+                        <span invisible="not gmail_connected">
                             Connected.
                         </span>
                     </div>

@@ -1,0 +1,109 @@
+unit;key;prompt;options;hint;answer
+Lire une fraction;lf-01;« 3 parts sur 8 » s'écrit…;*3/8|8/3|3/5;;
+Lire une fraction;lf-02;Une pizza est coupée en 4 parts égales. Léa en mange 1. Quelle fraction de la pizza a-t-elle mangée ?;*1/4|4/1|1/3;;
+Lire une fraction;lf-03;1/2 se lit…;*un demi|un deux|un quart;;
+Lire une fraction;lf-04;1/3 se lit…;*un tiers|un quart|un demi;;
+Lire une fraction;lf-05;1/4 se lit…;*un quart|un tiers|un quatre;;
+Lire une fraction;lf-06;Dans 5/6, le dénominateur est…;*6|5;;
+Lire une fraction;lf-07;Dans 5/6, le numérateur est…;*5|6;;
+Lire une fraction;lf-08;« trois cinquièmes » s'écrit…;*3/5|5/3|1/5;;
+Lire une fraction;lf-09;« deux tiers » s'écrit…;*2/3|3/2|1/3;;
+Lire une fraction;lf-10;Le dénominateur dit…;*en combien de parts égales on coupe le tout|combien de parts on prend;;
+Lire une fraction;lf-11;Une barre de chocolat a 10 carrés. Noah en mange 7. Quelle fraction de la barre a-t-il mangée ?;*7/10|3/10|10/7;;
+Lire une fraction;lf-12;Une barre de chocolat a 10 carrés. On en mange 7. Quelle fraction de la barre reste-t-il ?;*3/10|7/10|3/7;;
+Lire une fraction;lf-13;« sept douzièmes » s'écrit…;*7/12|12/7|7/2;;
+Lire une fraction;lf-14;4/9 se lit…;*quatre neuvièmes|neuf quarts|quatre neufs;;
+Lire une fraction;lf-15;Un gâteau est coupé en 6 parts égales. On mange les 6 parts. Quelle fraction du gâteau a été mangée ?;*6/6|1/6|0/6;;
+Lire une fraction;lf-16;Un disque est coupé en 3 parts pas égales et une part est coloriée. A-t-on colorié 1/3 du disque ?;*Non, les parts doivent être égales|Oui, une part sur trois;;
+Comparer à 0, à 1/2 et à 1;c12-01;3/8, comparée à 1/2, est…;*plus petite que 1/2|égale à 1/2|plus grande que 1/2;Le double de 3, c'est 6. Plus que 8 : plus grande que 1/2 ; égal à 8 : égale ; moins : plus petite.;
+Comparer à 0, à 1/2 et à 1;c12-02;4/8, comparée à 1/2, est…;plus petite que 1/2|*égale à 1/2|plus grande que 1/2;Le double de 4, c'est 8. Plus que 8 : plus grande que 1/2 ; égal à 8 : égale ; moins : plus petite.;
+Comparer à 0, à 1/2 et à 1;c12-03;5/8, comparée à 1/2, est…;plus petite que 1/2|égale à 1/2|*plus grande que 1/2;Le double de 5, c'est 10. Plus que 8 : plus grande que 1/2 ; égal à 8 : égale ; moins : plus petite.;
+Comparer à 0, à 1/2 et à 1;c12-04;2/6, comparée à 1/2, est…;*plus petite que 1/2|égale à 1/2|plus grande que 1/2;Le double de 2, c'est 4. Plus que 6 : plus grande que 1/2 ; égal à 6 : égale ; moins : plus petite.;
+Comparer à 0, à 1/2 et à 1;c12-05;3/6, comparée à 1/2, est…;plus petite que 1/2|*égale à 1/2|plus grande que 1/2;Le double de 3, c'est 6. Plus que 6 : plus grande que 1/2 ; égal à 6 : égale ; moins : plus petite.;
+Comparer à 0, à 1/2 et à 1;c12-06;5/6, comparée à 1/2, est…;plus petite que 1/2|égale à 1/2|*plus grande que 1/2;Le double de 5, c'est 10. Plus que 6 : plus grande que 1/2 ; égal à 6 : égale ; moins : plus petite.;
+Comparer à 0, à 1/2 et à 1;c12-07;2/5, comparée à 1/2, est…;*plus petite que 1/2|égale à 1/2|plus grande que 1/2;Le double de 2, c'est 4. Plus que 5 : plus grande que 1/2 ; égal à 5 : égale ; moins : plus petite.;
+Comparer à 0, à 1/2 et à 1;c12-08;3/5, comparée à 1/2, est…;plus petite que 1/2|égale à 1/2|*plus grande que 1/2;Le double de 3, c'est 6. Plus que 5 : plus grande que 1/2 ; égal à 5 : égale ; moins : plus petite.;
+Comparer à 0, à 1/2 et à 1;c12-09;6/10, comparée à 1/2, est…;plus petite que 1/2|égale à 1/2|*plus grande que 1/2;Le double de 6, c'est 12. Plus que 10 : plus grande que 1/2 ; égal à 10 : égale ; moins : plus petite.;
+Comparer à 0, à 1/2 et à 1;c12-10;1/3, comparée à 1/2, est…;*plus petite que 1/2|égale à 1/2|plus grande que 1/2;Le double de 1, c'est 2. Plus que 3 : plus grande que 1/2 ; égal à 3 : égale ; moins : plus petite.;
+Comparer à 0, à 1/2 et à 1;c12-11;7/12, comparée à 1/2, est…;plus petite que 1/2|égale à 1/2|*plus grande que 1/2;Le double de 7, c'est 14. Plus que 12 : plus grande que 1/2 ; égal à 12 : égale ; moins : plus petite.;
+Comparer à 0, à 1/2 et à 1;c12-12;5/5, comparée à 1, est…;plus petite que 1|*égale à 1|plus grande que 1;Compare le numérateur (5) au dénominateur (5).;
+Comparer à 0, à 1/2 et à 1;c12-13;7/4, comparée à 1, est…;plus petite que 1|égale à 1|*plus grande que 1;Compare le numérateur (7) au dénominateur (4).;
+Comparer à 0, à 1/2 et à 1;c12-14;3/4, comparée à 1, est…;*plus petite que 1|égale à 1|plus grande que 1;Compare le numérateur (3) au dénominateur (4).;
+Comparer à 0, à 1/2 et à 1;c12-15;0/7 vaut…;*0|1|7;;
+Comparer à 0, à 1/2 et à 1;c12-16;9/9 vaut…;*1|9|0;;
+La fraction d'un entier;fe-01;1/2 de 10;;2 assiettes : 10 ÷ 2 = 5 dans chaque assiette. J'en prends 1.;5
+La fraction d'un entier;fe-02;1/3 de 12;;3 assiettes : 12 ÷ 3 = 4 dans chaque assiette. J'en prends 1.;4
+La fraction d'un entier;fe-03;1/4 de 20;;4 assiettes : 20 ÷ 4 = 5 dans chaque assiette. J'en prends 1.;5
+La fraction d'un entier;fe-04;1/5 de 15;;5 assiettes : 15 ÷ 5 = 3 dans chaque assiette. J'en prends 1.;3
+La fraction d'un entier;fe-05;2/3 de 12;;3 assiettes : 12 ÷ 3 = 4 dans chaque assiette. J'en prends 2 : 2 × 4.;8
+La fraction d'un entier;fe-06;3/4 de 24;;4 assiettes : 24 ÷ 4 = 6 dans chaque assiette. J'en prends 3 : 3 × 6.;18
+La fraction d'un entier;fe-07;2/5 de 20;;5 assiettes : 20 ÷ 5 = 4 dans chaque assiette. J'en prends 2 : 2 × 4.;8
+La fraction d'un entier;fe-08;3/8 de 24;;8 assiettes : 24 ÷ 8 = 3 dans chaque assiette. J'en prends 3 : 3 × 3.;9
+La fraction d'un entier;fe-09;5/6 de 30;;6 assiettes : 30 ÷ 6 = 5 dans chaque assiette. J'en prends 5 : 5 × 5.;25
+La fraction d'un entier;fe-10;3/10 de 50;;10 assiettes : 50 ÷ 10 = 5 dans chaque assiette. J'en prends 3 : 3 × 5.;15
+La fraction d'un entier;fe-11;4/7 de 28;;7 assiettes : 28 ÷ 7 = 4 dans chaque assiette. J'en prends 4 : 4 × 4.;16
+La fraction d'un entier;fe-12;7/10 de 40;;10 assiettes : 40 ÷ 10 = 4 dans chaque assiette. J'en prends 7 : 7 × 4.;28
+La fraction d'un entier;fe-13;Emma donne 2/3 de ses 18 billes. Combien de billes donne-t-elle ?;;3 assiettes : 18 ÷ 3 = 6 dans chaque assiette. J'en prends 2 : 2 × 6.;12
+La fraction d'un entier;fe-14;Dans un sac, 3/8 des 32 bonbons sont rouges. Combien de bonbons sont rouges ?;;8 assiettes : 32 ÷ 8 = 4 dans chaque assiette. J'en prends 3 : 3 × 4.;12
+La fraction d'un entier;fe-15;Samuel a lu 3/5 de son livre de 25 pages. Combien de pages a-t-il lues ?;;5 assiettes : 25 ÷ 5 = 5 dans chaque assiette. J'en prends 3 : 3 × 5.;15
+La fraction d'un entier;fe-16;Une classe de 36 élèves. 5/9 de ces élèves ont un chat. Combien d'élèves ont un chat ?;;9 assiettes : 36 ÷ 9 = 4 dans chaque assiette. J'en prends 5 : 5 × 4.;20
+Les fractions équivalentes;eq-01;1/2 = ?/4;;2 × 2 = 4, alors 1 × 2.;2
+Les fractions équivalentes;eq-02;1/2 = ?/10;;2 × 5 = 10, alors 1 × 5.;5
+Les fractions équivalentes;eq-03;1/3 = ?/6;;3 × 2 = 6, alors 1 × 2.;2
+Les fractions équivalentes;eq-04;1/4 = ?/8;;4 × 2 = 8, alors 1 × 2.;2
+Les fractions équivalentes;eq-05;2/3 = ?/12;;3 × 4 = 12, alors 2 × 4.;8
+Les fractions équivalentes;eq-06;3/4 = ?/8;;4 × 2 = 8, alors 3 × 2.;6
+Les fractions équivalentes;eq-07;3/5 = ?/10;;5 × 2 = 10, alors 3 × 2.;6
+Les fractions équivalentes;eq-08;2/5 = ?/20;;5 × 4 = 20, alors 2 × 4.;8
+Les fractions équivalentes;eq-09;3/4 = ?/12;;4 × 3 = 12, alors 3 × 3.;9
+Les fractions équivalentes;eq-10;5/6 = ?/12;;6 × 2 = 12, alors 5 × 2.;10
+Les fractions équivalentes;eq-11;1/2 = 5/?;;1 × 5 = 5, alors 2 × 5.;10
+Les fractions équivalentes;eq-12;2/3 = 6/?;;2 × 3 = 6, alors 3 × 3.;9
+Les fractions équivalentes;eq-13;3/4 = 9/?;;3 × 3 = 9, alors 4 × 3.;12
+Les fractions équivalentes;eq-14;4/5 = ?/100;;5 × 20 = 100, alors 4 × 20.;80
+Les fractions équivalentes;eq-15;7/10 = ?/100;;10 × 10 = 100, alors 7 × 10.;70
+Les fractions équivalentes;eq-16;3/8 = ?/24;;8 × 3 = 24, alors 3 × 3.;9
+Réduire une fraction;rd-01;6/8 = 3/?;;6 ÷ 2 = 3, alors 8 ÷ 2.;4
+Réduire une fraction;rd-02;4/10 = 2/?;;4 ÷ 2 = 2, alors 10 ÷ 2.;5
+Réduire une fraction;rd-03;5/10 = 1/?;;5 ÷ 5 = 1, alors 10 ÷ 5.;2
+Réduire une fraction;rd-04;6/9 = 2/?;;6 ÷ 3 = 2, alors 9 ÷ 3.;3
+Réduire une fraction;rd-05;8/12 = 2/?;;8 ÷ 4 = 2, alors 12 ÷ 4.;3
+Réduire une fraction;rd-06;10/15 = 2/?;;10 ÷ 5 = 2, alors 15 ÷ 5.;3
+Réduire une fraction;rd-07;9/12 = ?/4;;12 ÷ 3 = 4, alors 9 ÷ 3.;3
+Réduire une fraction;rd-08;12/18 = ?/3;;18 ÷ 6 = 3, alors 12 ÷ 6.;2
+Réduire une fraction;rd-09;15/20 = ?/4;;20 ÷ 5 = 4, alors 15 ÷ 5.;3
+Réduire une fraction;rd-10;20/100 = 1/?;;20 ÷ 20 = 1, alors 100 ÷ 20.;5
+Réduire une fraction;rd-11;12/16 en plus simple expression;*3/4|6/8|4/3;;
+Réduire une fraction;rd-12;8/12 en plus simple expression;*2/3|4/6|3/2;;
+Réduire une fraction;rd-13;10/25 en plus simple expression;*2/5|5/2|1/5;;
+Réduire une fraction;rd-14;18/24 en plus simple expression;*3/4|9/12|6/8;;
+Réduire une fraction;rd-15;Laquelle est irréductible ?;*5/8|6/8|4/10;;
+Ordonner des fractions;or-01;Laquelle est la plus grande ?;3/8|*5/8;;
+Ordonner des fractions;or-02;Laquelle est la plus grande ?;2/7|*6/7|4/7;;
+Ordonner des fractions;or-03;Laquelle est la plus petite ?;*1/6|5/6|3/6;;
+Ordonner des fractions;or-04;Laquelle est la plus grande ?;*1/3|1/5|1/8;;
+Ordonner des fractions;or-05;Laquelle est la plus grande ?;2/9|*2/5|2/7;;
+Ordonner des fractions;or-06;Laquelle est la plus petite ?;3/4|*3/10|3/5;;
+Ordonner des fractions;or-07;Laquelle est la plus grande ?;2/3|*5/6;;
+Ordonner des fractions;or-08;Laquelle est la plus grande ?;*3/4|5/8;;
+Ordonner des fractions;or-09;Laquelle est la plus petite ?;*2/5|7/10;;
+Ordonner des fractions;or-10;Laquelle est la plus grande ?;1/2|*5/8|3/8;;
+Ordonner des fractions;or-11;Quel ordre est juste ?;*1/5 < 3/5 < 4/5|4/5 < 3/5 < 1/5|3/5 < 1/5 < 4/5;;
+Ordonner des fractions;or-12;Quel ordre est juste ?;*1/8 < 1/4 < 1/2|1/2 < 1/4 < 1/8|1/4 < 1/8 < 1/2;;
+Ordonner des fractions;or-13;Quel ordre est juste ?;*1/3 < 1/2 < 5/6|1/2 < 1/3 < 5/6|5/6 < 1/2 < 1/3;;
+Ordonner des fractions;or-14;Quel ordre est juste ?;*3/10 < 2/5 < 1/2|1/2 < 2/5 < 3/10|2/5 < 3/10 < 1/2;;
+Fraction, nombre décimal, pourcentage;fd-01;1/2 = …;*0,5|0,2|1,2;;
+Fraction, nombre décimal, pourcentage;fd-02;1/4 = …;*0,25|0,4|1,4;;
+Fraction, nombre décimal, pourcentage;fd-03;1/10 = …;*0,1|0,01|10;;
+Fraction, nombre décimal, pourcentage;fd-04;7/10 = …;*0,7|0,07|7;;
+Fraction, nombre décimal, pourcentage;fd-05;1/5 = …;*0,2|0,5|1,5;;
+Fraction, nombre décimal, pourcentage;fd-06;3/4 = …;*0,75|0,34|3,4;;
+Fraction, nombre décimal, pourcentage;fd-07;23/100 = …;*0,23|2,3|0,023;;
+Fraction, nombre décimal, pourcentage;fd-08;1/2 en pourcentage;*50 %|12 %|20 %;;
+Fraction, nombre décimal, pourcentage;fd-09;1/4 en pourcentage;*25 %|14 %|40 %;;
+Fraction, nombre décimal, pourcentage;fd-10;3/10 en pourcentage;*30 %|3 %|13 %;;
+Fraction, nombre décimal, pourcentage;fd-11;3/4 en pourcentage;*75 %|34 %|70 %;;
+Fraction, nombre décimal, pourcentage;fd-12;2/5 en pourcentage;*40 %|25 %|20 %;;
+Fraction, nombre décimal, pourcentage;fd-13;0,4 en pourcentage;*40 %|4 %|0,4 %;;
+Fraction, nombre décimal, pourcentage;fd-14;0,25 en fraction;*1/4|2/5|25/10;;
+Fraction, nombre décimal, pourcentage;fd-15;60 % en fraction;*3/5|6/100|1/6;;

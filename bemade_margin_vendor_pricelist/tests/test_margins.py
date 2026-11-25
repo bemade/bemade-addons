@@ -60,10 +60,10 @@ class TestSaleOrderLine(TransactionCase):
         """Test when all quantity is fulfilled from stock."""
         with patch.object(
             self.sale_order_line.product_id.__class__,
-            "qty_available",
+            "free_qty",
             new_callable=PropertyMock,
-        ) as mock_qty_available:
-            mock_qty_available.return_value = 10  # All available
+        ) as mock_free_qty:
+            mock_free_qty.return_value = 10  # All available
 
             # Recompute the fields
             self.sale_order_line._compute_actual_gp()
@@ -102,10 +102,10 @@ class TestSaleOrderLine(TransactionCase):
         """Test when all quantity is fulfilled from vendor."""
         with patch.object(
             self.sale_order_line.product_id.__class__,
-            "qty_available",
+            "free_qty",
             new_callable=PropertyMock,
-        ) as mock_qty_available:
-            mock_qty_available.return_value = 0
+        ) as mock_free_qty:
+            mock_free_qty.return_value = 0
 
             # Assert purchase_price_actual equals purchase_price_vendor (from vendor)
             self.assertEqual(
@@ -131,10 +131,10 @@ class TestSaleOrderLine(TransactionCase):
         """Test when quantity is partially fulfilled from stock and partially from vendor."""
         with patch.object(
             self.sale_order_line.product_id.__class__,
-            "qty_available",
+            "free_qty",
             new_callable=PropertyMock,
-        ) as mock_qty_available:
-            mock_qty_available.return_value = 5
+        ) as mock_free_qty:
+            mock_free_qty.return_value = 5
             # Calculate expected blended purchase price
             qty_from_vendor = 5
             qty_from_stock = 5
@@ -167,10 +167,10 @@ class TestSaleOrderLine(TransactionCase):
         other possible causes of a div by zero error."""
         with patch.object(
             self.sale_order_line.product_id.__class__,
-            "qty_available",
+            "free_qty",
             new_callable=PropertyMock,
-        ) as mock_qty_available:
-            mock_qty_available.return_value = -1  # Negative available stock
+        ) as mock_free_qty:
+            mock_free_qty.return_value = -1  # Negative available stock
 
             # Set product_uom_qty to zero
             self.sale_order_line.product_uom_qty = 0
@@ -198,10 +198,10 @@ class TestSaleOrderLine(TransactionCase):
         self.sale_order.action_confirm()
         with patch.object(
             self.sale_order_line.product_id.__class__,
-            "qty_available",
+            "free_qty",
             new_callable=PropertyMock,
-        ) as mock_qty_available:
-            mock_qty_available.return_value = 10  # All available
+        ) as mock_free_qty:
+            mock_free_qty.return_value = 10  # All available
 
             # Recompute the fields
             self.sale_order_line._compute_actual_gp()
@@ -231,10 +231,10 @@ class TestSaleOrderLine(TransactionCase):
         self.sale_order.action_confirm()
         with patch.object(
             self.sale_order_line.product_id.__class__,
-            "qty_available",
+            "free_qty",
             new_callable=PropertyMock,
-        ) as mock_qty_available:
-            mock_qty_available.return_value = 0
+        ) as mock_free_qty:
+            mock_free_qty.return_value = 0
 
             # Assert purchase_price_actual equals purchase_price_vendor (from vendor)
             self.assertEqual(
@@ -261,10 +261,10 @@ class TestSaleOrderLine(TransactionCase):
         self.sale_order.action_confirm()
         with patch.object(
             self.sale_order_line.product_id.__class__,
-            "qty_available",
+            "free_qty",
             new_callable=PropertyMock,
-        ) as mock_qty_available:
-            mock_qty_available.return_value = 5
+        ) as mock_free_qty:
+            mock_free_qty.return_value = 5
             # Calculate expected blended purchase price
             qty_from_vendor = 5
             qty_from_stock = 5
@@ -298,10 +298,10 @@ class TestSaleOrderLine(TransactionCase):
         self.sale_order.action_confirm()
         with patch.object(
             self.sale_order_line.product_id.__class__,
-            "qty_available",
+            "free_qty",
             new_callable=PropertyMock,
-        ) as mock_qty_available:
-            mock_qty_available.return_value = -1  # Negative available stock
+        ) as mock_free_qty:
+            mock_free_qty.return_value = -1  # Negative available stock
 
             # Set product_uom_qty to zero
             self.sale_order_line.product_uom_qty = 0

@@ -9,6 +9,7 @@
                 <field name="parent_standard_id"/>
                 <field name="required_count"/>
                 <field name="skill_id"/>
+                <field name="job_ids" widget="many2many_tags" optional="show"/>
             </list>
         </field>
     </record>
@@ -27,6 +28,7 @@
                             <field name="parent_standard_id"/>
                             <field name="is_sub_qualification" readonly="1"/>
                             <field name="skill_id"/>
+                            <field name="job_ids" widget="many2many_tags"/>
                         </group>
                         <group>
                             <field name="required_count"/>
@@ -58,6 +60,7 @@
                                 <list decoration-success="state == 'qualified'"
                                       decoration-warning="state == 'suspended'">
                                     <field name="employee_id"/>
+                                    <field name="from_job"/>
                                     <field name="state"/>
                                     <field name="percent_complete" widget="progressbar"/>
                                 </list>

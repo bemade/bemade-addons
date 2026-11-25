@@ -1,4 +1,5 @@
-from odoo import fields, models
+from odoo import api, fields, models
+from odoo.exceptions import AccessError
 
 
 class ConversationTransport(models.Model):
@@ -28,20 +29,174 @@ class ConversationTransport(models.Model):
     imap_ssl = fields.Boolean(string="IMAP over SSL", default=True)
     smtp_host = fields.Char(string="SMTP Server")
     smtp_port = fields.Integer(string="SMTP Port", default=587)
-    smtp_ssl = fields.Boolean(
-        string="SMTP over STARTTLS",
-        default=True,
-        help="Use STARTTLS on the SMTP connection (the common case on port "
-        "587). Leave off only for a plain/legacy relay.",
+    smtp_encryption = fields.Selection(
+        [
+            ("none", "None"),
+            ("starttls", "STARTTLS"),
+            ("ssl", "SSL/TLS"),
+        ],
+        string="SMTP Encryption",
+        default="starttls",
+        help="How the SMTP connection is secured. STARTTLS is what servers "
+        "usually expect on port 587; SSL/TLS (implicit TLS, SMTPS) is what "
+        "they usually expect on port 465. Choose None only for a plain "
+        "legacy relay.",
     )
+    smtp_ssl = fields.Boolean(
+        string="SMTP over STARTTLS (legacy)",
+        compute="_compute_smtp_ssl",
+        inverse="_inverse_smtp_ssl",
+        help="Deprecated alias of the SMTP Encryption field, kept for "
+        "callers that still read or write the old checkbox: true means "
+        "STARTTLS, false means no encryption.",
+    )
+
+    @api.depends("smtp_encryption")
+    def _compute_smtp_ssl(self):
+        for transport in self:
+            transport.smtp_ssl = transport.smtp_encryption == "starttls"
+
+    def _inverse_smtp_ssl(self):
+        for transport in self:
+            transport.smtp_encryption = "starttls" if transport.smtp_ssl else "none"
+
     password = fields.Char(
+        groups="base.group_system",
         help="IMAP/SMTP account password. Generic IMAP has no universal "
-        "OAuth mechanism, so this stays a plain stored secret -- scoped "
-        "like the rest of conversation.transport by the conversation_base "
-        "ir.rule (own + shared transports only). Left blank on an "
+        "OAuth mechanism, so this stays a plain stored secret. Only "
+        "administrators can read or write it; the owner of a personal "
+        "transport sets theirs through the New Password field. Left blank on an "
         "OAuth-connected account (conversation_gmail, ...): those "
         "authenticate with a token instead, never a stored password.",
     )
+    new_password = fields.Char(
+        compute="_compute_new_password",
+        inverse="_inverse_new_password",
+        copy=False,
+        help="Write-only. Sets the account password of your own transport "
+        "without ever being able to read a stored password back.",
+    )
+    password_set = fields.Boolean(
+        compute="_compute_password_set",
+        help="Whether a password is stored for this account. Says nothing "
+        "about its value.",
+    )
+
+    def _compute_new_password(self):
+        # Write-only: never expose anything, whatever is stored.
+        for transport in self:
+            transport.new_password = False
+
+    def _check_can_set_password(self, owner_ids):
+        """Owner-can-set rule: a non-admin may set the password of a
+        transport they own, never of a shared one. ``owner_ids`` are the
+        ``user_id`` values *before* the write, so a single write cannot
+        claim a shared transport and set its password in one go."""
+        if self.env.user.has_group("base.group_system"):
+            return
+        if any(owner_id != self.env.user.id for owner_id in owner_ids):
+            raise AccessError(
+                self.env._(
+                    "You can only set the password of your own transport; "
+                    "shared mailboxes are managed by an administrator."
+                )
+            )
+
+    # Fields that decide which server the stored password is sent to, and as
+    # whom. On a shared account they are a Conversations manager's to change.
+    # ``smtp_ssl`` is the legacy alias of ``smtp_encryption`` and ``provider``
+    # selects which endpoint fields are in use.
+    _CONNECTION_FIELDS = (
+        "provider",
+        "login",
+        "imap_host",
+        "imap_port",
+        "imap_ssl",
+        "smtp_host",
+        "smtp_port",
+        "smtp_encryption",
+        "smtp_ssl",
+    )
+
+    def _can_manage_connection(self):
+        return self.env.su or self.env.user.has_group(
+            "conversation_base.group_conversation_manager"
+        )
+
+    def _check_can_change_connection(self, vals):
+        """Only a Conversations manager (or an administrator) may change the
+        connection settings of a shared account; the owner of a personal
+        account keeps control of it. The owner is read *before* the write, so
+        a single write cannot take ownership of a shared account and
+        change its server in one go."""
+        keys = [key for key in self._CONNECTION_FIELDS if key in vals]
+        if not keys or self._can_manage_connection():
+            return
+        for transport in self:
+            if transport.user_id == self.env.user:
+                continue
+            for key in keys:
+                # The legacy alias writes through to the encryption mode even
+                # when it reads back unchanged, so any write of it counts.
+                if key == "smtp_ssl" or (transport[key] or False) != (
+                    vals[key] or False
+                ):
+                    transport._raise_connection_denied()
+
+    def _raise_connection_denied(self):
+        raise AccessError(
+            self.env._(
+                "Only a Conversations manager can change the server settings "
+                "and login of a shared mail account (%(transport)s).",
+                transport=self.display_name or "",
+            )
+        )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("new_password"):
+                self._check_can_set_password([vals.get("user_id")])
+        records = super().create(vals_list)
+        # Checked after the fact, like the password: ``user_id`` defaults are
+        # context-driven, so the stored result tells whether the new account
+        # is shared. Defaults sent along by a form are not a change.
+        if not self._can_manage_connection():
+            defaults = self.default_get(list(self._CONNECTION_FIELDS))
+            for record, vals in zip(records, vals_list):
+                if record.user_id == self.env.user:
+                    continue
+                if any(
+                    key in self._CONNECTION_FIELDS
+                    and (value or False) != (defaults.get(key) or False)
+                    for key, value in vals.items()
+                ):
+                    record._raise_connection_denied()
+        return records
+
+    def write(self, vals):
+        if vals.get("new_password"):
+            self._check_can_set_password([t.user_id.id for t in self])
+        self._check_can_change_connection(vals)
+        return super().write(vals)
+
+    def _inverse_new_password(self):
+        for transport in self:
+            if transport.new_password:
+                transport.sudo().password = transport.new_password
+        # Drop the written value from the cache so the same request (the
+        # form's save-then-read round trip) never echoes it back.
+        self.invalidate_recordset(["new_password"])
+
+    @api.depends_context("uid")
+    def _compute_password_set(self):
+        for transport in self:
+            transport.password_set = bool(transport.sudo().password)
+
+    def _clear_credentials(self):
+        result = super()._clear_credentials()
+        self.sudo().write({"password": False})
+        return result
 
     def _email_providers(self):
         return super()._email_providers() + ["imap"]
@@ -58,6 +213,9 @@ class ConversationTransport(models.Model):
             "imap_ssl": self.imap_ssl,
             "smtp_host": self.smtp_host,
             "smtp_port": self.smtp_port or 587,
-            "smtp_starttls": self.smtp_ssl,
-            "password": self.password,
+            "smtp_encryption": self.smtp_encryption or "none",
+            "smtp_starttls": self.smtp_encryption == "starttls",
+            # sudo: the engine runs as the end user on shared mailboxes, who
+            # cannot read the field; the value stays server-side.
+            "password": self.sudo().password,
         }

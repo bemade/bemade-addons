@@ -125,6 +125,24 @@
         <field name="priority">78</field>
     </record>
 
+    <!-- Task 1628: daily, ONE « Complete the player's file » To-Do per player
+         created since bemade_sports_clinic.incomplete_todo_since (set by the
+         19.0.1.94.0 post-migrate: no backfill) whose file is still incomplete
+         48 h after creation. The To-Do follows the file and closes itself once
+         complete; one dismissed by hand is never raised again. -->
+    <record id="ir_cron_incomplete_player_todos" model="ir.cron">
+        <field name="name">Incomplete Player File To-Dos</field>
+        <field name="model_id" ref="model_sports_patient"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_incomplete_player_todos()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-10-21 11:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">80</field>
+    </record>
+
     <!-- Task 1399: daily, record no-shows on the clinic worklist — rows still
          Expected once the clinic has ended get the stored no_show flag (the
          portal's live is_no_show needs no cron; this is the reporting twin).

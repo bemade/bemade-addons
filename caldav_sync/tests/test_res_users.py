@@ -75,7 +75,10 @@ class TestUsers(TransactionCase, CaldavTestCommon):
         mock_client.principal.side_effect = AuthorizationError("Invalid credentials")
 
         # Should handle the error gracefully and set is_caldav_enabled to False
-        with self.assertLogs("odoo.addons.caldav_sync.models.res_users", "ERROR"):
+        # (the check, and its log line, live in base_caldav's mixin)
+        with self.assertLogs(
+            "odoo.addons.base_caldav.models.caldav_connection_mixin", "ERROR"
+        ):
             user._compute_is_caldav_enabled()
         self.assertFalse(user.is_caldav_enabled)
 

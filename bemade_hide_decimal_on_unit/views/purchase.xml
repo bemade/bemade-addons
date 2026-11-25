@@ -17,7 +17,7 @@
                 <span t-esc="'%.0f' % order_line.product_qty"/>
             </t>
             <t t-else="">
-                <span t-field="order_line.product_qty"/>
+                <span t-field="order_line.product_qty" t-options="{'min_precision': 1}"/>
             </t>
         </xpath>
     </template>
@@ -31,7 +31,7 @@
                 <span t-esc="'%.0f' % line.product_qty"/>
             </t>
             <t t-else="">
-                <span t-field="line.product_qty"/>
+                <span t-field="line.product_qty" t-options="{'min_precision': 1}"/>
             </t>
         </xpath>
     </template>

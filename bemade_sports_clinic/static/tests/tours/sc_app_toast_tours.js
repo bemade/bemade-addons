@@ -16,15 +16,15 @@ registry.category("web_tour.tours").add("sc_1583_add_to_team_toast", {
         },
         {
             content: "Back on the list: the confirmation toast shows at once",
-            trigger: '.o_sc_app .o_sc_toast[data-sc-toast-tone="success"]:not([hidden]):contains("Two")',
+            trigger: '.o_pk_app .o_pk_toast[data-pk-toast-tone="success"]:not([hidden]):contains("Two")',
         },
         {
             content: "The toast payload was consumed (shown once)",
-            trigger: ".o_sc_app .o_sc_toast:not([data-sc-notify])",
+            trigger: ".o_pk_app .o_pk_toast:not([data-pk-notify])",
         },
         {
             content: "The player's row is now a link, no « Add to Team » left",
-            trigger: '[data-sc-section="players.list"] a[href^="/my/player?player_id="]',
+            trigger: '[data-pk-section="players.list"] a[href^="/my/player?player_id="]',
             run() {
                 if (document.querySelector('form[data-sc-action="players.add_to_team"]')) {
                     throw new Error("the « Add to Team » form is still offered");

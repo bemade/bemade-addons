@@ -36,7 +36,7 @@ class TestAppShellI18n1542(TestAppShellI18n1538):
         self.assertIn('lang="fr-CA"', html_tag)
         for term in ('Aperçu', 'Joueurs', 'Activités', 'Ajouter un joueur',
                      'Changements récents', 'Blessés', 'En reprise', 'Disponibles',
-                     "Annonce de l'équipe", 'Publier', 'Historique',
+                     "Annonce d'équipe", 'Publier', 'Historique',
                      'Événements à venir', 'Par statut', 'Par numéro',
                      # Task 1581: the announcement history sheet is lazy.
                      'Historique des annonces', 'Chargement…'):
@@ -50,7 +50,7 @@ class TestAppShellI18n1542(TestAppShellI18n1538):
         self._switch(True)
         self._login_tp()
         text = self._fr('/my/app/install').replace('&#39;', "'")
-        for term in ("Installer l'application", 'iPhone et iPad (Safari)',
+        for term in ("Installer l'application", 'iPhone et iPad (Safari ou Chrome)',
                      'Touchez le bouton Partager', "L'application est installée"):
             self.assertIn(term, text, term)
         text = self._fr('/my/app/more').replace('&#39;', "'")
@@ -63,10 +63,14 @@ class TestAppShellI18n1542(TestAppShellI18n1538):
         self.assertNotIn('&lt;!DOCTYPE', text)
 
     def test_owl_strings_served_in_french(self):
-        resp = self.url_open('/web/webclient/translations?lang=fr_CA&mods=bemade_sports_clinic')
+        # Task 5382 (kit P4c3): the autosave field's texts are the kit's.
+        resp = self.url_open('/web/webclient/translations?lang=fr_CA'
+                             '&mods=bemade_portal_kit,bemade_sports_clinic')
+        modules = resp.json()['modules']
         messages = {
             m['id']: m['string']
-            for m in resp.json()['modules']['bemade_sports_clinic']['messages']}
+            for name in ('bemade_portal_kit', 'bemade_sports_clinic')
+            for m in modules[name]['messages']}
         for source, french in (('Draft restored', 'Brouillon restauré'),
                                ('Saving…', 'Enregistrement…'),
                                ('Offline — pending', 'Hors ligne — en attente'),

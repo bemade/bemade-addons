@@ -94,13 +94,15 @@ class TestEndToEndWorkflows(TransactionCase):
 
         # Step 1: Coach reports an injury (unverified)
         with freeze_time('2025-01-15'):
-            # Create injury as coach
+            # Create injury as coach. #1675 (owner 2026-10-25): a coach's
+            # report is the diagnosis + date — the external note is written
+            # by therapists only (the model refuses it from a coach).
             injury = self.env['sports.patient.injury'].with_user(self.coach_user).create({
                 'patient_id': self.patient.id,
                 'diagnosis': 'Ankle Sprain - Initial',
-                'external_notes': 'Player twisted ankle during practice.',
                 'injury_date': fields.Date.today(),
             })
+            self.assertFalse(injury.sudo().external_notes)
 
             # Check that injury is unverified and has default values
             self.assertEqual(injury.stage, 'unverified')
@@ -260,7 +262,7 @@ class TestEndToEndWorkflows(TransactionCase):
             'city': 'Test City',
             'zip': '12345',
             'email': 'test.patient@example.com',
-            'phone': '555-123-4567',
+            'phone': '514-555-0167',  # task 1645: a valid synthetic number
         })
 
         # Create a contact for the patient. sports.patient.contact uses
@@ -269,7 +271,7 @@ class TestEndToEndWorkflows(TransactionCase):
         patient_contact = self.env['sports.patient.contact'].create({
             'patient_id': patient_for_anon.id,
             'name': 'Test Parent',
-            'mobile': '555-987-6543',
+            'mobile': '514-555-0198',  # task 1645: a valid synthetic number
             'email': 'test.parent@example.com',
             'contact_type': 'mother',
         })

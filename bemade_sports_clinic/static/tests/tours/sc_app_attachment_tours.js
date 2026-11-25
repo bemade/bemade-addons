@@ -6,7 +6,7 @@
  */
 import { registry } from "@web/core/registry";
 
-const ROW = "a.o_sc_entity_row[data-sc-attachment][download]";
+const ROW = "a.o_pk_entity_row[data-sc-attachment][download]";
 
 registry.category("web_tour.tours").add("sc_1586_attachment_download", {
     steps: () => [

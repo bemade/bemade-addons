@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="campaign_view_form" model="ir.ui.view">
+        <field name="name">hr.appraisal.campaign.form</field>
+        <field name="model">hr.appraisal.campaign</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_load_employees" type="object" string="Add All Employees"
+                            invisible="state != 'draft'"/>
+                    <button name="action_launch" type="object" string="Launch" class="oe_highlight"
+                            invisible="state != 'draft'"
+                            confirm="Every selected employee with an Odoo user gets an evaluation and a to-do. Launch?"/>
+                    <button name="action_start_calibration" type="object" string="Start Calibration"
+                            class="oe_highlight" invisible="state != 'running'"/>
+                    <button name="action_open_calibration_board" type="object" string="Calibration Board"
+                            invisible="state not in ('calibration', 'meetings', 'closed')"/>
+                    <button name="action_close_calibration" type="object" string="Close Calibration"
+                            class="oe_highlight" invisible="state != 'calibration'"
+                            confirm="Calibrated evaluations move to the meeting step and managers get a to-do. Continue?"/>
+                    <button name="action_close" type="object" string="Close Campaign"
+                            invisible="state != 'meetings'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" name="action_open_appraisals" type="object" icon="fa-star-half-o">
+                            <field name="appraisal_count" widget="statinfo" string="Evaluations"/>
+                        </button>
+                        <button class="oe_stat_button" name="action_open_appraisals" type="object"
+                                icon="fa-clock-o" invisible="not count_overdue">
+                            <field name="count_overdue" widget="statinfo" string="Overdue"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Annual 2026" readonly="state == 'closed'"/></h1>
+                    </div>
+                    <group>
+                        <group string="Period">
+                            <field name="date_start" readonly="state != 'draft'"/>
+                            <field name="date_end" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                            <field name="user_id"/>
+                        </group>
+                        <group string="Deadlines">
+                            <field name="deadline_self_eval"/>
+                            <field name="deadline_manager"/>
+                            <field name="deadline_calibration"/>
+                            <field name="deadline_meetings"/>
+                        </group>
+                    </group>
+                    <group string="Progress" invisible="state == 'draft'">
+                        <group>
+                            <field name="count_self_eval"/>
+                            <field name="count_manager_eval"/>
+                            <field name="count_calibration"/>
+                        </group>
+                        <group>
+                            <field name="count_meeting"/>
+                            <field name="count_acknowledged"/>
+                            <field name="count_closed"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Employees" name="employees">
+                            <div class="alert alert-warning" role="alert" invisible="not employee_without_user_ids">
+                                These employees have no Odoo user and get no evaluation in Odoo: handle them on paper or give them a user first.
+                                <field name="employee_without_user_ids" widget="many2many_tags" readonly="1"/>
+                            </div>
+                            <div class="alert alert-warning" role="alert" invisible="not employee_without_manager_ids">
+                                These employees have no manager: after the launch, set the evaluator (Appraisers) on their evaluation.
+                                <field name="employee_without_manager_ids" widget="many2many_tags" readonly="1"/>
+                            </div>
+                            <field name="employee_ids" readonly="state != 'draft'">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="department_id"/>
+                                    <field name="job_id"/>
+                                    <field name="parent_id"/>
+                                    <field name="user_id" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Scoring" name="scoring">
+                            <group>
+                                <group>
+                                    <field name="scale_id" readonly="state != 'draft'"/>
+                                    <field name="section_ids" widget="many2many_tags"/>
+                                </group>
+                                <group>
+                                    <field name="target_score"/>
+                                    <field name="alignment_gap"/>
+                                </group>
+                            </group>
+                            <div class="text-muted mb-2">
+                                A score reaches a rating level from the number of points shown. Lines without a
+                                section rate the overall total; a score below every threshold gets the lowest level.
+                            </div>
+                            <button name="action_reset_thresholds" type="object" string="Reload the Default Thresholds"
+                                    class="btn-secondary mb-2" invisible="state != 'draft'"
+                                    confirm="Replace the thresholds of this campaign with the defaults of its scale and sections?"/>
+                            <field name="threshold_ids" readonly="state == 'closed'">
+                                <list editable="bottom" default_order="section_id, min_score desc">
+                                    <field name="scale_id" column_invisible="True"/>
+                                    <field name="section_id" domain="[('scale_id', '=', scale_id)]"
+                                           placeholder="Overall total"/>
+                                    <field name="level_id" options="{'no_create': True}"/>
+                                    <field name="min_score"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="campaign_view_list" model="ir.ui.view">
+        <field name="name">hr.appraisal.campaign.list</field>
+        <field name="model">hr.appraisal.campaign</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="appraisal_count" string="Evaluations"/>
+                <field name="count_overdue" string="Overdue"/>
+                <field name="scale_id" optional="hide"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_campaign" model="ir.actions.act_window">
+        <field name="name">Evaluation Campaigns</field>
+        <field name="res_model">hr.appraisal.campaign</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Launch the yearly evaluation</p>
+            <p>Create a campaign (e.g. « Annual 2026 »), add the employees and the deadlines, then launch it:
+            every employee gets their evaluation form and a to-do.</p>
+        </field>
+    </record>
+</odoo>

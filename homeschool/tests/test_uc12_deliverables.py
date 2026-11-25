@@ -15,11 +15,14 @@ Acceptance criteria
 4. A **resource user** reads the deliverables of the students he is attached to and
    cannot write at all.
 5. The manager edits every field.
+6. ``answer_lines`` (integer, default 0, 0–12): the ruled lines printed under the
+   deliverable for a written answer; a column of the day form's deliverables list.
 """
 from datetime import date
 
 from odoo import fields
 from odoo.exceptions import AccessError
+from odoo.tests import Form
 from odoo.tools.misc import mute_logger
 
 from .common import HomeschoolCase
@@ -135,3 +138,19 @@ class TestDeliverables(HomeschoolCase):
         # attached to the second student as well: sees both families' lists
         self.student_b.resource_user_ids = [fields.Command.link(teacher.id)]
         self.assertEqual(Deliverable.search([]), (self.d1 | self.d2 | self.d_bonus | self.d_b).with_user(teacher))
+
+    def test_answer_lines_field_and_day_form(self):
+        """``answer_lines`` defaults to 0, is editable from the day form's deliverables list
+        and stays within 0–12."""
+        day = self.make_day(fields.Date.context_today(self.Day))
+        line = self.Deliverable.create({"day_id": day.id, "name": "Reading question"})
+        self.assertEqual(line.answer_lines, 0)
+        self.assertEqual(self.Deliverable._fields["answer_lines"].string, "Answer lines")
+        with Form(day) as form:
+            with form.deliverable_ids.edit(0) as row:
+                row.answer_lines = 5
+        self.assertEqual(line.answer_lines, 5)
+        for bad in (-1, 13):
+            with mute_logger("odoo.sql_db"), self.assertRaises(Exception), self.env.cr.savepoint():
+                line.answer_lines = bad
+                line.flush_recordset()

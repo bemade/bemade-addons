@@ -9,30 +9,40 @@
                 <setting
           id="company_signature_setting"
           string="Company-standard Signature"
-          help="Generate the email signature of every internal user from one template. Users can no longer edit their own signature."
+          help="Generate the email signature of every employee from one template. They can no longer edit their own signature."
           company_dependent="1"
           groups="base.group_system"
         >
                     <field name="company_signature_enforced" />
                     <div
-            class="content-group mt16"
+            class="content-group mt16 w-100"
             invisible="not company_signature_enforced"
           >
+                        <label
+              for="company_signature_template"
+              string="Template"
+              class="o_form_label d-block"
+            />
                         <field
               name="company_signature_template"
               options="{'codeview': true, 'height': 220, 'resizable': true}"
-              class="border border-secondary"
+              class="d-block w-100 border border-secondary"
             />
-                        <div class="text-muted mt8">
-                            Placeholders: {{name}}, {{job_title}}, {{work_phone}},
-                            {{mobile_phone}}, {{work_email}}, {{company_name}},
-                            {{company_phone}}, {{company_email}}, {{company_website}}.
-                            Unknown placeholders are left as typed. Write one optional
-                            line per paragraph: a paragraph whose placeholders are all
-                            empty (for example a user without a mobile) is removed
-                            entirely, label included. Turning the policy off keeps each
-                            user's last generated signature; the original is kept in
-                            the user form and can be restored there.
+                        <label
+              for="company_signature_notice"
+              class="o_form_label d-block mt16"
+            />
+                        <field
+              name="company_signature_notice"
+              options="{'height': 80, 'resizable': true}"
+              class="d-block w-100 border border-secondary"
+            />
+                        <div class="mt8">
+                            <label
+                for="company_signature_notice_until"
+                class="o_form_label me-2"
+              />
+                            <field name="company_signature_notice_until" />
                         </div>
                     </div>
                 </setting>

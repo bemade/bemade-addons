@@ -2,10 +2,14 @@ from . import data_recycle_model
 from . import data_recycle_record
 from . import mail_followers
 from . import mail_activity
+from . import sc_phone
 from . import patient
 from . import patient_injury
 from . import injury_note_history
+from . import patient_training_history
+from . import patient_return_proposal
 from . import patient_contact
+from . import patient_incomplete_todo
 from . import res_partner
 from . import sc_app_roles
 from . import sc_app_nav
@@ -36,3 +40,9 @@ from . import sale_order_line
 from . import event_cancel_wizard
 from . import patient_merge_wizard
 from . import ir_http
+from . import patient_critical_item
+from . import sc_app_help
+from . import sc_app_pwa
+from . import patient_duplicate
+from . import sc_dashboard
+from . import sc_follow

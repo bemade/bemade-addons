@@ -4,9 +4,9 @@
  * Replaces, FOR THE SHELL ONLY, the inline scripts of the legacy
  * activity_list_table / reassign modal / assignee warning (those partials
  * stay unchanged for the legacy pages). Progressive enhancement, inert
- * outside .o_sc_app:
+ * outside .o_pk_app:
  *
- * - a row action ([data-sc-activity-id] + data-sc-sheet-open) fills the
+ * - a row action ([data-sc-activity-id] + data-pk-sheet-open) fills the
  *   opened sheet's form: activity_id, the current assignee's name
  *   ([data-sc-current-assignee]) and resets the new-assignee select;
  * - an assignee <select data-sc-assignee-select> shows the advisory
@@ -14,15 +14,15 @@
  *   its data-sc-no-access attribute.
  */
 function inShell(el) {
-    return Boolean(el && el.closest && el.closest(".o_sc_app"));
+    return Boolean(el && el.closest && el.closest(".o_pk_app"));
 }
 
 document.addEventListener("click", (ev) => {
-    const opener = ev.target.closest && ev.target.closest("[data-sc-activity-id][data-sc-sheet-open]");
+    const opener = ev.target.closest && ev.target.closest("[data-sc-activity-id][data-pk-sheet-open]");
     if (!opener || !inShell(opener)) {
         return;
     }
-    const sheet = document.getElementById(opener.dataset.scSheetOpen);
+    const sheet = document.getElementById(opener.dataset.pkSheetOpen);
     if (!sheet) {
         return;
     }
@@ -57,7 +57,7 @@ document.addEventListener("change", (ev) => {
 });
 
 function init() {
-    for (const select of document.querySelectorAll(".o_sc_app select[data-sc-assignee-select]")) {
+    for (const select of document.querySelectorAll(".o_pk_app select[data-sc-assignee-select]")) {
         refreshAssigneeWarning(select);
     }
 }

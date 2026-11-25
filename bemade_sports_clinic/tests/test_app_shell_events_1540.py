@@ -9,7 +9,7 @@ Acceptance criteria covered here:
 * UC-E2 (AC2) List: upcoming / past / calendar segments, type chips
   filtering on ``event_type``, one row per event; « Nouvel événement » for
   therapists only.
-* UC-E3 (AC2) Calendar: the shared sc_calendar component on the unchanged
+* UC-E3 (AC2) Calendar: the shared pk_calendar component on the unchanged
   feed, FullCalendar NOT loaded by a raw <script src>.
 * UC-E4 (AC2/AC5) Detail: the assigned therapist sees their OWN timesheet
   cards + the add / edit / delete sheets (CSRF, today's routes); a coach
@@ -52,7 +52,7 @@ class TestAppShellEvents1540(Events1540Common):
                         '/my/event/%s/edit' % self.event.id, '/my/event/create'):
                 text, tree = self._get(url)
                 self.assertIsNone(self._shell(tree), url)
-                self.assertNotIn('data-sc-app-shell', text, url)
+                self.assertNotIn('data-pk-app-shell', text, url)
         finally:
             for p in patches:
                 p.stop()
@@ -68,24 +68,25 @@ class TestAppShellEvents1540(Events1540Common):
         self._login_tp()
         _text, tree = self._get('/my/events?no_default_dates=1')
         self.assertIsNotNone(self._shell(tree))
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'), ['upcoming', 'past', 'calendar'])
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'), ['upcoming', 'past', 'calendar'])
         ids = [int(x) for x in tree.xpath('//*[@data-sc-event-id]/@data-sc-event-id')]
         self.assertIn(self.event.id, ids)
-        self.assertEqual(tree.xpath('//header//a[@data-sc-action="events.create"]/@href'), ['/my/event/create'])
+        # Task 1607 (deliberate update): « + Ajouter » is in the list header.
+        self.assertEqual(tree.xpath('//div[contains(@class, "o_pk_list_header")]//a[@data-pk-action="events.create"]/@href'), ['/my/event/create'])
         game = tree.xpath('//a[@data-sc-event-type="game"]/@href')[0]
         self.assertIn('event_type=game', game)
         _text, tree = self._get('/my/events?no_default_dates=1&event_type=clinic')
         self.assertNotIn(str(self.event.id), tree.xpath('//*[@data-sc-event-id]/@data-sc-event-id'))
         self._login_coach()
         _text, tree = self._get('/my/events?no_default_dates=1')
-        self.assertFalse(tree.xpath('//*[@data-sc-action="events.create"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-action="events.create"]'))
 
     # -- UC-E3 -----------------------------------------------------------
     def test_calendar_in_shell(self):
         self._switch(True)
         self._login_coach()
         text, tree = self._get('/my/events/calendar?team_id=%s' % self.team_a.id)
-        node = tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_calendar"]')[0]
+        node = tree.xpath('//owl-component[@name="bemade_portal_kit.pk_calendar"]')[0]
         props = json.loads(node.get('props'))
         self.assertEqual(props['feedUrl'], '/my/events/calendar/data')
         self.assertEqual(props['params'], {'team_id': str(self.team_a.id)})
@@ -100,22 +101,31 @@ class TestAppShellEvents1540(Events1540Common):
         cards = tree.xpath('//*[@data-sc-timesheet-id]/@data-sc-timesheet-id')
         self.assertEqual(cards, [str(self.timesheet.id)])
         for sheet, action in (('sc_ts_add_sheet', '/my/event/%s/timesheet/add' % self.event.id),
-                              ('sc_ts_delete_%s' % self.timesheet.id, '/my/sc/timesheet/%s/delete' % self.timesheet.id),
                               ('sc_event_cancel_sheet', '/my/event/%s/cancel' % self.event.id)):
             form = tree.xpath('//dialog[@id="%s"]//form' % sheet)[0]
             self.assertEqual(form.get('action'), action)
             self.assertTrue(form.xpath('.//input[@name="csrf_token"]'), sheet)
-        self.assertEqual(tree.xpath('//header//button/@data-sc-sheet-open'), ['sc_ts_add_sheet'])
+        # Task 1736 (deliberate update): the timesheet's delete (an archive)
+        # is the card's archive icon posting a plain form — no confirmation
+        # sheet, an undo toast instead.
+        form = tree.xpath('//form[@id="sc_ts_archive_%s"]' % self.timesheet.id)[0]
+        self.assertEqual(form.get('action'), '/my/sc/timesheet/%s/delete' % self.timesheet.id)
+        self.assertTrue(form.xpath('.//input[@name="csrf_token"]'))
+        # Task 1607 (deliberate update): « + Ajouter » in the timesheets list
+        # header (was in the app bar).
+        self.assertEqual(tree.xpath('//div[contains(@class, "o_pk_list_header")]//button/@data-pk-sheet-open'),
+                         ['sc_ts_add_sheet'])
+        self.assertFalse(tree.xpath('//header//button/@data-pk-sheet-open'))
         # The own timesheet is edited in place (pencil card, owner review 2026-10-11).
-        self.assertTrue(tree.xpath('//*[@data-sc-edit-card="timesheet-%s"]' % self.timesheet.id))
+        self.assertTrue(tree.xpath('//*[@data-pk-edit-card="timesheet-%s"]' % self.timesheet.id))
 
     def test_detail_coach_no_timesheets(self):
         self._switch(True)
         self._login_coach()
         _text, tree = self._get('/my/event/%s' % self.event.id)
         self.assertIsNotNone(self._shell(tree))
-        self.assertFalse(tree.xpath('//*[@data-sc-section="event.timesheets"]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-action="event.edit"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="event.timesheets"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-action="event.edit"]'))
 
     # -- UC-E5 -----------------------------------------------------------
     def test_create_and_edit_through_the_shell_form(self):
@@ -148,7 +158,7 @@ class TestAppShellEvents1540(Events1540Common):
         self.assertIn(resp.status_code, (302, 303))
         _text, tree = self._get('/my/event/%s' % event.id)
         props = {json.loads(p)['field']: json.loads(p) for p in tree.xpath(
-            '//*[@data-sc-edit-card="event"]//owl-component/@props')}
+            '//*[@data-pk-edit-card="event"]//owl-component/@props')}
         self.assertEqual(props['team_ids']['value'], str(self.team_a.id))
         self.assertEqual(props['description']['value'], 'Line one\nLine two')
         resp = self._post('/my/event/%s/save' % event.id, {

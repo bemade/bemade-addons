@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <!--
+        Setting "above": render the signature right after the empty typing line,
+        before the quoted part, and drop it from its core place at the bottom.
+        Setting "below" (default): core output unchanged.
+    -->
+    <t t-inherit="mail.Message.bodyInReply" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o_mail_reply_container')]" position="before">
+            <t t-if="signature and message.store.mail_signature_position === 'above'">
+                <div data-o-mail-quote="1">
+                    <t t-call="html_editor.Signature">
+                        <t t-set="signatureClass" t-value="'o-signature-container'" />
+                    </t>
+                </div>
+                <br />
+            </t>
+        </xpath>
+        <xpath expr="//div[@t-if='signature']" position="attributes">
+            <attribute
+        name="t-if"
+      >signature and message.store.mail_signature_position !== 'above'</attribute>
+        </xpath>
+    </t>
+
+    <t t-inherit="mail.Message.bodyInForward" t-inherit-mode="extension">
+        <xpath
+      expr="//div[span[contains(text(), 'Forwarded message')]]"
+      position="before"
+    >
+            <t t-if="signature and message.store.mail_signature_position === 'above'">
+                <div data-o-mail-quote="1">
+                    <t t-call="html_editor.Signature">
+                        <t t-set="signatureClass" t-value="'o-signature-container'" />
+                    </t>
+                </div>
+                <br />
+            </t>
+        </xpath>
+        <xpath expr="//div[@t-if='signature']" position="attributes">
+            <attribute
+        name="t-if"
+      >signature and message.store.mail_signature_position !== 'above'</attribute>
+        </xpath>
+    </t>
+</templates>

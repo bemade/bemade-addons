@@ -134,13 +134,18 @@ class MailConversation(models.Model):
             else self.env["ir.attachment"]
         )
 
+        # Thread the forward under the last message it carries, so the
+        # recipient's mail client files it with the original. Falsy when
+        # that message has no RFC822 id: no header, as before.
+        in_reply_to = messages[-1].message_id or None
+
         wire_id = transport._send_raw(
             subject=subject,
             body=body,
             to_emails=to_emails,
             cc=cc_emails,
             bcc=bcc_emails,
-            in_reply_to=None,
+            in_reply_to=in_reply_to,
             attachments=self._forward_attachment_payloads(attachments),
         )
 

@@ -25,6 +25,8 @@
         <field name="arch" type="xml">
             <form string="Injury Document">
                 <sheet>
+                    <field name="active" invisible="1"/>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
                     <group>
                         <group>
                             <field name="name"/>
@@ -58,6 +60,9 @@
                 <field name="category"/>
                 <field name="created_by_id"/>
                 <filter string="My Uploads" name="my_uploads" domain="[('created_by_id', '=', uid)]"/>
+                <!-- Task 1432: a portal « Delete » archives; restore here. -->
+                <separator/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
             </search>
         </field>
     </record>
@@ -134,14 +139,14 @@
                                  column (same idiom as the injury_date row above). -->
                             <label for="internal_notes"/>
                             <div>
-                                <field name="internal_notes"/>
+                                <field name="internal_notes" placeholder="Current state (replaces the previous text; the history keeps the versions)"/>
                                 <field name="last_internal_note_info" nolabel="1" readonly="1"
                                        class="text-muted fst-italic o_sc_last_note_stamp"
                                        invisible="not last_internal_note_info"/>
                             </div>
                             <label for="external_notes"/>
                             <div>
-                                <field name="external_notes"/>
+                                <field name="external_notes" placeholder="Current state (replaces the previous text; the history keeps the versions)"/>
                                 <field name="last_external_note_info" nolabel="1" readonly="1"
                                        class="text-muted fst-italic o_sc_last_note_stamp"
                                        invisible="not last_external_note_info"/>

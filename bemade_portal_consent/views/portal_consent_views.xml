@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2026 Bemade Inc. - License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html). -->
+<odoo>
+    <!-- Acceptances (read-only log) -->
+    <record id="portal_consent_acceptance_view_list" model="ir.ui.view">
+        <field name="name">portal.consent.acceptance.list</field>
+        <field name="model">portal.consent.acceptance</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false">
+                <field name="accepted_at"/>
+                <field name="document_id"/>
+                <field name="version_id"/>
+                <field name="user_id"/>
+                <field name="partner_id"/>
+                <field name="ip" optional="show"/>
+                <field name="user_agent" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="portal_consent_acceptance_view_form" model="ir.ui.view">
+        <field name="name">portal.consent.acceptance.form</field>
+        <field name="model">portal.consent.acceptance</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false" delete="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="document_id"/>
+                            <field name="version_id"/>
+                            <field name="accepted_at"/>
+                        </group>
+                        <group>
+                            <field name="user_id"/>
+                            <field name="partner_id"/>
+                            <field name="ip"/>
+                            <field name="user_agent"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="portal_consent_acceptance_view_search" model="ir.ui.view">
+        <field name="name">portal.consent.acceptance.search</field>
+        <field name="model">portal.consent.acceptance</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="user_id"/>
+                <field name="partner_id"/>
+                <field name="document_id"/>
+                <field name="version_id"/>
+                <group>
+                    <filter name="group_document" string="Document" context="{'group_by': 'document_id'}"/>
+                    <filter name="group_version" string="Version" context="{'group_by': 'version_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_portal_consent_acceptance" model="ir.actions.act_window">
+        <field name="name">Consent Acceptances</field>
+        <field name="res_model">portal.consent.acceptance</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Versions -->
+    <record id="portal_consent_version_view_list" model="ir.ui.view">
+        <field name="name">portal.consent.version.list</field>
+        <field name="model">portal.consent.version</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="document_id"/>
+                <field name="number"/>
+                <field name="state" widget="badge" decoration-success="state == 'published'"/>
+                <field name="requires_resign"/>
+                <field name="published_at"/>
+                <field name="published_by_id" optional="hide"/>
+                <field name="acceptance_count" string="Acceptances"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="portal_consent_version_view_form" model="ir.ui.view">
+        <field name="name">portal.consent.version.form</field>
+        <field name="model">portal.consent.version</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_open_publish_wizard" type="object" string="Publish" class="btn-primary"
+                            invisible="state != 'draft' or not id"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_acceptances" type="object" class="oe_stat_button" icon="fa-check"
+                                invisible="state != 'published'">
+                            <field name="acceptance_count" widget="statinfo" string="Acceptances"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="document_id" readonly="state == 'published'"/>
+                            <field name="number" invisible="not id"/>
+                        </group>
+                        <group invisible="state != 'published'">
+                            <field name="published_at"/>
+                            <field name="published_by_id"/>
+                            <field name="requires_resign"/>
+                        </group>
+                    </group>
+                    <field name="body" readonly="state == 'published'" options="{'codeview': true}"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_portal_consent_version" model="ir.actions.act_window">
+        <field name="name">Consent Versions</field>
+        <field name="res_model">portal.consent.version</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Documents -->
+    <record id="portal_consent_document_view_list" model="ir.ui.view">
+        <field name="name">portal.consent.document.list</field>
+        <field name="model">portal.consent.document</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="current_version_id" string="Current"/>
+                <field name="required_version_id" string="Required"/>
+                <field name="acceptance_count" string="Acceptances"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="portal_consent_document_view_form" model="ir.ui.view">
+        <field name="name">portal.consent.document.form</field>
+        <field name="model">portal.consent.document</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_pending_users" type="object" class="oe_stat_button" icon="fa-hourglass-half"
+                                string="Pending Users" invisible="not required_version_id"/>
+                        <button name="action_view_acceptances" type="object" class="oe_stat_button" icon="fa-check">
+                            <field name="acceptance_count" widget="statinfo" string="Acceptances"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Privacy policy"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="current_version_id"/>
+                            <field name="required_version_id"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Internal note: what the document is for, who must accept it."/>
+                    <notebook>
+                        <page string="Versions" name="versions">
+                            <field name="version_ids" context="{'default_document_id': id}">
+                                <list create="true">
+                                    <field name="number"/>
+                                    <field name="state" widget="badge" decoration-success="state == 'published'"/>
+                                    <field name="requires_resign"/>
+                                    <field name="published_at"/>
+                                    <field name="acceptance_count" string="Acceptances"/>
+                                    <button name="action_open_publish_wizard" type="object" string="Publish"
+                                            invisible="state != 'draft'" class="btn-link"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="portal_consent_document_view_search" model="ir.ui.view">
+        <field name="name">portal.consent.document.search</field>
+        <field name="model">portal.consent.document</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_portal_consent_document" model="ir.actions.act_window">
+        <field name="name">Consent Documents</field>
+        <field name="res_model">portal.consent.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create a consent document</p>
+            <p>Portal users accept its published versions before they use the portal.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_portal_consent_document" name="Consent Documents" parent="base.menu_users"
+              action="action_portal_consent_document" sequence="40"
+              groups="bemade_portal_consent.group_portal_consent_manager"/>
+    <menuitem id="menu_portal_consent_acceptance" name="Consent Acceptances" parent="base.menu_users"
+              action="action_portal_consent_acceptance" sequence="41"
+              groups="bemade_portal_consent.group_portal_consent_manager"/>
+</odoo>

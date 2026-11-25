@@ -1,6 +1,6 @@
 // Copyright (C) 2026 Bemade Inc. (<https://www.bemade.org>).
 // License LGPL-3 or later (http://www.gnu.org/licenses/lgpl).
-import {Component} from "@odoo/owl";
+import {Component, onWillStart, useState} from "@odoo/owl";
 import {_t} from "@web/core/l10n/translation";
 import {deserializeDateTime} from "@web/core/l10n/dates";
 import {registry} from "@web/core/registry";
@@ -72,10 +72,48 @@ const CHANNEL_ICONS = {
   internal: "fa-comments-o",
 };
 
+let providerLabelsPromise = null;
+
+/**
+ * The provider selection labels ({imap: "Email (IMAP)", ...}) in the user's
+ * language, fetched once per page load. Never rejects: on failure the
+ * tooltip falls back to the raw provider key.
+ *
+ * `orm` must be the plain service (env.services.orm), not a component's
+ * useService("orm"): the promise is shared by every row, and a component's
+ * orm never settles once that component is destroyed. A list render that is
+ * replaced before the answer (a search typed while the list loads) would
+ * then leave every later row, and the whole list, waiting forever.
+ */
+function loadProviderLabels(orm) {
+  if (!providerLabelsPromise) {
+    providerLabelsPromise = orm
+      .call("conversation.transport", "fields_get", [["provider"], ["selection"]])
+      .then((fields) => Object.fromEntries(fields.provider?.selection || []))
+      .catch(() => {
+        providerLabelsPromise = null;
+        return {};
+      });
+  }
+  return providerLabelsPromise;
+}
+
+/** Forget the fetched labels (tests start each case from an empty page). */
+export function resetProviderLabels() {
+  providerLabelsPromise = null;
+}
+
 /** Channel icon with its name as a tooltip. */
 export class ConversationChannelField extends Component {
   static template = "conversation_base.ConversationChannelField";
   static props = {...standardFieldProps};
+
+  setup() {
+    this.labels = useState({});
+    onWillStart(async () => {
+      Object.assign(this.labels, await loadProviderLabels(this.env.services.orm));
+    });
+  }
 
   get channel() {
     return this.props.record.data[this.props.name] || "internal";
@@ -86,7 +124,9 @@ export class ConversationChannelField extends Component {
   }
 
   get title() {
-    return this.channel === "internal" ? _t("Internal") : this.channel;
+    return this.channel === "internal"
+      ? _t("Internal")
+      : this.labels[this.channel] || this.channel;
   }
 }
 

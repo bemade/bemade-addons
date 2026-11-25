@@ -1,7 +1,15 @@
-from odoo import api, fields, models
-from odoo.fields import Domain
+from markupsafe import Markup
 
-from .mail_conversation_draft import ACTIVE_STATES
+from odoo import api, fields, models
+from odoo.exceptions import UserError
+from odoo.fields import Domain
+from odoo.tools.mail import is_html_empty
+
+from .mail_conversation_draft import (
+    ACTIVE_STATES,
+    DIALOG_CONTEXT_KEY,
+    conversation_templates_exist,
+)
 
 
 class MailConversation(models.Model):
@@ -28,6 +36,18 @@ class MailConversation(models.Model):
         compute="_compute_active_draft",
         help="Who is working on the pending draft right now, if anyone.",
     )
+
+    has_reply_templates = fields.Boolean(
+        compute="_compute_has_reply_templates",
+        help="Whether any reply template exists for conversations.",
+    )
+
+    # No ``@api.depends`` and not stored: evaluated on every read, so a
+    # template created or deleted shows up without an upgrade or restart.
+    def _compute_has_reply_templates(self):
+        exists = conversation_templates_exist(self.env)
+        for conversation in self:
+            conversation.has_reply_templates = exists
 
     @api.depends("draft_ids.state", "draft_ids.editor_id", "draft_ids.editing_last_seen")
     def _compute_active_draft(self):
@@ -64,21 +84,68 @@ class MailConversation(models.Model):
     # ------------------------------------------------------------
 
     def _draft_form_action(self, draft):
+        """What the Reply entry points hand to the client: the draft in the
+        reply pop-up, over the conversation."""
+        return self._draft_dialog_action(draft)
+
+    def _draft_dialog_action(self, draft):
+        view = self.env.ref("conversation_draft.mail_conversation_draft_view_form_dialog")
         return {
             "type": "ir.actions.act_window",
+            "name": self.env._("Reply"),
             "res_model": draft._name,
             "res_id": draft.id,
             "view_mode": "form",
-            "views": [(False, "form")],
-            "target": "current",
+            "views": [(view.id, "form")],
+            "target": "new",
+            "context": {DIALOG_CONTEXT_KEY: True, "dialog_size": "extra-large"},
         }
 
-    def action_open_draft(self):
-        """Open the conversation's active reply draft, creating it when
-        there is none."""
+    def _is_reply_target(self, message):
+        """Whether ``message`` is one a correspondent has seen -- the same
+        rule the transports thread an outgoing mail by: an inbound email, a
+        captured inbound (it has an ``external_id``) or something we sent
+        (it has a ``transport_id``). Never an internal note, a tracking
+        message or a message of another record."""
+        self.ensure_one()
+        message = message.sudo()
+        return bool(
+            message.exists()
+            and message.model == self._name
+            and message.res_id == self.id
+            and message.message_type != "user_notification"
+            and message.message_id
+            and (
+                message.message_type == "email"
+                or message.external_id
+                or message.transport_id
+            )
+        )
+
+    def reply_target_message_ids(self, message_ids):
+        """Which of ``message_ids`` the thread offers a per-message Reply
+        on. Read-only: the client calls it for each batch of messages it
+        loads."""
+        self.ensure_one()
+        self.check_access("read")
+        messages = self.env["mail.message"].sudo().browse(message_ids).exists()
+        return [m.id for m in messages if self._is_reply_target(m)]
+
+    def action_open_draft(self, message_id=None):
+        """Open the conversation's active reply draft in the reply pop-up,
+        creating it when there is none. With ``message_id`` the reply
+        answers that message: it is quoted in the draft and the outgoing mail
+        threads under it."""
         self.ensure_one()
         self.check_access("write")
         draft = self.env["mail.conversation.draft"]._get_or_create_for(self)
+        if message_id:
+            message = self.env["mail.message"].sudo().browse(message_id).exists()
+            if not self._is_reply_target(message):
+                raise UserError(
+                    self.env._("This message cannot be answered from the conversation.")
+                )
+            draft._set_reply_target(message)
         draft._touch_editing()
         return self._draft_form_action(draft)
 
@@ -139,6 +206,20 @@ class MailConversation(models.Model):
                 if transport.sudo().sendable:
                     return transport
         return self.env["conversation.transport"]
+
+    def _draft_default_body(self, transport):
+        """The initial body of a new draft sent from ``transport``: the
+        acting user's signature as ordinary, editable text between two empty
+        paragraphs (the inbox reply wizard's layout), so nothing has to be
+        appended when the reply goes out. Empty when the user has no
+        signature or the transport is a team mailbox."""
+        self.ensure_one()
+        signature = self.env.user.signature
+        if is_html_empty(signature):
+            return False
+        if transport and not transport._draft_prefills_user_signature():
+            return False
+        return Markup("<p><br/></p>%s<p><br/></p>") % Markup(signature)
 
     def _draft_default_recipients(self):
         """Value dicts for the draft's recipient rows, derived from the

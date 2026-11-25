@@ -1,344 +1,401 @@
 // Task 1539 (epic #1535) — app shell P2: player, injury, notes, documents,
-// activities. Components added in sc_components.xml / sc_autosave_field.
-// Everything scoped under .o_sc_app (see sc_tokens.scss).
+// activities. Components added in sc_components.xml (the autosave field is
+// the kit's since task 5382).
+// Everything scoped under .o_pk_app (see sc_tokens.scss).
+//
+// Task 5357 (kit P3b2): the generic rules (only o_pk_* classes, data-pk-*
+// attributes, generic elements) moved to bemade_portal_kit (pk_components /
+// pk_pages.scss, loaded first); this file keeps the clinic's own.
 
-$sc-p2-laptop: 992px;
-
-.o_sc_app {
-    // ---------------------------------------------------------- fields
-    .o_sc_hint {
-        font-size: var(--sc-text-xs);
-        color: var(--sc-fg-3);
-    }
-
-    .o_sc_muted {
-        color: var(--sc-fg-3);
-    }
-
-    .o_sc_field_static .o_sc_field_value {
-        margin: 0;
-        min-height: 20px;
-    }
-
-    .o_sc_field_message {
-        font-size: var(--sc-text-sm);
-        color: var(--sc-warn);
-    }
-
-    .o_sc_field_error {
-        color: var(--sc-bad);
-    }
-
-    .o_sc_clear_btn {
-        margin-left: auto;
-        min-height: 24px;
-        font-size: var(--sc-text-xs);
-    }
-
-    .o_sc_select {
-        appearance: auto;
-    }
-
-    .o_sc_date_na {
-        display: flex;
-        align-items: center;
-        gap: var(--sc-space-3);
-
-        .o_sc_input {
-            flex: 1;
-        }
-    }
-
-    .o_sc_check {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        min-height: var(--sc-tap);
-        font-weight: 600;
-        color: var(--sc-fg-2);
-        cursor: pointer;
-
-        input {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--sc-accent);
-        }
-    }
-
+.o_pk_app {
     // Play status (owner review 2026-10-10): the pressed choice wears the
     // tone of the status pill it produces.
-    .o_sc_seg_input > button[aria-pressed="true"] {
-        &[data-sc-value="no:yes"],
-        &[data-sc-value="no:no_contact"] {
-            background: var(--sc-warn);
-            color: var(--sc-tone-fg);
+    .o_pk_seg_input > button[aria-pressed="true"] {
+        &[data-pk-value="no:yes"],
+        &[data-pk-value="no:no_contact"] {
+            background: var(--pk-warn);
+            color: var(--pk-tone-fg);
         }
 
-        &[data-sc-value="no:no"] {
-            background: var(--sc-bad);
-            color: var(--sc-tone-fg);
+        &[data-pk-value="no:no"] {
+            background: var(--pk-bad);
+            color: var(--pk-tone-fg);
         }
     }
 
-    .o_sc_seg_input > button:disabled {
-        cursor: default;
-        opacity: 0.6;
-    }
-
-    .o_sc_fields {
-        display: flex;
-        flex-direction: column;
-        gap: var(--sc-space-3);
+    // Review fixes 2026-10-18: a field shown for one injury status only
+    // (sc_injury_card.js); the holder does not add a box of its own.
+    .o_sc_stage_only:not([hidden]) {
+        display: contents;
     }
 
     // ------------------------------------------- inline-edit cards (2026-10-10)
-    // One pencil per card; read view by default (sc_app_ui.js toggles).
-    .o_sc_edit_card {
-        display: flex;
-        flex-direction: column;
-        gap: var(--sc-space-3);
-
-        [data-sc-edit-view][hidden] {
-            display: none !important;
-        }
-    }
-
-    .o_sc_edit_card_head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--sc-space-2);
-        min-height: var(--sc-tap);
-    }
-
-    .o_sc_edit_card_title {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--sc-space-2);
-        margin: 0;
-        font-family: var(--sc-font-title);
-        font-weight: 500;
-        font-size: var(--sc-title-md);
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
-        color: var(--sc-fg);
-        min-width: 0;
-
-        .o_sc_chip {
-            font-family: var(--sc-font-text);
-            text-transform: none;
-            letter-spacing: 0;
-        }
-    }
-
-    .o_sc_edit_card[data-sc-edit-open] [data-sc-edit-toggle] {
-        color: var(--sc-accent);
-    }
-
-    // tags field: chips + a search box with a few suggestions.
-    .o_sc_tags_field {
-        display: flex;
-        flex-direction: column;
-        gap: var(--sc-space-2);
-    }
-
-    .o_sc_tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--sc-space-2);
-        margin: 0;
-        padding: 0;
-        list-style: none;
-
-        &:empty {
-            display: none;
-        }
-    }
-
-    .o_sc_tag {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--sc-space-1);
-        max-width: 100%;
-        padding: 2px 2px 2px 12px;
-        border-radius: var(--sc-radius-pill);
-        background: var(--sc-surface-2);
-        border: 1px solid var(--sc-line);
-        font-size: var(--sc-text-md);
-
-        > span {
-            min-width: 0;
-            overflow-wrap: anywhere;
-        }
-    }
-
-    .o_sc_tag_remove {
-        appearance: none;
-        flex: none;
-        width: 32px;
-        height: 32px;
-        border: 0;
-        border-radius: 50%;
-        background: transparent;
-        color: var(--sc-fg-2);
-        font-size: 18px;
-        line-height: 1;
-        cursor: pointer;
-
-        &:hover,
-        &:focus-visible {
-            background: var(--sc-hover);
-            color: var(--sc-bad);
-        }
-    }
-
-    .o_sc_tags_options {
-        display: flex;
-        flex-direction: column;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        border: 1px solid var(--sc-line);
-        border-radius: var(--sc-radius-sm);
-        overflow: hidden;
-    }
-
-    .o_sc_tags_option {
-        appearance: none;
-        width: 100%;
-        min-height: var(--sc-tap);
-        padding: 0 var(--sc-space-3);
-        border: 0;
-        border-top: 1px solid var(--sc-line);
-        background: var(--sc-surface);
-        color: var(--sc-fg);
-        font: inherit;
-        text-align: left;
-        cursor: pointer;
-
-        &:hover,
-        &:focus-visible {
-            background: var(--sc-hover);
-        }
-    }
-
-    .o_sc_tags_options > li:first-child .o_sc_tags_option {
-        border-top: 0;
-    }
-
-    // ---------------------------------------------------------- buttons
-    .o_sc_btn_danger {
-        background: transparent;
-        border-color: var(--sc-bad);
-        color: var(--sc-bad);
-    }
-
-    .o_sc_icon_btn_danger {
-        color: var(--sc-bad);
-    }
-
-    .o_sc_actionbar {
-        position: sticky;
-        // Above the phone's fixed bottom tabs; 0 on a laptop (no tabs).
-        bottom: calc(var(--sc-tabs-height) + env(safe-area-inset-bottom, 0px));
-        z-index: 5;
-        display: flex;
-        gap: var(--sc-space-2);
-        padding: var(--sc-space-3) 0 calc(var(--sc-space-2) + env(safe-area-inset-bottom, 0px));
-        background: linear-gradient(to top, var(--sc-bg) 70%, transparent);
-
-        > .o_sc_btn,
-        > form {
-            flex: 1;
-        }
-
-        form .o_sc_btn {
-            width: 100%;
-        }
-    }
-
-    @media (min-width: $sc-p2-laptop) {
-        .o_sc_actionbar {
-            bottom: 0;
-        }
-    }
-
-    .o_sc_toast {
-        display: flex;
-        align-items: center;
-        gap: var(--sc-space-3);
-    }
-
-    // Task 1583: the session notification (title + message; errors marked).
-    .o_sc_toast_title {
-        font-weight: 600;
-    }
-
-    .o_sc_toast[data-sc-toast-tone="error"] {
-        border-left: 4px solid var(--sc-bad);
-    }
-
-    .o_sc_toast[data-sc-toast-tone="success"] {
-        border-left: 4px solid var(--sc-ok);
-    }
-
-    .o_sc_toast_action {
-        appearance: none;
-        border: 0;
-        background: transparent;
-        color: var(--sc-accent);
-        font: inherit;
-        font-weight: 600;
-        cursor: pointer;
-        min-height: 32px;
-        padding: 0 4px;
-    }
-
-    .o_sc_confirm_message {
-        margin: 0;
-    }
-
-    // Many tabs (the player page's seven): scroll sideways on a phone
-    // instead of squeezing the labels.
-    .o_sc_page_tabs_scroll {
-        overflow-x: auto;
-        scrollbar-width: none;
-
-        &::-webkit-scrollbar {
-            display: none;
-        }
-
-        > a {
-            flex: 0 0 auto;
-            padding: 0 16px;
-            white-space: nowrap;
-        }
-    }
-
-    @media (min-width: $sc-p2-laptop) {
-        .o_sc_page_tabs_scroll > a {
-            flex: 1 0 auto;
-        }
+    // One pencil per card; read view by default (the kit's pk_edit_cards.js
+    // toggles; the hidden view's rule is the kit's, task 5381).
+    .o_pk_edit_card[data-pk-edit-open] [data-pk-edit-toggle] {
+        color: var(--pk-accent);
     }
 
     // ---------------------------------------------------------- player
     .o_sc_hero {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
     }
 
     .o_sc_hero_head {
         display: flex;
         align-items: center;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
         min-width: 0;
+    }
+
+    // Task 1630: the name / team head and, left of the pencil, the
+    // « Allergies » / « Medical alert » pills; on a narrow screen the pills
+    // wrap under the name.
+    // Task 1736: the name / team head and the hero's top bar (★, pencil)
+    // on ONE line, the icons in the top-right corner (was: an absolutely
+    // positioned pencil and a « Suivre » button that wrapped on a phone).
+    .o_sc_hero_top {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: flex-start;
+        gap: var(--pk-space-2) var(--pk-space-3);
+        min-width: 0;
+
+        > .o_sc_hero_head {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        > .o_sc_hero_follow {
+            flex: none;
+            margin-top: calc(var(--pk-space-2) * -1);
+            margin-right: calc(var(--pk-space-2) * -1);
+        }
+    }
+
+    .o_sc_med_pills {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    .o_sc_med_pill {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-height: 26px;
+        padding: 2px 10px;
+        border: 1px solid transparent;
+        border-radius: var(--pk-radius-pill);
+        font: inherit;
+        font-size: var(--pk-text-xs);
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+        cursor: pointer;
+
+        // A phone tap lands even on the small drawn pill.
+        &::before {
+            content: "";
+            position: absolute;
+            inset: -8px -2px;
+        }
+
+        .o_pk_icon {
+            width: 14px;
+            height: 14px;
+        }
+    }
+
+    .o_sc_med_pill_static {
+        cursor: default;
+
+        &::before {
+            content: none;
+        }
+    }
+
+    // Review round 1 (owner 2026-10-22): the red pills on player cards
+    // (sc_player_status_line) — the size of the status pills next to them,
+    // and NOT positioned: under the link row's stretched link, so a tap on
+    // the pill opens the player.
+    // Task 1652: the card pill is a button, as tall as the status pills
+    // beside it (same padding, border, font metrics; the compact
+    // quick-change pills' 22 px).
+    .o_sc_med_pill.o_sc_med_card_pill {
+        // Above the card's stretched link (.o_pk_link_row_main::after), so
+        // a tap lands on the pill, not on the card.
+        position: relative;
+        z-index: 1;
+        appearance: none;
+        min-height: 22px;
+        padding: 1px 8px;
+        gap: 3px;
+        font-weight: 600;
+        line-height: 1.45;
+        white-space: nowrap;
+        cursor: pointer;
+        vertical-align: middle;
+
+        .o_pk_icon {
+            width: 1em;
+            height: 1em;
+        }
+    }
+
+    .o_sc_med_urgent { background: var(--pk-bad); color: var(--pk-tone-fg); }
+    .o_sc_med_minor { background: var(--pk-warn); color: var(--pk-tone-fg); }
+    .o_sc_med_none { background: var(--pk-surface-2); color: var(--pk-fg-2); }
+    .o_sc_med_unset { background: transparent; border-color: var(--pk-line); border-style: dashed; color: var(--pk-fg-2); }
+
+    .o_sc_med_epipen {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .o_sc_med_sheet {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+    }
+
+    // Task 1677: the popup's head pill, the EpiPen card, the item cards.
+    .o_sc_med_head {
+        display: flex;
+        align-items: center;
+        gap: var(--pk-space-2);
+    }
+
+    .o_sc_med_card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-2);
+        padding: var(--pk-space-2) var(--pk-space-3);
+        margin: 0;
+    }
+
+    .o_sc_med_card_row {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--pk-space-2);
+        min-width: 0;
+
+        > .o_sc_med_card_read {
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            > p {
+                margin: 0;
+            }
+        }
+
+        > .o_pk_icon_btn {
+            margin-left: auto;
+            margin-right: calc(var(--pk-space-2) * -1);
+            margin-top: calc((26px - var(--pk-tap)) / 2);
+        }
+    }
+
+    .o_sc_med_card_edit {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-2);
+    }
+
+    .o_sc_med_items {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-2);
+    }
+
+    .o_sc_med_item_line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px var(--pk-space-2);
+        min-height: 26px;
+    }
+
+    .o_sc_med_item_name {
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .o_sc_med_dot {
+        display: inline-block;
+        flex: none;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    .o_sc_med_vital_chip {
+        background: var(--pk-bad);
+        color: var(--pk-tone-fg);
+        font-weight: 700;
+    }
+
+    .o_sc_med_first_aid {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: var(--pk-text-sm);
+    }
+
+    // Review round 1 (owner 2026-10-27): an item's trash sits next to its ✓
+    // (top right), shown while the card is being edited — task 1736: the
+    // shared top bar (sc_card_icons: red, data-pk-edit-only).
+    .o_sc_med_card_row > .o_pk_card_icons {
+        margin-right: calc(var(--pk-space-2) * -1);
+        margin-top: calc((26px - var(--pk-tap)) / 2);
+    }
+
+    // Review round 1 (owner 2026-10-27): EpiPen as ONE line — the label, then
+    // a segmented Oui / Non pill (nothing lit until answered).
+    .o_sc_med_epipen_ask {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--pk-space-3);
+        min-height: var(--pk-tap);
+    }
+
+    .o_sc_med_epipen_ask_label {
+        font-weight: 700;
+    }
+
+    // Review round 2 (owner 2026-10-27): while editing, the EpiPen question
+    // sits on the card's top row, next to the ✓ (the read view is hidden:
+    // no empty header row above it).
+    .o_sc_med_epipen_card[data-pk-edit-open] {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        column-gap: var(--pk-space-2);
+
+        > .o_sc_med_card_row {
+            display: contents;
+
+            > .o_pk_icon_btn {
+                grid-column: 2;
+                grid-row: 1;
+                margin-top: 0;
+            }
+        }
+
+        > .o_sc_med_card_edit {
+            grid-column: 1;
+            grid-row: 1;
+        }
+    }
+
+    // Review round 2: the level pill in the popup's header, next to the title.
+    .o_pk_sheet_head > .o_sc_med_head {
+        flex: 0 1 auto;
+        min-width: 0;
+        margin-right: auto;
+    }
+
+    .o_pk_toggle_pill_opt {
+        &[data-sc-toggle-opt="yes"]:has(> input:checked) {
+            background: var(--pk-accent);
+            color: var(--pk-accent-fg);
+        }
+    }
+
+    .o_sc_med_none_box:not(:has(*)),
+    .o_sc_med_legacy:not(:has(*)) {
+        display: none;
+    }
+
+    .o_sc_med_none_check {
+        margin-top: var(--pk-space-2);
+    }
+
+    .o_sc_med_legacy > p {
+        margin: 0;
+    }
+
+    .o_sc_med_level_line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--pk-space-2);
+        margin: 0;
+    }
+
+    .o_sc_med_epipen_line {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 700;
+
+        .o_pk_icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .o_sc_med_pills {
+            margin-left: 0;
+            flex-basis: 100%;
+        }
+    }
+
+    // Review round 2 (owner 2026-10-27): the header's pills sit inside the
+    // card, on the line under Match / Practice (left-aligned, like a card's).
+    .o_sc_hero_status {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        > .o_sc_med_pills {
+            margin-left: 0;
+        }
+    }
+
+    .o_sc_hero_read {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+        min-width: 0;
+    }
+
+    // Task 1629: the training recommendation's title (+ « History ») sits
+    // just above its value / editor.
+    .o_sc_training_title {
+        margin-bottom: var(--pk-space-1);
+    }
+
+    .o_sc_hero_return:empty {
+        display: none;
+    }
+
+    // Review fixes 2026-10-18 (1018c): an empty date's placeholder line.
+    .o_sc_hero_return_empty {
+        margin: 0;
+        font-size: var(--pk-text-sm);
     }
 
     .o_sc_hero_title {
         margin: 0;
-        font-family: var(--sc-font-title);
+        font-family: var(--pk-font-title);
         font-weight: 600;
         font-size: 26px;
         line-height: 1;
@@ -346,64 +403,20 @@ $sc-p2-laptop: 992px;
         overflow-wrap: anywhere;
     }
 
-    .o_sc_chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-
-    .o_sc_actions_row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--sc-space-2);
-
-        form {
-            margin: 0;
-        }
-    }
-
-    .o_sc_filters {
-        display: flex;
-        flex-direction: column;
-        gap: var(--sc-space-3);
-    }
-
-    .o_sc_filter_grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: var(--sc-space-2);
-    }
-
-    @media (min-width: $sc-p2-laptop) {
-        .o_sc_filter_grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-    }
-
     .o_sc_add_to_team {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--sc-space-2);
-        padding: 0 var(--sc-space-3) var(--sc-space-3);
+        gap: var(--pk-space-2);
+        padding: 0 var(--pk-space-3) var(--pk-space-3);
 
-        .o_sc_input {
+        .o_pk_input {
             flex: 1 1 160px;
-        }
-    }
-
-    .o_sc_row_group {
-        background: var(--sc-surface);
-        border: 1px solid var(--sc-line);
-        border-radius: var(--sc-radius-md);
-
-        > .o_sc_entity_row {
-            border: 0;
         }
     }
 
     // ---------------------------------------------------------- notes
     .o_sc_note_card {
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
     }
 
     .o_sc_note_meta {
@@ -423,15 +436,15 @@ $sc-p2-laptop: 992px;
         padding: 0;
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
 
         li {
-            border-left: 3px solid var(--sc-line);
+            border-left: 3px solid var(--pk-line);
             padding: 2px 10px;
         }
 
-        li[data-sc-scope="internal"] {
-            border-left-color: var(--sc-secondary);
+        li[data-pk-scope="internal"] {
+            border-left-color: var(--pk-secondary);
         }
     }
 
@@ -443,33 +456,69 @@ $sc-p2-laptop: 992px;
         gap: 0;
         overflow: hidden;
 
-        > .o_sc_entity_row {
+        > .o_pk_entity_row,
+        > .o_sc_activity_head > .o_pk_entity_row {
             border: 0;
             border-radius: 0;
             background: transparent;
         }
 
         &:hover {
-            border-color: var(--sc-fg-3);
+            border-color: var(--pk-fg-3);
+        }
+    }
+
+    // Task 1736 r1: the card's top-bar icons in the regular icon colour
+    // (the link row's trailing area is muted).
+    .o_sc_activity .o_pk_row_trailing > .o_pk_card_icons {
+        color: var(--pk-fg);
+    }
+
+    // Task 1736 r1: the in-place edit (the fields, then « Done »).
+    .o_sc_activity_edit {
+        border-top: 1px solid var(--pk-line);
+        padding: var(--pk-space-3);
+
+        > .o_pk_fields_lazy {
+            display: flex;
+            flex-direction: column;
+            gap: var(--pk-space-3);
         }
     }
 
     .o_sc_activity_actions {
-        border-top: 1px solid var(--sc-line);
-        padding: var(--sc-space-2) var(--sc-space-3);
+        border-top: 1px solid var(--pk-line);
+        padding: var(--pk-space-2) var(--pk-space-3);
+    }
+
+    // Task 1736 r1: the popout's note, set apart from the details.
+    .o_sc_activity_popout .o_sc_activity_note {
+        margin-top: var(--pk-space-3);
+        padding-top: var(--pk-space-3);
+        border-top: 1px solid var(--pk-line);
+    }
+
+    // Task 1736 r1: the details popout's head (the title + its state chip).
+    .o_sc_activity_popout_title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--pk-space-2);
+        margin: 0 0 var(--pk-space-3);
+        font-size: 1.05rem;
     }
 }
 
 // Player Injuries tab (owner decision 2026-10-11): the inline « Add
 // Injury » card and the expandable injury cards.
-.o_sc_app {
+.o_pk_app {
     // Therapists answer « Can coaches see this injury? » first; the
     // diagnosis and « Create » appear once a choice is made (no default).
     .o_sc_injury_add {
         .o_sc_injury_add_diag {
             display: flex;
             flex-direction: column;
-            gap: var(--sc-space-3);
+            gap: var(--pk-space-3);
 
             &.o_sc_after_choice {
                 display: none;
@@ -490,8 +539,8 @@ $sc-p2-laptop: 992px;
 
     .o_sc_choice_options {
         display: flex;
-        border: 1px solid var(--sc-line);
-        border-radius: var(--sc-radius-sm);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-sm);
         overflow: hidden;
     }
 
@@ -501,15 +550,15 @@ $sc-p2-laptop: 992px;
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: var(--sc-tap);
+        min-height: var(--pk-tap);
         padding: 0 12px;
-        background: var(--sc-surface);
-        color: var(--sc-fg);
+        background: var(--pk-surface);
+        color: var(--pk-fg);
         font-weight: 600;
         cursor: pointer;
 
         + .o_sc_choice_option {
-            border-left: 1px solid var(--sc-line);
+            border-left: 1px solid var(--pk-line);
         }
 
         input {
@@ -521,62 +570,548 @@ $sc-p2-laptop: 992px;
         }
 
         &:has(input:checked) {
-            background: var(--sc-accent);
-            color: var(--sc-accent-fg);
+            background: var(--pk-accent);
+            color: var(--pk-accent-fg);
         }
 
         &:has(input:focus-visible) {
-            outline: 2px solid var(--sc-secondary);
+            outline: 2px solid var(--pk-secondary);
             outline-offset: -2px;
         }
     }
 
-    .o_sc_injury_item.o_sc_edit_card {
+    .o_sc_injury_item.o_pk_edit_card {
         gap: 0;
     }
-}
 
-// Grouped lists (events, timesheets: « Group by », owner review 2026-10-11).
-.o_sc_app {
-    .o_sc_group {
+    // Task 1616 (owner decision 2026-10-17): the open injury card in three
+    // sections — phone: Details, Notes, Documents stacked; laptop: Details
+    // top-left, Notes on the right (both rows), Documents under Details.
+    .o_sc_injury_sections {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-4);
+        min-width: 0;
+    }
 
-        + .o_sc_group {
-            margin-top: var(--sc-space-3);
+    .o_sc_injury_section {
+        min-width: 0;
+
+        + .o_sc_injury_section {
+            border-top: 1px solid var(--pk-line);
+            padding-top: var(--pk-space-3);
         }
     }
 
-    .o_sc_group_title {
-        margin: 0;
-        font-size: var(--sc-text-xs);
-        font-weight: 700;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-        color: var(--sc-fg-2);
+    // Task 1631: the Details row of consent + visibility pills — side by
+    // side on a laptop, stacked on a phone.
+    .o_sc_injury_flags {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--pk-space-2);
+        margin-bottom: var(--pk-space-3);
+    }
+
+    @media (max-width: 575.98px) {
+        .o_sc_injury_flags {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
+    /* Task 1736 r2: 1 vs 2 columns follows the CARD width (container query),
+       not the page width, so a narrow dashboard column gets the 1-column layout. */
+    .o_sc_injury_body {
+        container-type: inline-size;
+        container-name: sc-injury;
+    }
+
+    @container sc-injury (min-width: 720px) {
+        .o_sc_injury_sections {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-areas:
+                "details notes"
+                "documents notes";
+            grid-template-rows: auto 1fr;
+            column-gap: var(--pk-space-5);
+            row-gap: var(--pk-space-4);
+            align-items: start;
+        }
+
+        .o_sc_injury_details { grid-area: details; }
+        .o_sc_injury_documents { grid-area: documents; }
+
+        .o_sc_injury_notes {
+            grid-area: notes;
+            align-self: stretch;
+            border-left: 1px solid var(--pk-line);
+            padding-left: var(--pk-space-5);
+        }
+
+        .o_sc_injury_section + .o_sc_injury_section {
+            border-top: 0;
+            padding-top: 0;
+        }
+
+        .o_sc_injury_documents {
+            border-top: 1px solid var(--pk-line);
+            padding-top: var(--pk-space-3);
+        }
+    }
+
+    // Task 1675: the external / internal notes are two edit cards, one
+    // pencil each, under the Notes head (its one « History »).
+    .o_sc_injury_note_card {
+        margin-top: var(--pk-space-2);
+
+        & + .o_sc_injury_note_card {
+            margin-top: var(--pk-space-3);
+            padding-top: var(--pk-space-3);
+            border-top: 1px dashed var(--pk-line);
+        }
+
+        .o_sc_injury_note_head .o_pk_edit_card_title {
+            font-size: 0.95em;
+        }
+
+        .o_sc_injury_note_read > p {
+            margin: 0;
+        }
+    }
+
+    .o_sc_injury_doc_list {
+        gap: var(--pk-space-2);
+    }
+
+    .o_sc_injury_doc.o_pk_edit_card {
+        gap: var(--pk-space-2);
+    }
+
+    // Task 1644: the upload sheet — pinned head (title, the picker) and
+    // actions (Cancel / Upload), only the file list scrolls between, within
+    // the visible viewport (the keyboard included: dvh).
+    .o_pk_sheet[open]:has(form[data-sc-doc-upload]) {
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - env(safe-area-inset-top, 0px) - 8px);
+        max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 8px);
+        // clip, not hidden: a focus / scrollIntoView inside must never
+        // scroll the sheet itself (it carried the picker off screen).
+        overflow: hidden;
+        overflow: clip;
+
+        > .o_pk_sheet_head {
+            flex: none;
+        }
+
+        > .o_pk_sheet_body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+            overflow: clip;
+            padding-bottom: 0;
+        }
+
+        form[data-sc-doc-upload] {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .o_sc_doc_upload_head,
+        .o_sc_doc_upload_actions {
+            flex: none;
+        }
+
+        .o_sc_doc_upload_scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .o_sc_doc_upload_actions {
+            margin: 0 calc(-1 * var(--pk-space-4));
+            padding: var(--pk-space-3) var(--pk-space-4) calc(var(--pk-space-3) + env(safe-area-inset-bottom, 0px));
+            background: var(--pk-surface);
+            border-top: 1px solid var(--pk-line);
+        }
+    }
+
+    .o_sc_doc_upload_scroll {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+    }
+
+    form[aria-busy="true"] .o_sc_doc_upload_scroll,
+    form[aria-busy="true"] .o_sc_doc_upload_head {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    // Review fixes 2026-10-18 b: each chosen file is a small block — its
+    // head (name, size, « × ») then its own name / category / description
+    // (two columns when there is room, stacked on a phone).
+    .o_sc_doc_upload .o_pk_file_list {
+        gap: var(--pk-space-2);
+    }
+
+    .o_sc_doc_upload .o_pk_file {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--pk-space-2);
+        padding: var(--pk-space-2) var(--pk-space-3) var(--pk-space-3);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-md);
+    }
+
+    .o_sc_doc_upload .o_pk_file_too_large {
+        border-color: var(--pk-bad);
+    }
+
+    // Review fixes 2026-10-18 (1018c): the shared « Category » /
+    // « Description » only while no file is listed (sc_injury_card.js).
+    .o_sc_doc_shared_group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+
+        &[hidden] {
+            display: none;
+        }
     }
 }
 
 // Pencil edit paradigm (owner review 2026-10-11): note cards and stacked
 // read views (long notes under their label).
-.o_sc_app {
+.o_pk_app {
+    // Task 1721 (review round 1): the note card's head — the meta line,
+    // the pencil / ✓ at the top right (as on every edit card).
+    .o_sc_note_head {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--pk-space-2);
+        min-width: 0;
+
+        > .o_sc_note_meta {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        > .o_sc_note_edit_toggle {
+            flex: none;
+            margin-left: auto;
+            margin-top: calc((20px - var(--pk-tap)) / 2);
+            margin-right: calc(var(--pk-space-2) * -1);
+        }
+    }
+
+    .o_sc_note_text {
+        margin: 0;
+    }
+
     .o_sc_note_body {
         display: flex;
         align-items: flex-start;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
 
         .o_sc_note_text {
             flex: 1;
             margin: 0;
         }
     }
+}
 
-    .o_sc_kv_stacked {
-        grid-template-columns: minmax(0, 1fr);
+// Task 5382 (kit P4c3): the « replace » editor's rules (the injury notes)
+// moved to the kit (pk_components.scss, o_pk_replace_*).
 
-        dd {
-            margin-bottom: var(--sc-space-2);
+// Task 1603: the player header's « Retour prévu » and the follow-up
+// proposal sheet (sc_proposal.js).
+.o_pk_app {
+    .o_sc_hero_return .o_pk_input[type="date"] {
+        max-width: 16rem;
+    }
+
+    .o_sc_proposal_message {
+        margin: 0;
+        color: var(--pk-fg-2);
+    }
+
+    .o_sc_proposal_items {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-2);
+    }
+
+    .o_sc_proposal_item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: var(--pk-space-2) 0;
+        border-bottom: 1px solid var(--pk-line);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    .o_sc_proposal_label {
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .o_sc_proposal_change {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--pk-space-2);
+        color: var(--pk-fg-2);
+
+        .o_pk_input {
+            flex: 0 1 12rem;
+            min-height: var(--pk-tap);
+        }
+    }
+
+    .o_sc_proposal_current {
+        text-decoration: line-through;
+        color: var(--pk-fg-3);
+    }
+
+    .o_sc_proposal_proposed {
+        color: var(--pk-fg);
+    }
+
+    .o_sc_proposal_actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--pk-space-2);
+
+        .o_pk_btn {
+            min-height: var(--pk-tap);
+        }
+    }
+
+    // Task 1604: the quick « Vérifier » / « Résoudre » of an injury — a
+    // compact button of its own in the card row. Task 1662: the same
+    // metrics as the status pill beside it (.o_pk_pill_select: 32 px, xs
+    // text, pill radius), so the row is one pill high; 32 px stays a
+    // comfortable tap target. Colours unchanged (primary / ghost).
+    .o_sc_quick_btn {
+        min-height: 32px;
+        height: 32px;
+        padding: 2px 10px;
+        border-width: 1px;
+        border-radius: var(--pk-radius-pill);
+        font-size: var(--pk-text-xs);
+        line-height: 1.2;
+    }
+
+    // Task 1662: the injury card's summary trailing group (quick button,
+    // status pill) wraps instead of overflowing; the row gap keeps wrapped
+    // lines apart, so nothing overlaps.
+    // Task 1736 (owner 2026-11-01): the summary is the card's top bar — the
+    // read fragment's dot, text and quick button + status pill (a
+    // ``display: contents`` holder: its parts are the grid's cells), then
+    // the icon group (clock, trash, pencil) and the chevron. Phone: the
+    // pill line goes under the title, the icons stay on the title's line.
+    .o_sc_injury_item > summary.o_sc_injury_head {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        row-gap: var(--pk-space-1);
+        cursor: default;
+
+        > .o_sc_injury_head_main {
+            display: contents;
+
+            > .o_pk_row_trailing {
+                grid-column: 2 / -1;
+                grid-row: 2;
+                flex-wrap: wrap;
+                justify-content: flex-start;
+                row-gap: var(--pk-space-1);
+                min-width: 0;
+
+                &:empty {
+                    display: none;
+                }
+            }
+        }
+
+        > .o_sc_injury_head_icons {
+            grid-column: 3;
+            grid-row: 1;
+            gap: 0;
+            margin-right: calc(var(--pk-space-2) * -1);
+
+            // The card icons in the text colour, as on every other card
+            // (an entity row greys its trailing icons); the chevron stays
+            // the rows' grey.
+            .o_pk_card_icons {
+                gap: 0;
+                color: var(--pk-fg);
+            }
+        }
+
+        @media (min-width: 768px) {
+            grid-template-columns: auto minmax(0, 1fr) auto auto;
+
+            > .o_sc_injury_head_main > .o_pk_row_trailing {
+                grid-column: 3;
+                grid-row: 1;
+                justify-content: flex-end;
+            }
+
+            > .o_sc_injury_head_icons {
+                grid-column: 4;
+            }
+        }
+
+        // Task 1748: the player line (dashboard « Injuries to verify »)
+        // above the card's top bar, full width; the bar's rows move down
+        // one.
+        > .o_sc_injury_player_head {
+            grid-column: 1 / -1;
+            grid-row: 1;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            column-gap: var(--pk-space-2);
+            min-width: 0;
+
+            > .o_sc_injury_player_link {
+                font-weight: 600;
+                color: var(--pk-fg);
+                text-decoration: underline;
+                text-underline-offset: 2px;
+                overflow-wrap: anywhere;
+            }
+
+            > .o_sc_injury_player_teams {
+                color: var(--pk-fg-2);
+                font-size: var(--pk-text-xs);
+                overflow-wrap: anywhere;
+            }
+        }
+
+        &.o_sc_injury_head_with_player {
+            > .o_sc_injury_head_main > .o_pk_dot,
+            > .o_sc_injury_head_main > .o_pk_row_text,
+            > .o_sc_injury_head_icons {
+                grid-row: 2;
+            }
+
+            > .o_sc_injury_head_main > .o_pk_row_trailing {
+                grid-row: 3;
+            }
+
+            @media (min-width: 768px) {
+                > .o_sc_injury_head_main > .o_pk_row_trailing {
+                    grid-row: 2;
+                }
+            }
+        }
+    }
+
+    .o_sc_injury_toggle .o_pk_icon {
+        transition: transform .15s ease;
+    }
+
+    .o_sc_injury_item[open] > summary .o_sc_injury_toggle .o_pk_icon {
+        transform: rotate(180deg);
+    }
+}
+
+// Review 2026-10-20 (#1629): in the pencil view the training title is a
+// section title above the field; the field's own label row (« Effacer »,
+// the save state) sits on the title's line instead of a line of its own.
+.o_pk_app [data-pk-section="player.training.edit"] {
+    position: relative;
+
+    .o_pk_autosave > .o_pk_field_label {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin: 0;
+        min-height: calc(var(--pk-title-md) * 1.2);
+        display: flex;
+        align-items: center;
+        gap: var(--pk-space-2);
+    }
+}
+
+// Task 1729: on a phone the header's edit rows never overlap (« Effacer »
+// sat on the training title's « Historique »). Each field takes the full
+// width; its label text stays above it and its actions (save state,
+// « Effacer ») go on their own line under it, right-aligned; the title's
+// « Historique » wraps under the title when short (.o_pk_edit_card_title
+// wraps). The label box is dissolved (display: contents) so its parts can
+// be placed around the input; it stays the input's <label> (accessible name).
+@media (max-width: 767.98px) {
+    .o_pk_app [data-pk-section="player.header.edit"] {
+        .o_pk_autosave {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 5px var(--pk-space-3);
+            text-align: start;
+
+            > * {
+                flex: 1 1 100%;
+                min-width: 0;
+                order: 0;
+            }
+
+            > .o_pk_field_label {
+                display: contents;
+
+                > span:first-child {
+                    flex: 1 1 100%;
+                    order: 0;
+                }
+
+                > .o_pk_save_state,
+                > .o_pk_clear_btn,
+                > .o_pk_field_history {
+                    flex: 0 0 auto;
+                    order: 2;
+                }
+
+                > .o_pk_save_state {
+                    margin-left: auto;
+                }
+
+                > .o_pk_save_state + .o_pk_clear_btn {
+                    margin-left: 0;
+                }
+            }
+
+            > .o_pk_input,
+            > .o_pk_textarea,
+            > .o_pk_date_na {
+                order: 1;
+                width: 100%;
+                max-width: none;
+            }
+
+            > .o_pk_hint,
+            > .o_pk_field_message {
+                order: 3;
+            }
+        }
+
+        // The training label row is no longer laid over the title line.
+        [data-pk-section="player.training.edit"] .o_pk_autosave > .o_pk_field_label {
+            position: static;
+            min-height: 0;
         }
     }
 }

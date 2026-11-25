@@ -23,7 +23,18 @@
                         <group name="identity">
                             <field name="provider" />
                             <field name="login" />
-                            <field name="user_id" />
+                            <!-- Server-side check is authoritative: only a
+                                 Conversations manager can set or change the
+                                 owner of an account with write-back on. -->
+                            <field
+                name="user_id"
+                groups="conversation_base.group_conversation_manager"
+              />
+                            <field
+                name="user_id"
+                readonly="id and (not user_id or mailbox_writable)"
+                groups="!conversation_base.group_conversation_manager"
+              />
                             <field name="active" />
                         </group>
                         <group name="capabilities" string="Capabilities">
@@ -31,7 +42,19 @@
                             <field name="searchable" />
                             <field name="sendable" />
                             <field name="pushable" />
-                            <field name="mailbox_writable" />
+                            <!-- Server-side check is authoritative: only a
+                                 Conversations manager can enable write-back
+                                 on a shared account. Others only see it
+                                 editable on their personal accounts. -->
+                            <field
+                name="mailbox_writable"
+                groups="conversation_base.group_conversation_manager"
+              />
+                            <field
+                name="mailbox_writable"
+                readonly="not user_id"
+                groups="!conversation_base.group_conversation_manager"
+              />
                             <field name="artifact_only" />
                         </group>
                         <group name="triage" string="Triage">

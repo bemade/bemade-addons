@@ -45,7 +45,11 @@ from odoo.tools.misc import mute_logger
 
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
-ALWAYS_LIVE = {'sc_status', 'training_recommendation'}
+# Task 1603: « Retour prévu » is a live header field too (next to the training rec).
+# Task 1627: the play status is no autosave field any more — it is the
+# Match / Practice pill dropdowns, live outside the pencil by owner decision
+# (checked below: only in a ``status`` read fragment).
+ALWAYS_LIVE = {'training_recommendation', 'predicted_return_date'}
 
 
 @tagged('post_install', '-at_install')
@@ -74,15 +78,20 @@ class TestAppShellPencil(AppShellCommon):
     @staticmethod
     def _fields(node):
         return [json.loads(p) for p in node.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
 
     def _card(self, tree, key):
-        cards = tree.xpath('//*[@data-sc-edit-card="%s"]' % key)
+        cards = tree.xpath('//*[@data-pk-edit-card="%s"]' % key)
         self.assertEqual(len(cards), 1, key)
         card = cards[0]
-        self.assertEqual(len(card.xpath('.//button[@data-sc-edit-toggle]')), 1, key)
-        self.assertTrue(card.xpath('.//*[@data-sc-edit-view="read"]'), key)
-        edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
+        # Task 1736 (deliberate update): a card's pencil may sit in its
+        # enclosing card's top bar, pointing at it (data-pk-edit-for: the
+        # injury card's Details).
+        pencils = card.xpath('.//button[@data-pk-edit-toggle]') + tree.xpath(
+            '//button[@data-pk-edit-toggle][@data-pk-edit-for="%s"]' % key)
+        self.assertEqual(len(pencils), 1, key)
+        self.assertTrue(card.xpath('.//*[@data-pk-edit-view="read"]'), key)
+        edit = card.xpath('.//*[@data-pk-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden', key)
         return card, edit
 
@@ -92,16 +101,21 @@ class TestAppShellPencil(AppShellCommon):
         text, tree = self._get(self.injury_url)
         details, edit = self._card(tree, 'injury-details')
         names = {f['field'] for f in self._fields(edit)}
-        for name in ('diagnosis', 'sc_injury_date', 'stage', 'predicted_resolution_date',
-                     'resolution_date', 'parental_consent', 'hidden_from_coaches'):
+        for name in ('diagnosis', 'sc_injury_date', 'predicted_resolution_date', 'resolution_date'):
             self.assertIn(name, names)
-        notes, edit = self._card(tree, 'injury-notes')
-        self.assertEqual({f['field'] for f in self._fields(edit)}, {'external_notes', 'internal_notes'})
-        read = notes.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content()
-        self.assertIn('Synthetic ext', read)
-        self.assertIn('Synthetic int', read)
-        self.assertTrue(notes.xpath('.//*[@data-sc-sheet-open="sc_note_history_sheet"]'
-                                    '[not(ancestor::*[@data-sc-edit-view="edit"])]'))
+        # Task 1631: status, consent and visibility are pill dropdowns.
+        for name in ('stage', 'parental_consent', 'hidden_from_coaches'):
+            self.assertNotIn(name, names)
+            self.assertTrue(tree.xpath('//*[@data-pk-pill-select][@data-pk-field="%s"]' % name), name)
+        # Task 1675: one edit card per note.
+        for scope, text_ in (('external', 'Synthetic ext'), ('internal', 'Synthetic int')):
+            card, edit = self._card(tree, 'injury-notes-%s' % scope)
+            self.assertEqual([f['field'] for f in self._fields(edit)], ['%s_notes' % scope])
+            self.assertIn(text_, card.xpath('.//*[@data-pk-edit-view="read"]')[0].text_content())
+        notes = tree.xpath('//section[@data-pk-section="injury.notes"]')[0]
+        # Task 1616: the injury page is the open card (per-injury sheet ids).
+        self.assertTrue(notes.xpath('.//*[@data-pk-sheet-open="sc_note_history_sheet_%s"]'
+                                    '[not(ancestor::*[@data-pk-edit-view="edit"])]' % self.injury.id))
         self.assertNotIn('Saved as you go', text)
 
     # -- UC-PE2 ----------------------------------------------------------
@@ -110,8 +124,15 @@ class TestAppShellPencil(AppShellCommon):
         _text, tree = self._get(self.injury_url)
         _details, edit = self._card(tree, 'injury-details')
         self.assertEqual({f['field'] for f in self._fields(edit)}, {'sc_injury_date'})
-        notes, edit = self._card(tree, 'injury-notes')
-        self.assertEqual({f['field'] for f in self._fields(edit)}, {'external_notes'})
+        # Owner review 2026-10-25 (#1675): the external note reads, without
+        # a pencil or an editor, for a coach.
+        card = tree.xpath('//*[@data-pk-edit-card="injury-notes-external"]')[0]
+        self.assertFalse(card.xpath('.//button[@data-pk-edit-toggle]'))
+        self.assertFalse(card.xpath('.//*[@data-pk-edit-view="edit"]'))
+        self.assertFalse(self._fields(card))
+        self.assertIn('Synthetic ext', card.xpath('.//*[@data-pk-edit-view="read"]')[0].text_content())
+        self.assertFalse(tree.xpath('//*[@data-pk-edit-card="injury-notes-internal"]'))
+        notes = tree.xpath('//section[@data-pk-section="injury.notes"]')[0]
         self.assertNotIn('Synthetic int', notes.text_content())
 
     # -- UC-PE3 ----------------------------------------------------------
@@ -120,9 +141,9 @@ class TestAppShellPencil(AppShellCommon):
         _text, tree = self._get('/my/player?player_id=%s&tab=notes' % self.player.id)
         card, edit = self._card(tree, 'note-%s' % self.mine.id)
         self.assertEqual([f['field'] for f in self._fields(edit)], ['note', 'date', 'injury_id'])
-        self.assertIn('Synthetic mine', card.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content())
+        self.assertIn('Synthetic mine', card.xpath('.//*[@data-pk-edit-view="read"]')[0].text_content())
         theirs = tree.xpath('//*[@data-sc-note-id="%s"]' % self.theirs.id)[0]
-        self.assertFalse(theirs.xpath('.//button[@data-sc-edit-toggle]'))
+        self.assertFalse(theirs.xpath('.//button[@data-pk-edit-toggle]'))
         self.assertFalse(self._fields(theirs))
         self.assertIn('Synthetic theirs', theirs.text_content())
 
@@ -133,7 +154,7 @@ class TestAppShellPencil(AppShellCommon):
         card, edit = self._card(tree, 'activity')
         self.assertEqual({f['field'] for f in self._fields(edit)},
                          {'summary', 'date_deadline', 'user_id', 'note'})
-        self.assertIn('Player task', card.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content())
+        self.assertIn('Player task', card.xpath('.//*[@data-pk-edit-view="read"]')[0].text_content())
         resp = self.url_open('/my/activity/%s/edit' % self.act_player.id, allow_redirects=False)
         self.assertIn(resp.status_code, (302, 303))
         self.assertTrue(resp.headers['Location'].split('?')[0].endswith('/my/activity/%s' % self.act_player.id))
@@ -246,7 +267,7 @@ class TestAppShellPencil(AppShellCommon):
         self.assertIn('Synthetic plan', event.description)
         self._login_coach()
         _text, tree = self._get('/my/event/%s' % event.id)
-        self.assertFalse(tree.xpath('//*[@data-sc-edit-card="event"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-edit-card="event"]'))
         with mute_logger('odoo.http'):
             self.assertIn(self._save(event, 'name', 'Nope').status_code, (403, 404))
 
@@ -266,12 +287,34 @@ class TestAppShellPencil(AppShellCommon):
             login()
             for url in pages + extra:
                 _text, tree = self._get(url)
-                for node in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+                for node in tree.xpath('//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'):
                     props = json.loads(node.get('props'))
                     if props.get('mode') != 'server' or props.get('field') in ALWAYS_LIVE:
                         continue
-                    self.assertTrue(node.xpath('ancestor::*[@data-sc-edit-view="edit"]'),
+                    self.assertTrue(node.xpath('ancestor::*[@data-pk-edit-view="edit"]'),
                                     '%s: %s is live outside a pencil' % (url, props.get('field')))
+                # Task 1627: the deliberate always-live exception — the status
+                # pills, in the player's « status » read fragment only. Task
+                # 1631: and the injury card's pills — the status in its
+                # « summary », consent + visibility in its « flags ».
+                homes = {
+                    ('sports.patient', 'sc_status'): 'status',
+                    ('sports.patient.injury', 'stage'): 'summary',
+                    ('sports.patient.injury', 'parental_consent'): 'flags',
+                    ('sports.patient.injury', 'hidden_from_coaches'): 'flags',
+                }
+                # Task 1634: and the player cards' pills, in each card's
+                # « row-<scope> » read fragment.
+                card_homes = {('sports.patient', 'sc_status')}
+                for pill in tree.xpath('//*[@data-pk-pill-select]'):
+                    target = (pill.get('data-pk-model'), pill.get('data-pk-field'))
+                    home = homes.get(target)
+                    self.assertTrue(home, '%s: %s' % (url, pill.get('data-pk-field')))
+                    base = '%s:%s:' % (pill.get('data-pk-model'), pill.get('data-pk-record-id'))
+                    keys = pill.xpath('ancestor::*[@data-pk-fragment]/@data-pk-fragment')
+                    self.assertTrue(base + home in keys or (
+                        target in card_homes and any(k.startswith(base + 'row-') for k in keys)),
+                        '%s: %s' % (url, keys))
 
 
 @tagged('post_install', '-at_install')

@@ -1,0 +1,507 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_portal_consent
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-15 23:14+0000\n"
+"PO-Revision-Date: 2026-11-15 23:14+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: bemade_portal_consent
+#. odoo-python
+#: code:addons/bemade_portal_consent/models/portal_consent_version.py:0
+msgid "%(document)s, version %(number)s"
+msgstr "%(document)s, version %(number)s"
+
+#. module: bemade_portal_consent
+#. odoo-python
+#: code:addons/bemade_portal_consent/models/portal_consent_acceptance.py:0
+msgid "A consent acceptance is never edited."
+msgstr "Une acceptation de consentement n'est jamais modifiée."
+
+#. module: bemade_portal_consent
+#. odoo-python
+#: code:addons/bemade_portal_consent/models/portal_consent_document.py:0
+msgid ""
+"A document with a published version cannot be deleted. Archive it instead."
+msgstr ""
+"Un document qui a une version publiée ne peut pas être supprimé. Archivez-le"
+" plutôt."
+
+#. module: bemade_portal_consent
+#. odoo-python
+#: code:addons/bemade_portal_consent/models/portal_consent_version.py:0
+msgid "A later version of this document is already published."
+msgstr "Une version plus récente de ce document est déjà publiée."
+
+#. module: bemade_portal_consent
+#. odoo-python
+#: code:addons/bemade_portal_consent/models/portal_consent_version.py:0
+msgid "A published consent version cannot be deleted."
+msgstr "Une version de consentement publiée ne peut pas être supprimée."
+
+#. module: bemade_portal_consent
+#. odoo-python
+#: code:addons/bemade_portal_consent/models/portal_consent_version.py:0
+msgid "A published consent version is read-only. Write a new version instead."
+msgstr ""
+"Une version de consentement publiée est en lecture seule. Rédigez plutôt une"
+" nouvelle version."
+
+#. module: bemade_portal_consent
+#: model:ir.model.constraint,message:bemade_portal_consent.constraint_portal_consent_version_number_unique
+msgid "A version number is unique within its document."
+msgstr "Un numéro de version est unique dans son document."
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__acceptance_count
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__acceptance_count
+msgid "Acceptance Count"
+msgstr "Nombre d'acceptations"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__acceptance_ids
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_document_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_document_view_list
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_version_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_version_view_list
+msgid "Acceptances"
+msgstr "Acceptations"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_acceptance__accepted_at
+msgid "Accepted On"
+msgstr "Acceptée le"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,help:bemade_portal_consent.field_portal_consent_document__active
+msgid "An archived document is never pending."
+msgstr "Un document archivé n'est jamais en attente."
+
+#. module: bemade_portal_consent
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_document_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_document_view_search
+msgid "Archived"
+msgstr "Archivé"
+
+#. module: bemade_portal_consent
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_publish_wizard_view_form
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__code
+msgid "Code"
+msgstr "Code"
+
+#. module: bemade_portal_consent
+#: model:ir.actions.act_window,name:bemade_portal_consent.action_portal_consent_acceptance
+#: model:ir.ui.menu,name:bemade_portal_consent.menu_portal_consent_acceptance
+msgid "Consent Acceptances"
+msgstr "Acceptations des consentements"
+
+#. module: bemade_portal_consent
+#: model:ir.actions.act_window,name:bemade_portal_consent.action_portal_consent_document
+#: model:ir.ui.menu,name:bemade_portal_consent.menu_portal_consent_document
+msgid "Consent Documents"
+msgstr "Documents de consentement"
+
+#. module: bemade_portal_consent
+#: model:res.groups,name:bemade_portal_consent.group_portal_consent_manager
+msgid "Consent Manager"
+msgstr "Gestionnaire des consentements"
+
+#. module: bemade_portal_consent
+#: model:ir.actions.act_window,name:bemade_portal_consent.action_portal_consent_version
+msgid "Consent Versions"
+msgstr "Versions des consentements"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_acceptance__partner_id
+msgid "Contact"
+msgstr "Contact"
+
+#. module: bemade_portal_consent
+#: model_terms:ir.actions.act_window,help:bemade_portal_consent.action_portal_consent_document
+msgid "Create a consent document"
+msgstr "Créer un document de consentement"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_acceptance__create_uid
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__create_uid
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_publish_wizard__create_uid
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_acceptance__create_date
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__create_date
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_publish_wizard__create_date
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: bemade_portal_consent
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_document_view_list
+msgid "Current"
+msgstr "Actuelle"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__current_version_id
+msgid "Current Version"
+msgstr "Version actuelle"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__description
+msgid "Description"
+msgstr "Description"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_ir_http__display_name
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_acceptance__display_name
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__display_name
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_publish_wizard__display_name
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__display_name
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_res_users__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_acceptance__document_id
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_publish_wizard__document_id
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__document_id
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_acceptance_view_search
+msgid "Document"
+msgstr "Document"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields.selection,name:bemade_portal_consent.selection__portal_consent_version__state__draft
+msgid "Draft"
+msgstr "Brouillon"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_publish_wizard__is_first
+msgid "First Published Version"
+msgstr "Première version publiée"
+
+#. module: bemade_portal_consent
+#: model:ir.model,name:bemade_portal_consent.model_ir_http
+msgid "HTTP Routing"
+msgstr "Routage HTTP"
+
+#. module: bemade_portal_consent
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_page
+msgid "I accept"
+msgstr "J'accepte"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_ir_http__id
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_acceptance__id
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__id
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_publish_wizard__id
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__id
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_res_users__id
+msgid "ID"
+msgstr "ID"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_acceptance__ip
+msgid "IP Address"
+msgstr "Adresse IP"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,help:bemade_portal_consent.field_portal_consent_document__description
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_document_view_form
+msgid "Internal note: what the document is for, who must accept it."
+msgstr "Note interne : à quoi sert le document, qui doit l'accepter."
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_acceptance__write_uid
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__write_uid
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_publish_wizard__write_uid
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__write_uid
+msgid "Last Updated by"
+msgstr "Dernière mise à jour par"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_acceptance__write_date
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__write_date
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_publish_wizard__write_date
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__write_date
+msgid "Last Updated on"
+msgstr "Dernière mise à jour le"
+
+#. module: bemade_portal_consent
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_page
+msgid "Log out"
+msgstr "Se déconnecter"
+
+#. module: bemade_portal_consent
+#: model:res.groups,comment:bemade_portal_consent.group_portal_consent_manager
+msgid ""
+"Manages the portal consent documents and their versions, reads the "
+"acceptance log."
+msgstr ""
+"Gère les documents de consentement du portail et leurs versions, consulte le"
+" registre des acceptations."
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__name
+msgid "Name"
+msgstr "Nom"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__number
+msgid "Number"
+msgstr "Numéro"
+
+#. module: bemade_portal_consent
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_publish_wizard_view_form
+msgid ""
+"Once published, the version is read-only: its text can no longer change and it cannot be\n"
+"                    deleted. Check that every translation of the text is complete."
+msgstr ""
+"Une fois publiée, la version est en lecture seule : son texte ne peut plus changer et elle ne peut\n"
+"                    pas être supprimée. Vérifiez que chaque traduction du texte est complète."
+
+#. module: bemade_portal_consent
+#. odoo-python
+#: code:addons/bemade_portal_consent/models/portal_consent_version.py:0
+msgid "Only a draft version can be published."
+msgstr "Seule une version brouillon peut être publiée."
+
+#. module: bemade_portal_consent
+#. odoo-python
+#: code:addons/bemade_portal_consent/models/portal_consent_version.py:0
+msgid "Only a published version can be accepted."
+msgstr "Seule une version publiée peut être acceptée."
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,help:bemade_portal_consent.field_portal_consent_document__sequence
+msgid "Order in which pending documents are shown to a user."
+msgstr ""
+"Ordre dans lequel les documents en attente sont présentés à l'utilisateur."
+
+#. module: bemade_portal_consent
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_document_view_form
+msgid "Pending Users"
+msgstr "Utilisateurs en attente"
+
+#. module: bemade_portal_consent
+#. odoo-python
+#: code:addons/bemade_portal_consent/models/portal_consent_document.py:0
+msgid "Pending: %s"
+msgstr "En attente : %s"
+
+#. module: bemade_portal_consent
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_page
+msgid ""
+"Please read this document. You can use the portal once you have accepted it."
+msgstr ""
+"Veuillez lire ce document. Vous pourrez utiliser le portail une fois que "
+"vous l'aurez accepté."
+
+#. module: bemade_portal_consent
+#: model:res.groups.privilege,name:bemade_portal_consent.res_groups_privilege_portal_consent
+msgid "Portal Consent"
+msgstr "Consentement au portail"
+
+#. module: bemade_portal_consent
+#: model:ir.model,name:bemade_portal_consent.model_portal_consent_acceptance
+msgid "Portal Consent Acceptance"
+msgstr "Acceptation de consentement au portail"
+
+#. module: bemade_portal_consent
+#: model:ir.model,name:bemade_portal_consent.model_portal_consent_document
+msgid "Portal Consent Document"
+msgstr "Document de consentement au portail"
+
+#. module: bemade_portal_consent
+#: model:ir.model,name:bemade_portal_consent.model_portal_consent_version
+msgid "Portal Consent Version"
+msgstr "Version de consentement au portail"
+
+#. module: bemade_portal_consent
+#: model_terms:ir.actions.act_window,help:bemade_portal_consent.action_portal_consent_document
+msgid "Portal users accept its published versions before they use the portal."
+msgstr ""
+"Les utilisateurs du portail en acceptent les versions publiées avant "
+"d'utiliser le portail."
+
+#. module: bemade_portal_consent
+#. odoo-python
+#: code:addons/bemade_portal_consent/models/portal_consent_version.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_document_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_publish_wizard_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_version_view_form
+msgid "Publish"
+msgstr "Publier"
+
+#. module: bemade_portal_consent
+#: model:ir.model,name:bemade_portal_consent.model_portal_consent_publish_wizard
+msgid "Publish a Portal Consent Version"
+msgstr "Publier une version de consentement au portail"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields.selection,name:bemade_portal_consent.selection__portal_consent_version__state__published
+msgid "Published"
+msgstr "Publiée"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__published_by_id
+msgid "Published By"
+msgstr "Publiée par"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__published_at
+msgid "Published On"
+msgstr "Publiée le"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_publish_wizard__requires_resign
+msgid "Require a New Acceptance"
+msgstr "Exiger une nouvelle signature"
+
+#. module: bemade_portal_consent
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_document_view_list
+msgid "Required"
+msgstr "Requise"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__required_version_id
+msgid "Required Version"
+msgstr "Version requise"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__requires_resign
+msgid "Requires a New Acceptance"
+msgstr "Exige une nouvelle signature"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__sequence
+msgid "Sequence"
+msgstr "Séquence"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__state
+msgid "State"
+msgstr "État"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,help:bemade_portal_consent.field_portal_consent_document__code
+msgid ""
+"Technical identifier, unique. Consumers refer to the document by its XML id "
+"or this code."
+msgstr ""
+"Identifiant technique, unique. Les modules qui utilisent le document s'y "
+"réfèrent par son ID XML ou par ce code."
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_version__body
+msgid "Text"
+msgstr "Texte"
+
+#. module: bemade_portal_consent
+#: model:ir.model.constraint,message:bemade_portal_consent.constraint_portal_consent_document_code_unique
+msgid "The code of a consent document must be unique."
+msgstr "Le code d'un document de consentement doit être unique."
+
+#. module: bemade_portal_consent
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_publish_wizard_view_form
+msgid ""
+"The first published version of a document always requires an acceptance."
+msgstr ""
+"La première version publiée d'un document exige toujours une acceptation."
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,help:bemade_portal_consent.field_portal_consent_document__required_version_id
+msgid ""
+"The latest published version that requires a new acceptance. A user who "
+"accepted it, or a later published version, is compliant."
+msgstr ""
+"La dernière version publiée qui exige une nouvelle signature. Un utilisateur"
+" qui l'a acceptée, ou qui a accepté une version publiée plus récente, est en"
+" règle."
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,help:bemade_portal_consent.field_portal_consent_document__current_version_id
+msgid "The latest published version: the text shown to users."
+msgstr "La dernière version publiée : le texte présenté aux utilisateurs."
+
+#. module: bemade_portal_consent
+#: model:ir.model,name:bemade_portal_consent.model_res_users
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_acceptance__user_id
+msgid "User"
+msgstr "Utilisateur"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_acceptance__user_agent
+msgid "User Agent"
+msgstr "Agent utilisateur"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,help:bemade_portal_consent.field_portal_consent_publish_wizard__requires_resign
+msgid ""
+"Users who accepted an earlier version must accept this one before using the "
+"portal again. Leave it unchecked for a correction that changes nothing for "
+"them (typo, layout)."
+msgstr ""
+"Les utilisateurs qui ont accepté une version antérieure doivent accepter "
+"celle-ci avant d'utiliser de nouveau le portail. Laissez la case décochée "
+"pour une correction qui ne change rien pour eux (coquille, mise en page)."
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,help:bemade_portal_consent.field_portal_consent_version__requires_resign
+msgid "Users who accepted an earlier version must accept this one."
+msgstr ""
+"Les utilisateurs qui ont accepté une version antérieure doivent accepter "
+"celle-ci."
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_acceptance__version_id
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_publish_wizard__version_id
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_acceptance_view_search
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_page
+msgid "Version"
+msgstr "Version"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__version_count
+msgid "Version Count"
+msgstr "Nombre de versions"
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,help:bemade_portal_consent.field_portal_consent_version__number
+msgid "Version number, per document (1, 2, 3…)."
+msgstr "Numéro de version, par document (1, 2, 3…)."
+
+#. module: bemade_portal_consent
+#: model:ir.model.fields,field_description:bemade_portal_consent.field_portal_consent_document__version_ids
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_document_view_form
+msgid "Versions"
+msgstr "Versions"
+
+#. module: bemade_portal_consent
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_page
+msgid "documents to read and accept"
+msgstr "documents à lire et à accepter"
+
+#. module: bemade_portal_consent
+#: model_terms:ir.ui.view,arch_db:bemade_portal_consent.portal_consent_document_view_form
+msgid "e.g. Privacy policy"
+msgstr "p. ex. Politique de confidentialité"

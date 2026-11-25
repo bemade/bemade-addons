@@ -1,0 +1,24 @@
+{
+  "stepsFile": "../../static/tests/tours/thread_view.steps.js",
+  "startPath": "/odoo/action-conversation_base.mail_conversation_action",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "lang": "fr_CA",
+  "voice": "fr_FR-siwis-medium",
+  "title": "Lire et répondre à une conversation comme dans une boîte courriel",
+  "introNarration": "Dans cette démonstration, nous ouvrons une conversation présentée comme un fil de courriels, puis nous y répondons et nous la transférons, sans quitter le fil.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "La vue fil de discussion est facultative : le formulaire reste l'écran habituel. Chaque courriel a ses boutons Répondre et Transférer, le bas du fil répond à toute la conversation ou la transfère en entier, et le bouton Vue formulaire vous ramène au formulaire.",
+  "stepOverrides": {
+    "note-badge": {"containsText": "Note interne"},
+    "reply-on-email": {
+      "selector": ".o-conversationThreadView .o-mail-Message[data-thread-view-kind='mail'] .o-mail-Message-actions button[title='Répondre']"
+    },
+    "close-dialog": {"containsText": "Fermer"},
+    "forward-on-email": {
+      "selector": ".o-conversationThreadView .o-mail-Message[data-thread-view-kind='mail'] .o-mail-Message-actions button[title='Transférer']"
+    },
+    "cancel-forward": {"containsText": "Annuler"},
+    "cancel-forward-2": {"containsText": "Annuler"}
+  }
+}

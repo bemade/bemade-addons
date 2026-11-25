@@ -90,7 +90,7 @@ class TestUrgentNotifications(TransactionCase):
     # ------------------------------------------------------------------ utils
     def _urgent_messages(self):
         """mail.message records produced by the urgent summary send."""
-        return self.env["mail.message"].search([("subject", "=like", "FitCrew%")])
+        return self.env["mail.message"].search([("subject", "=like", "Le Fit Crew%")])
 
     def _notified_partner_ids(self):
         msgs = self._urgent_messages()
@@ -672,7 +672,7 @@ class TestUrgentNoSelfNotify(TransactionCase):
         self.env.cr.precommit.run()
         self.Patient._urgent_notify_set_watermark(self._wm())
         self.Patient._cron_send_urgent_notifications(now=self._now())
-        msgs = self.env["mail.message"].search([("subject", "=like", "FitCrew%")])
+        msgs = self.env["mail.message"].search([("subject", "=like", "Le Fit Crew%")])
         notified = set(self.env["mail.notification"].search([
             ("mail_message_id", "in", msgs.ids),
         ]).mapped("res_partner_id").ids)

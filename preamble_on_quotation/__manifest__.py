@@ -8,7 +8,7 @@
 
 {
     "name": "Quotation PDF Preamble",
-    "version": "19.0.0.3.0",
+    "version": "19.0.0.3.1",
     "license": "LGPL-3",
     "category": "Sales",
     "summary": "Add customizable HTML preamble to quotation PDFs and the customer portal",

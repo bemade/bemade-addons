@@ -13,7 +13,8 @@ Acceptance criteria
 4. ``homeschool.day.journal_state`` is computed: ``incomplete`` when any hour-bearing
    (not ``opening`` / ``pause`` / ``debrief`` — ``NO_HOURS_KINDS``), non-skipped block of a
    past or current day lacks its minutes or its adult-present minutes, or when the day
-   has no journal entry; ``done`` otherwise. (Replaces ``journal.py status``; agrees
+   has no journal entry — except a day with **no** hour-bearing block and no entry, which is
+   ``empty``; ``done`` otherwise. (Replaces ``journal.py status``; agrees
    with the journal API's ``status``.)
 5. The weekly adult-presence rollup (sum of ``minutes_adult_present`` per ISO week,
    in hours) is available through ``read_group`` and equals what
@@ -108,7 +109,7 @@ class TestBlockActuals(HomeschoolCase):
 
     def test_journal_state_search_matches_the_badge(self):
         """Searching on ``journal_state`` returns exactly the days whose computed state matches,
-        for each of the four values, with ``=``, ``in`` and ``!=``."""
+        for each of the five values, with ``=``, ``in`` and ``!=``."""
         off = self.make_day(self.today - timedelta(days=3), is_off=True)
         future = self.make_day(self.today + timedelta(days=3))
         self.make_block(future, "Later", 45, 1, subject_id=self.fle.id)
@@ -125,21 +126,30 @@ class TestBlockActuals(HomeschoolCase):
         self.make_block(done, "Pause", 15, 2, kind="pause")
         self.make_block(done, "Skipped", 45, 3, subject_id=self.math.id, status="skipped")
         self.env["homeschool.journal"].create({"day_id": done.id, "went_well": "fine"})
-        days = self.day | off | future | pending | no_entry | done  # self.day: today, nothing recorded
+        # past, no hour-bearing block (an opening only), no journal entry: empty, not incomplete
+        empty = self.make_day(self.today - timedelta(days=5))
+        self.make_block(empty, "Opening", 10, 1, kind="opening")
+        bare = self.make_day(self.today - timedelta(days=6))  # nothing at all
+        # past, no hour-bearing block but a journal entry: done
+        noted = self.make_day(self.today - timedelta(days=7))
+        self.env["homeschool.journal"].create({"day_id": noted.id, "went_well": "a walk"})
+        days = self.day | off | future | pending | no_entry | done | empty | bare | noted  # self.day: today, nothing recorded
         expected = {state: days.filtered(lambda d: d.journal_state == state) for state, _ in JOURNAL_STATES}
         self.assertEqual(expected["off"], off)
         self.assertEqual(expected["future"], future)
         self.assertEqual(expected["incomplete"], self.day | pending | no_entry)
-        self.assertEqual(expected["done"], done)
+        self.assertEqual(expected["done"], done | noted)
+        self.assertEqual(expected["empty"], empty | bare)
 
         def found(domain):
             return self.Day.search([("student_id", "=", self.student.id), ("id", "in", days.ids)] + domain)
 
         for state, _ in JOURNAL_STATES:
             self.assertEqual(found([("journal_state", "=", state)]), expected[state], state)
-        self.assertEqual(found([("journal_state", "in", ["off", "done"])]), off | done)
+        self.assertEqual(found([("journal_state", "in", ["off", "done"])]), off | done | noted)
         self.assertEqual(found([("journal_state", "!=", "future")]), days - future)
-        self.assertEqual(found([("journal_state", "not in", ["incomplete", "done"])]), off | future)
+        self.assertEqual(found([("journal_state", "!=", "incomplete")]), days - self.day - pending - no_entry)
+        self.assertEqual(found([("journal_state", "not in", ["incomplete", "done"])]), off | future | empty | bare)
 
     def test_no_hours_kinds_never_pending(self):
         opening = self.make_block(self.day, "Opening", 10, 0, kind="opening")

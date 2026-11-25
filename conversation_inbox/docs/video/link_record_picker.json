@@ -1,0 +1,23 @@
+{
+  "stepsFile": "../../static/tests/tours/link_record_picker.steps.js",
+  "startPath": "/odoo/action-conversation_inbox.conversation_inbox_client_action",
+  "login": {
+    "path": "/web/login",
+    "formSelector": "form"
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "lang": "fr_CA",
+  "voice": "fr_FR-siwis-medium",
+  "title": "Lier un courriel à un enregistrement en le cherchant par son nom",
+  "introNarration": "Dans cette démonstration, nous voyons comment lier un courriel de votre boîte de réception à un enregistrement, par exemple un contact, en le cherchant par son nom, sans jamais avoir à connaître son numéro interne.",
+  "outroTitle": "À retenir",
+  "outroNarration": "Choisissez d'abord le type d'enregistrement, puis tapez une partie de son nom et sélectionnez-le dans la liste. Si vous changez de type, votre choix précédent est effacé pour éviter un mauvais lien.",
+  "stepOverrides": {
+    "see_item": {
+      "containsText": "Soumission pour la commande"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "stepsFile": "../../static/tests/tours/draft_no_send_message.steps.js",
+  "startPath": "/odoo/action-conversation_base.mail_conversation_action",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "lang": "fr_CA",
+  "voice": "fr_FR-siwis-medium",
+  "title": "Commenter un brouillon de réponse",
+  "introNarration": "Dans cette démonstration, nous voyons que le fil de discussion d'un brouillon de réponse n'offre plus le bouton « Envoyer un message », qui n'aurait joint personne.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "Pour écrire aux destinataires, utilisez le bouton Envoyer du brouillon. Le bouton de note interne reste disponible, et les autres documents gardent leur bouton « Envoyer un message ».",
+  "stepOverrides": {
+    "log-note-present": {"containsText": "Note"}
+  }
+}

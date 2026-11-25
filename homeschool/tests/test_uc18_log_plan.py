@@ -29,6 +29,11 @@ Acceptance criteria
 9. The report « Ma liste du jour » (``homeschool.report_day_list``) renders one card per
    deliverable in ``sequence`` order with its ``when`` label, the bonus card dashed, a tick
    for a done one, and the two footer lines.
+10. A deliverable row may carry ``answer_lines`` (an integer 0–12): the ruled lines
+    printed under it for a written answer. Absent on create → 0; absent on a replay → the
+    record keeps its value; a negative, non-integer or > 12 value is a ``UserError``
+    before anything is written. The report prints exactly that many ruled lines under the
+    card's text (none for 0), and the time column never wraps (``white-space: nowrap``).
 """
 from datetime import date
 
@@ -403,3 +408,57 @@ class TestLogPlan(HomeschoolCase):
         self.assertIn("le reste du temps est à toi", html)
         self.assertIn("Ce qui n'est pas coché va à demain, sans drame", html)
         self.assertIn(day.display_name, html)
+
+    # answer lines ------------------------------------------------------
+    def test_answer_lines(self):
+        payload = plan_payload()
+        payload["deliverables"][0]["answer_lines"] = 4
+        res = self.api.log_plan(self.student.id, "2026-03-03", payload)
+        d1 = self.Deliverable.browse(res["deliverable_ids"]["d1"])
+        d2 = self.Deliverable.browse(res["deliverable_ids"]["d2"])
+        self.assertEqual((d1.answer_lines, d2.answer_lines), (4, 0), "absent on create: 0")
+        # a replay without the key keeps the value
+        res = self.api.log_plan(self.student.id, "2026-03-03", plan_payload())
+        self.assertEqual(res["deliverable_ids"]["d1"], d1.id)
+        self.assertEqual(d1.answer_lines, 4, "absent on replay: left as is")
+        payload = plan_payload()
+        payload["deliverables"][0]["answer_lines"] = 0
+        self.api.log_plan(self.student.id, "2026-03-03", payload)
+        self.assertEqual(d1.answer_lines, 0)
+        payload["deliverables"][0]["answer_lines"] = 12
+        self.api.log_plan(self.student.id, "2026-03-03", payload)
+        self.assertEqual(d1.answer_lines, 12)
+        for bad in (-1, "x", 50, 13, 2.5, True, "4"):
+            payload = plan_payload()
+            payload["deliverables"][0]["answer_lines"] = bad
+            payload["deliverables"][1]["name"] = "must not be written"
+            with self.assertRaises(UserError, msg=repr(bad)):
+                self.api.log_plan(self.student.id, "2026-03-03", payload)
+            self.assertEqual(d1.answer_lines, 12, "nothing written on a refused plan (%r)" % (bad,))
+            self.assertNotEqual(d2.name, "must not be written")
+
+    def test_report_answer_lines_and_nowrap(self):
+        payload = plan_payload()
+        payload["deliverables"][0]["answer_lines"] = 4
+        payload["deliverables"][0]["when"] = "10 h 05"
+        res = self.api.log_plan(self.student.id, "2026-03-03", payload)
+        day = self.Day.browse(res["day_id"])
+        Report = self.env["ir.actions.report"].with_user(self.manager)
+        html = Report._render_qweb_html("homeschool.report_day_list", day.ids)[0].decode()
+        self.assertEqual(html.count('class="hs-line"'), 4, "4 ruled lines for the first card, none for the bonus")
+        first, second = html.index("Three time readings"), html.index("A fourth reading")
+        self.assertEqual(html[first:second].count('class="hs-line"'), 4, "under the first card")
+        self.assertIn('<td class="hs-when">10 h 05</td>', html, "a time label never wraps")
+        style = html[html.index("<style>"):html.index("</style>")]
+        when_rule = style[style.index("td.hs-when"):]
+        when_rule = when_rule[:when_rule.index("}")]
+        self.assertIn("white-space: nowrap", when_rule)
+        self.assertIn("width: 96px", when_rule)
+        # a phrase wraps inside the column instead of widening it
+        self.assertIn('<td class="hs-when">bonus</td>', html)
+        self.Deliverable.browse(res["deliverable_ids"]["d2"]).when = "quand ça se place"
+        self.Deliverable.browse(res["deliverable_ids"]["d1"]).answer_lines = 0
+        html = Report._render_qweb_html("homeschool.report_day_list", day.ids)[0].decode()
+        self.assertIn('<td class="hs-when hs-when-long">quand ça se place</td>', html)
+        self.assertIn("td.hs-when-long { white-space: normal; }", html)
+        self.assertNotIn('class="hs-line"', html)

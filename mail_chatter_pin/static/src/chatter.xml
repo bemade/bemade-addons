@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-inherit="mail.Chatter" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o-mail-Chatter-content')]/t" position="before">
+            <ChatterPinnedBlock
+        t-if="state.thread.id and !messageSearch.searching and !messageSearch.searched"
+        thread="state.thread"
+      />
+        </xpath>
+    </t>
+
+    <t t-inherit="mail.Message" t-inherit-mode="extension">
+        <xpath
+      expr="//div[@name='header']/small[hasclass('o-mail-Message-date')]"
+      position="after"
+    >
+            <small
+        t-if="message.pinned_at and message.thread and message.thread.model !== 'discuss.channel'"
+        class="o-mail-Message-chatterPinned ms-1 text-600"
+        title="Pinned"
+      >
+                <i class="fa fa-thumb-tack" />
+            </small>
+        </xpath>
+    </t>
+
+</templates>

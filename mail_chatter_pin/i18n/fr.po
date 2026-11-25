@@ -1,0 +1,58 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* mail_chatter_pin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: mail_chatter_pin
+#. odoo-python
+#: code:addons/mail_chatter_pin/models/mail_thread.py:0
+msgid "Only internal users can pin messages."
+msgstr "Seuls les utilisateurs internes peuvent épingler des messages."
+
+#. module: mail_chatter_pin
+#. odoo-python
+#: code:addons/mail_chatter_pin/models/mail_thread.py:0
+msgid "Only notes and emails of this record can be pinned."
+msgstr "Seuls les notes et les courriels de ce dossier peuvent être épinglés."
+
+#. module: mail_chatter_pin
+#. odoo-javascript
+#: code:addons/mail_chatter_pin/static/src/message_actions.js:0
+msgid "Pin"
+msgstr "Épingler"
+
+#. module: mail_chatter_pin
+#. odoo-javascript
+#: code:addons/mail_chatter_pin/static/src/chatter.xml:0
+msgid "Pinned"
+msgstr "Épinglé"
+
+#. module: mail_chatter_pin
+#. odoo-javascript
+#: code:addons/mail_chatter_pin/static/src/chatter_pinned_block.js:0
+msgid "Pinned (%(count)s)"
+msgstr "Épinglés (%(count)s)"
+
+#. module: mail_chatter_pin
+#. odoo-javascript
+#: code:addons/mail_chatter_pin/static/src/chatter_pinned_block.xml:0
+#: code:addons/mail_chatter_pin/static/src/message_actions.js:0
+msgid "Unpin"
+msgstr "Désépingler"
+
+#. module: mail_chatter_pin
+#. odoo-python
+#: code:addons/mail_chatter_pin/models/mail_thread.py:0
+msgid "Use the channel's own pin feature for Discuss channels."
+msgstr "Pour les canaux de Discussion, utilisez l'épinglage propre au canal."

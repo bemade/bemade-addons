@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Extends the FSM task form; the FSM mobile form (a primary view on
+         top of it) inherits the tab and the banner. -->
+    <record id="project_task_form_fsm_prep" model="ir.ui.view">
+        <field name="name">project.task.form.fsm.prep</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="industry_fsm.view_task_form2_inherit" />
+        <field name="arch" type="xml">
+            <!-- Banner outside warning_section, which the mobile form hides. -->
+            <xpath expr="//t[@name='warning_section']" position="after">
+                <div
+          role="alert"
+          class="alert alert-danger d-flex gap-2 mb-0 o_fsm_prep_overbooking_banner"
+          groups="industry_fsm.group_fsm_user"
+          invisible="not is_fsm or not fsm_prep_overbooking_warning"
+        >
+                    <i
+            class="fa fa-wrench fa-lg mt-1"
+            role="img"
+            title="Tool overbooked"
+          />
+                    <field
+            name="fsm_prep_overbooking_warning"
+            nolabel="1"
+            class="flex-grow-1"
+          />
+                </div>
+            </xpath>
+            <xpath expr="//page[@name='description_page']" position="after">
+                <page
+          string="To Bring"
+          name="fsm_prep"
+          groups="industry_fsm.group_fsm_user"
+          invisible="not is_fsm or parent_id"
+        >
+                    <field name="fsm_prep_line_ids" nolabel="1">
+                        <list editable="bottom" decoration-danger="overbooked">
+                            <field name="sequence" widget="handle" />
+                            <field name="checked" widget="boolean_toggle" />
+                            <field name="name" />
+                            <field name="tool_id" options="{'no_create': True}" />
+                            <field name="quantity" />
+                            <field name="checked_label" class="text-muted" />
+                            <!-- fixed width: an empty list freezes the columns at their
+                                 minimum, which cut the note of a line added in edit -->
+                            <field
+                  name="overbooking_note"
+                  class="text-danger"
+                  width="300px"
+                />
+                            <field name="overbooked" column_invisible="True" />
+                            <!-- kept client-side so a re-tick before save brings the
+                                 stamp back; the server ignores client stamp values -->
+                            <field name="checked_by_id" column_invisible="True" force_save="1" />
+                            <field name="checked_at" column_invisible="True" force_save="1" />
+                        </list>
+                        <kanban>
+                            <field name="overbooked" />
+                            <field name="checked_by_id" force_save="1" />
+                            <field name="checked_at" force_save="1" />
+                            <templates>
+                                <t t-name="card" class="flex-row align-items-center">
+                                    <field
+                    name="checked"
+                    widget="boolean_toggle"
+                    class="me-2"
+                  />
+                                    <div class="flex-grow-1">
+                                        <div>
+                                            <field name="quantity" class="me-1" />×
+                                            <field name="name" class="fw-bold" />
+                                        </div>
+                                        <field
+                      name="checked_label"
+                      class="text-muted small"
+                    />
+                                        <field
+                      name="overbooking_note"
+                      class="text-danger small"
+                    />
+                                    </div>
+                                </t>
+                            </templates>
+                        </kanban>
+                        <form string="To Bring">
+                            <group>
+                                <field name="checked" />
+                                <field name="tool_id" options="{'no_create': True}" />
+                                <field name="name" />
+                                <field name="quantity" />
+                                <field
+                  name="checked_label"
+                  invisible="not checked_label"
+                />
+                                <field
+                  name="overbooking_note"
+                  class="text-danger"
+                  invisible="not overbooking_note"
+                />
+                            </group>
+                        </form>
+                    </field>
+                    <div class="text-muted small">
+                        Tools needed by visits planned on overlapping dates (start to
+                        end date, plus the tool's return delay) beyond the quantity
+                        owned are shown in red. Visits without both dates are not
+                        counted. This list is not billed.
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_zeffy_campaign_user,zeffy.campaign user,model_zeffy_campaign,group_zeffy_user,1,0,0,0
+access_zeffy_contact_user,zeffy.contact user,model_zeffy_contact,group_zeffy_user,1,0,0,0
+access_zeffy_payment_user,zeffy.payment user,model_zeffy_payment,group_zeffy_user,1,0,0,0
+access_zeffy_campaign_system,zeffy.campaign system,model_zeffy_campaign,base.group_system,1,1,1,1
+access_zeffy_contact_system,zeffy.contact system,model_zeffy_contact,base.group_system,1,1,1,1
+access_zeffy_payment_system,zeffy.payment system,model_zeffy_payment,base.group_system,1,1,1,1

@@ -1,0 +1,57 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_mail_notified_preview
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: bemade_mail_notified_preview
+#. odoo-python
+#: code:addons/bemade_mail_notified_preview/models/mail_thread.py:0
+msgid "%(names)s (Odoo inbox)"
+msgstr "%(names)s (boîte Odoo)"
+
+#. module: bemade_mail_notified_preview
+#. odoo-python
+#: code:addons/bemade_mail_notified_preview/models/mail_thread.py:0
+msgid "%(names)s (email)"
+msgstr "%(names)s (courriel)"
+
+#. module: bemade_mail_notified_preview
+#. odoo-python
+#: code:addons/bemade_mail_notified_preview/models/mail_thread.py:0
+msgid "Also sent to followers: %(groups)s"
+msgstr "Aussi envoyé aux abonnés : %(groups)s"
+
+#. module: bemade_mail_notified_preview
+#: model:ir.model.fields,field_description:bemade_mail_notified_preview.field_mail_compose_message__notified_followers_preview
+msgid "Followers notified"
+msgstr "Abonnés notifiés"
+
+#. module: bemade_mail_notified_preview
+#: model:ir.model.fields,help:bemade_mail_notified_preview.field_mail_compose_message__notified_followers_preview
+msgid ""
+"Followers of the record that this message will also notify. Display only."
+msgstr ""
+"Abonnés du document que ce message notifiera aussi. Affichage seulement."
+
+#. module: bemade_mail_notified_preview
+#. odoo-python
+#: code:addons/bemade_mail_notified_preview/models/mail_thread.py:0
+msgid "No followers will be notified"
+msgstr "Aucun abonné ne sera notifié"
+
+#. module: bemade_mail_notified_preview
+#. odoo-python
+#: code:addons/bemade_mail_notified_preview/models/mail_thread.py:0
+msgid "⚠ %(names)s (no email — won't receive)"
+msgstr "⚠ %(names)s (aucune adresse — ne recevra rien)"

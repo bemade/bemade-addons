@@ -7,7 +7,7 @@
 // Task 1540: the fonts are SELF-HOSTED (static/src/fonts, SIL OFL 1.1, latin
 // subset of the brand files — no off-domain request: the clinic kiosk's iPad
 // is URL-filtered), and the tokens are MIXINS applied to two roots: the shell
-// (.o_sc_app, dark by default, light via [data-sc-theme="light"]) and the
+// (.o_pk_app, dark by default, light via [data-pk-theme="light"]) and the
 // sign-in kiosk (.o_sc_kiosk_body, light). This bundle loads on every
 // frontend page, so NOTHING may leak outside those roots (switch off =
 // today's portal, unchanged); an @font-face only downloads when used.
@@ -28,7 +28,17 @@
     src: url("/bemade_sports_clinic/static/src/fonts/DMSans-Variable-latin.woff2") format("woff2");
 }
 
-// Palette, type and scale — shared by every root.
+// Task 5357 (kit P3b2): Fit Crew's brand file. The kit (bemade_portal_kit,
+// pk_tokens.scss) declares every --pk-* slot with neutral defaults (light,
+// system fonts, normal case); this file sets Fit Crew's values on the same
+// roots with at least the kit's specificity: [data-pk-theme="dark"] and
+// [data-pk-theme="light"] (higher than the kit's light .o_pk_app), and
+// .o_pk_app without the attribute = dark, as before (same specificity as the
+// kit's: wins by load order, the kit being a dependency). The shell's body
+// the same way.
+
+// Palette, type and letter case — shared by every root (the scales are the
+// kit's, pk-scale-tokens).
 @mixin sc-brand-tokens {
     // Brand palette
     --sc-forest: #243925;
@@ -39,102 +49,98 @@
     --sc-grey: #e5e5e5;
 
     // Type
-    --sc-font-title: "Teko", "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --sc-font-text: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --sc-text-xs: 11px;
-    --sc-text-sm: 12px;
-    --sc-text-md: 14px;
-    --sc-text-lg: 16px;
-    --sc-title-md: 20px;
-    --sc-title-lg: 24px;
-    --sc-title-xl: 30px;
+    --pk-font-title: "Teko", "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --pk-font-text: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --pk-title-transform: uppercase;
+    --pk-title-spacing: 0.03em;
+    --pk-appbar-title-spacing: 0.02em;
+    --pk-label-transform: uppercase;
+    --pk-label-spacing: 0.04em;
+    --pk-stat-label-spacing: 0.06em;
 
-    // Spacing / radius / elevation scale
-    --sc-space-1: 4px;
-    --sc-space-2: 8px;
-    --sc-space-3: 12px;
-    --sc-space-4: 16px;
-    --sc-space-5: 22px;
-    --sc-space-6: 32px;
-    --sc-radius-sm: 10px;
-    --sc-radius-md: 12px;
-    --sc-radius-lg: 14px;
-    --sc-radius-pill: 999px;
-    --sc-tap: 44px;
-    --sc-rail-width: 232px;
-    --sc-appbar-height: 56px;
-    --sc-tabs-height: 64px;
+    // The brand mark, the avatar and the install icon
+    --pk-brand-mark: var(--sc-neon);
+    --pk-avatar-bg: var(--sc-mauve);
+    --pk-avatar-fg: #ffffff;
+    --pk-install-icon-bg: var(--sc-midnight);
+    --pk-secondary-fg: #ffffff;
 }
 
 @mixin sc-theme-dark {
-    --sc-bg: #120e12;
-    --sc-surface: #1d1a20;
-    --sc-surface-2: #302e33;
-    --sc-line: #3b393f;
-    --sc-fg: #e5e5e5;
-    --sc-fg-2: #a9a8ae;
-    --sc-fg-3: #7a7980;
-    --sc-accent: #a4c754;
-    --sc-accent-fg: #120e12;
-    --sc-secondary: #b678c4;
-    --sc-ok: #a4c754;
-    --sc-warn: #e9b949;
-    --sc-bad: #ec6a6a;
-    --sc-tone-fg: #120e12;
-    --sc-bar: #0d0a0e;
-    --sc-bar-fg: #e5e5e5;
-    --sc-bar-fg-2: #a9a8ae;
-    --sc-bar-active: #a4c754;
-    --sc-bar-active-bg: rgba(164, 199, 84, 0.14);
-    --sc-hover: rgba(255, 255, 255, 0.06);
-    --sc-focus: #a4c754;
-    --sc-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    --pk-bg: #120e12;
+    --pk-surface: #1d1a20;
+    --pk-surface-2: #302e33;
+    --pk-line: #3b393f;
+    --pk-fg: #e5e5e5;
+    --pk-fg-2: #a9a8ae;
+    --pk-fg-3: #7a7980;
+    --pk-accent: #a4c754;
+    --pk-accent-fg: #120e12;
+    --pk-secondary: #b678c4;
+    --pk-ok: #a4c754;
+    --pk-warn: #e9b949;
+    --pk-bad: #ec6a6a;
+    --pk-overdue: #fb923c; // task 1727: a past « Retour prévu »
+    --pk-tone-fg: #120e12;
+    --pk-bar: #0d0a0e;
+    --pk-bar-fg: #e5e5e5;
+    --pk-bar-fg-2: #a9a8ae;
+    --pk-bar-active: #a4c754;
+    --pk-bar-active-bg: rgba(164, 199, 84, 0.14);
+    --pk-hover: rgba(255, 255, 255, 0.06);
+    --pk-focus: #a4c754;
+    --pk-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    --pk-close-filter: invert(0.8);
+    --pk-color-scheme: dark;
 }
 
 @mixin sc-theme-light {
-    --sc-bg: #f4f5f2;
-    --sc-surface: #ffffff;
-    --sc-surface-2: #e5e5e5;
-    --sc-line: #d5d7d1;
-    --sc-fg: #120e12;
-    --sc-fg-2: #4d4c52;
-    --sc-fg-3: #6b6a71;
-    --sc-accent: #243925;
-    --sc-accent-fg: #ffffff;
-    --sc-secondary: #783e88;
-    --sc-ok: #5f8f2b;
-    --sc-warn: #b8860b;
-    --sc-bad: #c0392b;
-    --sc-tone-fg: #ffffff;
-    --sc-bar: #243925;
-    --sc-bar-fg: #ffffff;
-    --sc-bar-fg-2: #cfd6c9;
-    --sc-bar-active: #ffffff;
-    --sc-bar-active-bg: rgba(164, 199, 84, 0.22);
-    --sc-hover: rgba(18, 14, 18, 0.06);
-    --sc-focus: #783e88;
-    --sc-shadow: 0 6px 20px rgba(18, 14, 18, 0.12);
+    --pk-bg: #f4f5f2;
+    --pk-surface: #ffffff;
+    --pk-surface-2: #e5e5e5;
+    --pk-line: #d5d7d1;
+    --pk-fg: #120e12;
+    --pk-fg-2: #4d4c52;
+    --pk-fg-3: #6b6a71;
+    --pk-accent: #243925;
+    --pk-accent-fg: #ffffff;
+    --pk-secondary: #783e88;
+    --pk-ok: #5f8f2b;
+    --pk-warn: #b8860b;
+    --pk-bad: #c0392b;
+    --pk-overdue: #c2410c; // task 1727: a past « Retour prévu »
+    --pk-tone-fg: #ffffff;
+    --pk-bar: #243925;
+    --pk-bar-fg: #ffffff;
+    --pk-bar-fg-2: #cfd6c9;
+    --pk-bar-active: #ffffff;
+    --pk-bar-active-bg: rgba(164, 199, 84, 0.22);
+    --pk-hover: rgba(18, 14, 18, 0.06);
+    --pk-focus: #783e88;
+    --pk-shadow: 0 6px 20px rgba(18, 14, 18, 0.12);
+    --pk-close-filter: none;
+    --pk-color-scheme: light;
 }
 
-.o_sc_app {
+// The shell root and its body: dark unless the light theme is chosen.
+.o_pk_app,
+.o_pk_app[data-pk-theme="dark"],
+body.o_pk_app_body,
+body.o_pk_app_body.o_pk_app_body_dark,
+body.o_pk_app_body[data-pk-theme="dark"] {
     @include sc-brand-tokens;
     @include sc-theme-dark;
+}
 
-    &[data-sc-theme="light"] {
-        @include sc-theme-light;
-    }
+.o_pk_app[data-pk-theme="light"],
+body.o_pk_app_body.o_pk_app_body_light,
+body.o_pk_app_body[data-pk-theme="light"] {
+    @include sc-theme-light;
 }
 
 // Task 1540: the sign-in kiosk root (clinic_kiosk_layout's <body>).
 .o_sc_kiosk_body {
+    @include pk-scale-tokens;
     @include sc-brand-tokens;
     @include sc-theme-light;
-}
-
-// The page behind the shell (overscroll, safe areas) follows the theme too.
-body.o_sc_app_body {
-    background: #120e12;
-    &.o_sc_app_body_light {
-        background: #f4f5f2;
-    }
 }

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field
+      name="name"
+    >res.config.settings.view.form.inherit.mail_activity_done_assigned_by</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="mail.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <setting id="activities_setting" position="after">
+                <setting
+          id="activity_done_lang_setting"
+          string="Activity completion messages"
+          help="Write the chatter message posted when an activity is marked as done in this language, whatever the language of the user marking it as done. Empty: the user's language."
+          company_dependent="1"
+        >
+                    <field name="activity_done_lang" />
+                </setting>
+            </setting>
+        </field>
+    </record>
+</odoo>

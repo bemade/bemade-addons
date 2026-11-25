@@ -269,9 +269,11 @@ class SportsTeam(models.Model):
         # sync sudo, so only internal users may change a team's organization
         # (a portal TP with team write access must not be able to pull an
         # organization's staff onto a team — review finding).
-        if "parent_id" in vals and not self.env.su and not self.env.user._is_internal():
+        # Task 1659: and only an ADMIN among them — the organization's staff
+        # lines follow the team (sudo), so re-parenting is a staff change.
+        if "parent_id" in vals and not self.env.su and not self._sc_staff_admin(self.env.user):
             raise AccessError(
-                _("Only internal users can change a team's parent organization.")
+                _("Only clinic administrators can change a team's parent organization.")
             )
         old_parents = (
             {rec.id: rec.parent_id for rec in self} if "parent_id" in vals else {}
@@ -347,6 +349,14 @@ class SportsTeam(models.Model):
                 rec.announcement_deadline and rec.announcement_deadline < today
             )
 
+    @api.model
+    def _sc_staff_admin(self, user):
+        """Task 1659: who may change staff composition — a clinic
+        administrator or a system administrator (internal)."""
+        return bool(user._is_internal() and (
+            user.has_group("base.group_system")
+            or user.has_group("bemade_sports_clinic.group_sports_clinic_admin")))
+
     def _user_can_edit_announcement(self, user=None):
         """Whether ``user`` (default: current) may author/edit/dismiss THIS
         team's announcement. Admins/system always may; otherwise only staff
@@ -376,6 +386,9 @@ class SportsTeam(models.Model):
                 continue
             if not new:
                 action = "dismiss"
+            elif not old and self.env.context.get("sc_announcement_restore"):
+                # Task 1663: the undo of an archive.
+                action = "restore"
             elif not old:
                 action = "set"
             else:
@@ -504,17 +517,28 @@ class SportsTeam(models.Model):
             days = DASHBOARD_UPCOMING_EVENTS_DAYS_DEFAULT
         return max(days, 1)
 
+    @api.model
+    def _dashboard_upcoming_events_domain(self):
+        """``sports.event`` domain of the upcoming-events block: starts between
+        now and now + the configured horizon, not cancelled. Shared by the team
+        dashboard compute and the morning briefing's assigned-events lookup
+        (task 1636) so the two can never drift."""
+        now = fields.Datetime.now()
+        horizon = now + timedelta(days=self._dashboard_upcoming_events_days())
+        return [
+            ("date_start", ">=", now),
+            ("date_start", "<=", horizon),
+            ("state", "!=", "cancelled"),
+        ]
+
     @api.depends("event_ids.date_start", "event_ids.state")
     def _compute_dashboard_upcoming_events(self):
         # Non-stored: a window change in Settings is live on the next read.
-        now = fields.Datetime.now()
-        horizon = now + timedelta(days=self._dashboard_upcoming_events_days())
+        domain = self._dashboard_upcoming_events_domain()
         for rec in self:
-            events = rec.event_ids.filtered(
-                lambda e: e.date_start
-                and now <= e.date_start <= horizon
-                and e.state != "cancelled"
-            ).sorted(key=lambda e: e.date_start)
+            events = rec.event_ids.filtered_domain(domain).sorted(
+                key=lambda e: e.date_start
+            )
             rec.dashboard_upcoming_event_ids = events
 
     @api.depends("staff_ids.role")
@@ -673,6 +697,16 @@ class SportsTeam(models.Model):
 class TeamStaff(models.Model):
     _name = "sports.team.staff"
     _description = "Sports Team Staff"
+    # Task 1645: the mobile (the partner's phone) is normalized / refused.
+    _inherit = ["sc.phone.mixin"]
+    _sc_phone_fields = ("mobile",)
+
+    def _sc_phone_country(self, vals=None):
+        partner = self.env["res.partner"]
+        if vals and vals.get("partner_id"):
+            partner = partner.browse(vals["partner_id"])
+        partner = partner or self[:1].partner_id
+        return partner.country_id or self.env.company.country_id
 
     sequence = fields.Integer()
     team_id = fields.Many2one(
@@ -1074,14 +1108,19 @@ class TeamStaff(models.Model):
         if self._staff_batch():
             return res
 
+        # Review fixes 2026-10-24: an event-coverage row (auto-created from
+        # an event assignment) never changes portal groups — it used to
+        # grant the portal TP group to whoever was put on an event.
+        granting = res.filtered(lambda s: s.source != 'event')
+
         # Update all portal group memberships for new records
-        res._update_all_portal_groups()
-        
+        granting._update_all_portal_groups()
+
         # Update group membership based on staff roles
-        affected_users = res.mapped('user_ids')
+        affected_users = granting.mapped('user_ids')
         if affected_users:
             for user in affected_users.sudo():
-                res._update_all_portal_groups(user)
+                granting._update_all_portal_groups(user)
         
         # Handle follower recomputation
         res.team_id.mapped("patient_ids").recompute_followers()
@@ -1091,9 +1130,11 @@ class TeamStaff(models.Model):
         self._check_org_locked(unlinking=True)
         if self._staff_batch():
             return super().unlink()
-        # Store affected partners and users before deletion
+        # Store affected partners and users before deletion. Review fixes
+        # 2026-10-24: event-coverage rows grant no group, so removing one
+        # changes none either.
         affected_partners = self.mapped('partner_id')
-        affected_users = self.mapped('user_ids')
+        affected_users = self.filtered(lambda s: s.source != 'event').mapped('user_ids')
 
         # Standard processing for follower recomputation
         patients = self.team_id.mapped("patient_ids")
@@ -1176,9 +1217,12 @@ class TeamStaff(models.Model):
         Returns:
             recordset: Staff records with therapist roles
         """
+        # Review fixes 2026-10-24: event-coverage rows never count (they
+        # grant no portal group).
         return self.env['sports.team.staff'].sudo().search([
             ('partner_id', '=', partner_id),
-            ('role', 'in', ['head_therapist', 'therapist', 'doctor'])
+            ('role', 'in', ['head_therapist', 'therapist', 'doctor']),
+            ('source', '!=', 'event'),
         ])
     
     def _get_staff_with_coach_roles(self, partner_id):
@@ -1190,9 +1234,12 @@ class TeamStaff(models.Model):
         Returns:
             recordset: Staff records with coach roles
         """
+        # Review fixes 2026-10-24: event-coverage rows never count (they
+        # grant no portal group).
         return self.env['sports.team.staff'].sudo().search([
             ('partner_id', '=', partner_id),
-            ('role', 'in', ['head_coach', 'coach'])
+            ('role', 'in', ['head_coach', 'coach']),
+            ('source', '!=', 'event'),
         ])
     
     def update_all_treatment_professional_groups(self):
@@ -1380,7 +1427,9 @@ class TeamStaff(models.Model):
         if self._staff_batch():
             return result
 
-        if 'role' in vals or 'team_id' in vals:
+        # Review fixes 2026-10-24: a row adopted out of event coverage
+        # (``source`` changed) starts / stops counting for the groups.
+        if 'role' in vals or 'team_id' in vals or 'source' in vals:
             self._update_all_portal_groups()
 
         if 'team_id' in vals or 'silent_notifications' in vals or 'role' in vals:

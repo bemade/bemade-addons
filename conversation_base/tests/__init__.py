@@ -18,3 +18,12 @@ from . import test_triage_members
 from . import test_triage_actions
 from . import test_triage_row_data
 from . import test_triage_tour
+from . import test_transport_permissions
+from . import test_transport_remove_mailbox
+from . import test_app_landing
+from . import test_triage_unread_per_user
+from . import test_saved_filter_names
+from . import test_triage_fields_js
+from . import test_delivery_icon_tour
+from . import test_own_address_tour
+from . import test_neutralize

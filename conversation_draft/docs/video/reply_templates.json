@@ -1,0 +1,12 @@
+{
+  "stepsFile": "../../static/tests/tours/reply_templates.steps.js",
+  "startPath": "/odoo/action-conversation_base.mail_conversation_action",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "lang": "fr_CA",
+  "voice": "fr_FR-siwis-medium",
+  "title": "Créer des modèles de réponse pour vos conversations",
+  "introNarration": "Dans cette démonstration, nous voyons comment un administrateur crée un modèle de réponse, et comment les boutons de réponse avec modèle apparaissent ensuite sur les conversations.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "Dès qu'un modèle de réponse existe, vos équipes peuvent l'appliquer à un brouillon en un clic. Tant qu'aucun modèle n'existe, ces boutons restent masqués."
+}

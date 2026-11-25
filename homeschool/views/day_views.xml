@@ -61,6 +61,7 @@
                                     <field name="name"/>
                                     <field name="detail"/>
                                     <field name="bonus"/>
+                                    <field name="answer_lines" optional="show"/>
                                     <field name="done"/>
                                     <field name="done_at"/>
                                     <field name="done_by"/>

@@ -132,13 +132,15 @@ class TestAppShellNote1587(_Note1587Common):
     # -- UC-N5 -----------------------------------------------------------
     def _note_card_fields(self, url):
         _text, tree = self._get(url)
-        cards = tree.xpath('//*[@data-sc-edit-card="note-%s"]' % self.note.id)
+        cards = tree.xpath('//*[@data-pk-edit-card="note-%s"]' % self.note.id)
         self.assertEqual(len(cards), 1, url)
         card = cards[0]
-        self.assertEqual(card.get('data-sc-edit-reload'), '1', url)
-        edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
+        # Task 1611: no reload on « Done » — the meta line is a read fragment.
+        self.assertIsNone(card.get('data-sc-edit-reload'), url)
+        self.assertTrue(card.xpath('.//*[@data-pk-fragment="sports.treatment.note:%s:meta"]' % self.note.id), url)
+        edit = card.xpath('.//*[@data-pk-edit-view="edit"]')[0]
         props = [json.loads(p) for p in edit.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
         return {p['field']: p for p in props}, card
 
     def test_note_card_fields(self):
@@ -158,9 +160,11 @@ class TestAppShellNote1587(_Note1587Common):
             self.assertIn(str(self.injury.id), keys)
             self.assertIn(str(self.injury2.id), keys)
             # The note's current (resolved) injury stays offered; another
-            # resolved injury and another player's are not.
+            # player's is not. Task 1665 (deliberate update): every injury of
+            # the player is offered, the resolved ones last.
             self.assertIn(str(self.resolved.id), keys)
-            self.assertNotIn(str(self.closed_other.id), keys)
+            self.assertIn(str(self.closed_other.id), keys)
+            self.assertGreater(keys.index(str(self.closed_other.id)), keys.index(str(self.injury.id)))
             self.assertNotIn(str(self.foreign.id), keys)
             self.assertIn('Synthetic old bruise', card.text_content())
 
@@ -189,7 +193,7 @@ class TestAppShellNoteFr1587(_Note1587Common):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'])
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'])
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):
@@ -201,10 +205,10 @@ class TestAppShellNoteFr1587(_Note1587Common):
         self._login_tp()
         self.opener.cookies.set('frontend_lang', 'fr_CA')
         text, tree = self._get('/my/player?player_id=%s&tab=notes' % self.player.id)
-        card = tree.xpath('//*[@data-sc-edit-card="note-%s"]' % self.note.id)[0]
+        card = tree.xpath('//*[@data-pk-edit-card="note-%s"]' % self.note.id)[0]
         self.assertIn('Note générale', card.xpath('.//*[contains(@class, "o_sc_note_meta")]')[0].text_content())
         props = {p['field']: p for p in (json.loads(raw) for raw in card.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props'))}
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props'))}
         self.assertEqual(props['injury_id']['options'][0], ['', 'Note générale'])
         self.assertEqual(props['injury_id']['label'], 'Blessure')
         resp = self._save(self.note, 'injury_id', str(self.foreign.id))

@@ -33,6 +33,7 @@ class TestPortalCsrf1544(PortalCovCommon):
             'name': 'zz-1544.pdf', 'patient_id': self.player.id,
             'injury_id': self.injury.id,
             'file_content': base64.b64encode(b'synthetic'), 'category': 'other',
+            'created_by_id': self.tp.id,  # task 1432: the uploader deletes
         })
 
     # -- document delete ---------------------------------------------------------
@@ -61,7 +62,8 @@ class TestPortalCsrf1544(PortalCovCommon):
         resp = self.url_open('/my/injury/document/delete/%s' % doc.id,
                              data={'csrf_token': self._csrf()}, allow_redirects=False)
         self.assertEqual(resp.status_code, 303)
-        self.assertFalse(doc.exists())
+        doc.invalidate_recordset()
+        self.assertFalse(doc.active)  # task 1432: archived, not unlinked
 
     def test_documents_page_delete_is_post_form_with_token(self):
         self._new_document()

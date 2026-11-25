@@ -48,7 +48,7 @@ provider (SMS, WhatsApp, ...) is unaffected by this module being installed.
 - `_email_providers()` -- append its `provider` code, so the engine knows
   the record is one of its own.
 - `_email_connection_params()` -- `imap_host`, `imap_port`, `imap_ssl`,
-  `smtp_host`, `smtp_port`, `smtp_starttls`, `password`. Guarded as above.
+  `smtp_host`, `smtp_port`, `smtp_encryption` (`none` / `starttls` / `ssl`; the older boolean `smtp_starttls` is still honoured), `password`. Guarded as above.
 - `_imap_oauth_string(force_refresh=False)` -- optional. Return a SASL
   XOAUTH2 string to authenticate via OAuth instead of `login`/`password`,
   or leave the engine's `None` default for a password login. The engine

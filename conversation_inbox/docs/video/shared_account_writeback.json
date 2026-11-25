@@ -1,0 +1,12 @@
+{
+  "stepsFile": "../../static/tests/tours/shared_account_writeback.steps.js",
+  "startPath": "/odoo/action-conversation_inbox.conversation_transport_action_my",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "lang": "fr_CA",
+  "voice": "fr_FR-siwis-medium",
+  "title": "Protéger l'écriture dans une boîte courriel partagée",
+  "introNarration": "Dans cette démonstration, nous voyons qui peut autoriser Odoo à archiver ou supprimer des courriels dans la vraie boîte d'un compte partagé : seuls les gestionnaires Conversations le peuvent, y compris pour attribuer un compte partagé à quelqu'un, tandis que chacun décide pour son propre compte personnel.",
+  "outroTitle": "À retenir",
+  "outroNarration": "Les membres de l'équipe peuvent toujours archiver et traiter les courriels, mais la suppression dans une boîte partagée exige la permission « Supprimer le courrier partagé », que votre administrateur accorde aux personnes de confiance."
+}

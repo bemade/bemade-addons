@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_campaign_appraisal" model="ir.actions.report">
+        <field name="name">Campaign Evaluation</field>
+        <field name="model">hr.appraisal</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_appraisal_campaign.report_campaign_appraisal</field>
+        <field name="report_file">hr_appraisal_campaign.report_campaign_appraisal</field>
+        <field name="print_report_name">'%s - %s' % (object.campaign_id.name or 'Evaluation', object.employee_id.name)</field>
+    </record>
+
+    <!-- Results: one column per section, then the total and the overall rating.
+         results: hr.appraisal._campaign_results_data() -->
+    <template id="campaign_results_table">
+        <table class="table table-sm table-bordered o_campaign_results mb-2">
+            <thead>
+                <tr>
+                    <th/>
+                    <th t-foreach="results['sections']" t-as="row"><span t-out="row['section'].name"/></th>
+                    <th>Total</th>
+                    <th>Rating</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr t-if="results['see_self']" class="o_campaign_results_self">
+                    <th>Self-evaluation</th>
+                    <td t-foreach="results['sections']" t-as="row">
+                        <t t-out="row['self']"/> / <t t-out="row['max']"/>
+                    </td>
+                    <td>
+                        <t t-out="results['total']['self']"/> / <t t-out="results['total']['max']"/>
+                        (<t t-out="round(100.0 * results['total']['self'] / (results['total']['max'] or 1))"/> %)
+                    </td>
+                    <td/>
+                </tr>
+                <tr t-if="results['see_final']" class="o_campaign_results_final">
+                    <th>Final evaluation</th>
+                    <td t-foreach="results['sections']" t-as="row">
+                        <t t-out="row['final']"/> / <t t-out="row['max']"/>
+                        <span t-if="row['band']" t-attf-class="badge ms-1 text-bg-#{row['band'].display_color}" t-out="row['band'].name"/>
+                    </td>
+                    <td>
+                        <t t-out="results['total']['final']"/> / <t t-out="results['total']['max']"/>
+                        (<t t-out="round(100.0 * results['total']['final'] / (results['total']['max'] or 1))"/> %)
+                    </td>
+                    <td>
+                        <span t-if="results['total']['band']" t-attf-class="badge text-bg-#{results['total']['band'].display_color}" t-out="results['total']['band'].name"/>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p t-if="results['see_self'] and results['see_final'] and results['aligned']" class="mb-1">
+            <t t-if="results['aligned'] == 'aligned'">Very aligned evaluation</t>
+            <t t-else="">Gap to discuss in the 1-on-1</t>
+            (<t t-out="results['gap']"/>)
+        </p>
+        <p t-if="results['see_final'] and results['target']" class="mb-1 text-muted">
+            Target: <t t-out="results['target']"/> / <t t-out="results['total']['max']"/>
+        </p>
+    </template>
+
+    <template id="report_campaign_appraisal_grade">
+        <!-- grade: int, line: hr.appraisal.campaign.line -->
+        <t t-set="picture" t-value="line.level_text_ids.filtered(lambda t: t.value == grade)[:1]"/>
+        <t t-if="grade">
+            <strong><t t-out="grade"/> – <t t-out="picture.level_id.name"/></strong><br/>
+            <span t-out="picture.description"/>
+        </t>
+        <t t-else="">—</t>
+    </template>
+
+    <template id="report_campaign_appraisal_document">
+        <t t-call="web.external_layout">
+            <t t-set="doc" t-value="doc.with_context(lang=report_lang)"/>
+            <t t-set="o" t-value="doc"/>
+            <div class="page">
+                <h3 class="text-center">Performance Evaluation</h3>
+                <h5 class="text-center text-muted" t-out="doc.campaign_id.name"/>
+                <table class="table table-sm table-bordered mb-3">
+                    <tr>
+                        <th class="w-25">Employee</th><td><span t-out="doc.sudo().employee_id.name"/></td>
+                        <th class="w-25">Job Position</th><td><span t-out="doc.job_id.name"/></td>
+                    </tr>
+                    <tr>
+                        <th>Department</th><td><span t-out="doc.department_id.name"/></td>
+                        <th>Evaluator</th><td><span t-out="', '.join(doc.sudo().manager_ids.mapped('name'))"/></td>
+                    </tr>
+                </table>
+
+                <t t-set="results" t-value="doc._campaign_results_data()"/>
+                <t t-foreach="results['sections']" t-as="row">
+                    <h5><t t-out="row_index + 1"/>. <t t-out="row['section'].name"/></h5>
+                    <table class="table table-sm table-bordered" style="font-size: 0.85em;">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Criterion</th>
+                                <th style="width: 40%;">Self-evaluation</th>
+                                <th t-if="results['see_final']" style="width: 40%;">Final evaluation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="doc.campaign_line_ids.filtered(lambda l: l.section_id == row['section'])" t-as="line">
+                                <td><strong t-out="line.name"/></td>
+                                <td>
+                                    <t t-call="hr_appraisal_campaign.report_campaign_appraisal_grade">
+                                        <t t-set="grade" t-value="line.employee_grade_ui"/>
+                                    </t>
+                                    <div t-if="line.employee_examples_ui" class="text-muted mt-1">
+                                        <em>Examples:</em> <span t-out="line.employee_examples_ui"/>
+                                    </div>
+                                </td>
+                                <td t-if="results['see_final']">
+                                    <t t-call="hr_appraisal_campaign.report_campaign_appraisal_grade">
+                                        <t t-set="grade" t-value="line.final_grade_ui"/>
+                                    </t>
+                                    <div t-if="line.manager_remarks_ui" class="text-muted mt-1">
+                                        <em>Remarks:</em> <span t-out="line.manager_remarks_ui"/>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </t>
+
+                <h5>Results</h5>
+                <t t-call="hr_appraisal_campaign.campaign_results_table"/>
+
+                <h5>Acknowledgement</h5>
+                <p t-if="doc.employee_ack_date">
+                    Read and discussed by <span t-out="doc.employee_ack_user_id.name"/>
+                    on <span t-field="doc.employee_ack_date"/>.
+                </p>
+                <p t-if="doc.employee_ack_comment"><em>Employee comment:</em> <span t-out="doc.employee_ack_comment"/></p>
+                <p t-if="doc.manager_validated_date">
+                    Validated by <span t-out="doc.manager_validated_user_id.name"/>
+                    on <span t-field="doc.manager_validated_date"/>.
+                </p>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_campaign_appraisal">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="hr_appraisal_campaign.report_campaign_appraisal_document" t-lang="report_lang"/>
+            </t>
+        </t>
+    </template>
+</odoo>

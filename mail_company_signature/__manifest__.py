@@ -1,6 +1,6 @@
 {
     "name": "Mail Company Signature",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.3.1",
     "category": "Discuss",
     "summary": "Company-standard email signature generated from a template, "
     "with a visible signature preview in the chatter composer.",
@@ -9,8 +9,10 @@
     "license": "LGPL-3",
     "depends": ["mail", "hr"],
     "data": [
+        "data/ir_cron.xml",
         "views/res_config_settings_views.xml",
         "views/res_users_views.xml",
+        "views/hr_employee_views.xml",
     ],
     "assets": {
         "web.assets_backend": [

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Task 1752: a generic instance banner (« DÉMO » on demo.lefitcrew.com).
+         Driven by the system parameter bemade_sports_clinic.instance_banner
+         (Settings > Sports Clinic Portal > Instance banner); empty = nothing,
+         so production is untouched. Hooked on web.layout, the root of the
+         login page, the backend web client, the portal and the app shell
+         (reports use web.report_layout, so PDFs never carry it). Fixed and
+         click-through: a 3 px red line across the top plus a centred red tab
+         with the text; it never moves or blocks the page underneath.
+         Not an app-shell view (no sc_ prefix, outside the shell's no-inline-
+         style lint): its styles are inline ON PURPOSE so it renders on every
+         layout (login, backend, kiosk with its CSS-only bundle) without
+         depending on any asset bundle, which can be missing on a DB-only
+         demo copy. -->
+    <template id="instance_banner_layout" name="Instance banner (demo / test)" inherit_id="web.layout" priority="99">
+        <xpath expr="//body/t[@t-out='0']" position="before">
+            <t t-set="sc_instance_banner_text"
+               t-value="(request.env['ir.config_parameter'].sudo().get_param('bemade_sports_clinic.instance_banner') or '').strip()"/>
+            <div t-if="sc_instance_banner_text" id="sc_instance_banner" class="o_sc_instance_banner" role="note"
+                 style="position: fixed; top: 0; left: 0; right: 0; height: 0; z-index: 2147483000; pointer-events: none;">
+                <div style="height: 3px; background: #D0442C;"/>
+                <span class="o_sc_instance_banner_label"
+                      style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); background: #D0442C; color: #FFFFFF; font: 700 12px/18px system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; padding: 0 12px 1px; border-radius: 0 0 6px 6px; box-shadow: 0 1px 3px rgba(0, 0, 0, .35);"
+                      t-out="sc_instance_banner_text"/>
+                <span class="visually-hidden">Non-production instance: the data shown here is fictitious.</span>
+            </div>
+        </xpath>
+    </template>
+</odoo>

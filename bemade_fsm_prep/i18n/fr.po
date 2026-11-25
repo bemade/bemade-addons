@@ -1,0 +1,295 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_fsm_prep
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 02:40+0000\n"
+"PO-Revision-Date: 2026-11-19 02:40+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: bemade_fsm_prep
+#. odoo-python
+#: code:addons/bemade_fsm_prep/models/project_task.py:0
+msgid "%(total)s needed, %(owned)s owned"
+msgstr "%(total)s requis, %(owned)s possédé(s)"
+
+#. module: bemade_fsm_prep
+#: model_terms:ir.ui.view,arch_db:bemade_fsm_prep.project_task_form_fsm_prep
+msgid "<i class=\"fa fa-wrench fa-lg mt-1\" role=\"img\" title=\"Tool overbooked\"/>"
+msgstr "<i class=\"fa fa-wrench fa-lg mt-1\" role=\"img\" title=\"Outil réservé en trop\"/>"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_service_tool__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: bemade_fsm_prep
+#: model_terms:ir.actions.act_window,help:bemade_fsm_prep.fsm_service_tool_action
+msgid "Add a service tool"
+msgstr "Ajouter un outil de service"
+
+#. module: bemade_fsm_prep
+#: model_terms:ir.ui.view,arch_db:bemade_fsm_prep.fsm_service_tool_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_fsm_prep.fsm_service_tool_view_search
+msgid "Archived"
+msgstr "Archivé"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__checked_label
+msgid "Check"
+msgstr "Vérification"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__checked
+msgid "Checked"
+msgstr "Vérifié"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__checked_by_id
+msgid "Checked By"
+msgstr "Vérifié par"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__checked_at
+msgid "Checked On"
+msgstr "Vérifié le"
+
+#. module: bemade_fsm_prep
+#. odoo-python
+#: code:addons/bemade_fsm_prep/models/fsm_prep_line.py:0
+msgid "Checked by %(user)s on %(date)s"
+msgstr "Vérifié par %(user)s le %(date)s"
+
+#. module: bemade_fsm_prep
+#: model_terms:ir.ui.view,arch_db:bemade_fsm_prep.task_template_form_view_fsm_prep
+msgid ""
+"Copied to the visit (the top-level task) when this template is\n"
+"                        applied, with the lines of the sub-templates."
+msgstr "Copiées sur la visite (la tâche de premier niveau) quand ce modèle est appliqué, avec les lignes des sous-modèles."
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__create_uid
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_template_line__create_uid
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_service_tool__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__create_date
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_template_line__create_date
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_service_tool__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,help:bemade_fsm_prep.field_fsm_service_tool__return_delay_days
+msgid ""
+"Days the tool stays unavailable after a visit's planned end (coming back, "
+"cleaning). A visit needing this tool conflicts with another one that starts "
+"before that visit's end plus this delay. 0: the tool is available again as "
+"soon as the visit ends."
+msgstr "Nombre de jours pendant lesquels l'outil reste indisponible après la fin planifiée d'une visite (retour, nettoyage). Une visite qui demande cet outil entre en conflit avec une autre qui commence avant la fin de cette visite plus ce délai. 0 : l'outil est de nouveau disponible dès la fin de la visite."
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__name
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_template_line__name
+msgid "Description"
+msgstr "Description"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__display_name
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_template_line__display_name
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_service_tool__display_name
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_project_task__display_name
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_project_task_template__display_name
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_sale_order_line__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,help:bemade_fsm_prep.field_fsm_service_tool__quantity_owned
+msgid ""
+"How many of this tool the company owns. Visits planned on overlapping dates "
+"that need more than this are flagged."
+msgstr "Combien de cet outil l'entreprise possède. Les visites planifiées à des dates qui se chevauchent et qui en demandent davantage sont signalées."
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__id
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_template_line__id
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_service_tool__id
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_project_task__id
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_project_task_template__id
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_sale_order_line__id
+msgid "ID"
+msgstr "Identifiant"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__write_uid
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_template_line__write_uid
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_service_tool__write_uid
+msgid "Last Updated by"
+msgstr "Dernière mise à jour par"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__write_date
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_template_line__write_date
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_service_tool__write_date
+msgid "Last Updated on"
+msgstr "Dernière mise à jour le"
+
+#. module: bemade_fsm_prep
+#: model_terms:ir.actions.act_window,help:bemade_fsm_prep.fsm_service_tool_action
+msgid ""
+"List the tools the team brings to visits, how many the company\n"
+"                owns and how many days each one takes to come back. A visit that\n"
+"                needs a tool already used by visits planned at the same time\n"
+"                (plus that return delay) beyond that quantity shows a warning."
+msgstr "Listez les outils que l'équipe apporte aux visites, combien l'entreprise en possède et combien de jours chacun met à revenir. Une visite qui demande un outil déjà utilisé au-delà de cette quantité par des visites planifiées en même temps (plus ce délai de retour) affiche un avertissement."
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_service_tool__name
+msgid "Name"
+msgstr "Nom"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_service_tool__notes
+#: model_terms:ir.ui.view,arch_db:bemade_fsm_prep.fsm_service_tool_view_form
+msgid "Notes"
+msgstr "Notes"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__overbooked
+msgid "Overbooked"
+msgstr "Réservé en trop"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__overbooking_note
+msgid "Overbooking"
+msgstr "Réservation en trop"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__quantity
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_template_line__quantity
+msgid "Quantity"
+msgstr "Quantité"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_service_tool__quantity_owned
+msgid "Quantity Owned"
+msgstr "Quantité possédée"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_service_tool__return_delay_days
+msgid "Return Delay (days)"
+msgstr "Délai de retour (jours)"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__sequence
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_template_line__sequence
+msgid "Sequence"
+msgstr "Séquence"
+
+#. module: bemade_fsm_prep
+#: model:ir.model,name:bemade_fsm_prep.model_fsm_service_tool
+#: model_terms:ir.ui.view,arch_db:bemade_fsm_prep.fsm_service_tool_view_form
+msgid "Service Tool"
+msgstr "Outil de service"
+
+#. module: bemade_fsm_prep
+#: model:ir.actions.act_window,name:bemade_fsm_prep.fsm_service_tool_action
+#: model:ir.ui.menu,name:bemade_fsm_prep.fsm_service_tool_menu
+msgid "Service Tools"
+msgstr "Outils de service"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_template_line__template_id
+msgid "Task Template"
+msgstr "Modèle de tâche"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.constraint,message:bemade_fsm_prep.constraint_fsm_service_tool_quantity_owned_positive
+msgid "The quantity owned cannot be negative."
+msgstr "La quantité possédée ne peut pas être négative."
+
+#. module: bemade_fsm_prep
+#: model:ir.model.constraint,message:bemade_fsm_prep.constraint_fsm_service_tool_return_delay_days_positive
+msgid "The return delay cannot be negative."
+msgstr "Le délai de retour ne peut pas être négatif."
+
+#. module: bemade_fsm_prep
+#: model:ir.model.constraint,message:bemade_fsm_prep.constraint_fsm_prep_line_quantity_positive
+#: model:ir.model.constraint,message:bemade_fsm_prep.constraint_fsm_prep_template_line_quantity_positive
+msgid "The quantity to bring must be positive."
+msgstr "La quantité à apporter doit être positive."
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_project_task__fsm_prep_line_ids
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_project_task_template__fsm_prep_template_line_ids
+#: model_terms:ir.ui.view,arch_db:bemade_fsm_prep.project_task_form_fsm_prep
+#: model_terms:ir.ui.view,arch_db:bemade_fsm_prep.task_template_form_view_fsm_prep
+msgid "To Bring"
+msgstr "À apporter"
+
+#. module: bemade_fsm_prep
+#: model:ir.model,name:bemade_fsm_prep.model_fsm_prep_line
+msgid "To Bring Line"
+msgstr "Ligne « À apporter »"
+
+#. module: bemade_fsm_prep
+#: model:ir.model,name:bemade_fsm_prep.model_fsm_prep_template_line
+msgid "To Bring Template Line"
+msgstr "Ligne « À apporter » de modèle"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__tool_id
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_template_line__tool_id
+msgid "Tool"
+msgstr "Outil"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_project_task__fsm_prep_overbooking_warning
+msgid "Tool Overbooking"
+msgstr "Outil réservé en trop"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,help:bemade_fsm_prep.field_project_task_template__fsm_prep_template_line_ids
+msgid ""
+"Tools and materials to bring, copied to the visit (the top-level task) when "
+"this template is applied."
+msgstr "Outils et matériel à apporter, copiés sur la visite (la tâche de premier niveau) quand ce modèle est appliqué."
+
+#. module: bemade_fsm_prep
+#: model_terms:ir.ui.view,arch_db:bemade_fsm_prep.project_task_form_fsm_prep
+msgid ""
+"Tools needed by visits planned on overlapping dates (start to\n"
+"                        end date, plus the tool's return delay) beyond the quantity\n"
+"                        owned are shown in red. Visits without both dates are not\n"
+"                        counted. This list is not billed."
+msgstr "Les outils demandés au-delà de la quantité possédée par des visites planifiées à des dates qui se chevauchent (date de début à date de fin, plus le délai de retour de l'outil) sont affichés en rouge. Les visites sans les deux dates ne sont pas comptées. Cette liste n'est pas facturée."
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,field_description:bemade_fsm_prep.field_fsm_prep_line__task_id
+msgid "Visit"
+msgstr "Visite"
+
+#. module: bemade_fsm_prep
+#: model:ir.model.fields,help:bemade_fsm_prep.field_fsm_prep_line__overbooked
+msgid ""
+"Visits planned on overlapping dates (the end extended by the tool's return "
+"delay) need more of this tool than the quantity owned. Visits without a "
+"start and an end date are ignored."
+msgstr "Des visites planifiées à des dates qui se chevauchent (la fin prolongée du délai de retour de l'outil) demandent plus de cet outil que la quantité possédée. Les visites sans date de début et de fin sont ignorées."
+
+#. module: bemade_fsm_prep
+#: model_terms:ir.ui.view,arch_db:bemade_fsm_prep.fsm_service_tool_view_form
+msgid "e.g. Bin"
+msgstr "ex. Bac"

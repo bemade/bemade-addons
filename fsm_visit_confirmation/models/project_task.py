@@ -1,3 +1,5 @@
+from markupsafe import Markup
+
 from odoo import models, fields
 
 
@@ -46,3 +48,44 @@ class ProjectTask(models.Model):
                 )
 
         return result
+
+    def _action_customer_approve(self):
+        """Record the customer's approval of the visit (Approve link of the
+        confirmation email).
+
+        Marks the task approved and posts one bilingual note (French first,
+        then English). If the task is still in a stage that carries an approval
+        template and that stage names an ``approved_stage_id``, the task moves
+        there. A task moved by hand in the meantime stays where it is.
+        """
+        for task in self:
+            stage = task.stage_id
+            target = (
+                stage.approved_stage_id if stage.approval_template_id else False
+            )
+            task.write({"state": "03_approved"})
+            if target:
+                task.write({"stage_id": target.id})
+                installed = dict(self.env["res.lang"].get_installed())
+                fr_name = (
+                    target.with_context(lang="fr_FR").name
+                    if "fr_FR" in installed
+                    else target.name
+                )
+                en_name = target.with_context(lang="en_US").name
+                body = Markup(
+                    "Visite approuvée par le client ; tâche déplacée à "
+                    "l'étape « %s ».<br/>Visit approved by customer; task "
+                    "moved to stage \u201c%s\u201d."
+                ) % (fr_name, en_name)
+            else:
+                body = Markup(
+                    "Visite approuvée par le client.<br/>"
+                    "Visit approved by customer."
+                )
+            task.message_post(
+                body=body,
+                message_type="comment",
+                subtype_xmlid="mail.mt_note",
+            )
+        return True

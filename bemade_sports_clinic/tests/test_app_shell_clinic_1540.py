@@ -11,7 +11,7 @@ Acceptance criteria covered here:
   phone tabs (waiting list · file), the live component with its first data in
   its props, and the no-JS list inside it; the file shows the instant status
   pair, the note form docked open posting to /my/injury/note/add WITH
-  ``event_id``, the injury sheets loading the unchanged fragment routes;
+  ``event_id``, the injuries as inline pencil cards (task 1590);
   the add / resolve / kiosk sheets post to today's routes with a CSRF token.
 * UC-C3 Roles: a coach is refused on both pages as today; an internal
   therapist and a clinic administrator (#1577) get the shell pages.
@@ -98,7 +98,7 @@ class TestAppShellClinic1540(Clinic1540Common):
             text, tree = self._get('/my/clinic/%s' % self.clinic.id)
             self.assertIn('o_sc_clinic_detail', text)
             self.assertIn('o_sc_worklist', text)
-            self.assertNotIn('data-sc-app-shell', text)
+            self.assertNotIn('data-pk-app-shell', text)
             self.assertNotIn('sc_clinic_worklist', text)
         text, _tree = self._get('/my/clinic/%s/worklist/fragment' % self.clinic.id)
         self.assertIn('o_sc_worklist', text)
@@ -109,9 +109,9 @@ class TestAppShellClinic1540(Clinic1540Common):
         self._login_tp()
         text, tree = self._get('/my/clinics')
         self.assertIsNotNone(self._shell(tree))
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'),
                          ['today', 'upcoming', 'past', 'all'])
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a[@aria-selected="true"]/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a[@aria-selected="true"]/@data-pk-tab'),
                          ['today'])
         ids = [int(x) for x in tree.xpath('//*[@data-sc-clinic-id]/@data-sc-clinic-id')]
         self.assertIn(self.clinic.id, ids)       # mine + today
@@ -123,14 +123,14 @@ class TestAppShellClinic1540(Clinic1540Common):
         self.assertIn(self.other_clinic.id, ids)
         # the counts chip (2 patients on the list, the kiosk row is not one)
         self.assertIn('2', ' '.join(tree.xpath(
-            '//*[@data-sc-clinic-id="%s"]//*[contains(@class, "o_sc_chip")]//text()' % self.clinic.id)))
+            '//*[@data-sc-clinic-id="%s"]//*[contains(@class, "o_pk_chip")]//text()' % self.clinic.id)))
 
     def test_clinic_page_in_shell(self):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/clinic/%s' % self.clinic.id)
         self.assertIsNotNone(self._shell(tree))
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'), ['worklist', 'dossier'])
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'), ['worklist', 'dossier'])
         props = self._props(tree)
         self.assertEqual(props['clinicId'], self.clinic.id)
         self.assertEqual(props['dataUrl'], '/my/clinic/%s/worklist/data' % self.clinic.id)
@@ -155,25 +155,30 @@ class TestAppShellClinic1540(Clinic1540Common):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/clinic/%s?patient=%s' % (self.clinic.id, self.player.id))
-        dossier = tree.xpath('//section[@data-sc-tab-panel="dossier"]')[0]
+        dossier = tree.xpath('//section[@data-pk-tab-panel="dossier"]')[0]
         self.assertIsNone(dossier.get('hidden'))
         fields_ = self._owl_fields(tree)
-        self.assertTrue(fields_['sc_status']['instant'])
+        # Task 1627: the instant status pair is the Match / Practice pill
+        # dropdowns (no autosave field).
+        self.assertNotIn('sc_status', fields_)
+        self.assertEqual(len(dossier.xpath('.//*[@data-pk-pill-select][@data-pk-field="sc_status"]')), 2)
         form = tree.xpath('//form[@data-sc-form="notes.add"]')[0]
         self.assertEqual(form.get('action'), '/my/injury/note/add')
         self.assertEqual(form.xpath('.//input[@name="event_id"]/@value'), [str(self.clinic.id)])
         self.assertEqual(form.getparent().get('open'), 'open')
-        lazy = tree.xpath('//dialog[@id="sc_clinic_injury_%s"]/@data-sc-lazy-url' % self.injury.id)
-        self.assertEqual(lazy, ['/my/injury/%s/form/fragment?clinic_id=%s&patient=%s' % (
-            self.injury.id, self.clinic.id, self.player.id)])
-        # The unchanged fragment answers for the shell sheet.
-        resp = self.url_open(lazy[0])
+        # Task 1590: the injuries are inline pencil cards (no fragment sheet).
+        self.assertTrue(tree.xpath('//details[@id="clinic-injury-%s"][@data-pk-edit-card="injury"]'
+                                   % self.injury.id))
+        self.assertFalse(tree.xpath('//dialog[@id="sc_clinic_injury_%s"]' % self.injury.id))
+        # The legacy fragment route still answers (the legacy page uses it).
+        resp = self.url_open('/my/injury/%s/form/fragment?clinic_id=%s&patient=%s' % (
+            self.injury.id, self.clinic.id, self.player.id))
         self.assertEqual(resp.status_code, 200)
 
     @staticmethod
     def _owl_fields(tree):
         out = {}
-        for node in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+        for node in tree.xpath('//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'):
             props = json.loads(node.get('props'))
             out[props.get('field') or props.get('name')] = props
         return out
@@ -344,11 +349,11 @@ class TestClinicTeaserLive1540(Clinic1540Common):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/home')
-        chips = tree.xpath('//*[@data-sc-section="home.clinic_teaser"]'
-                           '//*[@data-sc-live-count-url]')
+        chips = tree.xpath('//*[@data-pk-section="home.clinic_teaser"]'
+                           '//*[@data-pk-live-count-url]')
         self.assertEqual(len(chips), 1)
         chip = chips[0]
-        self.assertEqual(chip.get('data-sc-live-count-url'), self.URL)
-        self.assertEqual(chip.get('data-sc-live-poll'), '20')
+        self.assertEqual(chip.get('data-pk-live-count-url'), self.URL)
+        self.assertEqual(chip.get('data-pk-live-poll'), '20')
         self.assertEqual(chip.text_content().strip(), '1')
-        self.assertIn('o_sc_chip_mauve', chip.get('class'))
+        self.assertIn('o_pk_chip_secondary', chip.get('class'))

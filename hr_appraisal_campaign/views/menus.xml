@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_campaign_root" name="Evaluation Campaigns"
+              parent="hr_appraisal.menu_hr_appraisal_root" sequence="5"
+              groups="hr_appraisal.group_hr_appraisal_user,hr_appraisal_campaign.group_campaign_calibration"/>
+    <menuitem id="menu_campaign_campaigns" name="Campaigns" parent="menu_campaign_root"
+              action="action_campaign" sequence="1"
+              groups="hr_appraisal.group_hr_appraisal_user"/>
+    <menuitem id="menu_campaign_calibration_board" name="Calibration Board" parent="menu_campaign_root"
+              action="action_campaign_calibration_board" sequence="2"
+              groups="hr_appraisal.group_hr_appraisal_user,hr_appraisal_campaign.group_campaign_calibration"/>
+    <menuitem id="menu_campaign_grade_analysis" name="Evaluation Analysis" parent="menu_campaign_root"
+              action="action_campaign_grade_analysis" sequence="3"
+              groups="hr_appraisal.group_hr_appraisal_user,hr_appraisal_campaign.group_campaign_calibration"/>
+    <menuitem id="menu_campaign_calibration_log" name="Calibration Changes" parent="menu_campaign_root"
+              action="action_campaign_calibration_log" sequence="4"
+              groups="hr_appraisal.group_hr_appraisal_user,hr_appraisal_campaign.group_campaign_calibration"/>
+    <menuitem id="menu_campaign_remark_log" name="Remark Changes" parent="menu_campaign_root"
+              action="action_campaign_remark_log" sequence="5"
+              groups="hr_appraisal.group_hr_appraisal_user"/>
+
+    <menuitem id="menu_campaign_config" name="Evaluation Campaigns"
+              parent="hr_appraisal.menu_hr_appraisal_configuration" sequence="50"
+              groups="hr_appraisal.group_hr_appraisal_user"/>
+    <menuitem id="menu_campaign_scales" name="Rating Scales" parent="menu_campaign_config"
+              action="action_campaign_scale" sequence="1"/>
+    <menuitem id="menu_campaign_sections" name="Sections" parent="menu_campaign_config"
+              action="action_campaign_section" sequence="2"/>
+    <menuitem id="menu_campaign_criteria" name="Evaluation Criteria" parent="menu_campaign_config"
+              action="action_campaign_criterion" sequence="3"/>
+</odoo>

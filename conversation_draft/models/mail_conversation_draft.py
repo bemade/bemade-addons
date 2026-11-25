@@ -4,11 +4,14 @@ from datetime import timedelta
 
 import psycopg2.errors
 
+from markupsafe import Markup
+
 from odoo import Command, _, api, fields, models
 from odoo.addons.html_editor.tools import handle_history_divergence
 from odoo.exceptions import ConcurrencyError, UserError
 from odoo.http import request
-from odoo.tools.misc import mute_logger
+from odoo.tools import html_sanitize
+from odoo.tools.misc import format_datetime, mute_logger
 
 _logger = logging.getLogger(__name__)
 
@@ -22,7 +25,30 @@ DEFAULT_IDLE_MINUTES = 15
 HISTORY_ATTRIBUTE = re.compile(r'\s*data-last-history-steps="[0-9,]*"')
 
 # Writing any of these is refused once the draft has left the ``draft`` state.
-CONTENT_FIELDS = {"body", "subject", "transport_id", "recipient_ids", "attachment_ids"}
+CONTENT_FIELDS = {
+    "body",
+    "subject",
+    "transport_id",
+    "recipient_ids",
+    "attachment_ids",
+    "reply_to_message_id",
+}
+# Context key marking the compact reply pop-up: what the client does after a
+# send depends on where the draft is open.
+DIALOG_CONTEXT_KEY = "conversation_draft_dialog"
+
+
+def conversation_templates_exist(env):
+    """Whether at least one ``mail.template`` is written for conversations.
+
+    Read with ``sudo``: whether a template exists must not depend on the
+    reader's access to the template model.
+    """
+    return bool(
+        env["mail.template"]
+        .sudo()
+        .search_count([("model", "=", "mail.conversation")], limit=1)
+    )
 
 
 class MailConversationDraft(models.Model):
@@ -50,6 +76,10 @@ class MailConversationDraft(models.Model):
         required=True,
         ondelete="cascade",
         index=True,
+    )
+    has_reply_templates = fields.Boolean(
+        compute="_compute_has_reply_templates",
+        help="Whether any reply template exists for conversations.",
     )
     state = fields.Selection(
         [
@@ -84,9 +114,25 @@ class MailConversationDraft(models.Model):
         "draft_id",
         "attachment_id",
         string="Attachments",
+        # Same as every core attachment many2many (mail.message, mail.template,
+        # ...): without it each read, fields_get and group-by join runs an
+        # access-checked ir.attachment search that, with no res_model to narrow
+        # on, scans every record-linked attachment in the database. Draft access
+        # is delegated to the conversation, and the attachments themselves are
+        # still checked when read or downloaded.
+        bypass_search_access=True,
     )
     # Deliberately NOT tracked: tracking would subscribe the editor and make
     # every keystroke-adjacent save noisy in the chatter.
+    reply_to_message_id = fields.Many2one(
+        "mail.message",
+        string="In Reply To",
+        copy=False,
+        ondelete="set null",
+        help="The message this reply answers. Empty for a reply to the "
+        "conversation as a whole.",
+    )
+    reply_to_label = fields.Char(compute="_compute_reply_to_label")
     editor_id = fields.Many2one("res.users", string="Last Edited By", copy=False)
     editing_since = fields.Datetime(copy=False)
     editing_last_seen = fields.Datetime(copy=False)
@@ -106,6 +152,24 @@ class MailConversationDraft(models.Model):
     # ------------------------------------------------------------
     # Computes
     # ------------------------------------------------------------
+
+    # No ``@api.depends`` and not stored: evaluated on every read, so a
+    # template created or deleted shows up without an upgrade or restart.
+    def _compute_has_reply_templates(self):
+        exists = conversation_templates_exist(self.env)
+        for draft in self:
+            draft.has_reply_templates = exists
+
+    @api.depends("reply_to_message_id")
+    def _compute_reply_to_label(self):
+        for draft in self:
+            message = draft.reply_to_message_id.sudo()
+            if not message:
+                draft.reply_to_label = False
+                continue
+            author = message.author_id.name or message.email_from or ""
+            date = format_datetime(self.env, message.date) if message.date else ""
+            draft.reply_to_label = ", ".join(part for part in (author, date) if part)
 
     @api.depends("conversation_id")
     def _compute_display_name(self):
@@ -234,6 +298,7 @@ class MailConversationDraft(models.Model):
         vals = {
             "conversation_id": conversation.id,
             "transport_id": transport.id or False,
+            "body": conversation._draft_default_body(transport),
             "recipient_ids": [
                 Command.create(recipient_vals)
                 for recipient_vals in conversation._draft_default_recipients()
@@ -255,6 +320,67 @@ class MailConversationDraft(models.Model):
                     "Open it again to join their draft."
                 )
             ) from exc
+
+    # ------------------------------------------------------------
+    # Answering one specific message
+    # ------------------------------------------------------------
+
+    def _quote_of(self, message):
+        """The quoted original, in the block style of the inbox reply
+        wizard: From / Date / Subject / To, then the message body."""
+        self.ensure_one()
+        message = message.sudo()
+        recipients = (
+            message.incoming_email_to
+            or message.outgoing_email_to
+            or ", ".join(message.partner_ids.mapped("email_formatted"))
+        )
+        rows = [
+            (
+                self.env._("From"),
+                message.email_from or message.author_id.email_formatted or "",
+            ),
+            (
+                self.env._("Date"),
+                format_datetime(self.env, message.date) if message.date else "",
+            ),
+            (
+                self.env._("Subject"),
+                message.subject or self.conversation_id.display_name or "",
+            ),
+        ]
+        if recipients:
+            rows.append((self.env._("To"), recipients))
+        return Markup(
+            '<p><br/></p><blockquote style="padding-right:0px; padding-left:5px; '
+            "border-left-color:#000; margin-left:5px; margin-right:0px; "
+            'border-left-width:2px; border-left-style:solid">%(rows)s<br/>%(body)s'
+            "</blockquote><p><br/></p>"
+        ) % {
+            "rows": Markup("").join(
+                Markup("<b>%s:</b> %s<br/>") % (label, value) for label, value in rows
+            ),
+            "body": Markup(html_sanitize(message.body or "")),
+        }
+
+    def _set_reply_target(self, message):
+        """Make this draft the answer to ``message``: record it, and append
+        its quote under whatever has been typed already (never replacing
+        it)."""
+        self.ensure_one()
+        if not self.conversation_id._is_reply_target(message):
+            raise UserError(
+                self.env._("This message cannot be answered from the conversation.")
+            )
+        if self.reply_to_message_id == message:
+            return
+        body = HISTORY_ATTRIBUTE.sub("", self.body or "")
+        self.write(
+            {
+                "reply_to_message_id": message.id,
+                "body": Markup(body) + self._quote_of(message),
+            }
+        )
 
     # ------------------------------------------------------------
     # State transitions. Every transition is a compare-and-set in SQL so
@@ -415,7 +541,12 @@ class MailConversationDraft(models.Model):
     def _after_send_action(self):
         """What the client does once the send is recorded. Everything the
         request transaction does *after* the dedicated cursors committed
-        lives here: a replay of the request must land on "already sent"."""
+        lives here: a replay of the request must land on "already sent".
+
+        In the reply pop-up the dialog just closes and the conversation
+        behind it refreshes its thread; the full form reloads."""
+        if self.env.context.get(DIALOG_CONTEXT_KEY):
+            return {"type": "ir.actions.act_window_close"}
         return {"type": "ir.actions.client", "tag": "reload"}
 
     def _claim_for_sending(self):
@@ -482,13 +613,41 @@ class MailConversationDraft(models.Model):
             cc=cc,
             bcc=bcc,
             attachment_ids=attachments.ids,
+            reply_to_message=self.reply_to_message_id.sudo() or None,
         )
         self.write({"state": "sent", "sent_message_id": message.id})
         return message
 
     # ------------------------------------------------------------
-    # Wizard entry
+    # Wizard / view entry
     # ------------------------------------------------------------
+
+    def action_open_full_view(self):
+        """Open this draft full page: the only place its internal review
+        chatter is shown, because dialogs never render a chatter. Closes the
+        pop-up it is called from."""
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": self._name,
+            "res_id": self.id,
+            "view_mode": "form",
+            "views": [(False, "form")],
+            "target": "current",
+            # The client merges the pop-up's context into the action a button
+            # returns: clear the pop-up flags so the full form behaves as one.
+            "context": {DIALOG_CONTEXT_KEY: False, "dialog_size": False},
+        }
+
+    def action_open_dialog(self):
+        """Open this draft in the reply pop-up (a colleague's or an earlier
+        one), editable while it is still a draft."""
+        self.ensure_one()
+        self.check_access("read")
+        if self.state == "draft":
+            self.check_access("write")
+            self._touch_editing()
+        return self.conversation_id._draft_dialog_action(self)
 
     def action_use_template(self):
         self.ensure_one()

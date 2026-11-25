@@ -37,6 +37,15 @@ class MailConversationDraftTemplate(models.TransientModel):
                 draft and draft.state == "draft" and draft.body
             )
 
+    def _body_is_untouched_prefill(self, draft, conversation):
+        """Whether the draft body is still exactly the signature prefill a
+        new draft gets (compared as the field stores it)."""
+        if not draft.body:
+            return False
+        prefill = conversation._draft_default_body(draft.transport_id)
+        field = draft._fields["body"]
+        return bool(prefill) and draft.body == field.convert_to_cache(prefill, draft)
+
     def action_apply(self):
         self.ensure_one()
         template = self.template_id
@@ -59,7 +68,12 @@ class MailConversationDraftTemplate(models.TransientModel):
             "body_html", conversation.ids, compute_lang=True
         )[conversation.id]
         vals = {}
-        if self.mode == "replace" or not draft.body:
+        if self._body_is_untouched_prefill(draft, conversation):
+            # Nobody has typed yet: the template goes above the signature
+            # rather than below it, whichever mode was picked.
+            vals["body"] = f"{body}{draft.body}"
+            vals["subject"] = subject
+        elif self.mode == "replace" or not draft.body:
             vals["body"] = body
             vals["subject"] = subject
         else:

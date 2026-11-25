@@ -17,7 +17,7 @@ Acceptance criteria covered:
   The legacy form passes the confirmation only when ``identity_confirmed=1``
   is posted, and only writes the identity fields that changed.
 * AC-e  The app-shell pencil (POST /my/app/save) answers 428
-  ``confirm_identity`` (old → new, nothing written) without ``confirm=1``,
+  ``confirm`` (old → new, nothing written) without ``confirm=1``,
   and saves + records with it.
 * AC-f  Unticking a team on the legacy edit form is the official removal:
   the pending-removal flag is cleared, the removal note is posted, the open
@@ -39,7 +39,7 @@ from odoo.tools.misc import mute_logger
 
 from .portal_cov_common import PortalCovCommon
 
-SWITCH = 'bemade_sports_clinic.app_shell_enabled'
+SWITCH = 'bemade_portal_kit.enabled'
 
 
 def _load_migration():
@@ -139,7 +139,11 @@ class TestIdentityGuardModel1600(IdentityCommon):
     # ----- AC-c (model) -----
     def test_duplicate_identity_refused_for_portal(self):
         writer = self.player.with_user(self.tp).with_context(sc_identity_confirmed=True)
-        with self.assertRaisesRegex(ValidationError, 'Another player already has this name'):
+        # Task 1716 (owner 2026-10-26, DOB-oracle concern waived): Dana is
+        # on another team (not readable) — a write onto her exact name +
+        # date of birth gets the plain twin refusal (was the generic « ask a
+        # manager » of the 2026-10-23 review).
+        with self.assertRaisesRegex(ValidationError, 'Another player already has this name and date of birth'):
             writer.write({'first_name': ' dana ', 'last_name': 'SYNTHETIC', 'date_of_birth': '2010-01-02'})
         self.player.invalidate_recordset()
         self.assertEqual(self.player.first_name, 'Pat')
@@ -147,8 +151,8 @@ class TestIdentityGuardModel1600(IdentityCommon):
         self.other.active = False
         with self.assertRaises(ValidationError):
             writer.write({'first_name': 'Dana', 'last_name': 'Synthetic', 'date_of_birth': '2010-01-02'})
-        # Create through the portal path.
-        with self.assertRaises(ValidationError):
+        # Create through the portal path: the twin warning (task 1716).
+        with self.assertRaisesRegex(ValidationError, 'already exists'):
             self.env['sports.patient'].with_user(self.tp).create_portal_patient({
                 'first_name': 'Dana', 'last_name': 'Synthetic', 'date_of_birth': '2010-01-02',
                 'team_ids': [Command.set([self.team_a.id])]})
@@ -203,7 +207,9 @@ class TestIdentityGuardLegacy1600(IdentityCommon):
         }, allow_redirects=False)
         self.assertEqual(resp.status_code, 303)
         self.assertIn('/my/player/create', resp.headers['Location'])
-        self.assertIn('Another player already has this name and date of birth',
+        # Task 1716: Dana is on another team — the twin message with her
+        # team (was the generic « ask a manager », review 2026-10-23).
+        self.assertIn('A player with this name and date of birth already exists (PC Team B).',
                       self.url_open('/my/player/create').text)
         self.assertEqual(self.env['res.partner'].search_count([]), partners,
                          "no orphan contact left behind")
@@ -285,8 +291,10 @@ class TestIdentityGuardAppShell1600(IdentityCommon):
         resp = self._app_save('last_name', 'Onesynth')
         self.assertEqual(resp.status_code, 428, resp.text)
         body = resp.json()
-        self.assertTrue(body['confirm_identity'])
+        self.assertTrue(body['confirm'])
         self.assertEqual((body['old'], body['new']), ('One', 'Onesynth'))
+        # Task 5382: the clinic's line under old -> new (the kit's banner shows it).
+        self.assertEqual(body['detail'], "The change will be noted in the player's file.")
         self.player.invalidate_recordset()
         self.assertEqual(self.player.last_name, 'One')
         resp = self._app_save('last_name', 'Onesynth', confirm='1')
@@ -324,7 +332,9 @@ class TestIdentityGuardAppShell1600(IdentityCommon):
         self._login_tp()
         resp = self._app_save('last_name', 'Synthetic', confirm='1')
         self.assertEqual(resp.status_code, 400, resp.text)
-        self.assertIn('Another player already has this name', resp.json()['message'])
+        # Task 1716: Dana is on another team — the plain twin refusal (was
+        # the generic « ask a manager », review 2026-10-23).
+        self.assertEqual(resp.json()['message'], 'Another player already has this name and date of birth.')
 
 
 @tagged('-at_install', 'post_install')

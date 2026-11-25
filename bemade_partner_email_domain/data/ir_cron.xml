@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="ir_cron_unassigned_contacts_reminder" model="ir.cron">
+        <field name="name">Unassigned contacts: weekly reminder</field>
+        <field name="model_id" ref="model_partner_parent_suggestion" />
+        <field name="state">code</field>
+        <field name="code">model._cron_remind_open_rows()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">weeks</field>
+        <field name="active" eval="True" />
+    </record>
+</odoo>

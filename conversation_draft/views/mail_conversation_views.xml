@@ -17,12 +17,18 @@
             name="action_open_draft_with_template"
             string="Reply with template"
             type="object"
+            invisible="not has_reply_templates"
           />
+                    <field name="has_reply_templates" invisible="1" />
                 </header>
             </xpath>
             <xpath expr="//notebook" position="inside">
                 <page string="Drafts" name="drafts">
-                    <field name="draft_ids" readonly="1">
+                    <field
+            name="draft_ids"
+            readonly="1"
+            widget="conversation_draft_list"
+          >
                         <list>
                             <field name="create_date" />
                             <field name="subject" />

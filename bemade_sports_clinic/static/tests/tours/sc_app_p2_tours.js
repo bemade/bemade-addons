@@ -17,7 +17,7 @@ function draftKeys(fragment = "") {
     const keys = [];
     for (let i = 0; i < window.localStorage.length; i++) {
         const key = window.localStorage.key(i);
-        if (key && key.startsWith("sc_draft:") && key.includes(fragment)) {
+        if (key && key.startsWith("pk_draft:") && key.includes(fragment)) {
             keys.push(key);
         }
     }
@@ -29,38 +29,38 @@ tours.add("sc_1539_players_to_player", {
     steps: () => [
         {
             content: "Players list: the « Joueurs » tab is active",
-            trigger: '.o_sc_app a[data-sc-nav-key="players"][aria-current="page"]',
+            trigger: '.o_pk_app a[data-pk-nav-key="players"][aria-current="page"]',
         },
         {
             content: "Open the first player",
-            trigger: '[data-sc-section="players.list"] a.o_sc_entity_row[data-sc-player-id]',
+            trigger: '[data-pk-section="players.list"] [data-sc-player-id] a.o_pk_link_row_main',
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "Player page: it opens on « Blessures » (owner review 2026-10-11)",
-            trigger: 'section[data-sc-tab-panel="injuries"]:not([hidden]) [data-sc-injury-id]',
+            trigger: 'section[data-pk-tab-panel="injuries"]:not([hidden]) [data-sc-injury-id]',
         },
         {
             content: "Switch to « Infos » in place",
-            trigger: '[data-sc-tabs] a[data-sc-tab="info"]',
+            trigger: '[data-pk-tabs] a[data-pk-tab="info"]',
             run: "click",
         },
         {
-            trigger: 'section[data-sc-tab-panel="info"]:not([hidden]) [data-sc-section="player.info.teams"]',
+            trigger: 'section[data-pk-tab-panel="info"]:not([hidden]) [data-pk-section="player.info.teams"]',
             run() {
                 assert(window.location.search.includes("tab=info"), "?tab= kept in the URL");
-                const injuries = document.querySelector('section[data-sc-tab-panel="injuries"]');
+                const injuries = document.querySelector('section[data-pk-tab-panel="injuries"]');
                 assert(injuries.hidden, "injuries still shown");
             },
         },
         {
             content: "Back to « Blessures »",
-            trigger: '[data-sc-tabs] a[data-sc-tab="injuries"]',
+            trigger: '[data-pk-tabs] a[data-pk-tab="injuries"]',
             run: "click",
         },
         {
-            trigger: 'section[data-sc-tab-panel="injuries"]:not([hidden]) [data-sc-injury-id]',
+            trigger: 'section[data-pk-tab-panel="injuries"]:not([hidden]) [data-sc-injury-id]',
         },
     ],
 });
@@ -70,47 +70,64 @@ tours.add("sc_1539_injury_autosave", {
     steps: () => [
         {
             content: "Edit the notes card (pencil paradigm, owner review 2026-10-11)",
-            trigger: '[data-sc-edit-card="injury-notes"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="injury-notes-external"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
             content: "Type an external note",
-            trigger: '.o_sc_autosave[data-sc-field="external_notes"] textarea',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="external_notes"] textarea',
             run: "edit Tour 1539 synthetic external note",
         },
         {
             content: "Leave the field (blur)",
-            trigger: ".o_sc_appbar_title",
+            trigger: ".o_pk_appbar_title",
             run: "click",
         },
         {
             content: "Saved on blur",
-            trigger: '.o_sc_autosave[data-sc-field="external_notes"][data-sc-state="saved"]',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="external_notes"][data-pk-autosave-state="saved"]',
         },
+        // Task 1631: the status is the card header's pill dropdown —
+        // « Resolved » asks the date (the « Résoudre » sheet), going back to
+        // « Active » saves at once and offers to undo the dates.
         {
-            content: "Edit the details card (pencil)",
-            trigger: '[data-sc-edit-card="injury-details"] button[data-sc-edit-toggle]',
+            content: "Open the status pill",
+            trigger: '.o_sc_injury_item [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_red',
             run: "click",
         },
         {
-            content: "Resolve: instant save",
-            trigger: '.o_sc_autosave[data-sc-field="stage"] button[data-sc-value="resolved"]',
+            content: "« Resolved »: the resolve sheet",
+            trigger: '.o_sc_injury_item [data-pk-pill-key="stage"] [role="menuitemradio"][data-pk-pill-value="resolved"]',
             run: "click",
         },
         {
-            content: "Saved, « Résolue » pressed",
-            trigger:
-                '.o_sc_autosave[data-sc-field="stage"][data-sc-state="saved"] button[data-sc-value="resolved"][aria-pressed="true"]',
-        },
-        {
-            content: "Undo from the toast",
-            trigger: ".o_sc_toast:not([hidden]) [data-sc-toast-action]",
+            content: "Confirm the resolution date",
+            trigger: "#sc_injury_resolve_sheet[open] [data-sc-injury-resolve-confirm]",
             run: "click",
         },
         {
-            content: "Back to « Active », saved again",
-            trigger:
-                '.o_sc_autosave[data-sc-field="stage"][data-sc-state="saved"] button[data-sc-value="active"][aria-pressed="true"]',
+            content: "Dismiss the follow-up proposal",
+            trigger: "#sc_proposal_sheet[open] [data-sc-proposal-dismiss]",
+            run: "click",
+        },
+        {
+            content: "Resolved: the pill is green; back to « Active »",
+            trigger: '.o_sc_injury_item [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_green',
+            run: "click",
+        },
+        {
+            content: "Pick « Active »",
+            trigger: '.o_sc_injury_item [data-pk-pill-key="stage"] [role="menuitemradio"][data-pk-pill-value="active"]',
+            run: "click",
+        },
+        {
+            content: "The backward proposal; dismiss it",
+            trigger: '#sc_proposal_sheet[open][data-sc-proposal-kind="moved_back"] [data-sc-proposal-dismiss]',
+            run: "click",
+        },
+        {
+            content: "Back to « Active » (red), in place",
+            trigger: '.o_sc_injury_item [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_red',
         },
     ],
 });
@@ -122,7 +139,7 @@ tours.add("sc_1539_new_injury_draft", {
     steps: () => [
         {
             content: "Type the diagnosis",
-            trigger: '.o_sc_autosave[data-sc-field="diagnosis"] input',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="diagnosis"] input',
             run(helpers) {
                 window.sessionStorage.setItem("sc1539NewUrl", window.location.href);
                 return helpers.edit(DIAGNOSIS);
@@ -130,21 +147,21 @@ tours.add("sc_1539_new_injury_draft", {
         },
         {
             content: "Kept as a device draft",
-            trigger: '.o_sc_autosave[data-sc-field="diagnosis"][data-sc-state="draft"]',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="diagnosis"][data-pk-autosave-state="draft"]',
             run() {
                 assert(draftKeys("new_injury.").length === 1, "expected one new-injury draft");
             },
         },
         {
             content: "Leave the page",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             run() {
                 window.location.assign("/my/players");
             },
             expectUnloadPage: true,
         },
         {
-            trigger: '.o_sc_app a[data-sc-nav-key="players"][aria-current="page"]',
+            trigger: '.o_pk_app a[data-pk-nav-key="players"][aria-current="page"]',
             run() {
                 window.location.assign(window.sessionStorage.getItem("sc1539NewUrl"));
             },
@@ -152,9 +169,9 @@ tours.add("sc_1539_new_injury_draft", {
         },
         {
             content: "« Brouillon restauré » with the text",
-            trigger: '.o_sc_autosave[data-sc-field="diagnosis"][data-sc-restored="1"]',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="diagnosis"][data-pk-autosave-restored="1"]',
             run() {
-                const value = document.querySelector('.o_sc_autosave[data-sc-field="diagnosis"] input').value;
+                const value = document.querySelector('.o_pk_autosave[data-pk-autosave-field="diagnosis"] input').value;
                 assert(value === DIAGNOSIS, `restored value: ${value}`);
             },
         },
@@ -168,7 +185,7 @@ tours.add("sc_1539_new_injury_draft", {
             // Task 1579: no « created » POST-result page any more — the
             // player's Injuries tab (the canonical page) is the landing.
             content: "Landed on the player's injuries: the draft is gone",
-            trigger: '.o_sc_app [data-sc-tab-panel="injuries"]:not([hidden])',
+            trigger: '.o_pk_app [data-pk-tab-panel="injuries"]:not([hidden])',
             run() {
                 assert(window.location.pathname === "/my/player", window.location.href);
                 assert(draftKeys("new_injury.").length === 0, `drafts left: ${draftKeys()}`);
@@ -182,7 +199,7 @@ tours.add("sc_1539_activity_complete", {
     steps: () => [
         {
             content: "« Fait » on the activity row",
-            trigger: 'section[data-sc-tab-panel="activities"]:not([hidden]) button[data-sc-action="activity.complete"]',
+            trigger: 'section[data-pk-tab-panel="activities"]:not([hidden]) button[data-sc-action="activity.complete"]',
             run: "click",
         },
         {
@@ -202,7 +219,7 @@ tours.add("sc_1539_activity_complete", {
         },
         {
             content: "Back on the player's Activities tab, confirmation shown",
-            trigger: 'section[data-sc-tab-panel="activities"]:not([hidden])',
+            trigger: 'section[data-pk-tab-panel="activities"]:not([hidden])',
             run() {
                 assert(window.location.search.includes("success=activity_done"), window.location.search);
             },
@@ -212,25 +229,42 @@ tours.add("sc_1539_activity_complete", {
 
 // ------------------- player status: the hero pill follows the save (2026-10-10)
 tours.add("sc_status_pill_refresh", {
-    // Owner review 2026-10-11: the status selector lives in the page header
-    // (in place of the status pill) and saves in place.
+    // Owner review 2026-10-11: the status changes from the page header and
+    // saves in place. Task 1627: the Match / Practice pills are the
+    // dropdowns (no pencil, no 4-way selector); « No play » = Match no, then
+    // Practice no.
     steps: () => [
         {
-            content: "Available: « Match + practice » pressed in the header; mark the page to detect a reload",
-            trigger: '[data-sc-section="player.hero"] .o_sc_autosave[data-sc-field="sc_status"] button[data-sc-value="yes:yes"][aria-pressed="true"]',
+            content: "Header: the Match pill (green; task 1753: outside the read view); mark the page to detect a reload, open it",
+            trigger: '[data-pk-section="player.hero"] [data-pk-section="player.status"] [data-pk-pill-key="match"] button.o_pk_pill_select.o_pk_chip_green',
             run() {
                 window.__scPillNoReload = true;
+                this.anchor.click();
             },
         },
         {
-            content: "Pick « No play »",
-            trigger: '[data-sc-section="player.hero"] .o_sc_autosave[data-sc-field="sc_status"] button[data-sc-value="no:no"]',
+            content: "Match: No",
+            trigger: '[data-pk-section="player.hero"] [data-pk-pill-key="match"] [role="menuitemradio"][data-pk-pill-value="no"]',
             run: "click",
         },
         {
-            content: "Saved in place (no reload)",
-            trigger:
-                '[data-sc-section="player.hero"] .o_sc_autosave[data-sc-field="sc_status"][data-sc-state="saved"] button[data-sc-value="no:no"][aria-pressed="true"]',
+            content: "Saved in place: Match red; open Practice",
+            trigger: '[data-pk-section="player.hero"] [data-pk-pill-key="practice"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_green',
+            run() {
+                if (!document.querySelector('[data-pk-section="player.hero"] [data-pk-pill-key="match"]:not([aria-busy]) button.o_pk_chip_red')) {
+                    throw new Error("the match pill did not turn red");
+                }
+                this.anchor.click();
+            },
+        },
+        {
+            content: "Practice: No",
+            trigger: '[data-pk-section="player.hero"] [data-pk-pill-key="practice"] [role="menuitemradio"][data-pk-pill-value="no"]:not([aria-disabled])',
+            run: "click",
+        },
+        {
+            content: "The read view shows the new status (read fragment, no reload)",
+            trigger: '[data-pk-section="player.hero"] [data-pk-section="player.status"] [data-pk-pill-key="practice"]:not([aria-busy]) button.o_pk_chip_red',
             run() {
                 if (!window.__scPillNoReload) {
                     throw new Error("the page reloaded");
@@ -244,8 +278,8 @@ tours.add("sc_status_pill_refresh", {
 tours.add("sc_injury_inline_create", {
     steps: () => [
         {
-            content: "Open « Add Injury »",
-            trigger: 'details#sc_new_injury > summary',
+            content: "Open « Add Injury » from the list header's « + Ajouter »",
+            trigger: '.o_pk_list_header button.o_pk_list_add[aria-controls="sc_new_injury"][aria-expanded="false"]',
             run: "click",
         },
         {
@@ -276,17 +310,17 @@ tours.add("sc_injury_inline_create", {
         },
         {
             content: "The new injury is open in edit mode, with « Undo » offered",
-            trigger: '.o_sc_injury_item[data-sc-created-injury][open] [data-sc-edit-view="edit"]:not([hidden])',
+            trigger: '.o_sc_injury_item[data-sc-created-injury][open] [data-pk-edit-view="edit"]:not([hidden])',
         },
         {
             content: "Undo",
-            trigger: '.o_sc_toast:not([hidden]) [data-sc-toast-action]',
+            trigger: '.o_pk_toast:not([hidden]) [data-pk-toast-action]',
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "Back on the Injuries tab, the injury is gone",
-            trigger: 'section[data-sc-tab-panel="injuries"]:not([hidden])',
+            trigger: 'section[data-pk-tab-panel="injuries"]:not([hidden])',
             run() {
                 if ([...document.querySelectorAll(".o_sc_injury_item")].some((el) => el.textContent.includes("Synthetic tour ankle"))) {
                     throw new Error("the undone injury is still listed");
@@ -301,29 +335,47 @@ tours.add("sc_injury_resolve_date", {
     steps: () => [
         {
             content: "The injury is open; mark the page and edit it",
-            trigger: ".o_sc_injury_item[open] [data-sc-edit-toggle]",
+            trigger: ".o_sc_injury_item[open] [data-pk-edit-toggle]",
             run(helpers) {
                 window.__scResolveNoReload = true;
                 helpers.click();
             },
         },
         {
-            content: "No resolution date yet",
-            trigger: '.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="resolution_date"] input',
+            // Review fixes 2026-10-18: the resolution date field is hidden
+            // until the injury is resolved.
+            content: "No resolution date yet (its field hidden while active)",
+            trigger: '.o_sc_injury_item[open] .o_pk_autosave[data-pk-autosave-field="predicted_resolution_date"] input',
             run() {
-                if (this.anchor.value) {
-                    throw new Error(`resolution date already set: ${this.anchor.value}`);
+                const input = document.querySelector(
+                    '.o_sc_injury_item[open] .o_pk_autosave[data-pk-autosave-field="resolution_date"] input'
+                );
+                if (input.value) {
+                    throw new Error(`resolution date already set: ${input.value}`);
+                }
+                if (input.offsetParent) {
+                    throw new Error("the resolution date shows on an active injury");
                 }
             },
         },
         {
-            content: "Resolve",
-            trigger: '.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="stage"] button[data-sc-value="resolved"]',
+            content: "Resolve from the status pill (task 1631)",
+            trigger: '.o_sc_injury_item[open] [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select',
+            run: "click",
+        },
+        {
+            content: "« Resolved »",
+            trigger: '.o_sc_injury_item[open] [data-pk-pill-key="stage"] [role="menuitemradio"][data-pk-pill-value="resolved"]',
+            run: "click",
+        },
+        {
+            content: "Confirm the date (today)",
+            trigger: "#sc_injury_resolve_sheet[open] [data-sc-injury-resolve-confirm]",
             run: "click",
         },
         {
             content: "The resolution date shows at once (no reload)",
-            trigger: `.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="resolution_date"] input:value(${new Date().getFullYear()})`,
+            trigger: `.o_sc_injury_item[open] .o_pk_autosave[data-pk-autosave-field="resolution_date"] input:value(${new Date().getFullYear()})`,
             run() {
                 if (!window.__scResolveNoReload) {
                     throw new Error("the page reloaded");
@@ -338,34 +390,33 @@ tours.add("sc_event_pencil", {
     steps: () => [
         {
             content: "Read view first; open the pencil",
-            trigger: '[data-sc-edit-card="event"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="event"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
             content: "Rename the event",
-            trigger: '[data-sc-edit-card="event"] .o_sc_autosave[data-sc-field="name"] input',
+            trigger: '[data-pk-edit-card="event"] .o_pk_autosave[data-pk-autosave-field="name"] input',
             run: "edit Synthetic pencil event",
         },
         {
             content: "Leave the field so it saves",
-            trigger: '[data-sc-edit-card="event"] .o_sc_autosave[data-sc-field="name"] input',
+            trigger: '[data-pk-edit-card="event"] .o_pk_autosave[data-pk-autosave-field="name"] input',
             run() {
-                this.anchor.blur();
+                this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
             },
         },
         {
             content: "Saved",
-            trigger: '[data-sc-edit-card="event"] .o_sc_autosave[data-sc-field="name"][data-sc-state="saved"]',
+            trigger: '[data-pk-edit-card="event"] .o_pk_autosave[data-pk-autosave-field="name"][data-pk-autosave-state="saved"]',
         },
         {
-            content: "Done: the card reloads with the new name",
-            trigger: '[data-sc-edit-card="event"] [data-sc-edit-done]',
+            content: "Done: the card closes (task 1611: no reload, the title is a read fragment)",
+            trigger: '[data-pk-edit-card="event"] [data-pk-edit-done]',
             run: "click",
-            expectUnloadPage: true,
         },
         {
             content: "The title shows the new name",
-            trigger: '.o_sc_appbar_title:contains(Synthetic pencil event)',
+            trigger: '.o_pk_appbar_title:contains(Synthetic pencil event)',
         },
     ],
 });
@@ -374,8 +425,9 @@ tours.add("sc_event_pencil", {
 tours.add("sc_training_history_refresh", {
     steps: () => [
         {
+            // Task 1629: the link sits right after the all-caps section title.
             content: "Open the (empty) training history; mark the page to detect a reload",
-            trigger: '[data-sc-section="player.training"] .o_sc_field_label [data-sc-sheet-open="sc_training_history_sheet"]',
+            trigger: '[data-pk-section="player.training"] > h3.o_pk_edit_card_title > button.o_pk_section_more[data-pk-sheet-open="sc_training_history_sheet"]',
             run(helpers) {
                 window.__scTrainingNoReload = true;
                 helpers.click();
@@ -383,32 +435,60 @@ tours.add("sc_training_history_refresh", {
         },
         {
             content: "Nothing yet",
-            trigger: "dialog#sc_training_history_sheet[open] .o_sc_empty:not(.o_sc_lazy_loading)",
+            trigger: "dialog#sc_training_history_sheet[open] .o_pk_empty:not(.o_pk_lazy_loading)",
         },
         {
             content: "Close the sheet",
-            trigger: "dialog#sc_training_history_sheet[open] [data-sc-sheet-close]",
+            trigger: "dialog#sc_training_history_sheet[open] [data-pk-sheet-close]",
+            run: "click",
+        },
+        {
+            content: "Review fixes 2026-10-18: the header's pencil opens its edit view",
+            trigger: '[data-pk-section="player.hero"] [data-pk-card-icons] > button[data-pk-edit-toggle]',
             run: "click",
         },
         {
             content: "Type a recommendation",
-            trigger: '.o_sc_autosave[data-sc-field="training_recommendation"] textarea',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="training_recommendation"] textarea',
             run: "edit Synthetic bike only",
         },
         {
             content: "Leave the field so it saves",
-            trigger: '.o_sc_autosave[data-sc-field="training_recommendation"] textarea',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="training_recommendation"] textarea',
             run() {
-                this.anchor.blur();
+                this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
             },
         },
         {
             content: "Saved",
-            trigger: '.o_sc_autosave[data-sc-field="training_recommendation"][data-sc-state="saved"]',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="training_recommendation"][data-pk-autosave-state="saved"]',
         },
         {
-            content: "Open the history again",
-            trigger: '[data-sc-section="player.training"] .o_sc_field_label [data-sc-sheet-open="sc_training_history_sheet"]',
+            // Task 1601: the « Updated on … by … » stamp appears in place.
+            content: "The authorship stamp is updated without a reload",
+            trigger: '.o_pk_autosave[data-pk-autosave-field="training_recommendation"] .o_pk_hint:contains(Updated on):contains(PC TP)',
+        },
+        {
+            // Task 1629: one title + one History link in the edit view; the
+            // island's label stays as the textarea's accessible name.
+            content: "The edit view has one History link, next to its title",
+            trigger: '[data-pk-section="player.training.edit"] > h3.o_pk_edit_card_title > button.o_pk_section_more',
+            run() {
+                const section = this.anchor.closest('[data-pk-section="player.training.edit"]');
+                const links = section.querySelectorAll('[data-pk-sheet-open="sc_training_history_sheet"]');
+                if (links.length !== 1) {
+                    throw new Error(`expected one History link in the edit view, got ${links.length}`);
+                }
+                const textarea = section.querySelector(".o_pk_autosave textarea");
+                const label = textarea && textarea.labels && textarea.labels[0];
+                if (!label || !label.textContent.includes("Training Recommendation")) {
+                    throw new Error("the training textarea lost its accessible name");
+                }
+            },
+        },
+        {
+            content: "Open the history again (the edit view's title link)",
+            trigger: '[data-pk-section="player.training.edit"] > h3.o_pk_edit_card_title > button[data-pk-sheet-open="sc_training_history_sheet"]',
             run: "click",
         },
         {
@@ -428,9 +508,9 @@ tours.add("sc_player_inline_edit", {
     steps: () => [
         {
             content: "Identity card in read mode; mark the page to detect a reload",
-            trigger: '[data-sc-edit-card="identity"] [data-sc-edit-view="read"]',
+            trigger: '[data-pk-edit-card="identity"] [data-pk-edit-view="read"]',
             run() {
-                const edit = document.querySelector('[data-sc-edit-card="identity"] [data-sc-edit-view="edit"]');
+                const edit = document.querySelector('[data-pk-edit-card="identity"] [data-pk-edit-view="edit"]');
                 if (!edit || !edit.hidden) {
                     throw new Error("the edit view is not hidden by default");
                 }
@@ -439,36 +519,36 @@ tours.add("sc_player_inline_edit", {
         },
         {
             content: "Pencil: the card's fields appear",
-            trigger: '[data-sc-edit-card="identity"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="identity"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
             content: "Edit the position",
-            trigger: '[data-sc-edit-card="identity"] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="position"] input',
+            trigger: '[data-pk-edit-card="identity"] [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-pk-autosave-field="position"] input',
             run: "edit Safety",
         },
         {
             content: "Leave the field (saves)",
-            trigger: ".o_sc_appbar_title",
+            trigger: ".o_pk_appbar_title",
             run: "click",
         },
         {
             content: "Saved",
-            trigger: '[data-sc-edit-card="identity"] .o_sc_autosave[data-sc-field="position"][data-sc-state="saved"]',
+            trigger: '[data-pk-edit-card="identity"] .o_pk_autosave[data-pk-autosave-field="position"][data-pk-autosave-state="saved"]',
         },
         {
             content: "Done: back to read mode",
-            trigger: '[data-sc-edit-card="identity"] button[data-sc-edit-done]',
+            trigger: '[data-pk-edit-card="identity"] button[data-pk-edit-done]',
             run: "click",
         },
         {
             content: "The read view shows the new position, without a reload",
-            trigger: '[data-sc-edit-card="identity"] [data-sc-edit-view="read"]',
+            trigger: '[data-pk-edit-card="identity"] [data-pk-edit-view="read"]',
             run() {
-                if (!document.querySelector('[data-sc-edit-card="identity"] [data-sc-edit-view="edit"]').hidden) {
+                if (!document.querySelector('[data-pk-edit-card="identity"] [data-pk-edit-view="edit"]').hidden) {
                     throw new Error("« Done » left the edit view open");
                 }
-                const shown = document.querySelector('[data-sc-edit-card="identity"] [data-sc-display$=":position"]');
+                const shown = document.querySelector('[data-pk-edit-card="identity"] [data-pk-display$=":position"]');
                 if (!window.__scInlineNoReload) {
                     throw new Error("the page reloaded");
                 }
@@ -480,12 +560,17 @@ tours.add("sc_player_inline_edit", {
         {
             // Task 1579: the context line is the PHONE's (hidden on a
             // laptop, where this tour runs): check its text, not visibility.
+            // Task 1611: refreshed as a read fragment (a fetch after the save).
             content: "The app bar context follows",
-            trigger: '[data-sc-edit-card="identity"] [data-sc-edit-view="read"]',
-            run() {
-                const context = document.querySelector(".o_sc_appbar_context");
-                if (!context || !context.textContent.includes("Safety")) {
-                    throw new Error(`context line reads « ${context && context.textContent} »`);
+            trigger: '[data-pk-edit-card="identity"] [data-pk-edit-view="read"]',
+            async run() {
+                const start = Date.now();
+                const context = () => document.querySelector(".o_pk_appbar_context");
+                while (!(context() && context().textContent.includes("Safety"))) {
+                    if (Date.now() - start > 8000) {
+                        throw new Error(`context line reads « ${context() && context().textContent} »`);
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, 100));
                 }
             },
         },
@@ -497,37 +582,37 @@ tours.add("sc_player_teams_tags", {
     steps: () => [
         {
             content: "Open the Teams card",
-            trigger: '[data-sc-edit-card="teams"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="teams"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
             content: "The current team is a chip",
-            trigger: '[data-sc-edit-card="teams"] .o_sc_tags .o_sc_tag:contains("PC Team A")',
+            trigger: '[data-pk-edit-card="teams"] .o_pk_tags .o_pk_tag:contains("PC Team A")',
         },
         {
             content: "Search a team to add",
-            trigger: '[data-sc-edit-card="teams"] .o_sc_tags_search',
+            trigger: '[data-pk-edit-card="teams"] .o_pk_tags_search',
             run: "edit Team C",
         },
         {
             content: "Pick it in the suggestions",
-            trigger: '[data-sc-edit-card="teams"] .o_sc_tags_option:contains("PC Team C")',
+            trigger: '[data-pk-edit-card="teams"] .o_pk_tags_option:contains("PC Team C")',
             run: "click",
         },
         {
             content: "Added and saved",
             trigger:
-                '[data-sc-edit-card="teams"] .o_sc_autosave[data-sc-state="saved"] .o_sc_tag:contains("PC Team C")',
+                '[data-pk-edit-card="teams"] .o_pk_autosave[data-pk-autosave-state="saved"] .o_pk_tag:contains("PC Team C")',
         },
         {
             content: "Remove Team A",
-            trigger: '[data-sc-edit-card="teams"] .o_sc_tag:contains("PC Team A") button.o_sc_tag_remove',
+            trigger: '[data-pk-edit-card="teams"] .o_pk_tag:contains("PC Team A") button.o_pk_tag_remove',
             run: "click",
         },
         {
             content: "Only Team C left, saved",
             trigger:
-                '[data-sc-edit-card="teams"] .o_sc_autosave[data-sc-state="saved"] .o_sc_tags:not(:has(.o_sc_tag:contains("PC Team A")))',
+                '[data-pk-edit-card="teams"] .o_pk_autosave[data-pk-autosave-state="saved"] .o_pk_tags:not(:has(.o_pk_tag:contains("PC Team A")))',
         },
     ],
 });

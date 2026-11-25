@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="fsm_site_note_wizard_view_form" model="ir.ui.view">
+        <field name="name">fsm.site.note.wizard.view.form</field>
+        <field name="model">fsm.site.note.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Anything to remember next time at this site?">
+                <field name="task_id" invisible="1" />
+                <p class="text-muted">
+                    This note shows as a banner on every service task at
+                    <field
+            name="partner_id"
+            readonly="1"
+            class="d-inline fw-bold"
+            options="{'no_open': True}"
+          />
+                    until someone clears it.
+                </p>
+                <field
+          name="note"
+          nolabel="1"
+          class="w-100"
+          placeholder="E.g.: gate code changed, bring the tall ladder"
+        />
+                <footer>
+                    <button
+            class="btn-primary"
+            name="action_save"
+            type="object"
+            string="Save &amp; close"
+            data-hotkey="q"
+          />
+                    <button
+            class="btn-secondary"
+            name="action_skip"
+            type="object"
+            string="Skip"
+            data-hotkey="k"
+          />
+                    <button
+            class="btn-secondary"
+            special="cancel"
+            string="Cancel"
+            data-hotkey="x"
+          />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

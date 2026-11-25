@@ -1,24 +1,155 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <!-- Per-user "My Mail Accounts" config surface (task #3965, AC4):
-         reuses conversation_base's generic transport form/list/search
-         views as-is; only the domain/context here are inbox-specific
-         (scoped to the current user's own transports by default, but not
-         hard-filtered: the own+shared ir.rule in conversation_base
-         already enforces what a user may see/touch; this is just the
-         convenient "mine first" default). -->
+    <!-- Self-service "My mailboxes": every internal user adds, reconnects
+         and removes their own Google Workspace or IMAP mailbox here, with no
+         administrator involved. The own-or-shared ir.rule in
+         conversation_base is what enforces who may see or touch a record;
+         the action only presets the convenient "mine first" view and the
+         values a new mailbox needs to be usable right away:
+         - the owner is the current user (the form hides the field);
+         - the provider is left unset so the user picks it explicitly,
+           instead of getting whichever provider module loaded last;
+         - browse / search / send are on, so the mailbox appears in the
+           Inbox without the user touching technical capability flags. -->
+    <record id="conversation_transport_view_list_my" model="ir.ui.view">
+        <field name="name">conversation.transport.view.list.my</field>
+        <field name="model">conversation.transport</field>
+        <field name="arch" type="xml">
+            <list string="My mailboxes" delete="0" duplicate="0">
+                <header>
+                    <button
+            name="action_remove_mailbox"
+            type="object"
+            string="Remove"
+            confirm="Remove the selected mailboxes from Odoo? Conversations already filed are kept, and your real mailbox is not changed."
+          />
+                </header>
+                <field name="name" />
+                <field name="provider" />
+                <field name="login" />
+            </list>
+        </field>
+    </record>
+
+    <record id="conversation_transport_view_form_my" model="ir.ui.view">
+        <field name="name">conversation.transport.view.form.my</field>
+        <field name="model">conversation.transport</field>
+        <field
+      name="inherit_id"
+      ref="conversation_base.conversation_transport_view_form"
+    />
+        <field name="mode">primary</field>
+        <!-- After the generic form, so it never becomes the default one. -->
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <form position="attributes">
+                <attribute name="string">Mailbox</attribute>
+                <attribute name="delete">0</attribute>
+                <attribute name="duplicate">0</attribute>
+            </form>
+            <sheet position="before">
+                <header>
+                    <button
+            name="action_remove_mailbox"
+            type="object"
+            string="Remove"
+            invisible="not id"
+            confirm="Remove this mailbox from Odoo? Conversations already filed are kept, and your real mailbox is not changed."
+          />
+                </header>
+            </sheet>
+            <!-- The owner is always the person adding the mailbox: locked
+                 (but still saved) for everyone except a Conversations
+                 manager. The server's ownership guard is authoritative. -->
+            <xpath
+        expr="//field[@name='user_id'][@groups='!conversation_base.group_conversation_manager']"
+        position="attributes"
+      >
+                <attribute name="readonly">1</attribute>
+                <attribute name="force_save">1</attribute>
+            </xpath>
+            <field name="provider" position="attributes">
+                <attribute name="required">1</attribute>
+                <attribute name="readonly">id</attribute>
+            </field>
+            <!-- No "active" field on the form: the web client then offers
+                 no Archive action, and Remove is the one way to retire a
+                 mailbox (it also clears the credentials). -->
+            <field name="active" position="replace" />
+            <!-- Technical switches stay with the people who manage the
+                 module; a personal mailbox works without them (the action
+                 presets browse / search / send). Write-back on the real
+                 mailbox remains the owner's own opt-in. -->
+            <field name="browsable" position="attributes">
+                <attribute
+          name="groups"
+        >conversation_base.group_conversation_manager</attribute>
+            </field>
+            <field name="searchable" position="attributes">
+                <attribute
+          name="groups"
+        >conversation_base.group_conversation_manager</attribute>
+            </field>
+            <field name="sendable" position="attributes">
+                <attribute
+          name="groups"
+        >conversation_base.group_conversation_manager</attribute>
+            </field>
+            <field name="pushable" position="attributes">
+                <attribute
+          name="groups"
+        >conversation_base.group_conversation_manager</attribute>
+            </field>
+            <field name="artifact_only" position="attributes">
+                <attribute
+          name="groups"
+        >conversation_base.group_conversation_manager</attribute>
+            </field>
+        </field>
+    </record>
+
     <record id="conversation_transport_action_my" model="ir.actions.act_window">
-        <field name="name">My Mail Accounts</field>
+        <field name="name">My mailboxes</field>
         <field name="res_model">conversation.transport</field>
         <field name="view_mode">list,form</field>
         <field
       name="context"
-    >{'default_user_id': uid, 'search_default_filter_mine': 1}</field>
+    >{'default_user_id': uid, 'default_provider': False, 'default_browsable': True, 'default_searchable': True, 'default_sendable': True, 'search_default_filter_mine': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add your first mailbox
+            </p>
+            <p>
+                Connect your own Google Workspace or IMAP mailbox to browse,
+                file and reply to your email from Conversations. Nobody else
+                can see or use it.
+            </p>
+        </field>
+    </record>
+
+    <record
+    id="conversation_transport_action_my_list"
+    model="ir.actions.act_window.view"
+  >
+        <field name="sequence" eval="1" />
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="conversation_transport_view_list_my" />
+        <field name="act_window_id" ref="conversation_transport_action_my" />
+    </record>
+
+    <record
+    id="conversation_transport_action_my_form"
+    model="ir.actions.act_window.view"
+  >
+        <field name="sequence" eval="2" />
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="conversation_transport_view_form_my" />
+        <field name="act_window_id" ref="conversation_transport_action_my" />
     </record>
 
     <menuitem
     id="menu_conversation_transport_my"
-    name="My Mail Accounts"
+    name="My mailboxes"
     parent="conversation_base.menu_mail_conversation_root"
     action="conversation_transport_action_my"
     sequence="90"

@@ -80,11 +80,15 @@
 
                 <!-- TP-only additional info placed within Player Details -->
                 <t t-if="is_treatment_prof">
-                    <div class="row mb-3">
+                    <!-- Task 1630: « Other medical history ». Task 1677: the
+                         allergies and medical conditions are lists, edited in
+                         the app's popups (no level / details here any more). -->
+                    <t t-set="sc_med_src" t-value="form_data or patient_info or {}"/>
+                    <div class="row mb-3" data-sc-legacy-medical="form">
                         <div class="col-12">
                             <div class="form-group">
-                                <label for="allergies">Allergies</label>
-                                <textarea name="allergies" id="allergies" class="form-control" rows="2" placeholder="Enter allergies information here"><t t-esc="(form_data and form_data.get('allergies')) or (patient_info and patient_info.get('allergies')) or ''"/></textarea>
+                                <label for="medical_history_other">Other medical history</label>
+                                <textarea name="medical_history_other" id="medical_history_other" class="form-control" rows="2"><t t-esc="sc_med_src.get('medical_history_other') or ''"/></textarea>
                             </div>
                         </div>
                     </div>

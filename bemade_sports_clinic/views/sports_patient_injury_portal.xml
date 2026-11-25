@@ -173,8 +173,9 @@
                     </div>
                 </div>
                 
-                <!-- External Notes Section -->
-                <div class="card mb-4">
+                <!-- External Notes Section — therapists only (#1675, owner 2026-10-25:
+                     a coach's report is the diagnosis + date). -->
+                <div t-if="is_treatment_prof" class="card mb-4">
                     <div class="card-header bg-secondary text-white">
                         <h4 class="mb-0">External Notes</h4>
                     </div>

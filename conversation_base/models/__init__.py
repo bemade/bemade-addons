@@ -6,3 +6,4 @@ from . import mail_conversation_link
 from . import mail_conversation_participant
 from . import mail_conversation_member
 from . import mail_message
+from . import ir_filters

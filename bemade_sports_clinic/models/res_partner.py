@@ -54,6 +54,21 @@ class Partner(models.Model):
         help='Check this box if this contact represents a venue/location'
     )
 
+    def _sc_patient_company_message(self):
+        return _("A player's contact must be a person, not a company.")
+
+    @api.constrains("is_company")
+    def _check_patient_partner_is_person(self):
+        """Task 1680: a contact linked to a player (active or archived) cannot
+        become a company. The lookup is a sudo read (task 1536: callers
+        without a clinic group cannot read sports.patient); it only decides
+        whether to raise."""
+        companies = self.filtered("is_company")
+        if companies and self.env["sports.patient"].sudo().with_context(
+            active_test=False
+        ).search_count([("partner_id", "in", companies.ids)], limit=1):
+            raise ValidationError(self._sc_patient_company_message())
+
     def write(self, vals):
         # Task 1536: the guard is module-owned bookkeeping that runs for ANY
         # caller writing a partner name (e.g. res.users.create toggling

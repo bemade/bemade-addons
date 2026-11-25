@@ -8,7 +8,8 @@ Acceptance criteria
 2. The same past-day freeze as the journal: a write of ``went_well`` / ``went_badly`` /
    ``note`` on a block of a **past** day lands as a dated line under ``corrections``
    (``- **<today>** (<label>): <text>``) and the field itself is unchanged; today's block
-   takes the text in place.
+   takes the text in place. A past block's field still **empty** takes its first text in
+   place (nothing to correct).
 3. Minutes and ``status`` of a past block stay freely editable (closing yesterday late
    is normal) — only the three texts are frozen.
 4. ``journal_force_edit`` in the context bypasses the freeze (imports, repairs).
@@ -79,7 +80,7 @@ class TestBlockJournal(HomeschoolCase):
         self.assertEqual(self.past.corrections, "- **%s** (What went badly): late" % self.today_str)
 
     def test_journal_freeze_untouched(self):
-        entry = self.env["homeschool.journal"].create({"day_id": self.past_day.id, "went_well": "original"})
+        entry = self.env["homeschool.journal"].create({"day_id": self.past_day.id, "went_well": "original", "indicator_notes": "R3 0"})
         entry.write({"went_well": "rewritten", "indicator_notes": "R3 1"})
         self.assertEqual(entry.went_well, "original")
         self.assertEqual(entry.corrections,
@@ -96,3 +97,12 @@ class TestBlockJournal(HomeschoolCase):
             form.went_well = "late from the form"
         self.assertEqual(self.past.went_well, "original")
         self.assertIn("(What worked): late from the form", self.past.corrections)
+
+    def test_past_block_empty_field_fills_in_place(self):
+        blank = self.make_block(self.past_day, "Bonus", 30, 2, kind="bonus", subject_id=self.st.id)
+        blank.write({"went_well": "the kite flew", "minutes_total": 30})
+        self.assertEqual((blank.went_well, blank.minutes_total), ("the kite flew", 30))
+        self.assertFalse(blank.corrections)
+        blank.write({"went_well": "the kite flew twice", "note": "string too short"})
+        self.assertEqual((blank.went_well, blank.note), ("the kite flew", "string too short"))
+        self.assertEqual(blank.corrections, "- **%s** (What worked): the kite flew twice" % self.today_str)

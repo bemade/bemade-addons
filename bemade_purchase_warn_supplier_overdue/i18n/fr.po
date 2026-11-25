@@ -1,0 +1,199 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_purchase_warn_supplier_overdue
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 18:33+0000\n"
+"PO-Revision-Date: 2026-11-19 18:33+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields.selection,name:bemade_purchase_warn_supplier_overdue.selection__res_company__warn_supplier_scope__all
+msgid "All Vendors"
+msgstr "Tous les fournisseurs"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model_terms:ir.ui.view,arch_db:bemade_purchase_warn_supplier_overdue.res_config_settings_view_form_purchase_supplier_overdue
+msgid "Assign the To Do to a specific user or the current user"
+msgstr "Assigner la tâche à un utilisateur précis ou à l'utilisateur courant"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,help:bemade_purchase_warn_supplier_overdue.field_res_company__warn_supplier_scope
+#: model:ir.model.fields,help:bemade_purchase_warn_supplier_overdue.field_res_config_settings__warn_supplier_scope
+msgid ""
+"Choose whether to apply overdue warnings to all vendors or only to specific "
+"vendors."
+msgstr ""
+"Choisissez d'appliquer les avertissements de retard à tous les fournisseurs "
+"ou seulement à certains fournisseurs."
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model_terms:ir.ui.view,arch_db:bemade_purchase_warn_supplier_overdue.res_config_settings_view_form_purchase_supplier_overdue
+msgid ""
+"Choose whether to apply the overdue warning to all vendors or specific "
+"vendors"
+msgstr ""
+"Choisissez d'appliquer l'avertissement de retard à tous les fournisseurs ou "
+"à certains fournisseurs"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields.selection,name:bemade_purchase_warn_supplier_overdue.selection__res_company__warn_supplier_overdue_user_type__current
+msgid "Current User"
+msgstr "Utilisateur courant"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#. odoo-python
+#: code:addons/bemade_purchase_warn_supplier_overdue/models/purchase_order.py:0
+msgid "Overdue Invoices for Supplier %s"
+msgstr "Factures en souffrance du fournisseur %s"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,help:bemade_purchase_warn_supplier_overdue.field_res_company__warn_supplier_specific_ids
+#: model:ir.model.fields,help:bemade_purchase_warn_supplier_overdue.field_res_config_settings__warn_supplier_specific_ids
+msgid "Select specific vendors to apply overdue invoice warnings."
+msgstr ""
+"Sélectionnez les fournisseurs auxquels appliquer les avertissements de "
+"factures en souffrance."
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model_terms:ir.ui.view,arch_db:bemade_purchase_warn_supplier_overdue.res_config_settings_view_form_purchase_supplier_overdue
+msgid "Select specific vendors to apply overdue warnings if applicable"
+msgstr ""
+"Sélectionnez les fournisseurs auxquels appliquer les avertissements de "
+"retard, le cas échéant"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields.selection,name:bemade_purchase_warn_supplier_overdue.selection__res_company__warn_supplier_overdue_user_type__specific
+msgid "Specific User"
+msgstr "Utilisateur spécifique"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,help:bemade_purchase_warn_supplier_overdue.field_res_company__warn_supplier_overdue_user_id
+#: model:ir.model.fields,help:bemade_purchase_warn_supplier_overdue.field_res_config_settings__warn_supplier_overdue_user_id
+msgid "Specific User to warn when supplier is overdue."
+msgstr ""
+"Utilisateur précis à avertir lorsqu'un fournisseur a des factures en "
+"souffrance."
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,field_description:bemade_purchase_warn_supplier_overdue.field_res_company__warn_supplier_specific_ids
+#: model:ir.model.fields,field_description:bemade_purchase_warn_supplier_overdue.field_res_config_settings__warn_supplier_specific_ids
+#: model:ir.model.fields.selection,name:bemade_purchase_warn_supplier_overdue.selection__res_company__warn_supplier_scope__specific
+msgid "Specific Vendors"
+msgstr "Fournisseurs précis"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model_terms:ir.ui.view,arch_db:bemade_purchase_warn_supplier_overdue.res_config_settings_view_form_purchase_supplier_overdue
+msgid ""
+"Specific user to warn when PO is confirmed with a supplier who has overdue "
+"bills"
+msgstr ""
+"Utilisateur précis à avertir lorsqu'un bon de commande est confirmé avec un "
+"fournisseur qui a des factures en souffrance"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model_terms:ir.ui.view,arch_db:bemade_purchase_warn_supplier_overdue.res_config_settings_view_form_purchase_supplier_overdue
+msgid "Supplier Overdue"
+msgstr "Fournisseur en souffrance"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.actions.act_window,name:bemade_purchase_warn_supplier_overdue.res_config_settings_action_supplier_overdue
+#: model:ir.ui.menu,name:bemade_purchase_warn_supplier_overdue.menu_supplier_overdue_settings
+msgid "Supplier Overdue Settings"
+msgstr "Paramètres des fournisseurs en souffrance"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#. odoo-python
+#: code:addons/bemade_purchase_warn_supplier_overdue/models/purchase_order.py:0
+msgid ""
+"The supplier %s has overdue invoices. Please follow up before proceeding "
+"with the order %s."
+msgstr ""
+"Le fournisseur %s a des factures en souffrance. Veuillez faire le suivi "
+"avant de poursuivre la commande %s."
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,field_description:bemade_purchase_warn_supplier_overdue.field_res_company__warn_supplier_overdue_user_id
+msgid "User"
+msgstr "Utilisateur"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,field_description:bemade_purchase_warn_supplier_overdue.field_res_config_settings__warn_supplier_overdue_user_type
+msgid "User Warned Type"
+msgstr "Type d'utilisateur averti"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,field_description:bemade_purchase_warn_supplier_overdue.field_res_config_settings__warn_supplier_overdue_user_id
+msgid "User to warn"
+msgstr "Utilisateur à avertir"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,field_description:bemade_purchase_warn_supplier_overdue.field_res_config_settings__warn_supplier_scope
+msgid "Warn Scope"
+msgstr "Portée de l'avertissement"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model_terms:ir.ui.view,arch_db:bemade_purchase_warn_supplier_overdue.res_config_settings_view_form_purchase_supplier_overdue
+msgid "Warn a user on purchase order confirmation for overdue suppliers"
+msgstr ""
+"Avertir un utilisateur à la confirmation d'un bon de commande pour les "
+"fournisseurs en souffrance"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,field_description:bemade_purchase_warn_supplier_overdue.field_res_config_settings__warn_supplier_overdue
+msgid "Warn supplier when overdue"
+msgstr "Avertir quand le fournisseur est en souffrance"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,help:bemade_purchase_warn_supplier_overdue.field_res_company__warn_supplier_overdue
+#: model:ir.model.fields,help:bemade_purchase_warn_supplier_overdue.field_res_config_settings__warn_supplier_overdue
+msgid "Warn user when purchasing from a vendor with overdue bills."
+msgstr ""
+"Avertir l'utilisateur lors d'un achat auprès d'un fournisseur ayant des "
+"factures en souffrance."
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,field_description:bemade_purchase_warn_supplier_overdue.field_res_company__warn_supplier_overdue
+msgid "Warn when supplier invoice overdue"
+msgstr "Avertir quand une facture fournisseur est en souffrance"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,field_description:bemade_purchase_warn_supplier_overdue.field_res_company__warn_supplier_overdue_user_type
+msgid "Warned User"
+msgstr "Utilisateur averti"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,field_description:bemade_purchase_warn_supplier_overdue.field_res_company__warn_supplier_scope
+msgid "Warning Vendor Scope"
+msgstr "Portée des fournisseurs avertis"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,help:bemade_purchase_warn_supplier_overdue.field_res_company__warn_supplier_overdue_user_type
+#: model:ir.model.fields,help:bemade_purchase_warn_supplier_overdue.field_res_config_settings__warn_supplier_overdue_user_type
+msgid "Which user to warn when supplier is overdue"
+msgstr ""
+"Utilisateur à avertir lorsqu'un fournisseur a des factures en souffrance"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,field_description:bemade_purchase_warn_supplier_overdue.field_purchase_order__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model.fields,field_description:bemade_purchase_warn_supplier_overdue.field_purchase_order__id
+msgid "ID"
+msgstr "ID"
+
+#. module: bemade_purchase_warn_supplier_overdue
+#: model:ir.model,name:bemade_purchase_warn_supplier_overdue.model_purchase_order
+msgid "Purchase Order"
+msgstr "Bon de commande"

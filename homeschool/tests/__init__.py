@@ -20,4 +20,5 @@ from . import (
     test_uc18_log_plan,
     test_uc19_close_day,
     test_uc20_block_week_filters,
+    test_uc21_close_week,
 )

@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_mail_conversation_sent_recipient_user,mail.conversation.sent.recipient user,model_mail_conversation_sent_recipient,base.group_user,1,0,0,0

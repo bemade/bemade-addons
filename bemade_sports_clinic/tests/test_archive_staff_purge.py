@@ -39,7 +39,12 @@ class TestArchiveStaffPurge(TransactionCase):
         })
         cls.tp_user = cls.env["res.users"].create({
             "name": "Archive TP", "login": "archive.tp@example.com",
-            "group_ids": [(6, 0, [cls.env.ref("base.group_user").id])],
+            # Review fixes 2026-10-24: an assignee must be a treatment
+            # professional (the event's assignee rule).
+            "group_ids": [(6, 0, [
+                cls.env.ref("base.group_user").id,
+                cls.env.ref("bemade_sports_clinic.group_sports_clinic_treatment_professional").id,
+            ])],
         })
 
     def _staff(self, partner, **vals):

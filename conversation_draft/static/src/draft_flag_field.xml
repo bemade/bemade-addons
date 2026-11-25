@@ -4,6 +4,7 @@
         <span
       t-if="props.record.data[props.name]"
       class="o_conversation_draft_flag badge text-bg-warning"
+      t-att-title="label"
     >
             <i class="fa fa-pencil me-1" role="img" />
             <t t-out="label" />

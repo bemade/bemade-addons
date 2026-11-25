@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Task 5200 (kit P5): the app's settings (Settings › Portal App) and the
+     in-app help mapping (Settings › Technical › Portal App Help). -->
+<odoo>
+    <record id="pk_res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.bemade_portal_kit</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='general_settings']" position="inside">
+                <block title="Portal App" id="bemade_portal_kit_settings">
+                    <setting string="Portal app" help="Show the portal app to the users who hold an app role. Off: the stock portal.">
+                        <field name="pk_shell_enabled"/>
+                    </setting>
+                    <setting string="Theme choice" help="Let each user choose the light or dark theme. Off: everyone gets the default theme.">
+                        <field name="pk_theme_choice_enabled"/>
+                    </setting>
+                    <setting string="Help home" help="The help home article (an https address or a site path). The page-by-page articles: Settings › Technical › Portal App Help.">
+                        <div class="content-group">
+                            <field name="pk_help_home_url" placeholder="https://…"/>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="pk_help_view_list" model="ir.ui.view">
+        <field name="name">portal.kit.help.list</field>
+        <field name="model">portal.kit.help</field>
+        <field name="arch" type="xml">
+            <list string="App help" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="key"/>
+                <field name="url" widget="url"/>
+                <field name="note" optional="show"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="pk_help_action" model="ir.actions.act_window">
+        <field name="name">App help</field>
+        <field name="res_model">portal.kit.help</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Map an app page to its help article.</p>
+            <p>A key is the page's help key (e.g. settings, account); « key.tab » for a page whose help follows
+               its tab. An unmapped page opens the help home (Settings › Portal App › Help home).</p>
+        </field>
+    </record>
+
+    <menuitem id="pk_help_menu" name="Portal App Help" parent="base.menu_custom"
+              groups="base.group_system" action="pk_help_action" sequence="90"/>
+</odoo>

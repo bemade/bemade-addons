@@ -7,11 +7,12 @@ from odoo import http, fields, _
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
-from odoo.tools import format_date
-from .access_control_mixin import AccessControlMixin
-from ..models import sc_app_roles
+from .access_control_mixin import AccessControlMixin, parse_portal_date
 from .app_shell import AppShellMixin
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
+
+import pytz
+from urllib.parse import quote as url_quote
 
 _logger = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         values = self._create_injury_form_values(patient, post)
         # Task 1539: the app shell (switch on: a DEVICE draft until « Créer »,
         # nothing is created before the POST) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_injury_new_values(patient, values))
         return self._sc_render('bemade_sports_clinic.portal_create_injury',
                                'bemade_sports_clinic.sc_app_injury_new', values)
@@ -206,7 +207,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # card posts the coach visibility (therapists: required, no default)
         # and the diagnosis only; today's date; it lands back on the
         # player's Injuries tab with the new injury open for editing.
-        sc_inline = bool(post.get('sc_inline')) and self._sc_app_shell_active()
+        sc_inline = bool(post.get('sc_inline')) and self._pk_shell_active()
         if sc_inline:
             injuries_url = self._sc_inline_injuries_url(patient, post, clinic_event)
             visibility = post.get('coach_visibility')
@@ -227,13 +228,22 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'diagnosis': post.get('diagnosis', ''),
             'external_notes': post.get('external_notes', ''),
         }
-        
+        # Owner review 2026-10-25 (#1675): coaches read the external note
+        # but never write it — a coach's report carries the diagnosis only.
+        # In the app a posted external note is ignored; on the legacy portal
+        # (switch off) too, with a flash on the « created » page (the model
+        # refuses the field from a coach: never let it reach create()).
+        external_dropped = False
+        if self._sc_drops_external_notes(is_treatment_prof):
+            posted_external = vals.pop('external_notes')
+            external_dropped = bool((posted_external or '').strip()) and not self._pk_shell_active()
+
         # Handle injury date and injury_date_na checkbox
         if post.get('injury_date_na'):
             vals['injury_date_na'] = True
             vals['injury_date'] = False  # Clear injury_date if N/A is checked
         elif post.get('injury_date'):
-            vals['injury_date'] = post.get('injury_date')
+            vals['injury_date'] = parse_portal_date(post.get('injury_date'))  # task 1640
             vals['injury_date_na'] = False
         
         # Handle optional fields
@@ -241,7 +251,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             vals['parental_consent'] = post.get('parental_consent')
         
         if post.get('predicted_resolution_date'):
-            vals['predicted_resolution_date'] = post.get('predicted_resolution_date')
+            vals['predicted_resolution_date'] = parse_portal_date(post.get('predicted_resolution_date'))  # task 1640
             
         # Handle internal notes for treatment professionals
         if is_treatment_prof and post.get('internal_notes'):
@@ -286,6 +296,11 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Trigger recomputation of patient status based on the injury
         patient._compute_is_injured()
         patient._compute_stage()
+
+        # Task 1603: created with a predicted resolution date by a therapist
+        # in the app -> the landing page proposes the player's Retour prévu.
+        if is_treatment_prof and vals.get('predicted_resolution_date') and self._pk_shell_active():
+            self._sc_stash_proposal(patient._retour_prevu_after_injury_change(injury))
         
         # Use explicit navigation context (team_context_id) for redirect, not inferred team assignment
         team_context_id = post.get('team_context_id')
@@ -303,7 +318,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         if sc_inline:
             return request.redirect(self._url_with_query(
-                injuries_url, 'created=%s' % injury.id) + '#injury-%s' % injury.id)
+                injuries_url, 'created=%s' % injury.id) + '#%s%s' % (
+                    self._sc_inline_card_prefix(post, clinic_event), injury.id))
 
         # Task 1412: created FROM a clinic (the form's return_url is a clinic
         # page) ⇒ go straight back there, same patient, the new card in view.
@@ -317,13 +333,14 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # lands on a POST result page — it redirects to the player's
         # Injuries tab (same context) with the new injury open and its
         # « Undo »; that page drops the device draft of the new injury
-        # (data-sc-draft-clear, task 1539) once it exists.
-        if self._sc_app_shell_active():
+        # (data-pk-draft-clear, task 1539) once it exists.
+        if self._pk_shell_active():
             injuries_url = self._sc_inline_injuries_url(patient, post, clinic_event)
             return request.redirect(self._url_with_query(
                 injuries_url, 'created=%s' % injury.id) + '#injury-%s' % injury.id)
         values = {
             'return_url': return_url,
+            'warning': 'external_notes_readonly' if external_dropped else None,
         }
         return request.render('bemade_sports_clinic.portal_injury_created', values)
         
@@ -331,8 +348,24 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
     SC_UNDO_CREATE_MINUTES = 2
 
+    @staticmethod
+    def _sc_inline_from_clinic(post, clinic_event):
+        """Task 1590: the inline card was posted from the clinic dossier
+        (``sc_origin=clinic``, with a clinic the user may open) — not from
+        the player page, which carries ``clinic_id`` as navigation context
+        too and keeps landing on the player page."""
+        return bool(clinic_event) and post.get('sc_origin') == 'clinic'
+
+    def _sc_inline_card_prefix(self, post, clinic_event):
+        """The id prefix of an injury card on the page the create lands on."""
+        return 'clinic-injury-' if self._sc_inline_from_clinic(post, clinic_event) else 'injury-'
+
     def _sc_inline_injuries_url(self, patient, post, clinic_event=None):
-        """The player page's Injuries tab, with the team / clinic context."""
+        """The player page's Injuries tab, with the team / clinic context —
+        or, from the clinic dossier (task 1590), that clinic with the same
+        patient's file open."""
+        if self._sc_inline_from_clinic(post, clinic_event):
+            return '/my/clinic/%s?patient=%s&tab=dossier' % (clinic_event.id, patient.id)
         url = '/my/player?player_id=%s' % patient.id
         try:
             team_id = int(post.get('team_context_id') or post.get('team_id') or 0)
@@ -355,14 +388,18 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         except (UserError, AccessError, MissingError):
             return request.redirect('/my/players')
         patient = injury.patient_id
-        url = self._sc_inline_injuries_url(patient, post, self._clinic_context(post))
+        clinic_event = self._clinic_context(post)
+        url = self._sc_inline_injuries_url(patient, post, clinic_event)
+        if self._sc_inline_from_clinic(post, clinic_event):
+            url += '#clinic-injuries'
         record = injury.sudo()
         deadline = fields.Datetime.now() - timedelta(minutes=self.SC_UNDO_CREATE_MINUTES)
         allowed = (
             record.create_uid == request.env.user
             and record.create_date and record.create_date >= deadline
             and not record.treatment_note_ids
-            and not record.document_ids
+            # Task 1432: an archived document still blocks it (cascade).
+            and not record.with_context(active_test=False).document_ids
         )
         if not allowed:
             _logger.info("Undo of injury %s refused for user %s", injury.id, request.env.user.id)
@@ -406,40 +443,28 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return request.redirect('/my/players')
             
         injury = self._check_access_to_injury(injury_id)
+        # Task 1616: the app shell has no injury page any more — the injury
+        # is its open card (player page, or the clinic dossier listing it);
+        # an old link / bookmark lands there. Switch off: today's page.
+        if self._pk_shell_active():
+            return self._sc_injury_card_redirect(injury, post, team_id=team_id)
         values = self._edit_injury_form_values(injury, team_id, post)
-        # Task 1539: the app shell (switch on: each field saved on blur
-        # through /my/app/save, status / visibility instant with undo) or
-        # today's template (off). The clinic modal fragment is unchanged.
-        if self._sc_app_shell_active():
-            values.update(self._sc_injury_edit_values(injury, values))
-        return self._sc_render('bemade_sports_clinic.portal_edit_injury',
-                               'bemade_sports_clinic.sc_app_injury_edit', values)
+        return request.render('bemade_sports_clinic.portal_edit_injury', values)
 
-    def _sc_injury_edit_values(self, injury, values):
-        env = request.env
-        Injury = env['sports.patient.injury']
-        roles = env.user._sc_app_roles()
-        is_tp = values['is_treatment_prof']
-        ctx_qs = values.get('ctx_qs') or ''
-        consent_options = [('', '')] + list(
-            Injury._fields['parental_consent']._description_selection(env))
-        # Labels first, keys zipped in (babel's extractor, see app_shell).
-        visibility_labels = (env._("Coaches"), env._("Hidden"))
-        return {
-            'sc_stage_options': list(Injury._fields['stage']._description_selection(env)),
-            'sc_visibility_options': list(zip(('0', '1'), visibility_labels)),
-            'sc_consent_options': consent_options,
-            'sc_diagnosis_editable': bool(is_tp or injury.stage == 'unverified'),
-            'sc_is_tp_view': bool(is_tp and roles & sc_app_roles.TP),
-            'sc_documents_url': '/my/injury/documents?injury_id=%s%s' % (injury.id, ctx_qs),
-            # Task 1581: the notes history sheet (fetched on every open).
-            'sc_note_history_url': '/my/injury/%s/notes/history/fragment' % injury.id,
-            'sc_injury_flash': {
-                'success': env._("Injury successfully updated.")
-                if values.get('success') == 'injury_updated' else False,
-                'error': values.get('error') or False,
-            },
-        }
+    # The round-trip messages an old injury-page link may still carry.
+    _SC_CARD_FLASH = ('success', 'error')
+
+    def _sc_injury_card_redirect(self, injury, post, team_id=None):
+        """Task 1616: redirect to ``injury``'s open card, in the navigation
+        context of ``post`` (team, validated clinic) and with its
+        ``success`` / ``error`` message."""
+        team_id = team_id or post.get('team_id')
+        url = self._sc_injury_card_url(injury, team_id=team_id, clinic=self._clinic_context(post))
+        for key in self._SC_CARD_FLASH:
+            value = post.get(key)
+            if value and re.fullmatch(r'[\w-]{1,64}', str(value)):
+                url = self._url_with_query(url, '%s=%s' % (key, value))
+        return request.redirect(url)
 
     def _edit_injury_form_values(self, injury, team_id, post):
         """The edit form's qcontext — shared by the page and, with the
@@ -502,6 +527,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'page_name': 'edit_injury',
             'error': post.get('error'),
             'success': post.get('success'),
+            'warning': post.get('warning'),
             'team': team,
             'team_context_id': team_context_id,
             'clinic_event': clinic_event,
@@ -567,7 +593,16 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'diagnosis': post.get('diagnosis', injury.diagnosis or ''),
             'external_notes': post.get('external_notes', injury.external_notes or ''),
         })
-        
+        # #1675: a coach never writes the external note (the app's injury
+        # card is read-only for them; the legacy form shows it read-only).
+        # A changed value posted anyway (a stale page) is dropped; on the
+        # legacy portal the form says so (warning=external_notes_readonly).
+        external_dropped = False
+        if self._sc_drops_external_notes(is_treatment_prof):
+            posted_external = vals.pop('external_notes')
+            external_dropped = (not self._pk_shell_active() and (posted_external or '').strip()
+                                != (injury.external_notes or '').strip())
+
         # Handle injury date and N/A checkbox
         if post.get('injury_date_na'):
             vals['injury_date_na'] = True
@@ -575,16 +610,16 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         else:
             vals['injury_date_na'] = False
             if post.get('injury_date'):
-                vals['injury_date'] = post.get('injury_date')
+                vals['injury_date'] = parse_portal_date(post.get('injury_date'))  # task 1640
         
 
         
         # Handle resolution dates
         if post.get('predicted_resolution_date'):
-            vals['predicted_resolution_date'] = post.get('predicted_resolution_date')
+            vals['predicted_resolution_date'] = parse_portal_date(post.get('predicted_resolution_date'))  # task 1640
         
         if post.get('resolution_date'):
-            vals['resolution_date'] = post.get('resolution_date')
+            vals['resolution_date'] = parse_portal_date(post.get('resolution_date'))  # task 1640
         
         # Fields only treatment professionals can update
         if is_treatment_prof:
@@ -612,11 +647,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # page — the modal's form) ⇒ back to the clinic, same patient, card in
         # view. Every other caller keeps today's stay-on-the-form behaviour.
         posted_return_url = self._local_return_url(post.get('return_url'), None)
+        flash = 'success=injury_updated' + (
+            '&warning=external_notes_readonly' if external_dropped else '')
         if self._is_clinic_page_url(posted_return_url):
-            return request.redirect(self._url_with_query(posted_return_url, 'success=injury_updated'))
+            return request.redirect(self._url_with_query(posted_return_url, flash))
 
         # Save stays on the edit form so the user can keep editing; Done (return_url) is how they leave.
-        edit_url = f'/my/injury/edit?injury_id={injury_id}&success=injury_updated'
+        edit_url = f'/my/injury/edit?injury_id={injury_id}&{flash}'
         team_id = post.get('team_id')
         if team_id:
             edit_url += f'&team_id={team_id}'   # preserve team nav context on re-render
@@ -643,6 +680,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
           success=injury_updated, else to the edit form as the full save does.
         """
         is_tp = self._is_treatment_professional()
+        # #1675: a coach never writes the external note either; on the
+        # legacy portal a changed value is dropped with a warning flash.
+        drop_external = self._sc_drops_external_notes(is_tp)
+        external_dropped = False
         vals = {}
         for fname in self._PARTIAL_INJURY_FIELDS:
             if fname not in post:
@@ -650,16 +691,31 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if fname == 'internal_notes' and not is_tp:
                 continue
             value = post.get(fname)
+            if fname == 'external_notes' and drop_external:
+                external_dropped = (not self._pk_shell_active() and (value or '').strip()
+                                    != (injury.external_notes or '').strip())
+                continue
             vals[fname] = value if (value or '').strip() else False
         if vals:
             injury.sudo().write(vals)
+        flash = 'success=injury_updated' + (
+            '&warning=external_notes_readonly' if external_dropped else '')
         edit_url = self._with_clinic(
-            f'/my/injury/edit?injury_id={injury.id}&success=injury_updated',
+            f'/my/injury/edit?injury_id={injury.id}&{flash}',
             self._clinic_context(post))
         return_url = self._local_return_url(post.get('return_url'), None)
         if return_url:
-            return request.redirect(self._url_with_query(return_url, 'success=injury_updated'))
+            return request.redirect(self._url_with_query(return_url, flash))
         return request.redirect(edit_url)
+
+    def _sc_drops_external_notes(self, is_tp):
+        """#1675 (owner 2026-10-25): the injury routes drop a posted
+        ``external_notes`` of a non-therapist — in the app always, on the
+        legacy portal for a share user (a coach: the model refuses the field
+        from them). An internal non-therapist on the legacy portal keeps it."""
+        if is_tp:
+            return False
+        return self._pk_shell_active() or request.env.user.share
 
     def _add_treatment_note(self, patient, note_content, injury=None, event=None):
         """Helper method to add a treatment note to a patient, optionally linked
@@ -764,7 +820,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         
         # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_notes_values(patient, notes, post))
         return self._sc_render('bemade_sports_clinic.portal_treatment_notes',
                                'bemade_sports_clinic.sc_app_treatment_notes', values)
@@ -779,13 +835,12 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             note.id: self._sc_note_edit_props(note)
             for note in notes if note._can_portal_edit(user)
         }
-        injuries = patient.injury_ids
         return {
             'sc_note_props': note_props,
-            'sc_injury_choices': [(i.id, i.display_name or i.diagnosis or str(i.id))
-                                  for i in injuries],
+            # Task 1665: the same list as the note edit picker.
+            'sc_injury_choices': self._sc_note_injury_options(patient),
             'sc_note_draft_prefix': 'sports.patient.%s.new_note.' % patient.id,
-            'sc_flash': {
+            'pk_flash': {
                 'success': {
                     'note_added': env._("Treatment note added successfully."),
                     'note_updated': env._("Treatment note updated."),
@@ -985,8 +1040,9 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Task 1581: the page is retired in the app shell — the history is
         # the injury page's sheet now; an old link lands on that page (same
         # team / clinic context). Switch off: today's page, unchanged.
-        if self._sc_app_shell_active():
-            return request.redirect('/my/injury/edit?injury_id=%s%s' % (injury.id, ctx_qs))
+        if self._pk_shell_active():
+            # Task 1616: … which is now the injury's open card.
+            return self._sc_injury_card_redirect(injury, post, team_id=team_context_id)
         values = {
             'injury': injury,
             'patient': injury.patient_id,
@@ -1022,6 +1078,37 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         histories = request.env['sports.injury.note.history'].search(domain)
         return histories, requested_scope, is_treatment_prof
 
+    def _injury_followup_note_entries(self, injury):
+        """Task 1735: [(sort key, history entry)] of the player's Notes-tab
+        notes (``sports.treatment.note``) linked to ``injury`` — therapists
+        only (the caller checks; a coach holds no treatment-note ACL). They
+        count as INTERNAL entries with a « Follow-up note » chip.
+
+        Deliberately NOT sudo: the treatment-note portal record rule keeps
+        the therapist to the patients of the teams they staff.
+
+        Sort key: a note written on its own date sorts at its write time
+        (``create_date``, the moment shown); a back-dated note has no time,
+        so it sorts at the END of its date (viewer's tz), shown date-only —
+        the same « when » as the Notes tab (``portal_when_label``)."""
+        Note = request.env['sports.treatment.note']
+        notes = Note.search([('injury_id', '=', injury.id)])
+        label = request.env._("Follow-up note")
+        tz = pytz.timezone(request.env.user.tz or request.env.context.get('tz') or 'UTC')
+        keyed = []
+        for note in notes:
+            written = note.create_date
+            if written and note.date == fields.Date.context_today(note, timestamp=written):
+                moment = written
+            else:
+                moment = tz.localize(datetime.combine(note.date, time.max)).astimezone(
+                    pytz.utc).replace(tzinfo=None)
+            entry = self._sc_history_entry(
+                None, note.user_id.name, note.note, action=label, tone='green', scope='internal')
+            entry['when'] = note.portal_when_label or ''
+            keyed.append(((moment, 0, note.id), entry))
+        return keyed
+
     @http.route(['/my/injury/<int:injury_id>/notes/history/fragment'], type='http',
                 auth='user', website=True, methods=['GET'])
     def injury_note_history_fragment(self, injury_id, scope=None, **kw):
@@ -1038,12 +1125,17 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         env = request.env
         histories, scope, is_treatment_prof = self._injury_note_history(injury, scope)
         scope_labels = {'internal': env._("Internal"), 'external': env._("External")}
-        entries = [self._sc_history_entry(
+        # Task 1735: (sort key, entry) from both sources, merged newest first.
+        keyed = [((row.note_datetime or row.create_date, 1, row.id), self._sc_history_entry(
             row.note_datetime, row.author_id.name, row.content,
             action=scope_labels.get(row.scope) if is_treatment_prof else None,
-            tone='mauve' if row.scope == 'internal' else 'ghost',
+            tone='secondary' if row.scope == 'internal' else 'ghost',
             scope=row.scope,
-        ) for row in histories]
+        )) for row in histories]
+        if is_treatment_prof and scope in ('all', 'internal'):
+            keyed += self._injury_followup_note_entries(injury)
+        keyed.sort(key=lambda pair: pair[0], reverse=True)
+        entries = [entry for _key, entry in keyed]
         base = '/my/injury/%s/notes/history/fragment' % injury.id
         return request.render('bemade_sports_clinic.sc_note_history_fragment', {
             'entries': entries,
@@ -1067,6 +1159,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return request.redirect('/my/players')
             
         injury = self._check_access_to_injury(injury_id)
+        # Task 1616: in the app shell the documents are the injury card's
+        # « Documents » section — an old link lands on the open card.
+        if self._pk_shell_active():
+            return self._sc_injury_card_redirect(injury, post, team_id=team_id)
             
         # Get documents for this injury
         documents = request.env['sports.injury.document'].sudo().search(
@@ -1121,42 +1217,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'ctx_qs': ctx_qs,
         }
         
-        # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            values.update(self._sc_documents_values(documents, values))
-        return self._sc_render('bemade_sports_clinic.portal_injury_documents',
-                               'bemade_sports_clinic.sc_app_injury_documents', values)
+        return request.render('bemade_sports_clinic.portal_injury_documents', values)
 
-    def _sc_documents_values(self, documents, values):
-        env = request.env
-        labels = dict(env['sports.injury.document']._fields['category']._description_selection(env))
-        nav = {}
-        if values.get('team_context_id'):
-            nav['team_id'] = values['team_context_id']
-        if values.get('clinic_event'):
-            nav['clinic_id'] = values['clinic_event'].id
-        return {
-            'sc_document_rows': [{
-                'doc': doc,
-                'meta': ' · '.join(part for part in (
-                    labels.get(doc.category, ''), format_date(env, doc.create_date),
-                    doc.created_by_id.display_name or '') if part),
-            } for doc in documents],
-            'sc_nav_hidden': nav,
-            'sc_flash': {
-                'success': {
-                    'document_uploaded': env._("Document uploaded."),
-                    'document_deleted': env._("Document deleted."),
-                }.get(values.get('success')),
-                'error': {
-                    'no_file': env._("Please choose a file."),
-                    'file_too_large': env._("The file is too large (10 MB maximum)."),
-                    'upload_failed': env._("The upload failed."),
-                    'permission_denied': env._("You do not have permission to do this."),
-                }.get(values.get('error')),
-            },
-        }
-        
     @http.route(['/my/injury/document/upload'], type='http', auth='user', website=True, methods=['POST'])
     def upload_injury_document(self, **post):
         """Upload a document for an injury"""
@@ -1209,7 +1271,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         """Download a document attached to an injury"""
         document = request.env['sports.injury.document'].sudo().browse(int(document_id))
         
-        if not document.exists():
+        # Task 1432: an archived (portal-deleted) document is gone.
+        if not document.exists() or not document.active:
             raise request.not_found()
             
         try:
@@ -1235,7 +1298,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def download_patient_document(self, document_id, **post):
         """Download a document linked to a patient (injury optional)."""
         document = request.env['sports.injury.document'].sudo().browse(int(document_id))
-        if not document.exists():
+        # Task 1432: an archived (portal-deleted) document is gone.
+        if not document.exists() or not document.active:
             raise request.not_found()
         try:
             # Access check based on patient (primary link)
@@ -1271,71 +1335,204 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             tail = f"#{frag}" if frag else ''
             return request.redirect(f"{base}{sep}{qs}{tail}")
 
-        attachment = post.get('attachment')
-        if not attachment:
+        # Task 1616: SEVERAL files at once (the injury card's « Add »): each
+        # 10 MB at most, all or nothing — one oversized file and none is
+        # saved (the message names it). One category / description for all;
+        # ``document_name`` names a single file only.
+        files = [f for f in request.httprequest.files.getlist('attachment') if f and f.filename]
+        if not files:
             return _redirect('error=no_file')
 
+        injury_id = False
+        if post.get('injury_id'):
+            try:
+                injury_id = int(post['injury_id'])
+            except (TypeError, ValueError):
+                injury_id = 0
+            if injury_id not in patient.sudo().injury_ids.ids:
+                return _redirect('error=invalid_injury')
+
+        # Review fixes 2026-10-18 b: each file's OWN name / category /
+        # description (the shared picker's rows), as parallel lists keyed by
+        # position; the shared single values stay the fallback.
+        per_file = self._sc_document_rows(files, post)
+        if per_file is None:
+            return _redirect('error=invalid_category')
+
         try:
-            name = attachment.filename
-            safe_file_name = self._sanitize_filename(name)
-            file_content = attachment.read()
-            file_size = len(file_content)
-
-            # 10MB limit
-            if file_size > 10 * 1024 * 1024:
-                return _redirect('error=file_too_large')
-
-            # Create patient-linked document (injury optional)
-            request.env['sports.injury.document'].sudo().create({
+            payloads = [(f.filename, f.read()) for f in files]
+            too_large = [name for name, content in payloads if len(content) > self.SC_DOCUMENT_MAX_BYTES]
+            if too_large:
+                names = ', '.join(self._sanitize_filename(name) for name in too_large)[:300]
+                return _redirect('error=file_too_large&error_files=%s' % url_quote(names))
+            single_name = (post.get('document_name') or '').strip() if len(payloads) == 1 else ''
+            vals_list = [{
                 'patient_id': patient.id,
-                'injury_id': int(post['injury_id']) if post.get('injury_id') else False,
-                'name': post.get('document_name', name),
-                'description': post.get('description', ''),
-                'category': post.get('category', 'other'),
-                'file_content': base64.b64encode(file_content),
-                'file_name': safe_file_name,
+                'injury_id': injury_id,
+                'name': row['name'] or single_name or name,
+                'description': row['description'],
+                'category': row['category'],
+                'file_content': base64.b64encode(content),
+                'file_name': self._sanitize_filename(name),
                 'created_by_id': request.env.user.id,
-            })
-
-            return _redirect('success=document_uploaded')
-
+            } for (name, content), row in zip(payloads, per_file)]
+            with request.env.cr.savepoint():
+                request.env['sports.injury.document'].sudo().create(vals_list)
         except Exception as e:
             _logger.error(f"Error uploading patient document: {e}")
             return _redirect('error=upload_failed')
-        
+        if len(vals_list) > 1:
+            return _redirect('success=documents_uploaded&count=%s' % len(vals_list))
+        return _redirect('success=document_uploaded')
+
+    SC_DOCUMENT_MAX_BYTES = 10 * 1024 * 1024
+
+    @staticmethod
+    def _sc_document_rows(files, post):
+        """Review fixes 2026-10-18 b — one ``{name, category, description}``
+        per uploaded file, or None when a category is not one of the
+        document's (the whole upload is refused).
+
+        The picker posts, per chosen file, ``doc_file`` (its file name),
+        ``doc_name``, ``doc_category`` and ``doc_description``: position i
+        is file i when the lists line up and the names match; otherwise a
+        file takes the first unused row with its file name; a file without
+        a row takes the shared ``category`` / ``description`` (the form
+        before this change, or a browser that could not rebuild the file
+        input). An empty name means « the file name »."""
+        form = request.httprequest.form
+        keys = form.getlist('doc_file')
+        names = form.getlist('doc_name')
+        categories = form.getlist('doc_category')
+        descriptions = form.getlist('doc_description')
+        valid = set(request.env['sports.injury.document']._fields['category'].get_values(request.env))
+        shared_category = post.get('category') or 'other'
+        shared = {'name': '', 'category': shared_category, 'description': post.get('description', '') or ''}
+        rows = [{
+            'key': key,
+            'name': (names[i] if i < len(names) else '').strip(),
+            'category': (categories[i] if i < len(categories) else '') or shared_category,
+            'description': (descriptions[i] if i < len(descriptions) else '') or '',
+        } for i, key in enumerate(keys)]
+        if len(rows) == len(files) and all(row['key'] == f.filename for row, f in zip(rows, files)):
+            matched = rows
+        else:
+            unused = list(rows)
+            matched = []
+            for f in files:
+                row = next((r for r in unused if r['key'] == f.filename), None)
+                if row is not None:
+                    unused.remove(row)
+                matched.append(row or shared)
+        out = [{'name': row['name'][:255], 'category': row['category'], 'description': row['description']}
+               for row in matched]
+        if shared_category not in valid or any(row['category'] not in valid for row in out):
+            return None
+        return out
+
     @http.route(['/my/injury/document/delete/<int:document_id>'], type='http', auth='user',
                 website=True, methods=['POST'], csrf=True)
     def delete_injury_document(self, document_id, **post):
-        """Delete a document attached to an injury.
+        """Delete a document — of an injury or of the player (injury-less).
 
         Task 1544: POST + CSRF only (a GET used to delete, so a crafted link or
-        image could remove a document for a logged-in TP)."""
+        image could remove a document for a logged-in TP).
+
+        Task 1432 (owner decision 2026-10-31): only the document's uploader or
+        a clinic administrator may delete it, and « delete » ARCHIVES it (a
+        clinic administrator restores it from the backend), with an internal
+        note on the player. Player-level documents (no injury) work too (they
+        used to 404). A refusal comes back with « permission denied » — never
+        a 404 / 500 for a document the user can see."""
         document = request.env['sports.injury.document'].sudo().browse(int(document_id))
-        
-        if not document.exists():
+
+        if not document.exists() or not document.active:
             raise request.not_found()
-            
+
         try:
-            # Check access to the injury this document belongs to
-            injury = self._check_access_to_injury(document.injury_id.id)
-        except UserError:
+            # The injury's access, or (no injury) the player's — as the download.
+            if document.injury_id:
+                self._check_access_to_injury(document.injury_id.id)
+            else:
+                self._check_access_to_patient(document.patient_id.id)
+        except (UserError, AccessError):
             raise request.not_found()
-            
+
         # Keep the team/clinic nav context across the round-trip (task 1410).
         ctx_qs = _nav_ctx_qs(post, self._clinic_context(post))
 
-        # Check if user is a treatment professional (only they can delete documents)
-        is_treatment_prof = self._is_treatment_professional()
-        if not is_treatment_prof:
-            return request.redirect(f'/my/injury/documents?injury_id={document.injury_id.id}{ctx_qs}&error=permission_denied')
-            
-        # Delete the document
-        injury_id = document.injury_id.id
-        document.sudo().unlink()
-        
-        # Redirect back to documents page with success message
-        return request.redirect(f'/my/injury/documents?injury_id={injury_id}{ctx_qs}&success=document_deleted')
-        
+        # Task 1616: the injury card posts where to come back (the card);
+        # task 1432: the player Documents tab too.
+        return_url = self._safe_return_url(post.get('return_url'), None)
+        if document.injury_id:
+            fallback = f'/my/injury/documents?injury_id={document.injury_id.id}{ctx_qs}'
+        else:
+            fallback = f'/my/player?player_id={document.patient_id.id}{ctx_qs}&tab=documents'
+
+        def _back(query):
+            return request.redirect(self._url_with_query(return_url or fallback, query))
+
+        # A treatment professional (or an administrator) who uploaded it, or
+        # a clinic administrator.
+        user = request.env.user
+        allowed = (
+            (self._is_treatment_professional() or self._is_clinic_admin())
+            and document._sc_can_manage(user)
+        )
+        if not allowed:
+            _logger.info("Document %s delete refused for user %s", document.id, user.id)
+            return _back('error=permission_denied')
+
+        document._sc_portal_archive(user)
+        # Task 1736 (owner 2026-11-01): the app shell's archive icon — no
+        # banner, an « Document archived · Undo » toast instead.
+        if post.get('sc_undo'):
+            undo = '/my/injury/document/restore/%s' % document.id
+            if return_url:
+                undo += '?return_url=%s' % url_quote(return_url, safe='')
+            self._pk_offer_undo(request.env._("Document archived."), undo)
+            return request.redirect(return_url or fallback)
+        return _back('success=document_deleted')
+
+    @http.route(['/my/injury/document/restore/<int:document_id>'], type='http', auth='user',
+                website=True, methods=['POST'], csrf=True)
+    def restore_injury_document(self, document_id, **post):
+        """Task 1736: « Annuler » of a document just archived from the app
+        (the archive icon's undo toast) — the same right as the archive (its
+        uploader or a clinic administrator, with access to the injury / the
+        player); the player's chatter says it is back."""
+        document = request.env['sports.injury.document'].sudo().with_context(
+            active_test=False).browse(int(document_id))
+        if not document.exists():
+            raise request.not_found()
+        try:
+            if document.injury_id:
+                self._check_access_to_injury(document.injury_id.id)
+            else:
+                self._check_access_to_patient(document.patient_id.id)
+        except (UserError, AccessError):
+            raise request.not_found()
+        ctx_qs = _nav_ctx_qs(post, self._clinic_context(post))
+        return_url = self._safe_return_url(post.get('return_url'), None)
+        if document.injury_id:
+            fallback = f'/my/injury/documents?injury_id={document.injury_id.id}{ctx_qs}'
+        else:
+            fallback = f'/my/player?player_id={document.patient_id.id}{ctx_qs}&tab=documents'
+        user = request.env.user
+        allowed = (
+            (self._is_treatment_professional() or self._is_clinic_admin())
+            and document._sc_can_manage(user)
+        )
+        if not allowed:
+            _logger.info("Document %s restore refused for user %s", document.id, user.id)
+            return request.redirect(self._url_with_query(return_url or fallback, 'error=permission_denied'))
+        if not document.active:
+            document._sc_portal_restore(user)
+        request.session['notification'] = {
+            'type': 'success', 'title': '', 'message': request.env._("Document restored."),
+        }
+        return request.redirect(return_url or fallback)
+
     @http.route(['/my/injury/verify'], type='http', auth='user', website=True, methods=['POST'])
     def verify_injury(self, injury_id, **post):
         """Verify an injury (change status from unverified to active)"""
@@ -1387,6 +1584,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             injury.sudo().unlink()
             _logger.info(f"Injury {injury_id} deleted by user {request.env.user.id}")
             
+            # Task 1616: from the injury card — back to the list it was in
+            # (the player's Injuries tab or the clinic dossier).
+            if post.get('sc_card') and post.get('return_url'):
+                return request.redirect(self._url_with_query(return_url, 'success=injury_deleted'))
             # Redirect back to player page with success message
             return request.redirect(f'/my/player?player_id={patient_id}{ctx_qs}&success=injury_deleted')
             

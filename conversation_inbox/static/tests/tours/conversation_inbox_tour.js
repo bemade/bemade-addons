@@ -16,6 +16,9 @@
  * So the steps below deliberately favour *wiring* over presentation:
  *
  *  - the client action mounts and browse_page's rows reach the DOM;
+ *  - every row shows its action icons while collapsed, and the actions
+ *    run from there without the message being fetched (the Python side
+ *    asserts which envelopes were fetched);
  *  - expanding a row round-trips fetch_envelope and renders the body as
  *    HTML (a real paragraph, not its escaped source);
  *  - Next/Previous actually page (the sequence-window paging behind them
@@ -65,6 +68,17 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
     // Paging: the Next/Previous wiring over sequence-window paging.
     // --------------------------------------------------------------
     {
+      // The test browser runs in UTC, which would hide the bug. Odoo's
+      // web client renders every datetime in luxon's default zone, so
+      // switching it is what a Toronto user's browser looks like. The
+      // rows below are re-fetched and re-rendered after this point.
+      content: "View the inbox from a Toronto browser",
+      trigger: ".o_conversation_inbox",
+      run() {
+        window.luxon.Settings.defaultZone = "America/Toronto";
+      },
+    },
+    {
       content: "Page forward",
       trigger: ".o_conversation_inbox button:contains('Next'):not(:disabled)",
       run: "click",
@@ -74,6 +88,11 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
       trigger: ".o_conversation_inbox_list .card-header:contains('Tour Message C')",
     },
     {
+      // 2026-01-15 17:00:00 UTC in winter (EST, UTC-5): 12:00, not 17:00.
+      content: "A winter message shows Toronto standard time, not UTC",
+      trigger: `.o_inbox_row:has(.card-header:contains('Tour Message C')) .o_inbox_row_date:contains('12:00'):not(:contains('17:00'))`,
+    },
+    {
       content: "Page back",
       trigger: ".o_conversation_inbox button:contains('Previous'):not(:disabled)",
       run: "click",
@@ -81,29 +100,55 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
     {
       content: "Page 1 is back",
       trigger: ".o_conversation_inbox_list .card-header:contains('Tour Message A')",
-      run: "click",
-    },
-    // --------------------------------------------------------------
-    // Expanding round-trips fetch_envelope.
-    // --------------------------------------------------------------
-    {
-      // A rendered paragraph, not its escaped source: matching the text
-      // alone also passed while the body was shown as raw HTML.
-      content: "The envelope body rendered as HTML",
-      trigger:
-        ".o_conversation_inbox_body:not(:contains('<p>')) p:contains('the quote you asked for')",
     },
     {
-      content: "Attachment names are listed without being ingested",
-      trigger: ".o_conversation_inbox_attachments:contains('quote.pdf')",
+      // 2026-08-14 09:00:00 UTC in summer (EDT, UTC-4): 05:00, not 09:00.
+      content: "A summer message shows Toronto daylight time, not UTC",
+      trigger: `.o_inbox_row:has(.card-header:contains('Tour Message A')) .o_inbox_row_date:contains('05:00'):not(:contains('09:00'))`,
+    },
+    {
+      // Tour Message B has no Date: its row shows an empty date, never "false".
+      content: "A dateless message is listed without the text 'false'",
+      trigger: `.o_inbox_row:has(.card-header:contains('Tour Message B')):not(:contains('false')):not(:contains('Invalid'))`,
+      run() {
+        const row = [...document.querySelectorAll(".o_inbox_row")].find((el) =>
+          el.textContent.includes("Tour Message B")
+        );
+        const cell = row && row.querySelector(".o_inbox_row_date");
+        if (!cell || cell.textContent.trim() !== "") {
+          throw new Error("The dateless message must have an empty date cell");
+        }
+      },
+    },
+    // --------------------------------------------------------------
+    // Row actions are on the collapsed row: no message was opened, so no
+    // envelope was fetched for any of them (asserted server-side).
+    // --------------------------------------------------------------
+    {
+      content: "A collapsed row already shows its action icons, tooltips included",
+      trigger: `.o_inbox_row:has(.card-header:contains('Tour Message A')):not(:has(.card-body)) .o_inbox_row_actions:has(
+        button.o_inbox_new_conversation[title][aria-label],
+        button.o_inbox_add_existing[title][aria-label],
+        button.o_inbox_link_record[title][aria-label],
+        button.o_inbox_reassign[title][aria-label],
+        button.o_inbox_reply[title][aria-label],
+        button.o_inbox_reply_all[title][aria-label],
+        button.o_inbox_forward[title][aria-label],
+        button.o_inbox_route_alias[title][aria-label],
+        button.o_inbox_mark_read[title][aria-label],
+        button.o_inbox_archive[title][aria-label],
+        button.o_inbox_delete[title][aria-label],
+        button.o_inbox_hide[title][aria-label]
+      )`,
     },
     // --------------------------------------------------------------
     // The dead-button regression: every triage action must open its
-    // dialog.
+    // dialog, now straight from the collapsed row.
     // --------------------------------------------------------------
     {
-      content: "Capture opens the capture wizard",
-      trigger: ".card-body button:contains('New Conversation')",
+      content: "Capture opens the capture wizard from the collapsed row",
+      trigger:
+        ".o_inbox_row:has(.card-header:contains('Tour Message A')) .o_inbox_new_conversation",
       run: "click",
     },
     {
@@ -116,8 +161,13 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
       run: "click",
     },
     {
+      content: "The row stayed collapsed",
+      trigger: ".o_conversation_inbox:not(:has(.modal)):not(:has(.card-body))",
+    },
+    {
       content: "Reassign opens its wizard",
-      trigger: ".card-body button:contains('Reassign')",
+      trigger:
+        ".o_inbox_row:has(.card-header:contains('Tour Message A')) .o_inbox_reassign",
       run: "click",
     },
     {
@@ -133,8 +183,9 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
     // The composer: opens, and opens PREFILLED.
     // --------------------------------------------------------------
     {
-      content: "Reply opens the composer",
-      trigger: ".card-body button:contains('Reply')",
+      content: "Reply opens the composer from the collapsed row",
+      trigger:
+        ".o_inbox_row:has(.card-header:contains('Tour Message A')) .o_inbox_reply",
       run: "click",
     },
     {
@@ -181,51 +232,64 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
       trigger: ".o_conversation_inbox:not(:has(.modal))",
     },
     // --------------------------------------------------------------
-    // Mailbox-side triage: Mark read, Archive, Delete and
-    // Hide are four distinct buttons, and only Hide is client-side.
-    // The Python harness stubs the transport hooks, so no socket opens.
+    // Mailbox-side triage from collapsed rows: Mark read, Archive,
+    // Delete and Hide are four distinct buttons, and only Hide is
+    // client-side. The Python harness stubs the transport hooks, so no
+    // socket opens.
     // --------------------------------------------------------------
     {
-      content: "Hide, Archive, Delete and Mark read all exist, distinctly labelled",
-      trigger:
-        ".card-body:has(button:contains('Mark read'), button:contains('Archive'), button:contains('Delete'), button:contains('Hide'))",
-    },
-    {
       content: "Mark read A",
-      trigger: ".card-body button:contains('Mark read')",
+      trigger:
+        ".o_inbox_row:has(.card-header:contains('Tour Message A')) .o_inbox_mark_read",
       run: "click",
     },
     {
-      content: "Mark read confirmed, and the row stays listed",
-      trigger:
-        ".o_notification:contains('Marked as read'), .o_conversation_inbox_list .card-header:contains('Tour Message A')",
+      content: "Mark read confirmed",
+      trigger: ".o_notification:contains('Marked as read')",
     },
     {
-      content: "Row A is still listed after Mark read",
-      trigger: ".o_conversation_inbox_list .card-header:contains('Tour Message A')",
+      content: "Row A is still listed after Mark read, still collapsed",
+      trigger:
+        ".o_conversation_inbox_list:not(:has(.card-body)) .card-header:contains('Tour Message A')",
     },
     {
       content: "Archive A",
-      trigger: ".card-body button:contains('Archive')",
+      trigger:
+        ".o_inbox_row:has(.card-header:contains('Tour Message A')) .o_inbox_archive",
       run: "click",
     },
     {
       content: "Row A disappears after Archive",
       trigger:
-        ".o_conversation_inbox_list:not(:has(.card-header:contains('Tour Message A')))",
+        ".o_conversation_inbox_list:not(:has(.card-header:contains('Tour Message A'))):not(:has(.card-body))",
     },
+    // --------------------------------------------------------------
+    // Opening a row is unchanged: it round-trips fetch_envelope and
+    // renders the body as HTML.
+    // --------------------------------------------------------------
     {
       content: "Expand B",
       trigger: ".o_conversation_inbox_list .card-header:contains('Tour Message B')",
       run: "click",
     },
     {
-      content: "B's body is shown",
-      trigger: ".o_conversation_inbox_body p:contains('the quote you asked for')",
+      // A rendered paragraph, not its escaped source: matching the text
+      // alone also passed while the body was shown as raw HTML.
+      content: "The envelope body rendered as HTML",
+      trigger:
+        ".o_conversation_inbox_body:not(:contains('<p>')) p:contains('the quote you asked for')",
+    },
+    {
+      content: "Attachment names are listed without being ingested",
+      trigger: ".o_conversation_inbox_attachments:contains('quote.pdf')",
+    },
+    {
+      content: "The actions are still on the expanded row",
+      trigger: ".o_inbox_row:has(.card-body) .o_inbox_row_actions .o_inbox_delete",
     },
     {
       content: "Delete B asks for confirmation",
-      trigger: ".card-body button:contains('Delete')",
+      trigger: ".o_inbox_row:has(.card-body) .o_inbox_delete",
       run: "click",
     },
     {
@@ -244,7 +308,7 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
     },
     {
       content: "Delete B again",
-      trigger: ".card-body button:contains('Delete')",
+      trigger: ".o_inbox_row:has(.card-body) .o_inbox_delete",
       run: "click",
     },
     {
@@ -264,13 +328,9 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
       run: "click",
     },
     {
-      content: "Expand C",
-      trigger: ".o_conversation_inbox_list .card-header:contains('Tour Message C')",
-      run: "click",
-    },
-    {
-      content: "Hide C",
-      trigger: ".card-body button:contains('Hide')",
+      content: "Hide C from the collapsed row",
+      trigger:
+        ".o_inbox_row:has(.card-header:contains('Tour Message C')) .o_inbox_hide",
       run: "click",
     },
     {

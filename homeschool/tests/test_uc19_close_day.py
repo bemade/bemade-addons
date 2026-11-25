@@ -20,13 +20,18 @@ Acceptance criteria
    (``adult_missing_names``) and still lets the owner finish. With every block given its
    adult minutes and the entry written, ``journal_state`` is ``done`` and the journal API's
    ``status`` reports ``done``.
-5. A past day: the three texts and the entry's texts land under ``corrections`` (the
-   frozen mixin); minutes and status write in place; an unchanged pre-loaded text never
-   produces a correction line.
+5. A past day: a text that changes one already there lands under ``corrections`` (the
+   frozen mixin), a field still empty takes its text in place; minutes and status write
+   in place; an unchanged pre-loaded text never produces a correction line.
 6. Re-opening the wizard on a half-closed day shows the values already written.
 7. Managers only: a plain internal user gets ``AccessError``.
 8. Entry points: ``homeschool.day.action_open_close_wizard`` (the day form header) and
-   the Track › Close the day menu (today's day of the company's single student).
+   the Track › Close the day menu (the company's single student): today's day when it
+   holds an hour-bearing block, else the most recent past *Incomplete* day, else a
+   message. The menu never creates a day.
+9. **Next** refuses a block marked done or partial while either minute field is blank
+   (``UserError`` pointing to « Skip this block »); nothing is written. A typed ``0`` is
+   a value and passes.
 """
 from datetime import timedelta
 
@@ -118,6 +123,43 @@ class TestCloseDay(HomeschoolCase):
             wiz.action_next()
 
     # ------------------------------------------------------------------
+    # (a2) Next refuses a done / partial block with a blank minute field
+    # ------------------------------------------------------------------
+    def test_a_next_refuses_blank_minutes_on_done_or_partial(self):
+        wiz = self._open()
+        for status, total, adult in (("done", "", "45"), ("done", "45", ""), ("done", "", ""),
+                                     ("partial", "", "20"), ("partial", "20", "  ")):
+            with Form(wiz) as form:
+                form.status = status
+                form.minutes_total = total
+                form.minutes_adult_present = adult
+                form.went_well = "typed before the refusal"
+            with self.assertRaisesRegex(UserError, "Skip this block"):
+                wiz.action_next()
+            self.assertEqual((wiz.index, wiz.block_id), (0, self.b1), "still on the same screen")
+            self.assertEqual(self.b1.status, "planned", "nothing written (%s %r/%r)" % (status, total, adult))
+            self.assertFalse(self.b1.actuals_recorded or self.b1.adult_recorded or self.b1.went_well)
+        # an explicit 0 / 0 is a value: accepted
+        with Form(wiz) as form:
+            form.status = "done"
+            form.minutes_total = "0"
+            form.minutes_adult_present = "0"
+        wiz.action_next()
+        self.assertEqual((self.b1.status, self.b1.minutes_total, self.b1.minutes_adult_present), ("done", 0, 0))
+        self.assertTrue(self.b1.actuals_recorded and self.b1.adult_recorded)
+        self.assertEqual(wiz.block_id, self.b2)
+        # Skip on a blank screen: skipped, and the day can still close
+        wiz.action_skip()
+        self.assertEqual(self.b2.status, "skipped")
+        wiz.action_skip()
+        wiz.action_skip()
+        self.assertEqual(wiz.step, "journal")
+        with Form(wiz) as form:
+            form.went_well_day = "a short day"
+        wiz.action_finish()
+        self.assertEqual(self.day.journal_state, "done")
+
+    # ------------------------------------------------------------------
     # (b) skip
     # ------------------------------------------------------------------
     def test_b_skip_writes_skipped_only(self):
@@ -134,26 +176,28 @@ class TestCloseDay(HomeschoolCase):
     # ------------------------------------------------------------------
     # (c) blank adult: Incomplete, named, Finish still works
     # ------------------------------------------------------------------
-    def _close_all(self, wiz, adult_blank_on=None):
+    def _close_all(self, wiz):
         for block in (self.b1, self.b2, self.b3, self.reading):
             self.assertEqual(wiz.block_id, block)
             with Form(wiz) as form:
                 form.minutes_total = str(block.duration_planned)
-                if block != adult_blank_on:
-                    form.minutes_adult_present = str(block.duration_planned)
+                form.minutes_adult_present = str(block.duration_planned)
             wiz.action_next()
         self.assertEqual(wiz.step, "journal")
 
     def test_c_blank_adult_leaves_the_day_incomplete(self):
         wiz = self._open()
-        self._close_all(wiz, adult_blank_on=self.b3)
+        self._close_all(wiz)
+        # the wizard refuses a blank adult field; one can still come from elsewhere (an API
+        # row logged with « not recorded »)
+        self.b3.write({"minutes_adult_present": False})
         self.assertTrue(self.b3.actuals_recorded and not self.b3.adult_recorded)
         self.assertEqual(wiz.adult_missing_names, "P3 Science")
         self.assertEqual(self.day.journal_state, "incomplete")
         with Form(wiz) as form:
             form.went_well_day = "the morning"
         action = wiz.action_finish()
-        self.assertEqual(action["type"], "ir.actions.act_window_close")
+        self.assertEqual((action["type"], action.get("tag")), ("ir.actions.client", "soft_reload"))
         entry = self.day.journal_ids
         self.assertEqual(len(entry), 1)
         self.assertEqual(entry.went_well, "the morning")
@@ -216,9 +260,9 @@ class TestCloseDay(HomeschoolCase):
             form.went_badly = "late"
         wiz.action_next()
         self.assertEqual((block.minutes_total, block.minutes_adult_present, block.status), (40, 40, "done"))
-        self.assertEqual((block.went_well, block.went_badly, block.note), ("original", False, "kept"))
-        self.assertEqual(block.corrections,
-                         "- **%s** (What worked): rewritten\n- **%s** (What went badly): late" % (self.today_str, self.today_str))
+        self.assertEqual((block.went_well, block.went_badly, block.note), ("original", "late", "kept"),
+                         "the empty field takes its text in place")
+        self.assertEqual(block.corrections, "- **%s** (What worked): rewritten" % self.today_str)
         self.assertEqual(wiz.step, "journal")
         self.assertEqual(wiz.went_well_day, "day original", "pre-loaded")
         with Form(wiz) as form:
@@ -226,9 +270,8 @@ class TestCloseDay(HomeschoolCase):
             form.notes_day = "- added later"
         wiz.action_finish()
         self.assertEqual(entry.went_well, "day original")
-        self.assertFalse(entry.notes)
-        self.assertEqual(entry.corrections,
-                         "- **%s** (What worked): day rewritten\n- **%s** (Notes): - added later" % (self.today_str, self.today_str))
+        self.assertEqual(entry.notes, "- added later", "the empty field takes its text in place")
+        self.assertEqual(entry.corrections, "- **%s** (What worked): day rewritten" % self.today_str)
 
     # ------------------------------------------------------------------
     # (f) abandon after two Next, (g) re-open shows what is there
@@ -294,6 +337,9 @@ class TestCloseDay(HomeschoolCase):
     # entry points
     # ------------------------------------------------------------------
     def test_menu_opens_today(self):
+        """Today holds hour-bearing blocks: the menu opens it (unchanged)."""
+        older = self.make_day(self.today - timedelta(days=2))
+        self.make_block(older, "Older", 45, 1, subject_id=self.math.id)  # incomplete, but today wins
         action = self.Wizard.action_open_today()
         wiz = self.Wizard.browse(action["res_id"])
         self.assertEqual(wiz.day_id, self.day)
@@ -302,3 +348,63 @@ class TestCloseDay(HomeschoolCase):
         self.assertIn('name="action_open_close_wizard"', self.env.ref("homeschool.view_day_form").arch)
         with Form(self.day):
             pass  # the day form, header button included, still loads
+
+    def test_menu_without_today_opens_the_latest_incomplete_day(self):
+        """No day today (a Sunday, say): no day is created; the most recent past incomplete
+        day opens instead."""
+        self.day.unlink()
+        older = self.make_day(self.today - timedelta(days=5))
+        self.make_block(older, "Older", 45, 1, subject_id=self.math.id)
+        latest = self.make_day(self.today - timedelta(days=2))
+        self.make_block(latest, "Latest", 45, 1, subject_id=self.math.id)
+        closed = self.make_day(self.today - timedelta(days=1))  # more recent, but done
+        self.make_block(closed, "Closed", 45, 1, subject_id=self.math.id, minutes_total=45, minutes_adult_present=45)
+        self.Journal.create({"day_id": closed.id, "went_well": "fine"})
+        before = self.Day.search_count([])
+        action = self.Wizard.action_open_today()
+        self.assertEqual(self.Day.search_count([]), before, "the menu never creates a day")
+        self.assertFalse(self.Day.search([("student_id", "=", self.student.id), ("date", "=", self.today)]))
+        self.assertEqual(self.Wizard.browse(action["res_id"]).day_id, latest)
+
+    def test_menu_with_an_empty_today_skips_it(self):
+        """Today exists but holds no hour-bearing block (an opening only): it is not
+        opened; the latest incomplete past day is."""
+        (self.b1 | self.b2 | self.b3 | self.reading).unlink()
+        latest = self.make_day(self.today - timedelta(days=3))
+        self.make_block(latest, "Latest", 45, 1, subject_id=self.math.id)
+        action = self.Wizard.action_open_today()
+        self.assertEqual(self.Wizard.browse(action["res_id"]).day_id, latest)
+
+    def test_menu_with_nothing_to_close(self):
+        self.day.unlink()
+        done = self.make_day(self.today - timedelta(days=1))
+        self.make_block(done, "Closed", 45, 1, subject_id=self.math.id, minutes_total=45, minutes_adult_present=45)
+        self.Journal.create({"day_id": done.id, "went_well": "fine"})
+        self.make_day(self.today - timedelta(days=2))  # empty: not incomplete, never opened
+        self.make_day(self.today + timedelta(days=2)).block_ids = [fields.Command.create({"name": "Later", "duration_planned": 45})]
+        before = self.Day.search_count([])
+        with self.assertRaisesRegex(UserError, "Nothing to close"):
+            self.Wizard.action_open_today()
+        self.assertEqual(self.Day.search_count([]), before, "nothing created")
+
+    def test_e_past_day_closed_late_fills_empty_fields(self):
+        """A day closed days later with nothing written yet: every text lands in its field,
+        no correction line at all."""
+        past = self.make_day(self.today - timedelta(days=5))
+        block = self.make_block(past, "Late math", 45, 1, subject_id=self.math.id)
+        entry = self.Journal.create({"day_id": past.id, "notes": "- planned note"})
+        wiz = self._open(past)
+        with Form(wiz) as form:
+            form.minutes_total = "45"
+            form.minutes_adult_present = "45"
+            form.went_well = "the clocks"
+            form.note = "short"
+        wiz.action_next()
+        self.assertEqual((block.went_well, block.note), ("the clocks", "short"))
+        self.assertFalse(block.corrections)
+        with Form(wiz) as form:
+            form.went_well_day = "a good day"
+            form.went_badly_day = "the end"
+        wiz.action_finish()
+        self.assertEqual((entry.went_well, entry.went_badly, entry.notes), ("a good day", "the end", "- planned note"))
+        self.assertFalse(entry.corrections)

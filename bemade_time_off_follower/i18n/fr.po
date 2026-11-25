@@ -1,0 +1,52 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_time_off_follower
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 18:33+0000\n"
+"PO-Revision-Date: 2026-11-19 18:33+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: bemade_time_off_follower
+#: model:ir.model.fields,field_description:bemade_time_off_follower.field_hr_leave__alternate_follower_id
+msgid "Alternate Follower"
+msgstr "Abonné suppléant"
+
+#. module: bemade_time_off_follower
+#: model:ir.model.fields,field_description:bemade_time_off_follower.field_hr_leave__display_name
+#: model:ir.model.fields,field_description:bemade_time_off_follower.field_mail_thread__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: bemade_time_off_follower
+#: model:ir.model.fields,field_description:bemade_time_off_follower.field_hr_leave__id
+#: model:ir.model.fields,field_description:bemade_time_off_follower.field_mail_thread__id
+msgid "ID"
+msgstr "ID"
+
+#. module: bemade_time_off_follower
+#: model:ir.model,name:bemade_time_off_follower.model_hr_leave
+msgid "Time Off"
+msgstr "Congés"
+
+#. module: bemade_time_off_follower
+#: model:ir.model.fields,help:bemade_time_off_follower.field_hr_leave__alternate_follower_id
+msgid ""
+"User who will receive a copy of all communications related to this leave"
+msgstr ""
+"Utilisateur qui recevra une copie de toutes les communications liées à cette"
+" absence"
+
+#. module: bemade_time_off_follower
+#: model:ir.model,name:bemade_time_off_follower.model_mail_thread
+msgid "Email Thread"
+msgstr "Discussion par email"

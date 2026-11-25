@@ -80,9 +80,13 @@ class CommercialInvoice(models.Model):
         string="Deliveries",
         domain="[('picking_type_id.code', '=', 'outgoing')]",
     )
+    # One compute method per field: when a compute method is shared, writing
+    # any of its fields (the form sends carrier_id / ship_date) protects ALL
+    # of them from recomputation, so po_numbers, readonly in the view and
+    # never sent, was left empty.
     po_numbers = fields.Char(
         string="PO Numbers",
-        compute="_compute_delivery_header",
+        compute="_compute_po_numbers",
         compute_sudo=True,
         store=True,
         readonly=False,
@@ -90,14 +94,14 @@ class CommercialInvoice(models.Model):
     carrier_id = fields.Many2one(
         "delivery.carrier",
         string="Carrier",
-        compute="_compute_delivery_header",
+        compute="_compute_carrier_id",
         compute_sudo=True,
         store=True,
         readonly=False,
     )
     ship_date = fields.Date(
         string="Ship Date",
-        compute="_compute_delivery_header",
+        compute="_compute_ship_date",
         compute_sudo=True,
         store=True,
         readonly=False,
@@ -288,45 +292,42 @@ class CommercialInvoice(models.Model):
         "picking_ids",
         "picking_ids.sale_id",
         "picking_ids.sale_id.client_order_ref",
-        "picking_ids.carrier_id",
-        "picking_ids.scheduled_date",
-        "picking_ids.date_done",
+        "picking_ids.origin",
     )
-    def _compute_delivery_header(self):
-        """Aggregate header fields from the selected deliveries.
-
-        Ported from ``verajet_commercial_invoice`` (task 3705 MR-1): PO
-        numbers, carrier and ship date are derived from ``picking_ids`` so a
-        delivery-sourced commercial invoice carries the shipment header that a
-        customs document needs.
-        """
+    def _compute_po_numbers(self):
+        """PO numbers of the selected deliveries: unique, in order; the SO's
+        client_order_ref, else the SO name, else the picking origin."""
         for record in self:
-            pickings = record.picking_ids
-            # PO numbers: unique, keep insertion order, prefer client_order_ref,
-            # fall back to SO name when ref missing, then picking origin.
             refs = OrderedDict()
-            for pick in pickings:
+            for pick in record.picking_ids:
                 so = pick.sale_id
                 ref = (so.client_order_ref or so.name) if so else pick.origin
                 if ref:
                     refs[ref] = True
-            record.po_numbers = ", ".join(refs.keys()) if refs else False
+            record.po_numbers = ", ".join(refs) if refs else False
 
-            # Carrier: most common across pickings; ties broken by first seen.
-            carriers = [p.carrier_id for p in pickings if p.carrier_id]
+    @api.depends("picking_ids", "picking_ids.carrier_id")
+    def _compute_carrier_id(self):
+        """Most common carrier across the deliveries; ties: first seen."""
+        for record in self:
+            carriers = [p.carrier_id for p in record.picking_ids if p.carrier_id]
             if carriers:
                 counter = Counter(c.id for c in carriers)
-                most_common_id, _count = counter.most_common(1)[0]
-                record.carrier_id = most_common_id
+                record.carrier_id = counter.most_common(1)[0][0]
             else:
                 record.carrier_id = False
 
-            # Ship date: earliest of date_done (if validated) else scheduled_date.
-            candidates = []
-            for pick in pickings:
-                dt = pick.date_done or pick.scheduled_date
-                if dt:
-                    candidates.append(dt)
+    @api.depends(
+        "picking_ids", "picking_ids.scheduled_date", "picking_ids.date_done"
+    )
+    def _compute_ship_date(self):
+        """Earliest of date_done (if validated) else scheduled_date."""
+        for record in self:
+            candidates = [
+                pick.date_done or pick.scheduled_date
+                for pick in record.picking_ids
+                if pick.date_done or pick.scheduled_date
+            ]
             record.ship_date = min(candidates).date() if candidates else False
 
     def action_recompute_amounts(self):

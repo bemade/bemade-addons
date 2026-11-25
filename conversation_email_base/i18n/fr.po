@@ -1,0 +1,178 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* conversation_email_base
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-19 21:41+0000\n"
+"PO-Revision-Date: 2026-10-19 21:41+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: conversation_email_base
+#. odoo-python
+#: code:addons/conversation_email_base/models/conversation_transport.py:0
+msgid ""
+"%(transport)s's mail server does not support the IMAP MOVE command, so "
+"messages cannot be archived or deleted from Odoo."
+msgstr ""
+"Le serveur de courrier de %(transport)s ne prend pas en charge la commande "
+"IMAP MOVE : les messages ne peuvent pas être archivés ni supprimés depuis "
+"Odoo."
+
+#. module: conversation_email_base
+#: model:ir.model.fields,field_description:conversation_email_base.field_conversation_transport__imap_archive_folder
+msgid "Archive Folder"
+msgstr "Dossier d'archives"
+
+#. module: conversation_email_base
+#. odoo-python
+#: code:addons/conversation_email_base/models/conversation_transport.py:0
+msgid "Configure the IMAP host and login before browsing %(transport)s."
+msgstr ""
+"Configurez le serveur IMAP et l'identifiant avant de consulter "
+"%(transport)s."
+
+#. module: conversation_email_base
+#. odoo-python
+#: code:addons/conversation_email_base/models/conversation_transport.py:0
+msgid "Configure the SMTP host and login before sending from %(transport)s."
+msgstr ""
+"Configurez le serveur SMTP et l'identifiant avant d'envoyer depuis "
+"%(transport)s."
+
+#. module: conversation_email_base
+#: model:ir.model,name:conversation_email_base.model_conversation_transport
+msgid "Conversation Transport"
+msgstr "Boîte courriel de conversation"
+
+#. module: conversation_email_base
+#. odoo-python
+#: code:addons/conversation_email_base/models/conversation_transport.py:0
+msgid "Could not fetch message %(external_id)s on %(transport)s."
+msgstr "Impossible de récupérer le message %(external_id)s sur %(transport)s."
+
+#. module: conversation_email_base
+#. odoo-python
+#: code:addons/conversation_email_base/models/conversation_transport.py:0
+msgid "Could not open folder %(folder)s on %(transport)s."
+msgstr "Impossible d'ouvrir le dossier %(folder)s sur %(transport)s."
+
+#. module: conversation_email_base
+#. odoo-python
+#: code:addons/conversation_email_base/models/conversation_transport.py:0
+msgid "Could not read message headers on %(transport)s."
+msgstr "Impossible de lire les en-têtes des messages sur %(transport)s."
+
+#. module: conversation_email_base
+#: model:ir.model.fields,field_description:conversation_email_base.field_conversation_transport__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: conversation_email_base
+#: model:ir.model.fields,help:conversation_email_base.field_conversation_transport__imap_sent_folder
+msgid ""
+"Folder an outgoing message is APPENDed to after it is sent, so a reply sent "
+"from Odoo also appears in the account's own Sent mail. Leave blank to skip. "
+"Ignored for providers that save sent mail themselves (Gmail does; a generic "
+"IMAP/SMTP account does not, and without this an unfiled reply would exist "
+"nowhere at all)."
+msgstr ""
+"Dossier auquel un message sortant est ajouté (APPEND) après son envoi, pour "
+"qu'une réponse envoyée depuis Odoo apparaisse aussi dans les envoyés de la "
+"boîte. Laissez vide pour ne rien ajouter. Ignoré pour les fournisseurs qui "
+"enregistrent eux-mêmes les messages envoyés (Gmail le fait; une boîte "
+"IMAP/SMTP générique ne le fait pas, et sans ce réglage une réponse non "
+"classée n'existerait nulle part)."
+
+#. module: conversation_email_base
+#: model:ir.model.fields,help:conversation_email_base.field_conversation_transport__imap_archive_folder
+msgid ""
+"Folder the Archive action moves a message to. Leave blank to use the folder "
+"the server advertises as its Archive (RFC 6154 SPECIAL-USE), falling back to"
+" the provider's default name. Set it to override that, e.g. for a mailbox "
+"with a non-standard name. Gmail archives by removing the Inbox label and "
+"ignores this."
+msgstr ""
+"Dossier vers lequel l'action Archiver déplace un message. Laissez vide pour "
+"utiliser le dossier que le serveur annonce comme archive (RFC 6154 SPECIAL-"
+"USE), ou à défaut le nom par défaut du fournisseur. Renseignez-le pour "
+"forcer un autre dossier, p. ex. pour une boîte au nom non standard. Gmail "
+"archive en retirant l'étiquette Boîte de réception et ignore ce champ."
+
+#. module: conversation_email_base
+#: model:ir.model.fields,help:conversation_email_base.field_conversation_transport__imap_trash_folder
+msgid ""
+"Folder the Delete action moves a message to (never a permanent delete). "
+"Leave blank to use the folder the server advertises as its Trash (RFC 6154 "
+"SPECIAL-USE), falling back to the provider's default name. Set it to "
+"override that."
+msgstr ""
+"Dossier vers lequel l'action Supprimer déplace un message (jamais une "
+"suppression définitive). Laissez vide pour utiliser le dossier que le "
+"serveur annonce comme corbeille (RFC 6154 SPECIAL-USE), ou à défaut le nom "
+"par défaut du fournisseur. Renseignez-le pour forcer un autre dossier."
+
+#. module: conversation_email_base
+#: model:ir.model.fields,field_description:conversation_email_base.field_conversation_transport__id
+msgid "ID"
+msgstr "ID"
+
+#. module: conversation_email_base
+#: model:ir.model.fields,field_description:conversation_email_base.field_conversation_transport__imap_folder
+msgid "IMAP Folder"
+msgstr "Dossier IMAP"
+
+#. module: conversation_email_base
+#. odoo-python
+#: code:addons/conversation_email_base/models/conversation_transport.py:0
+msgid "IMAP search failed for %(transport)s."
+msgstr "La recherche IMAP a échoué sur %(transport)s."
+
+#. module: conversation_email_base
+#. odoo-python
+#: code:addons/conversation_email_base/models/conversation_transport.py:0
+msgid "No recipient to send to on %(transport)s."
+msgstr "Aucun destinataire à qui envoyer sur %(transport)s."
+
+#. module: conversation_email_base
+#. odoo-python
+#: code:addons/conversation_email_base/models/conversation_transport.py:0
+msgid "SMTP XOAUTH2 authentication failed for %(transport)s."
+msgstr "L'authentification SMTP XOAUTH2 a échoué pour %(transport)s."
+
+#. module: conversation_email_base
+#: model:ir.model.fields,field_description:conversation_email_base.field_conversation_transport__imap_sent_folder
+msgid "Sent Folder"
+msgstr "Dossier des envoyés"
+
+#. module: conversation_email_base
+#. odoo-python
+#: code:addons/conversation_email_base/models/conversation_transport.py:0
+msgid ""
+"The mailbox action failed on folder %(folder)s of %(transport)s%(detail)s."
+msgstr ""
+"L'action sur la boîte a échoué dans le dossier %(folder)s de "
+"%(transport)s%(detail)s."
+
+#. module: conversation_email_base
+#. odoo-python
+#: code:addons/conversation_email_base/models/conversation_transport.py:0
+msgid ""
+"The search returned too many results on %(transport)s. Narrow it down (add a"
+" sender, a subject or a date) and try again."
+msgstr ""
+"La recherche a retourné trop de résultats sur %(transport)s. Précisez-la "
+"(ajoutez un expéditeur, un objet ou une date) et réessayez."
+
+#. module: conversation_email_base
+#: model:ir.model.fields,field_description:conversation_email_base.field_conversation_transport__imap_trash_folder
+msgid "Trash Folder"
+msgstr "Dossier de la corbeille"

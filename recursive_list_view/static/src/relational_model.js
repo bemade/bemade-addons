@@ -2,7 +2,8 @@
 
 import {RelationalModel} from '@web/model/relational_model/relational_model';
 import {patch} from '@web/core/utils/patch';
-import {getFieldsSpec, getBasicEvalContext, makeActiveField} from "@web/model/relational_model/utils";
+import {makeActiveField} from "@web/model/relational_model/utils";
+import {getParentField, loadChildRecords} from "./recursive_utils";
 
 patch(RelationalModel.prototype, {
     // TODO: Modify the domain to include only records with parentField = False in the root search
@@ -42,84 +43,16 @@ patch(RelationalModel.prototype, {
         if (!Array.isArray(records)) {
             records = [records];
         }
-        const {resModel, activeFields, fields, context} = config;
-        if (!resModel) {
-            return [];
-        }
-        const parentField = await this._get_parent_field(resModel);
-        if (!parentField) {
-            return [];
-        }
-        const evalContext = getBasicEvalContext(config);
-        const fieldSpec = getFieldsSpec(activeFields, fields, evalContext);
-        // Fetch records with the additional field
-        const parentIds = records.map(record => record.resId);
-
-        const children = await this.orm.webSearchRead(
-            resModel, [[parentField, "in", parentIds]], {
-                context: {...context},
-                specification: fieldSpec,
-            });
-
-        if (children && children.length) {
-            // Track children by grouping child records under each parent
-            const childrenByParent = {};
-            for (const child of children.records) {
-                const parentId = child[parentField].id;
-                if (parentId) {
-                    if (!childrenByParent[parentId]) {
-                        childrenByParent[parentId] = [];
-                    }
-                    childrenByParent[parentId].push(child);
-                }
-            }
-
-            for (const parent of records) {
-                if (parent.depth == undefined) {
-                    parent.depth = 0;
-                }
-                if (parent.expanded == undefined) {
-                    parent.expanded = false;
-                }
-                if (!parent.childrenFetched) {
-                    if (childrenByParent[parent.resId]) {
-                        const childRecords = childrenByParent[parent.resId];
-                        parent.children = []
-                        for (const child of childRecords) {
-                            const childRecord = new this.constructor.Record(
-                                this,
-                                {
-                                    context: context,
-                                    activeFields: activeFields,
-                                    resModel: resModel,
-                                    fields: fields,
-                                    resId: child.id,
-                                    resIds: [child.id],
-                                    isMonoRecord: true,
-                                    currentCompanyId: parent.currentCompanyId,
-                                    mode: parent.mode,
-                                },
-                                child,
-                                {manuallyAdded: false},
-                            );
-                            parent.children.push(childRecord);
-                            childRecord.parent = parent;
-                            childRecord.depth = parent.depth + 1;
-                            childRecord.expanded = false;
-                            childRecord.childrenFetched = false;
-                        }
-                    }
-                    parent.childrenFetched = true;
-                }
-            }
-        }
+        await loadChildRecords({
+            orm: this.orm,
+            model: this,
+            config,
+            records,
+            maxDepth: (this.config && this.config.recursiveDepth) || config.recursiveDepth,
+        });
     },
     async _get_parent_field(model) {
-        return await this.orm.call(
-            'parent.field.service',
-            'get_parent_field',
-            [model],
-        );
+        return getParentField(this.orm, model);
     },
 
     findRecordInHierarchy(resId) {

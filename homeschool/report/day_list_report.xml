@@ -49,12 +49,15 @@
                 table.hs-item td.hs-text { padding-right: 16px; }
                 .hs-box { width: 34px; height: 34px; border: 2.5px solid #1B2A33; border-radius: 6px; margin-top: 2px; text-align: center; font-size: 24px; line-height: 30px; font-weight: 700; }
                 .hs-box-done { color: #3C8A4B; }
-                td.hs-when { width: 78px; font-family: Georgia, "Times New Roman", serif; color: #C98A2D; font-weight: 700; font-size: 1rem; padding-top: 16px; }
+                td.hs-when { width: 96px; white-space: nowrap; font-family: Georgia, "Times New Roman", serif; color: #C98A2D; font-weight: 700; font-size: 1rem; padding-top: 16px; }
+                td.hs-when-long { white-space: normal; }
                 .hs-item b { display: block; font-size: 1.15rem; }
                 .hs-item span { color: #5A6B75; font-size: .95rem; }
                 table.hs-bonus { border: 2px dashed #3C8A4B; background: transparent; }
                 .hs-bonus b { color: #3C8A4B; }
                 .hs-foot { margin-top: 18px; color: #5A6B75; font-size: .95rem; border-top: 1px solid #C9D3D9; padding-top: 8px; }
+                .hs-lines { margin-top: 6px; }
+                .hs-line { height: 30px; border-bottom: 1.5px solid #C9D3D9; }
                 .hs-fill { display: inline-block; border-bottom: 1.5px solid #1B2A33; min-width: 220px; height: 1.2em; vertical-align: bottom; }
             </style>
             <h1 class="hs-title">Ma liste du jour</h1>
@@ -66,10 +69,14 @@
                             <div t-if="line.done" class="hs-box hs-box-done">✓</div>
                             <div t-else="" class="hs-box">&#160;</div>
                         </td>
-                        <td class="hs-when"><t t-out="line.when or ''"/></td>
+                        <!-- a time (« 10 h 05 ») never wraps; a phrase (« quand ça se place ») wraps in the column -->
+                        <td t-attf-class="hs-when{{ ' hs-when-long' if len(line.when or '') &gt; 8 else '' }}"><t t-out="line.when or ''"/></td>
                         <td class="hs-text">
                             <b t-out="line.name"/>
                             <span t-if="line.detail" t-out="line.detail"/>
+                            <div t-if="line.answer_lines" class="hs-lines">
+                                <div t-foreach="range(line.answer_lines)" t-as="n" class="hs-line"/>
+                            </div>
                         </td>
                     </tr>
                 </table>

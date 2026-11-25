@@ -248,7 +248,11 @@ class Partner(models.Model):
             to_release.action_lift_credit_hold()
         return to_release
 
-    def _cron_execute_followup_company(self):
+    def _cron_execute_followup_company(self, *args, **kwargs):
+        # Signature-agnostic on purpose: 19.0 calls this with ``batch_size=``
+        # from ``_cron_execute_followup``; a fixed signature here made the whole
+        # nightly run raise a TypeError (and Odoo then switched the cron off).
+        #
         # Backstop. Upstream computes follow-up data for every partner here and
         # then narrows to the ones it will email, so it never visits partners
         # that are paid up, merely "with overdue invoices", or on manual
@@ -256,7 +260,7 @@ class Partner(models.Model):
         held = self.env["res.partner"].search([("hold_bg", "=", True)])
         if held:
             held._evaluate_credit_hold_release()
-        return super()._cron_execute_followup_company()
+        return super()._cron_execute_followup_company(*args, **kwargs)
 
     def _execute_followup_partner(self, options=None):
         # Check if we need to place on credit hold before expensive operations

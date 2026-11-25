@@ -1,0 +1,413 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_mail_gateway
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 18:33+0000\n"
+"PO-Revision-Date: 2026-11-19 18:33+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_token_create_wizard_form
+msgid ""
+"<strong>This is the only time you will see this token.</strong>\n"
+"                            Once you close this dialog, the raw value is gone — only its\n"
+"                            sha256 hash remains in the database. If you lose it, generate\n"
+"                            a new one and update your integration."
+msgstr ""
+"<strong>C'est la seule fois où vous verrez ce jeton.</strong>\n"
+"                            Une fois cette fenêtre fermée, la valeur brute disparaît : seule son\n"
+"                            empreinte sha256 reste dans la base de données. Si vous la perdez, générez\n"
+"                            un nouveau jeton et mettez à jour votre intégration."
+
+#. module: bemade_mail_gateway
+#. odoo-python
+#: code:addons/bemade_mail_gateway/models/bemade_mail_gateway_token.py:0
+msgid "A label is required."
+msgstr "Un libellé est requis."
+
+#. module: bemade_mail_gateway
+#: model:ir.model.constraint,message:bemade_mail_gateway.constraint_bemade_mail_gateway_token_name_unique
+msgid "A mail-gateway token with this label already exists."
+msgstr "Un jeton de passerelle courriel avec ce libellé existe déjà."
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__active
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_search
+msgid "Active"
+msgstr "Actif"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_search
+msgid "Active state"
+msgstr "État actif"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__allowed_ips
+msgid "Allowed Ips"
+msgstr "IP autorisées"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_form
+msgid "Audit"
+msgstr "Audit"
+
+#. module: bemade_mail_gateway
+#: model:ir.ui.menu,name:bemade_mail_gateway.menu_bemade_root
+msgid "Bemade"
+msgstr "Bemade"
+
+#. module: bemade_mail_gateway
+#: model:res.groups,name:bemade_mail_gateway.group_bemade_mail_gateway_admin
+msgid "Bemade Mail Gateway Administrator"
+msgstr "Administrateur de la passerelle courriel Bemade"
+
+#. module: bemade_mail_gateway
+#: model:ir.model,name:bemade_mail_gateway.model_bemade_mail_gateway_token
+msgid "Bemade Mail Gateway Token"
+msgstr "Jeton de passerelle courriel Bemade"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_token_create_wizard_form
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,help:bemade_mail_gateway.field_bemade_mail_gateway_token__allowed_ips
+msgid ""
+"Comma-separated CIDR list. Empty = no IP restriction. (Enforced in V2; field"
+" present for forward compatibility.)"
+msgstr ""
+"Liste CIDR séparée par des virgules. Vide = aucune restriction d'IP. "
+"(Appliqué en V2; champ présent pour compatibilité future.)"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_list
+msgid "Created"
+msgstr "Créé"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__create_uid
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__create_uid
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_list
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_search
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__create_date
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__description
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__description
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_form
+msgid "Description"
+msgstr "Description"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__display_name
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_token_create_wizard_form
+msgid "Done"
+msgstr "Terminé"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.actions.act_window,help:bemade_mail_gateway.action_bemade_mail_gateway_token
+msgid ""
+"Each token is generated with 256 bits of entropy, displayed\n"
+"                    once at creation, and only its sha256 hash is stored."
+msgstr ""
+"Chaque jeton est généré avec 256 bits d'entropie, affiché\n"
+"                    une seule fois à la création, et seule son empreinte sha256 est conservée."
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__expires_at
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__expires_at
+msgid "Expires At"
+msgstr "Expire le"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_search
+msgid "Expiring soon (next 30d)"
+msgstr "Expire bientôt (30 prochains jours)"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,help:bemade_mail_gateway.field_bemade_mail_gateway_token__description
+msgid "Free-form notes — what integration uses this token, who owns it, etc."
+msgstr ""
+"Notes libres : quelle intégration utilise ce jeton, qui en est responsable, "
+"etc."
+
+#. module: bemade_mail_gateway
+#: model:res.groups,comment:bemade_mail_gateway.group_bemade_mail_gateway_admin
+msgid ""
+"Full management of the token endpoint used by external mail relays (odoo-"
+"mail-gateway, ETLs, etc.)."
+msgstr ""
+"Gestion complète du point d'accès des jetons utilisé par les relais courriel"
+" externes (odoo-mail-gateway, ETL, etc.)."
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_token_create_wizard_form
+msgid "Generate"
+msgstr "Générer"
+
+#. module: bemade_mail_gateway
+#. odoo-python
+#: code:addons/bemade_mail_gateway/wizards/token_create_wizard.py:0
+#: model:ir.actions.act_window,name:bemade_mail_gateway.action_token_create_wizard
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_token_create_wizard_form
+msgid "Generate Mail Gateway Token"
+msgstr "Générer un jeton de passerelle courriel"
+
+#. module: bemade_mail_gateway
+#: model:ir.ui.menu,name:bemade_mail_gateway.menu_bemade_mail_gateway_generate
+msgid "Generate Token"
+msgstr "Générer un jeton"
+
+#. module: bemade_mail_gateway
+#: model:ir.model,name:bemade_mail_gateway.model_bemade_mail_gateway_token_create_wizard
+msgid "Generate a Bemade Mail Gateway Token"
+msgstr "Générer un jeton de passerelle courriel Bemade"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,help:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__name
+msgid "Human-readable label (e.g. 'omg-sugar', 'omg-pneumac')."
+msgstr "Libellé lisible (p. ex. « omg-sugar », « omg-pneumac »)."
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,help:bemade_mail_gateway.field_bemade_mail_gateway_token__name
+msgid "Human-readable label for this token (e.g. 'omg-sugar', 'omg-pneumac')."
+msgstr "Libellé lisible de ce jeton (p. ex. « omg-sugar », « omg-pneumac »)."
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__id
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__id
+msgid "ID"
+msgstr "ID"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__write_uid
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__write_uid
+msgid "Last Updated by"
+msgstr "Mis à jour par"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__write_date
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__write_date
+msgid "Last Updated on"
+msgstr "Mis à jour le"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__last_used_at
+msgid "Last Used At"
+msgstr "Dernière utilisation le"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__last_used_ip
+msgid "Last Used Ip"
+msgstr "Dernière IP utilisée"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_form
+msgid "Lifecycle"
+msgstr "Cycle de vie"
+
+#. module: bemade_mail_gateway
+#: model:ir.ui.menu,name:bemade_mail_gateway.menu_bemade_mail_gateway
+msgid "Mail Gateway"
+msgstr "Passerelle courriel"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_form
+msgid "Mail Gateway Token"
+msgstr "Jeton de passerelle courriel"
+
+#. module: bemade_mail_gateway
+#: model:ir.actions.act_window,name:bemade_mail_gateway.action_bemade_mail_gateway_token
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_list
+msgid "Mail Gateway Tokens"
+msgstr "Jetons de passerelle courriel"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__name
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__name
+msgid "Name"
+msgstr "Nom"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_search
+msgid "Never used"
+msgstr "Jamais utilisé"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.actions.act_window,help:bemade_mail_gateway.action_bemade_mail_gateway_token
+msgid ""
+"No tokens yet. Use the <b>Generate Token</b> button to create your first "
+"one."
+msgstr ""
+"Aucun jeton pour l'instant. Utilisez le bouton <b>Générer un jeton</b> pour "
+"créer le premier."
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,help:bemade_mail_gateway.field_bemade_mail_gateway_token__use_count
+msgid "Number of times this token has been validated successfully."
+msgstr "Nombre de validations réussies de ce jeton."
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,help:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__expires_at
+msgid "Optional expiration. Leave empty for a token that never expires."
+msgstr ""
+"Expiration facultative. Laissez vide pour un jeton qui n'expire jamais."
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,help:bemade_mail_gateway.field_bemade_mail_gateway_token__expires_at
+msgid "Optional hard expiry. Tokens past this date validate as invalid."
+msgstr "Expiration ferme facultative. Après cette date, le jeton est refusé."
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,help:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__description
+msgid "Optional notes — what integration uses this token, who owns it."
+msgstr ""
+"Notes facultatives : quelle intégration utilise ce jeton, qui en est "
+"responsable."
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,help:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__generated_token_id
+msgid ""
+"Reference to the created token record (so the user can navigate to it)."
+msgstr "Référence au jeton créé (pour que l'utilisateur puisse l'ouvrir)."
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_form
+msgid "Reserved for V2 — IP allowlist"
+msgstr "Réservé à la V2 : liste d'IP autorisées"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_form
+msgid "Revoke"
+msgstr "Révoquer"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_form
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_search
+msgid "Revoked"
+msgstr "Révoqué"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_bemade_mail_gateway_token_form
+msgid ""
+"Revoking disables this token immediately. The integration using it will "
+"start receiving 401. Continue?"
+msgstr ""
+"La révocation désactive ce jeton immédiatement. L'intégration qui l'utilise "
+"recevra des erreurs 401. Continuer?"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,help:bemade_mail_gateway.field_bemade_mail_gateway_token__last_used_ip
+msgid "Source IP of the most recent successful validation."
+msgstr "IP source de la dernière validation réussie."
+
+#. module: bemade_mail_gateway
+#. odoo-python
+#: code:addons/bemade_mail_gateway/wizards/token_create_wizard.py:0
+msgid ""
+"This wizard has already generated a token. Close it and start a new one."
+msgstr "Cet assistant a déjà généré un jeton. Fermez-le et recommencez."
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,help:bemade_mail_gateway.field_bemade_mail_gateway_token__last_used_at
+msgid "Timestamp of the most recent successful validation."
+msgstr "Date et heure de la dernière validation réussie."
+
+#. module: bemade_mail_gateway
+#. odoo-python
+#: code:addons/bemade_mail_gateway/wizards/token_create_wizard.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_token_create_wizard_form
+msgid "Token Generated — Save It Now"
+msgstr "Jeton généré : enregistrez-le maintenant"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__token_hash
+msgid "Token Hash"
+msgstr "Empreinte du jeton"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__generated_token_id
+msgid "Token Record"
+msgstr "Enregistrement du jeton"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token_create_wizard__generated_token
+msgid "Token Value"
+msgstr "Valeur du jeton"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.constraint,message:bemade_mail_gateway.constraint_bemade_mail_gateway_token_token_hash_unique
+msgid "Token hash collision (this is essentially impossible — please retry)."
+msgstr ""
+"Collision d'empreinte de jeton (en pratique impossible : veuillez "
+"réessayer)."
+
+#. module: bemade_mail_gateway
+#: model:ir.ui.menu,name:bemade_mail_gateway.menu_bemade_mail_gateway_tokens
+msgid "Tokens"
+msgstr "Jetons"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.actions.act_window,help:bemade_mail_gateway.action_bemade_mail_gateway_token
+msgid ""
+"Tokens authenticate external mail relays (notably the\n"
+"                    <code>odoo-mail-gateway</code> sidecar) into this Odoo's\n"
+"                    <code>mail.thread.message_process</code>, without consuming\n"
+"                    a billable user license."
+msgstr ""
+"Les jetons authentifient les relais courriel externes (notamment le\n"
+"                    conteneur <code>odoo-mail-gateway</code>) auprès de\n"
+"                    <code>mail.thread.message_process</code> de cet Odoo, sans consommer\n"
+"                    de licence utilisateur facturable."
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,help:bemade_mail_gateway.field_bemade_mail_gateway_token__active
+msgid "Uncheck to disable without deleting (preserves audit trail)."
+msgstr "Décochez pour désactiver sans supprimer (conserve la piste d'audit)."
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,field_description:bemade_mail_gateway.field_bemade_mail_gateway_token__use_count
+msgid "Use Count"
+msgstr "Nombre d'utilisations"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_token_create_wizard_form
+msgid "What integration will use this token?"
+msgstr "Quelle intégration utilisera ce jeton?"
+
+#. module: bemade_mail_gateway
+#: model_terms:ir.ui.view,arch_db:bemade_mail_gateway.view_token_create_wizard_form
+msgid "omg-sugar"
+msgstr "omg-sugar"
+
+#. module: bemade_mail_gateway
+#: model:ir.model.fields,help:bemade_mail_gateway.field_bemade_mail_gateway_token__token_hash
+msgid ""
+"sha256 hex digest of the secret. The raw token is shown once at creation and"
+" never persisted in clear."
+msgstr ""
+"Empreinte sha256 (hexadécimale) du secret. Le jeton brut est affiché une "
+"seule fois à la création et n'est jamais conservé en clair."
