@@ -994,3 +994,63 @@ class TestUpdateBaseCaldavEvent(TransactionCase, CaldavTestCommon):
             # Call with None event - should call add_event
             event._update_base_caldav_event(mock_calendar, None, event_data)
             mock_calendar.add_event.assert_called_once()
+
+
+@tagged("post_install", "-at_install")
+class TestPushReachesEveryUser(TransactionCase, CaldavTestCommon):
+    """An update is pushed to every CalDAV-enabled user's calendar, even when
+    one of those calendars does not hold the event (deleted there, or a URL
+    that reads as empty)."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env["res.users"].search([])._compute_is_caldav_enabled()
+        cls.organizer = cls._generate_user(
+            "push_org", caldav_username="o", caldav_password="o",
+            caldav_url="https://dav.example.com/organizer",
+        )
+        cls.attendee = cls._generate_user(
+            "push_att", caldav_username="a", caldav_password="a",
+            caldav_url="https://dav.example.com/attendee",
+        )
+
+    def test_missing_on_first_calendar_still_updates_the_next(self):
+        event = (
+            self.env["calendar.event"]
+            .with_user(self.organizer)
+            .with_context(caldav_no_sync=True)
+            .create(
+                {
+                    "name": "Two calendars",
+                    "start": datetime.now() + timedelta(days=1),
+                    "stop": datetime.now() + timedelta(days=1, hours=1),
+                    "partner_ids": [
+                        Command.set(
+                            [self.organizer.partner_id.id, self.attendee.partner_id.id]
+                        )
+                    ],
+                }
+            )
+        )
+        event.caldav_uid = "two-calendars"
+        event = event.with_context(caldav_no_sync=False)
+        self.assertEqual(
+            event.caldav_user_ids[:1], self.organizer,
+            "the organizer's calendar must be tried first for this test to bite",
+        )
+        on_attendee = MagicMock()
+        on_attendee.icalendar_component = {"uid": "two-calendars"}
+        calendars = {
+            "https://dav.example.com/organizer": MagicMock(),
+            "https://dav.example.com/attendee": MagicMock(),
+        }
+        calendars["https://dav.example.com/organizer"].events.return_value = []
+        calendars["https://dav.example.com/attendee"].events.return_value = [
+            on_attendee
+        ]
+        with patch("caldav.DAVClient") as client:
+            client.return_value.calendar.side_effect = lambda url: calendars[url]
+            (self.organizer | self.attendee)._compute_is_caldav_enabled()
+            event.write({"name": "Two calendars, renamed"})
+        on_attendee.save.assert_called_once()
