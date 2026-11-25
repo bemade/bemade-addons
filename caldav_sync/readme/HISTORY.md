@@ -1,3 +1,10 @@
+## 1.0.3 (2026-11-25)
+
+- An occurrence changed on its own in an all-day series (`RECURRENCE-ID` is a
+  date) no longer stops the synchronization.
+- A calendar that cannot be synchronized no longer stops the other users':
+  the failure is logged and the poll goes on.
+
 ## 1.0.2 (2026-11-25)
 
 - A recurring event with a date-only `UNTIL`, all-day or timed, no longer
