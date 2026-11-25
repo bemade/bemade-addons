@@ -704,7 +704,9 @@ class CalendarEvent(models.Model):
             values = self._get_values_from_ical_component(
                 component, user, for_creation=not existing_instance
             )
-            recurrency_vals = self._get_recurrency_values_from_ical_event(component)
+            recurrency_vals = (
+                existing_instance or self
+            )._get_recurrency_values_from_ical_event(component)
             if not existing_instance:
                 # If the event is in the past, we just ignore it.
                 stop = values.get("stop")
@@ -861,13 +863,11 @@ class CalendarEvent(models.Model):
 
         if not rrule or not isinstance(rrule, vRecur):
             return {}
-        until = rrule.get("until")
-        if until and isinstance(until, list):
-            if isinstance(until[0], datetime):
-                until = until[0].astimezone(utc)
-            else:
-                until = datetime.combine(until[0], datetime.min.time()).replace(tzinfo=utc)
-
+        last_slot = self._get_rrule_last_slot(rrule, component.get("dtstart").dt)
+        if last_slot:
+            # dateutil refuses an UNTIL that does not match the type of DTSTART.
+            rrule = vRecur(rrule)
+            rrule["UNTIL"] = [last_slot]
         rrule_str = rrule.to_ical() and rrule.to_ical().decode("utf-8")
         if rrule_str:
             dtstart = component.get(
@@ -899,12 +899,51 @@ class CalendarEvent(models.Model):
             vals.update(end_type="count")
             if not vals.get("count"):
                 vals.update(count=MAX_RECURRENT_EVENT)
-        until = vals.get("until")
-        if until and (isinstance(until, vDatetime) or isinstance(until, vDate)):
-            until_day = until.dt if isinstance(until, vDatetime) else until.dt
-            vals.update(until=until_day)
+        if last_slot:
+            # The field is a date. A datetime here never compares equal to it, so
+            # every poll would take the rule for a changed one and rewrite the
+            # series. Odoo keeps a count of its own on a series ending on a date.
+            vals.update(until=self._get_until_day(last_slot))
             vals.pop("count", None)
         return vals
+
+    def _get_rrule_last_slot(self, rrule: vRecur, dtstart: date) -> date | None:
+        """The last slot a rule ending with UNTIL can hold: the latest day allowed
+        by UNTIL, at the time of day of DTSTART.
+
+        RFC 5545 wants UNTIL to have the type of DTSTART, but a date-only UNTIL
+        on a timed series, or the reverse, is common. A date covers the whole
+        day, on the clock of DTSTART.
+
+        :param dtstart: The DTSTART of the series, a date for an all-day one.
+        :return: A date for an all-day series, an aware UTC datetime for a timed
+            one, or None if the rule has no UNTIL."""
+        until = rrule.get("until")
+        until = until[0] if isinstance(until, list) else until
+        if not until:
+            return None
+        if not isinstance(dtstart, datetime):
+            return until.date() if isinstance(until, datetime) else until
+        tz = dtstart.tzinfo or utc
+        if isinstance(until, datetime):
+            # A floating UNTIL is on the clock of DTSTART.
+            local = until.astimezone(tz) if until.tzinfo else until
+            day = local.date()
+            if local.time() < dtstart.time():
+                day -= timedelta(days=1)
+        else:
+            day = until
+        slot = datetime.combine(day, dtstart.time())
+        slot = tz.localize(slot) if hasattr(tz, "localize") else slot.replace(tzinfo=tz)
+        return slot.astimezone(utc)
+
+    def _get_until_day(self, last_slot: date) -> date:
+        """The date to store in "until" for that last slot. Odoo expands a series
+        on the time zone of its recurrence, which is not always the one of
+        DTSTART: the slot's date is the one on that clock."""
+        if not isinstance(last_slot, datetime):
+            return last_slot
+        return last_slot.astimezone(self.recurrence_id[:1]._get_timezone()).date()
 
     def _get_recurrence_changes(self, recurrency_vals: dict) -> dict:
         """Compare a set of recurrency values with those already present on

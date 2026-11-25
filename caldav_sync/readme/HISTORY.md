@@ -1,3 +1,10 @@
+## 1.0.2 (2026-11-25)
+
+- A recurring event with a date-only `UNTIL`, all-day or timed, no longer
+  stops the synchronization. Initial report and fix by schnarks.
+- Such a series holds the same occurrences in Odoo as on the server, and an
+  unchanged series ending on a date is no longer taken for a changed one.
+
 ## 1.0.1 (2026-10-27)
 
 - The CalDAV connection moves to the new `base_caldav` module
