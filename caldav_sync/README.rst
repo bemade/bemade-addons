@@ -24,13 +24,17 @@ Calendar or Thunderbird.
 - Create, update, and delete events in Odoo and reflect changes on the
   CalDAV server.
 - Poll CalDAV server for changes and update Odoo calendar accordingly.
+- Keep "show as free" in sync: an event marked free in the calendar client
+  (iCalendar ``TRANSP:TRANSPARENT``) is *Available* in Odoo, and the other
+  way round.
 
 **Technical Details**
 
 - The module extends the ``calendar.event`` model to add CalDAV
   synchronization functionality.
-- It uses the ``icalendar`` library to format events and the ``caldav``
-  library to interact with CalDAV servers.
+- The CalDAV connection (credentials, client, calendar lookup) and the
+  free/busy rules come from the ``base_caldav`` module, which also pins the
+  ``caldav`` and ``icalendar`` libraries.
 - Polling for changes on the CalDAV server can be triggered manually by
   triggering the scheduled action in Odoo.
 
@@ -61,6 +65,23 @@ Usage
 
 Changelog
 =========
+
+1.0.1 (2026-10-27)
+------------------
+
+- The CalDAV connection moves to the new ``base_caldav`` module
+  (``caldav.connection.mixin``), now a dependency. User settings keep the
+  same fields, so no data migration is needed; ``_get_caldav_client()`` and
+  ``_get_caldav_events()`` keep working.
+- "Show as free" is synchronized: ``TRANSP`` is pushed from and imported into
+  ``show_as``. Previously every imported event came in as busy.
+- The ``caldav`` and ``icalendar`` version pins move to ``base_caldav``.
+- An occurrence of a recurring series whose only change is "show as" is
+  pushed as its own exception.
+- An update reaches every CalDAV-enabled attendee's calendar even when one
+  of those calendars does not hold the event; the push used to stop at the
+  first such calendar.
+- Cancelled events (``STATUS:CANCELLED``) are imported as available.
 
 0.8.2 (2024-11-28)
 ------------------
