@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_appraisal_form_campaign" model="ir.ui.view">
+        <field name="name">hr.appraisal.form.campaign</field>
+        <field name="model">hr.appraisal</field>
+        <field name="inherit_id" ref="hr_appraisal.view_hr_appraisal_form"/>
+        <field name="arch" type="xml">
+            <!-- Odoo's own flow is replaced by the campaign's on campaign evaluations -->
+            <xpath expr="//header/button[@name='action_confirm']" position="attributes">
+                <attribute name="invisible" add="campaign_id" separator=" or "/>
+            </xpath>
+            <xpath expr="//header/button[@name='action_done']" position="attributes">
+                <attribute name="invisible" add="campaign_id" separator=" or "/>
+            </xpath>
+            <xpath expr="//header/button[@name='action_send_appraisal_request']" position="attributes">
+                <attribute name="invisible" add="campaign_id" separator=" or "/>
+            </xpath>
+            <xpath expr="//header/button[@name='action_back']" position="attributes">
+                <attribute name="invisible" add="campaign_id" separator=" or "/>
+            </xpath>
+            <xpath expr="//header/button[@name='action_calendar_event']" position="attributes">
+                <attribute name="invisible" add="campaign_id" separator=" or "/>
+            </xpath>
+            <xpath expr="//header/button[@name='action_reopen']" position="attributes">
+                <attribute name="invisible" add="campaign_id" separator=" or "/>
+            </xpath>
+            <xpath expr="//header/field[@name='state']" position="attributes">
+                <attribute name="invisible">campaign_id</attribute>
+            </xpath>
+            <xpath expr="//header/field[@name='state']" position="before">
+                <button name="action_campaign_submit_self" type="object" class="oe_highlight"
+                        string="Submit to my Manager"
+                        invisible="campaign_step != 'self_eval' or not campaign_can_edit_self"
+                        confirm="Once submitted, you can no longer change your self-evaluation. Continue?"/>
+                <button name="action_campaign_submit_manager" type="object" class="oe_highlight"
+                        string="Submit for Calibration"
+                        invisible="campaign_step != 'manager_eval' or not campaign_can_edit_manager"
+                        confirm="Once submitted, your grades go to calibration and can no longer be changed. Continue?"/>
+                <button name="action_campaign_share" type="object" class="oe_highlight"
+                        string="Meeting held — share with the employee"
+                        invisible="campaign_step != 'meeting' or campaign_shared or not (campaign_is_manager or campaign_is_hr)"
+                        confirm="Click this after the meeting with the employee. From then on, the employee sees the final grades and your remarks in Odoo and acknowledges the evaluation; you can still amend a remark until they do. Confirm the meeting was held?"/>
+                <button name="action_campaign_acknowledge" type="object" class="oe_highlight"
+                        string="I have read and discussed this evaluation"
+                        invisible="campaign_step != 'meeting' or not campaign_shared or not campaign_is_employee or employee_ack_date"/>
+                <button name="action_campaign_validate" type="object" class="oe_highlight"
+                        string="Validate"
+                        invisible="campaign_step != 'meeting' or not campaign_shared or not campaign_is_manager or manager_validated_date"/>
+                <button name="action_campaign_close" type="object" class="oe_highlight"
+                        string="Close Evaluation" groups="hr_appraisal.group_hr_appraisal_user"
+                        invisible="campaign_step != 'acknowledged'"/>
+                <button name="action_campaign_print" type="object" string="Print" icon="fa-print"
+                        invisible="not campaign_id"/>
+                <field name="campaign_step" widget="statusbar" invisible="not campaign_id"
+                       statusbar_visible="self_eval,manager_eval,calibration,meeting,acknowledged,closed"/>
+            </xpath>
+            <xpath expr="//div[@name='appraisal_info']" position="attributes">
+                <attribute name="invisible" add="campaign_id" separator=" or "/>
+            </xpath>
+            <xpath expr="//div[@name='appraisal_info']" position="after">
+                <div class="alert alert-info p-2" role="alert" invisible="not campaign_id or campaign_step != 'self_eval' or not campaign_is_employee">
+                        For each criterion, click the description that best matches your work this year, and give
+                        concrete examples. Your job profile is one click away (« Job Profile » button). When every
+                        criterion is graded, click « Submit to my Manager ».
+                    </div>
+                <div class="alert alert-info p-2" role="alert" invisible="not campaign_id or campaign_step != 'manager_eval' or not campaign_is_manager">
+                        The employee's choice is marked on each criterion. Click the description that matches your own
+                        assessment and add your remarks, then « Submit for Calibration ». The employee sees nothing
+                        of your evaluation in Odoo until you record, after the meeting, « Meeting held — share with
+                        the employee ».
+                    </div>
+                <div class="alert alert-info p-2" role="alert" invisible="not campaign_id or campaign_step != 'calibration' or not campaign_is_manager">
+                        Your grades are in calibration and can no longer be changed. You can still refine your remarks
+                        until the employee acknowledges the evaluation.
+                    </div>
+                <div class="alert alert-info p-2" role="alert" invisible="not campaign_id or campaign_step not in ('manager_eval', 'calibration', 'meeting') or campaign_shared or not campaign_is_employee">
+                        Your self-evaluation was submitted. Your manager will go over the evaluation with you at your
+                        meeting; you will see it here after the meeting.
+                    </div>
+                <div class="alert alert-info p-2" role="alert" invisible="not campaign_id or campaign_step != 'meeting' or campaign_shared or not campaign_is_manager">
+                        Calibration is done. Schedule the meeting and present the evaluation from your screen or the
+                        printout; you can still amend your remarks, with the employee if need be. After the meeting,
+                        click « Meeting held — share with the employee »: only then does the employee see it in Odoo.
+                    </div>
+                <div class="alert alert-info p-2" role="alert" invisible="not campaign_id or campaign_step != 'meeting' or not campaign_shared or not campaign_is_manager or employee_ack_date">
+                        The evaluation is shared with the employee. You can still amend a remark until they acknowledge it.
+                    </div>
+                <div class="alert alert-info p-2" role="alert" invisible="not campaign_id or campaign_step != 'meeting' or not campaign_shared or not campaign_is_employee or employee_ack_date">
+                        Your manager shared your evaluation after your meeting. Compare your choices with the final
+                        grades and read the remarks, then confirm you have read and discussed it. The remarks are frozen
+                        once you confirm.
+                    </div>
+                <div class="alert alert-warning p-2" role="alert" invisible="not campaign_needs_evaluator">
+                    This employee has no manager: HR must choose the evaluator (Appraisers) before the self-evaluation is submitted.
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='assessment_note']" position="attributes">
+                <attribute name="invisible" add="campaign_id" separator=" or "/>
+            </xpath>
+            <xpath expr="//field[@name='date_close']" position="after">
+                <field name="campaign_id" invisible="not campaign_id"/>
+                <field name="campaign_deadline" invisible="not campaign_deadline"/>
+            </xpath>
+            <xpath expr="//notebook/page[@name='appraisal']" position="attributes">
+                <attribute name="invisible">campaign_id</attribute>
+            </xpath>
+            <xpath expr="//notebook/page[@name='appraisal']" position="before">
+                <page string="Evaluation" name="campaign_evaluation" invisible="not campaign_id">
+                    <field name="campaign_line_ids" widget="campaign_word_picture_lines" nolabel="1"
+                           readonly="campaign_step not in ('self_eval', 'manager_eval', 'calibration', 'meeting')"/>
+                    <group string="Results" name="campaign_results" class="mt-3" invisible="not campaign_can_see_self and not campaign_can_see_manager">
+                        <field name="campaign_results_html" nolabel="1" colspan="2" readonly="1"/>
+                    </group>
+                    <group string="Acknowledgement" name="campaign_ack"
+                           invisible="campaign_step not in ('meeting', 'acknowledged', 'closed') or not campaign_shared">
+                        <group>
+                            <field name="employee_ack_comment"
+                                   readonly="not campaign_is_employee or employee_ack_date"
+                                   placeholder="Optional comment on your evaluation"/>
+                            <field name="employee_ack_date"/>
+                            <field name="employee_ack_user_id" invisible="not employee_ack_date"/>
+                        </group>
+                        <group>
+                            <field name="manager_validated_date"/>
+                            <field name="manager_validated_user_id" invisible="not manager_validated_date"/>
+                            <field name="campaign_shared_on"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+            <xpath expr="//field[@name='is_manager']" position="after">
+                <field name="campaign_shared" invisible="1"/>
+                <field name="campaign_is_employee" invisible="1"/>
+                <field name="campaign_is_manager" invisible="1"/>
+                <field name="campaign_is_hr" invisible="1"/>
+                <field name="campaign_can_see_self" invisible="1"/>
+                <field name="campaign_can_see_manager" invisible="1"/>
+                <field name="campaign_can_edit_self" invisible="1"/>
+                <field name="campaign_can_edit_manager" invisible="1"/>
+                <field name="campaign_needs_evaluator" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_appraisal_view_list_campaign" model="ir.ui.view">
+        <field name="name">hr.appraisal.list.campaign</field>
+        <field name="model">hr.appraisal</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="employee_id" widget="many2one_avatar_employee"/>
+                <field name="department_id"/>
+                <field name="job_id" optional="show"/>
+                <field name="manager_ids" widget="many2many_avatar_employee" string="Evaluator"/>
+                <field name="campaign_step" widget="badge"
+                       decoration-info="campaign_step in ('self_eval', 'manager_eval')"
+                       decoration-warning="campaign_step == 'calibration'"
+                       decoration-success="campaign_step in ('acknowledged', 'closed')"/>
+                <field name="campaign_deadline" widget="remaining_days" invisible="campaign_step == 'closed'"/>
+                <field name="score_self_total" string="Self" groups="hr_appraisal.group_hr_appraisal_user,hr_appraisal_campaign.group_campaign_calibration" optional="show"/>
+                <field name="score_final_total" string="Final" groups="hr_appraisal.group_hr_appraisal_user,hr_appraisal_campaign.group_campaign_calibration" optional="show"/>
+                <field name="band_final_id" groups="hr_appraisal.group_hr_appraisal_user,hr_appraisal_campaign.group_campaign_calibration" optional="show"/>
+                <field name="score_aligned" groups="hr_appraisal.group_hr_appraisal_user,hr_appraisal_campaign.group_campaign_calibration" optional="hide"/>
+                <field name="campaign_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="hr_appraisal_view_search_campaign" model="ir.ui.view">
+        <field name="name">hr.appraisal.search.campaign</field>
+        <field name="model">hr.appraisal</field>
+        <field name="inherit_id" ref="hr_appraisal.hr_appraisal_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <field name="campaign_id"/>
+                <filter name="campaign_overdue" string="Overdue step"
+                        domain="[('campaign_deadline', '&lt;', context_today().strftime('%Y-%m-%d')), ('campaign_step', '!=', 'closed')]"/>
+                <filter name="group_campaign_step" string="Evaluation Step" context="{'group_by': 'campaign_step'}"/>
+                <filter name="group_campaign" string="Campaign" context="{'group_by': 'campaign_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_campaign_appraisals" model="ir.actions.act_window">
+        <field name="name">Campaign Evaluations</field>
+        <field name="res_model">hr.appraisal</field>
+        <field name="view_mode">list,kanban,pivot,graph,form</field>
+        <field name="view_ids" eval="[Command.clear(),
+            Command.create({'view_mode': 'list', 'view_id': ref('hr_appraisal_view_list_campaign')})]"/>
+        <field name="context">{'search_default_group_campaign_step': 1}</field>
+    </record>
+</odoo>

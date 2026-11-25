@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_groups_privilege_campaign_calibration" model="res.groups.privilege">
+        <field name="name">Appraisal Calibration</field>
+        <field name="category_id" ref="base.module_category_human_resources"/>
+    </record>
+
+    <record id="group_campaign_calibration" model="res.groups">
+        <field name="name">Calibrate evaluations</field>
+        <field name="privilege_id" ref="res_groups_privilege_campaign_calibration"/>
+        <field name="comment">Directors and HR who compare and adjust the grades of a campaign
+during its calibration phase. Grants read access to the appraisals of campaigns in or past
+calibration.</field>
+    </record>
+
+    <data noupdate="1">
+        <!-- Lines follow the appraisal: employee, appraisers and the hierarchy above. -->
+        <record id="rule_line_employee" model="ir.rule">
+            <field name="name">Campaign appraisal line: own / team</field>
+            <field name="model_id" ref="model_hr_appraisal_campaign_line"/>
+            <field name="domain_force">[
+                '|', '|',
+                ('appraisal_id.employee_id.user_id', '=', user.id),
+                ('appraisal_id.manager_ids.user_id', 'in', [user.id]),
+                ('appraisal_id.employee_id', 'child_of', user.employee_ids.ids),
+            ]</field>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        </record>
+        <record id="rule_line_calibration" model="ir.rule">
+            <field name="name">Campaign appraisal line: calibration</field>
+            <field name="model_id" ref="model_hr_appraisal_campaign_line"/>
+            <field name="domain_force">[('appraisal_id.campaign_id.state', 'in', ('calibration', 'meetings', 'closed'))]</field>
+            <field name="groups" eval="[(4, ref('group_campaign_calibration'))]"/>
+        </record>
+        <record id="rule_line_hr" model="ir.rule">
+            <field name="name">Campaign appraisal line: HR</field>
+            <field name="model_id" ref="model_hr_appraisal_campaign_line"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('hr_appraisal.group_hr_appraisal_user'))]"/>
+        </record>
+        <record id="rule_appraisal_calibration" model="ir.rule">
+            <field name="name">Campaign appraisal: calibration read</field>
+            <field name="model_id" ref="hr_appraisal.model_hr_appraisal"/>
+            <field name="domain_force">[('campaign_id.state', 'in', ('calibration', 'meetings', 'closed'))]</field>
+            <field name="groups" eval="[(4, ref('group_campaign_calibration'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+        <record id="rule_campaign_company" model="ir.rule">
+            <field name="name">Evaluation campaign: multi-company</field>
+            <field name="model_id" ref="model_hr_appraisal_campaign"/>
+            <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        </record>
+        <record id="rule_calibration_log_company" model="ir.rule">
+            <field name="name">Campaign calibration log: multi-company</field>
+            <field name="model_id" ref="model_hr_appraisal_campaign_calibration_log"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+        <record id="rule_remark_log_company" model="ir.rule">
+            <field name="name">Campaign remark log: multi-company</field>
+            <field name="model_id" ref="model_hr_appraisal_campaign_remark_log"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+    </data>
+</odoo>
