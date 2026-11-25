@@ -26,8 +26,8 @@ function assert(condition, message) {
 }
 
 function draftKey(recordKey) {
-    const app = document.querySelector(".o_sc_app[data-sc-uid]");
-    return `sc_draft:${app.dataset.scDb || ""}:${app.dataset.scUid}:${recordKey}`;
+    const app = document.querySelector(".o_pk_app[data-pk-uid]");
+    return `pk_draft:${app.dataset.pkDb || ""}:${app.dataset.pkUid}:${recordKey}`;
 }
 
 function teamId() {
@@ -44,7 +44,7 @@ tours.add("sc_1640_team", {
     steps: () => [
         {
             content: "Seed a bad deadline draft (6-digit year), then reload",
-            trigger: ".o_sc_app[data-sc-uid]",
+            trigger: ".o_pk_app[data-pk-uid]",
             run() {
                 window.localStorage.setItem(
                     draftKey(`sports.team.${teamId()}.announcement_deadline`),
@@ -56,7 +56,7 @@ tours.add("sc_1640_team", {
         },
         {
             content: "Open the compose form (the announcement card's pencil)",
-            trigger: '[data-sc-edit-card="announcement"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="announcement"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
@@ -71,13 +71,13 @@ tours.add("sc_1640_team", {
                     ) === null,
                     "the bad draft was kept"
                 );
-                assert(!document.querySelector(".o_sc_draft_banner"), "« Brouillon restauré » shown");
+                assert(!document.querySelector(".o_pk_draft_banner"), "« Brouillon restauré » shown");
                 assertBounds(input, "Valide jusqu'au (OWL)");
             },
         },
         {
             content: "The plain QWeb « add player » DOB input is stamped (on load)",
-            trigger: "main#sc_content",
+            trigger: "main#pk_content",
             run() {
                 // Task 1655: the inline create panel's date of birth.
                 assertBounds(document.querySelector('#sc_add_player [data-sc-player-add-field="dob"]'), "add-player DOB (QWeb)");
@@ -85,16 +85,16 @@ tours.add("sc_1640_team", {
         },
         {
             content: "Injected inputs: a fragment swap, a lazy body, a focus; existing bounds kept",
-            trigger: "main#sc_content",
+            trigger: "main#pk_content",
             run() {
-                const main = document.querySelector("main#sc_content");
+                const main = document.querySelector("main#pk_content");
                 const box = document.createElement("div");
                 box.innerHTML =
                     '<input type="date" id="t1640_frag"/>' +
                     '<input type="date" id="t1640_today" max="2026-01-01"/>' +
                     '<input type="datetime-local" id="t1640_dt"/>';
                 main.appendChild(box);
-                document.dispatchEvent(new CustomEvent("sc:fragments"));
+                document.dispatchEvent(new CustomEvent("pk:fragments"));
                 assertBounds(document.querySelector("#t1640_frag"), "fragment input");
                 assertBounds(document.querySelector("#t1640_today"), "own max kept", MIN, "2026-01-01");
                 assertBounds(
@@ -107,7 +107,7 @@ tours.add("sc_1640_team", {
                 const lazy = document.createElement("div");
                 main.appendChild(lazy);
                 lazy.innerHTML = '<input type="date" id="t1640_lazy" min="2026-10-22"/>';
-                lazy.dispatchEvent(new CustomEvent("sc:lazy-loaded", { bubbles: true }));
+                lazy.dispatchEvent(new CustomEvent("pk:lazy-loaded", { bubbles: true }));
                 assertBounds(document.querySelector("#t1640_lazy"), "lazy input (own min kept)", "2026-10-22", MAX);
 
                 const late = document.createElement("input");
@@ -129,12 +129,16 @@ tours.add("sc_1640_player", {
     steps: () => [
         {
             content: "The player's autosave date inputs carry the bounds",
-            trigger: 'main#sc_content:has(.o_sc_autosave input[type="date"])',
+            trigger: 'main#pk_content:has(.o_pk_autosave input[type="date"])',
             run() {
-                const inputs = [...document.querySelectorAll('.o_sc_autosave input[type="date"]')];
+                const inputs = [...document.querySelectorAll('.o_pk_autosave input[type="date"]')];
                 assert(inputs.length >= 1, "no autosave date input");
                 for (const input of inputs) {
-                    assertBounds(input, `autosave ${input.id || input.name}`);
+                    // Task 1727: « Retour prévu » starts at today (its own
+                    // min, a 4-digit year) — the default max still applies.
+                    const own = input.id.endsWith("_predicted_return_date") ? input.getAttribute("min") : MIN;
+                    assert(/^\d{4}-\d{2}-\d{2}$/.test(own), `autosave ${input.id}: min=${own}`);
+                    assertBounds(input, `autosave ${input.id || input.name}`, own);
                 }
             },
         },

@@ -29,7 +29,7 @@ from odoo import Command, fields
 from odoo.tests import tagged
 from odoo.tools.misc import mute_logger
 
-from odoo.addons.bemade_sports_clinic.controllers import app_shell
+from odoo.addons.bemade_portal_kit.tools import pk_validate_save_spec
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
 
@@ -287,11 +287,13 @@ class TestAppShellSave1539(AppShellCommon):
 
     # -- UC-R8 -----------------------------------------------------------
     def test_sudo_spec_requires_permission(self):
-        app_shell._validate_save_registry(app_shell.SAVE_REGISTRY)
+        # Task 5199: the kit validates the specs (every installed one here).
+        for model, spec in self.env['portal.kit'].pk_save_specs().items():
+            pk_validate_save_spec(model, spec)
         with self.assertRaises(AssertionError):
-            app_shell._validate_save_registry({'x.model': {
+            pk_validate_save_spec('x.model', {
                 'fields': ('a',), 'check': lambda c, r: None,
-                'write': lambda c, r, f, v: None, 'sudo_write': True}})
+                'write': lambda c, r, f, v: None, 'sudo_write': True})
 
     @mute_logger('odoo.http')
     def test_csrf_required(self):

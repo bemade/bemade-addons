@@ -59,7 +59,7 @@ def _props(node):
 
 def _island_fields(scope):
     return [_props(node).get('field')
-            for node in scope.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]')]
+            for node in scope.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]')]
 
 
 @tagged('post_install', '-at_install')
@@ -73,9 +73,9 @@ class TestAllergiesHeaderOnly1018b(AppShellCommon):
     def test_medical_card_has_no_allergies(self):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=overview' % self.player.id)
-        medical = tree.xpath('//section[@data-sc-edit-card="medical"]')
+        medical = tree.xpath('//section[@data-pk-edit-card="medical"]')
         self.assertEqual(len(medical), 1)
-        read = medical[0].xpath('.//*[@data-sc-edit-view="read"]')[0]
+        read = medical[0].xpath('.//*[@data-pk-edit-view="read"]')[0]
         self.assertNotIn('Allergies', [' '.join(dt.itertext()).strip() for dt in read.xpath('.//dt')])
         for field in ('allergies', 'allergy_level', 'allergy_details'):
             self.assertNotIn(field, _island_fields(medical[0]))
@@ -87,7 +87,7 @@ class TestAllergiesHeaderOnly1018b(AppShellCommon):
         _text, tree = self._get('/my/player?player_id=%s' % self.player.id)
         # Task 1630: the pill in the header, the details + editor in its popup
         # (task 1677: the list — plain inputs, no island).
-        pill = tree.xpath('//*[@data-sc-section="player.medical"]//button[@data-sc-med-pill="allergy"]')
+        pill = tree.xpath('//*[@data-pk-section="player.medical"]//button[@data-sc-med-pill="allergy"]')
         self.assertEqual(len(pill), 1)
         sheet = tree.xpath('//dialog[@id="sc_med_player_allergy_%s"]' % self.player.id)
         self.assertEqual(len(sheet), 1)
@@ -237,7 +237,7 @@ class TestDocumentPicker1018b(DocPicker1018bMixin, AppShellCommon):
 class AccountCards1018bCommon(AccountShellCommon):
 
     def _card(self, tree, key):
-        cards = tree.xpath('//section[@data-sc-edit-card="%s"]' % key)
+        cards = tree.xpath('//section[@data-pk-edit-card="%s"]' % key)
         self.assertEqual(len(cards), 1, key)
         return cards[0]
 
@@ -252,7 +252,7 @@ class TestAccountCards1018b(AccountCards1018bCommon):
     def test_no_company_card_and_no_page_save(self):
         self._login_coach()
         _text, tree = self._get('/my/account')
-        self.assertFalse(tree.xpath('//*[@data-sc-section="account.company"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="account.company"]'))
         form = tree.xpath('//form[contains(@class, "address_autoformat")]')[0]
         names = set(form.xpath('.//input/@name | .//select/@name'))
         self.assertNotIn('company_name', names)
@@ -276,22 +276,22 @@ class TestAccountCards1018b(AccountCards1018bCommon):
         }
         for key, (field_names, shown) in expected.items():
             card = self._card(tree, key)
-            self.assertTrue(card.xpath('.//button[@data-sc-edit-toggle]'), key)
-            read = card.xpath('.//*[@data-sc-edit-view="read"]')
+            self.assertTrue(card.xpath('.//button[@data-pk-edit-toggle]'), key)
+            read = card.xpath('.//*[@data-pk-edit-view="read"]')
             self.assertEqual(len(read), 1, key)
-            self.assertEqual(read[0].get('data-sc-fragment'), 'res.partner:%s:%s' % (partner.id, key))
+            self.assertEqual(read[0].get('data-pk-fragment'), 'res.partner:%s:%s' % (partner.id, key))
             text = ' '.join(read[0].itertext())
             for value in shown:
                 self.assertIn(value, text, key)
-            edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
+            edit = card.xpath('.//*[@data-pk-edit-view="edit"]')[0]
             self.assertEqual(edit.get('hidden'), 'hidden')
             self.assertEqual(set(edit.xpath('.//input/@name | .//select/@name')), field_names, key)
             # Round 2 (1018c): no « Save » / « Cancel », a « Done ».
-            self.assertTrue(edit.xpath('.//button[@data-sc-edit-done]'), key)
-            self.assertTrue(edit.xpath('.//*[@data-sc-account-errors]'), key)
+            self.assertTrue(edit.xpath('.//button[@data-pk-edit-done]'), key)
+            self.assertTrue(edit.xpath('.//*[@data-pk-account-errors]'), key)
         # The read views show the state and country names.
         address = ' '.join(self._card(tree, 'account-address').xpath(
-            './/*[@data-sc-edit-view="read"]')[0].itertext())
+            './/*[@data-pk-edit-view="read"]')[0].itertext())
         self.assertIn(self.qc.name, address)
         self.assertIn(self.ca.name, address)
 
@@ -301,7 +301,7 @@ class TestAccountCards1018b(AccountCards1018bCommon):
         result = self._address_post(partner, phone='+1 514-555-0177', company_name=None, vat=None)
         self.assertEqual(result, {'redirectUrl': SAVED_URL})
         resp = self.url_open('/my/account', headers={
-            'X-Sc-Fragments': 'res.partner:%s:account-contact' % partner.id})
+            'X-Pk-Fragments': 'res.partner:%s:account-contact' % partner.id})
         self.assertEqual(resp.status_code, 200)
         html = resp.json()['fragments']['res.partner:%s:account-contact' % partner.id]
         self.assertIn('555-0177', html)

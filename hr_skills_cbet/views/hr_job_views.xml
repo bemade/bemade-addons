@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- UC-STD-06 — a job position lists the CBET standards it requires. -->
+    <record id="view_hr_job_form_cbet" model="ir.ui.view">
+        <field name="name">hr.job.form.inherit.cbet</field>
+        <field name="model">hr.job</field>
+        <field name="inherit_id" ref="hr.view_hr_job_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="CBET" name="cbet_standards"
+                      groups="hr_skills_cbet.group_cbet_manager">
+                    <group>
+                        <field name="cbet_standard_ids" widget="many2many_tags"
+                               options="{'no_create': True}"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

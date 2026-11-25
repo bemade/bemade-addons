@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Homeschool Portal",
-    "version": "19.0.2.0.0",
+    "version": "19.0.3.0.0",
     "category": "Education",
     "summary": "Portal pages for the home-schooled student and the outside teacher: "
     "the day and the week, the day's list to tick, traces to read or hand in, the reading log.",
@@ -52,20 +52,59 @@ Access
 * The block kinds and the day headers are the core's own labels (selection
   values, ``day.display_name``), in the user's language.
 
+The app (Bemade portal kit)
+---------------------------
+
+Since 19.0.3.0.0 the portal is an app on ``bemade_portal_kit``, with its installable
+app (``bemade_portal_kit_pwa``) and its dashboard (``bemade_portal_kit_dashboard``).
+While the kit's switch is on (Settings › Portal App), a portal user who is a student's
+own login (role ``learner``) or attached to a student as a resource user (role
+``tutor``) gets every page above in the app's shell:
+
+* **Today** (``/my/home``) — the kit's dashboard of the learner's day: today's list
+  (the learner ticks it from the card), today's blocks, today's reading entry (and,
+  with ``homeschool_practice``, today's quests). Each widget links to its page; each
+  user may arrange his own.
+* **Week**, **Traces** (list, page with its comments, hand-in form), **Reading**
+  (books, book page, today's entry) — the pages above, inside the shell; « Practice »
+  comes with ``homeschool_practice``.
+* A tutor who follows several learners switches between them from the app bar; the
+  URLs keep naming the student.
+* Roles come from the students (``res.users._pk_extra_roles``), never from groups; a
+  user may hold both. Internal users (the parents) keep the stock portal.
+* The brand name is the company's; the installed app opens on Today
+  (``/my/app.webmanifest`` where it is the database's default app — the homeschool
+  instance — else ``/my/app/homeschool.webmanifest``).
+* It is the kit app ``homeschool`` (kit 19.0.1.15.0 or later): its roles, menu, pages,
+  widgets, layout, home and installable app are registered for that app only, so
+  another kit app installed in the same database never mixes with it. An upgrade over
+  an older kit stops before anything is written: upgrade the kit in the same run
+  (``-u bemade_portal_kit,bemade_portal_kit_pwa,bemade_portal_kit_dashboard,homeschool_portal``).
+
+Switch off (or a user without a homeschool role): every route answers the same pages
+on the stock portal layout. Routes, URLs, data and record rules are the same in both.
+
 Language
 --------
 
-Source strings are English; ``i18n/fr_CA.po`` carries the French. The user's own
-language drives the rendering (there is no website module here).
+Source strings are English; ``i18n/fr.po`` carries the French (it serves every French
+locale, ``fr_CA`` included). The user's own language drives the rendering.
     """,
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
-    "depends": ["homeschool", "portal"],
+    "depends": [
+        "homeschool",
+        "portal",
+        "bemade_portal_kit",
+        "bemade_portal_kit_pwa",
+        "bemade_portal_kit_dashboard",
+    ],
     "data": [
         "security/ir.model.access.csv",
         "views/portal_templates.xml",
         "views/portal_menu.xml",
+        "views/hs_app.xml",
     ],
     "assets": {
         "web.assets_frontend": [

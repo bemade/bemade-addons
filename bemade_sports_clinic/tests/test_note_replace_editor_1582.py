@@ -48,7 +48,7 @@ NOTE_FIELDS = ('external_notes', 'internal_notes')
 
 def _autosave_props(node):
     out = {}
-    for raw in node.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props'):
+    for raw in node.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props'):
         props = json.loads(raw)
         out[props.get('field') or props.get('name')] = props
     return out
@@ -106,7 +106,7 @@ class TestNoteReplaceEditor1582(PlayerInlineCommon):
         self.injury.sudo().write({'external_notes': 'T1582 synthetic external v2'})
         _text, tree = self._get(
             '/my/injury/%s/notes/history/fragment?scope=external' % self.injury.id)
-        scopes = set(tree.xpath('//li[contains(@class, "o_sc_history_entry")]/@data-sc-scope'))
+        scopes = set(tree.xpath('//li[contains(@class, "o_pk_history_entry")]/@data-pk-scope'))
         self.assertEqual(scopes, {'external'})
 
     # -- UC-R2 -----------------------------------------------------------
@@ -276,13 +276,15 @@ class TestNoteReplaceFr1582(TestAppShellI18n1538):
         return self._fr(url).replace('&#39;', "'")
 
     def test_owl_strings_served_in_french(self):
-        resp = self.url_open('/web/webclient/translations?lang=fr_CA&mods=bemade_sports_clinic')
+        # Task 5382 (kit P4c3): the replace editor is the kit's; its texts
+        # are the kit's, and « New note » is the clinic's caption, passed
+        # from the page (checked in test_injury_page_in_french).
+        resp = self.url_open('/web/webclient/translations?lang=fr_CA&mods=bemade_portal_kit')
         messages = {
             m['id']: m['string']
-            for m in resp.json()['modules']['bemade_sports_clinic']['messages']}
+            for m in resp.json()['modules']['bemade_portal_kit']['messages']}
         for source, french in (
                 ('Current text', 'Texte actuel'),
-                ('New note', 'Nouvelle note'),
                 ('Reuse current text', 'Reprendre le texte actuel'),
                 ('Replaces the previous text; the old one is kept in the history.',
                  "Remplace le texte précédent ; l'ancien est conservé dans l'historique.")):
@@ -296,12 +298,15 @@ class TestNoteReplaceFr1582(TestAppShellI18n1538):
         props = _autosave_props(tree)
         self.assertEqual(props['external_notes']['placeholder'],
                          "Écrire l'état actuel de la blessure — remplace le texte précédent")
+        # Task 5382: the clinic's « New note » caption, in French.
+        for fname in ('external_notes', 'internal_notes'):
+            self.assertEqual(props[fname]['replaceNewLabel'], 'Nouvelle note', fname)
         # Task 1631: one « Historique » (the Notes head), no scoped sheets.
         self.assertNotIn('historyLabel', props['internal_notes'])
-        links = tree.xpath('//section[@data-sc-section="injury.notes"]//*[@data-sc-sheet-open="sc_note_history_sheet_%s"]'
+        links = tree.xpath('//section[@data-pk-section="injury.notes"]//*[@data-pk-sheet-open="sc_note_history_sheet_%s"]'
                            % self.injury.id)
         self.assertEqual([' '.join(link.text_content().split()) for link in links], ['Historique'])
-        titles = {t.strip() for t in tree.xpath('//dialog//h2[contains(@class, "o_sc_sheet_title")]/text()')}
+        titles = {t.strip() for t in tree.xpath('//dialog//h2[contains(@class, "o_pk_sheet_title")]/text()')}
         self.assertNotIn('Historique des notes externes', titles)
         self.assertNotIn('Historique des notes internes', titles)
 

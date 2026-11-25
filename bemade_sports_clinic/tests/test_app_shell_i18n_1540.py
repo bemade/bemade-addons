@@ -47,8 +47,10 @@ class TestAppShellI18n1540(TestAppShellI18n1538):
         for term in ("Aujourd'hui", 'À venir', 'Qui me sont assignées', 'Filtres', '1 sur la liste'):
             self.assertIn(term, text.replace('&#39;', "'"), term)
         text = self._fr('/my/clinic/%s?patient=%s' % (self.clinic.id, self.player.id)).replace('&#39;', "'")
-        for term in ("Liste d'attente", 'Dossier', 'Ajouter un patient', 'Dossier complet',
-                     'Nouvelle blessure', 'Notes de traitement', "Résoudre l'inscription",
+        # Task 1721: the hero's « Dossier complet » / « Nouvelle blessure »
+        # gave way to the player card and the injuries' « + Ajouter ».
+        for term in ("Liste d'attente", 'Dossier', 'Ajouter un patient', 'Blessures',
+                     'Ajouter', 'Notes de traitement', "Résoudre l'inscription",
                      "Borne d'inscription"):
             self.assertIn(term, text, term)
         data = self.url_open('/my/clinic/%s/worklist/data' % self.clinic.id).json()

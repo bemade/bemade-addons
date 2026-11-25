@@ -41,7 +41,7 @@ tours.add("sc_1655_add_existing", {
         },
         {
             content: "Élodie is listed with « Add to team »; Create stays disabled",
-            trigger: `${PANEL} li[data-sc-check-player]:not(.o_sc_search_archived) button[data-sc-action="player.link"]`,
+            trigger: `${PANEL} li[data-sc-check-player]:not(.o_pk_search_archived) button[data-sc-action="player.link"]`,
             run(helpers) {
                 assert(document.querySelector(`${PANEL} [data-sc-player-add-submit]`).getAttribute("aria-disabled") === "true",
                     "Create enabled without a date of birth");
@@ -51,7 +51,7 @@ tours.add("sc_1655_add_existing", {
         },
         {
             content: "Added",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
         },
     ],
 });
@@ -79,7 +79,7 @@ tours.add("sc_1655_create_new", {
         },
         {
             content: "The player page, identity card in edit",
-            trigger: '[data-sc-edit-card="identity"][data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden])',
+            trigger: '[data-pk-edit-card="identity"][data-pk-edit-open] [data-pk-edit-view="edit"]:not([hidden])',
         },
     ],
 });

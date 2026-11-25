@@ -1,0 +1,199 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* fsm_job_profitability
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 18:33+0000\n"
+"PO-Revision-Date: 2026-11-19 18:33+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: fsm_job_profitability
+#: model_terms:ir.actions.act_window,help:fsm_job_profitability.action_fsm_tech_job_report
+msgid ""
+"Analyze job-level revenue and hours allocated to each technician\n"
+"                    based on their share of effective hours on FSM jobs."
+msgstr ""
+"Analysez les revenus par travail et les heures attribuées à chaque technicien\n"
+"                    selon sa part des heures effectives sur les travaux FSM."
+
+#. module: fsm_job_profitability
+#: model_terms:ir.actions.act_window,help:fsm_job_profitability.action_report_fsm_job
+msgid ""
+"Analyze the profitability of your FSM jobs by customer, period and\n"
+"                    other dimensions."
+msgstr ""
+"Analysez la rentabilité de vos travaux FSM par client, période et\n"
+"                    autres dimensions."
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_job__job_revenue_per_hour
+msgid "Avg Job Revenue per Hour"
+msgstr "Revenu moyen par heure du travail"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_tech_job__tech_revenue_per_hour
+msgid "Avg Technician Revenue per Hour"
+msgstr "Revenu moyen par heure du technicien"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_job__company_id
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_tech_job__company_id
+msgid "Company"
+msgstr "Société"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_job__partner_id
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_tech_job__partner_id
+#: model_terms:ir.ui.view,arch_db:fsm_job_profitability.view_fsm_tech_job_search
+msgid "Customer"
+msgstr "Client"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_job__display_name
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_tech_job__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_job__job_effective_hours
+msgid "Effective Hours"
+msgstr "Heures effectives"
+
+#. module: fsm_job_profitability
+#: model:ir.actions.act_window,name:fsm_job_profitability.action_report_fsm_job
+#: model:ir.model,name:fsm_job_profitability.model_report_fsm_job
+#: model_terms:ir.ui.view,arch_db:fsm_job_profitability.view_fsm_job_graph
+#: model_terms:ir.ui.view,arch_db:fsm_job_profitability.view_fsm_job_pivot
+msgid "FSM Job Profitability"
+msgstr "Rentabilité des travaux FSM"
+
+#. module: fsm_job_profitability
+#: model:ir.model,name:fsm_job_profitability.model_report_fsm_tech_job
+msgid "FSM Technician Job Profitability"
+msgstr "Rentabilité des travaux FSM par technicien"
+
+#. module: fsm_job_profitability
+#: model:ir.actions.act_window,name:fsm_job_profitability.action_fsm_tech_job_report
+#: model_terms:ir.ui.view,arch_db:fsm_job_profitability.view_fsm_tech_job_graph
+#: model_terms:ir.ui.view,arch_db:fsm_job_profitability.view_fsm_tech_job_pivot
+msgid "FSM Technician Profitability"
+msgstr "Rentabilité FSM des techniciens"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_job__id
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_tech_job__id
+msgid "ID"
+msgstr "ID"
+
+#. module: fsm_job_profitability
+#: model:ir.ui.menu,name:fsm_job_profitability.fsm_menu_reporting_job_profitability
+msgid "Job Profitability"
+msgstr "Rentabilité des travaux"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_job__job_revenue
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_tech_job__job_revenue
+msgid "Job Revenue (Ordered, Pre-tax)"
+msgstr "Revenu du travail (commandé, avant taxes)"
+
+#. module: fsm_job_profitability
+#: model_terms:ir.actions.act_window,help:fsm_job_profitability.action_report_fsm_job
+msgid ""
+"Job revenue is based on sales order lines whose product categories are\n"
+"                    flagged as \"FSM Product\". If no categories are flagged as FSM Product\n"
+"                    in the database, the report falls back to using the full Sales Order\n"
+"                    untaxed amount (all order lines) as job revenue."
+msgstr ""
+"Le revenu du travail est basé sur les lignes de commande dont les catégories d'articles sont\n"
+"                    marquées « Article FSM ». Si aucune catégorie n'est marquée Article FSM\n"
+"                    dans la base de données, le rapport utilise le montant hors taxes complet\n"
+"                    de la commande client (toutes les lignes) comme revenu du travail."
+
+#. module: fsm_job_profitability
+#: model_terms:ir.actions.act_window,help:fsm_job_profitability.action_fsm_tech_job_report
+#: model_terms:ir.actions.act_window,help:fsm_job_profitability.action_report_fsm_job
+msgid "No data yet!"
+msgstr "Pas encore de données !"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_job__date_order
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_tech_job__date_order
+msgid "Order Date"
+msgstr "Date de la commande"
+
+#. module: fsm_job_profitability
+#: model_terms:ir.ui.view,arch_db:fsm_job_profitability.view_fsm_tech_job_search
+msgid "Order Month"
+msgstr "Mois de la commande"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_job__job_allocated_hours
+msgid "Planned Hours"
+msgstr "Heures planifiées"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_job__sale_order_id
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_tech_job__sale_order_id
+#: model_terms:ir.ui.view,arch_db:fsm_job_profitability.view_fsm_tech_job_search
+msgid "Sales Order"
+msgstr "Commande client"
+
+#. module: fsm_job_profitability
+#: model_terms:ir.ui.view,arch_db:fsm_job_profitability.view_fsm_job_search
+msgid "Search FSM Jobs"
+msgstr "Rechercher des travaux FSM"
+
+#. module: fsm_job_profitability
+#: model_terms:ir.ui.view,arch_db:fsm_job_profitability.view_fsm_tech_job_search
+msgid "Search Technician Profitability"
+msgstr "Rechercher la rentabilité des techniciens"
+
+#. module: fsm_job_profitability
+#: model_terms:ir.ui.view,arch_db:fsm_job_profitability.view_fsm_tech_job_search
+msgid "Technician"
+msgstr "Technicien"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_tech_job__employee_id
+msgid "Technician (Employee)"
+msgstr "Technicien (employé)"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_tech_job__user_id
+msgid "Technician (User)"
+msgstr "Technicien (utilisateur)"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_tech_job__tech_effective_hours
+msgid "Technician Effective Hours"
+msgstr "Heures effectives du technicien"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_tech_job__tech_allocated_hours
+msgid "Technician Planned Hours"
+msgstr "Heures prévues du technicien"
+
+#. module: fsm_job_profitability
+#: model:ir.ui.menu,name:fsm_job_profitability.fsm_menu_reporting_tech_profitability
+msgid "Technician Profitability"
+msgstr "Rentabilité des techniciens"
+
+#. module: fsm_job_profitability
+#: model:ir.model.fields,field_description:fsm_job_profitability.field_report_fsm_tech_job__tech_revenue
+msgid "Technician Revenue (Allocated)"
+msgstr "Revenu du technicien (attribué)"
+
+#. module: fsm_job_profitability
+#: model_terms:ir.ui.view,arch_db:fsm_job_profitability.view_fsm_job_search
+#: model_terms:ir.ui.view,arch_db:fsm_job_profitability.view_fsm_tech_job_search
+msgid "This Year"
+msgstr "Cette année"

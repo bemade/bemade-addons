@@ -11,6 +11,8 @@
 #   3. The message's own long Message-Id is plain as well.
 
 from contextlib import contextmanager
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from unittest.mock import MagicMock, patch
 
 from odoo.tests import TransactionCase
@@ -102,3 +104,77 @@ class TestConversationEmailSendHeaders(TransactionCase):
         self._assert_plain(lines, "References", LONG_ID)
         self._assert_plain(lines, "Message-Id", OWN_ID)
         self.assertNotIn(b"=?", b"\r\n".join(lines))
+
+    def _two_inbound(self):
+        conversation = self.env["mail.conversation"].create(
+            {"name": "Thread", "primary_transport_id": self.transport.id}
+        )
+        first = conversation.message_post(body="<p>first question</p>")
+        first.write({"external_id": "1", "message_id": "<first@client.example>"})
+        second = conversation.message_post(body="<p>second question</p>")
+        second.write({"external_id": "2", "message_id": "<second@client.example>"})
+        return conversation, first, second
+
+    def test_reply_to_a_specific_message_threads_under_it(self):
+        conversation, first, _second = self._two_inbound()
+        reply = conversation.action_reply(
+            "<p>answer to the first</p>",
+            recipients=["c@example.com"],
+            reply_to_message=first,
+        )
+        lines = self._wire_headers()
+        self._assert_plain(lines, "In-Reply-To", "<first@client.example>")
+        self._assert_plain(lines, "References", "<first@client.example>")
+        self.assertEqual(reply.parent_id, first)
+
+    def test_reply_without_a_target_keeps_the_newest_anchor(self):
+        conversation, _first, second = self._two_inbound()
+        conversation.action_reply("<p>answer</p>", recipients=["c@example.com"])
+        lines = self._wire_headers()
+        self._assert_plain(lines, "In-Reply-To", "<second@client.example>")
+        self._assert_plain(lines, "References", "<second@client.example>")
+
+    def test_a_target_from_another_conversation_is_not_trusted(self):
+        conversation, _first, _second = self._two_inbound()
+        other = self.env["mail.conversation"].create(
+            {"name": "Other", "primary_transport_id": self.transport.id}
+        )
+        stranger = other.message_post(body="<p>elsewhere</p>")
+        stranger.write({"external_id": "9", "message_id": "<stranger@client.example>"})
+        transport = self.transport.with_context(
+            conversation_reply_to_message_id=stranger.id
+        )
+        self.assertFalse(transport._explicit_reply_message_id(conversation))
+
+    def test_send_raw_stamps_exactly_one_date_header(self):
+        before = datetime.now(timezone.utc).replace(microsecond=0)
+        self.transport._send_raw(
+            subject="Hello",
+            body="<p>x</p>",
+            to_emails=["a@example.com"],
+            bcc=["hidden@example.com"],
+        )
+        after = datetime.now(timezone.utc)
+        lines = self._wire_headers()
+        dates = [line for line in lines if line.startswith(b"Date:")]
+        self.assertEqual(len(dates), 1)
+        sent_at = parsedate_to_datetime(self.sent[0]["Date"])
+        self.assertLessEqual(before, sent_at)
+        self.assertLessEqual(sent_at, after)
+        # Bcc stays out of the headers.
+        self.assertFalse([line for line in lines if line.startswith(b"Bcc")])
+
+    def test_sent_folder_copy_carries_the_same_date(self):
+        appended = []
+        with patch.object(
+            type(self.transport),
+            "_imap_append_to_sent",
+            side_effect=lambda outgoing: appended.append(outgoing),
+        ):
+            self.transport._send_raw(
+                subject="Hello", body="<p>x</p>", to_emails=["a@example.com"]
+            )
+        self.assertEqual(len(appended), 1)
+        self.assertTrue(appended[0]["Date"])
+        self.assertEqual(appended[0]["Date"], self.sent[0]["Date"])
+        self.assertEqual(appended[0]["Message-Id"], self.sent[0]["Message-Id"])

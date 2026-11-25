@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Task 1660 / 5200 (kit P5): the in-app help mapping is the kit's
+     (portal.kit.help); the clinic administrators reach it from the clinic's
+     Administration menu too. -->
+<odoo>
+    <menuitem id="sc_app_help_menu"
+              name="App help"
+              parent="sports_clinic_staff_menu"
+              groups="bemade_sports_clinic.group_sports_clinic_admin"
+              action="bemade_portal_kit.pk_help_action"
+              sequence="90"/>
+</odoo>

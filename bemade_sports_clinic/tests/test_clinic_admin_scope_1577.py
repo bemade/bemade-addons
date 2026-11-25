@@ -104,21 +104,26 @@ class TestClinicAdminScope1577(Parity1577Common):
         self.assertLess(pos[self.team_a], pos[self.team_unstaffed])
 
     def test_clinic_admin_home_all_teams_staffed_first(self):
+        # Task 1624 (deliberate update, owner 2026-10-29): « My teams » left
+        # the home (the dashboard's sections default to the STAFFED teams);
+        # the full list, staffed first, is /my/teams.
         self._switch(True)
         self._login_cadmin()
         text, tree = self._get('/my/home')
         self.assertIsNotNone(self._shell(tree))
+        self.assertFalse(re.findall(r'data-sc-team-id="(\d+)"', text))
+        text, tree = self._get('/my/teams')
         ids = [int(x) for x in re.findall(r'data-sc-team-id="(\d+)"', text)]
-        self.assertIn(self.team_a.id, ids)
         self.assertEqual(ids[0], self.team_a.id, "the staffed team comes first")
-        # The count covers every team (the home lists up to 8 rows).
-        teams_total = self.env['sports.team'].search_count([])
-        self.assertEqual(len(ids), min(teams_total, 8))
+        self.assertIn(self.team_b.id, ids)
+        self.assertEqual(self.env['portal.kit.dashboard'].with_user(self.cadmin)._sc_scope_teams({}),
+                         self.team_a)
 
     def test_internal_tp_home_staffed_only(self):
+        # Task 1624 (deliberate update): the team list is /my/teams.
         self._switch(True)
         self._login_itp()
-        text, _tree = self._get('/my/home')
+        text, _tree = self._get('/my/teams')
         ids = [int(x) for x in re.findall(r'data-sc-team-id="(\d+)"', text)]
         self.assertEqual(ids, [self.team_a.id])
 
@@ -273,7 +278,7 @@ class TestTeamRefusalFrench1577(Parity1577Common):
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

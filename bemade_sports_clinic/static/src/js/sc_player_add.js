@@ -1,5 +1,5 @@
 /*
- * Task 1655 — the inline « create a player » panel (inert outside .o_sc_app).
+ * Task 1655 — the inline « create a player » panel (inert outside .o_pk_app).
  *
  * form[data-sc-player-add]: once a first AND a last name are typed, the
  * existence check (GET /my/app/player-check, 300 ms after the last key; a
@@ -10,17 +10,17 @@
  * - « Create » stays greyed (aria-disabled, never a dead click) until it can
  *   succeed, with the reason under it (aria-describedby): what is missing
  *   (« Complete: first name, last name, date of birth »), the check still
- *   running, an exact name + date-of-birth twin, a same-name player the
- *   user can't open (security review 2026-10-23), or a half-filled
- *   emergency contact;
+ *   running, an exact name + date-of-birth twin not confirmed with « Create
+ *   anyway », an unlikely date of birth not confirmed (task 1716), or a
+ *   half-filled emergency contact;
  * - the create posts with fetch: ANY refusal of the server (a twin created
  *   meanwhile, an invalid mobile…) shows in the panel — under its field, or
  *   next to « Create » — the panel stays open with every typed value; only
  *   a success leaves the page (the new player's page).
  */
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 // Task 1658: the greyed button + reason line are the shared form guard's.
-import { guardFlash, guardRefresh } from "@bemade_sports_clinic/js/sc_form_guard";
+import { guardFlash, guardRefresh } from "@bemade_portal_kit/js/pk_form_guard";
 
 const DEBOUNCE_MS = 300;
 const timers = new WeakMap();
@@ -44,6 +44,27 @@ function contact(form) {
 
 function keyOf(values) {
     return JSON.stringify(values);
+}
+
+/**
+ * Task 1716 (review round 2, owner 2026-10-27): an override is accepted for
+ * the IDENTITY it was shown for — first name, last name, date of birth (and,
+ * for « Create anyway », the matched twins) — never for the whole form: a
+ * team, a contact or anything else changed afterwards keeps it.
+ */
+function identityKey(form) {
+    const { first, last, dob } = fields(form);
+    return JSON.stringify([first, last, dob]);
+}
+
+function acceptKeys(form) {
+    const identity = identityKey(form);
+    return { dob: identity, force: `${identity}|${form.dataset.scCheckedExactIds || ""}` };
+}
+
+function accepted(form) {
+    const keys = acceptKeys(form);
+    return { dob: form.dataset.scDobOkKey === keys.dob, force: form.dataset.scForceKey === keys.force };
 }
 
 function reasons(form) {
@@ -70,13 +91,15 @@ function blocker(form) {
     if (missing.length) {
         return `${text.missing} ${missing.join(", ")}`;
     }
-    if (form.dataset.scCheckedKey === keyOf(values) && form.dataset.scCheckedExact === "1") {
-        return text.exact;
+    // Task 1716: a twin and an unlikely date of birth are warnings — each
+    // confirmed for THESE values (« Create anyway », « The date is correct »).
+    const key = keyOf(values);
+    const ok = accepted(form);
+    if (form.dataset.scCheckedKey === key && form.dataset.scCheckedDobWarn === "1" && !ok.dob) {
+        return text.dobWarn;
     }
-    // Security review 2026-10-23: a same-name player the user can't open —
-    // the server refuses the create whatever the date of birth.
-    if (form.dataset.scCheckedKey === keyOf(values) && form.dataset.scCheckedTwin === "1") {
-        return text.twin;
+    if (form.dataset.scCheckedKey === key && form.dataset.scCheckedExact === "1" && !ok.force) {
+        return text.exact;
     }
     const ec = contact(form);
     if (Boolean(ec.name) !== Boolean(ec.mobile)) {
@@ -88,16 +111,30 @@ function blocker(form) {
     return "";
 }
 
+/** Task 1716: the confirmations posted with the create, for the accepted identity only. */
+function syncConfirmations(form) {
+    const ok = accepted(form);
+    const force = form.querySelector("[data-sc-player-add-force]");
+    if (force) {
+        force.value = ok.force ? "1" : "0";
+    }
+    const dobOk = form.querySelector("[data-sc-player-add-dob-ok]");
+    if (dobOk) {
+        dobOk.value = ok.dob ? "1" : "0";
+    }
+}
+
 function refreshSubmit(form) {
     // Task 1658: the panel's own reasons (check-as-you-type, twins, the
     // emergency contact pair), shown by the shared guard.
+    syncConfirmations(form);
     const busy = posting.has(form);
     const reason = busy ? "" : blocker(form);
     guardRefresh(form, reason, busy);
     // Task 1674: only similar players found — « Create » stays enabled, the
     // reason line asks to check them first.
     if (!busy && !reason && form.dataset.scCheckedNear === "1") {
-        const line = form.querySelector("[data-sc-guard-reason]");
+        const line = form.querySelector("[data-pk-guard-reason]");
         if (line) {
             line.textContent = reasons(form).near || "";
             line.hidden = !line.textContent;
@@ -129,7 +166,7 @@ function showError(form, message, field) {
             ec.open = true;
         }
         const note = document.createElement("p");
-        note.className = "o_sc_field_message o_sc_field_error";
+        note.className = "o_pk_field_message o_pk_field_error";
         note.setAttribute("role", "alert");
         note.dataset.scPlayerAddFieldError = field;
         note.textContent = message;
@@ -177,11 +214,14 @@ async function check(form) {
         if (results && results.dataset.scReady === "1") {
             form.dataset.scCheckedKey = keyOf(values);
             form.dataset.scCheckedExact = results.dataset.scExact || "0";
-            form.dataset.scCheckedTwin = results.dataset.scTwinElsewhere || "0";
+            form.dataset.scCheckedExactIds = results.dataset.scExactIds || "";
+            form.dataset.scCheckedDobWarn = results.dataset.scDobWarn || "0";
             form.dataset.scCheckedNear = results.dataset.scNear || "0";
         } else {
             delete form.dataset.scCheckedKey;
+            delete form.dataset.scCheckedExactIds;
         }
+        showAccepted(form);
     } catch {
         // aborted / offline: the button stays as it was
     } finally {
@@ -200,7 +240,7 @@ function schedule(form) {
 
 function playerForm(target) {
     const form = target && target.closest && target.closest("form[data-sc-player-add]");
-    return form && form.closest(".o_sc_app") ? form : null;
+    return form && form.closest(".o_pk_app") ? form : null;
 }
 
 document.addEventListener("input", (ev) => {
@@ -234,11 +274,11 @@ async function create(form) {
     clearErrors(form);
     const data = Object.fromEntries(new FormData(form).entries());
     try {
-        const result = await scFetch(form.getAttribute("action"), { method: "POST", data, toast: false, timeout: 30000 });
+        const result = await pkFetch(form.getAttribute("action"), { method: "POST", data, toast: false, timeout: 30000 });
         if (result && result.redirect) {
             // Task 1672: the panel resets before the page changes (back on
             // the team page, reopening it shows an empty form).
-            form.dispatchEvent(new CustomEvent("sc:create-success", { bubbles: true }));
+            form.dispatchEvent(new CustomEvent("pk:create-success", { bubbles: true }));
             window.location.assign(result.redirect);
             return;
         }
@@ -281,10 +321,60 @@ document.addEventListener(
     true
 );
 
+// Task 1716: « Create anyway » / « The date is correct » in the check.
+document.addEventListener("click", (ev) => {
+    const button =
+        ev.target.closest && ev.target.closest("[data-sc-player-add-force-btn], [data-sc-player-add-dob-confirm]");
+    const form = button && playerForm(button);
+    if (!form) {
+        return;
+    }
+    ev.preventDefault();
+    const keys = acceptKeys(form);
+    if (button.matches("[data-sc-player-add-force-btn]")) {
+        form.dataset.scForceKey = keys.force;
+    } else {
+        form.dataset.scDobOkKey = keys.dob;
+    }
+    showAccepted(form);
+    refreshSubmit(form);
+});
+
+/**
+ * Review round 1 (owner 2026-10-27): an accepted override is no longer a
+ * button — « ✓ Accepted by the user » takes its place, for the identity it
+ * was accepted for (round 2: a re-check after a team change keeps it).
+ */
+function showAccepted(form) {
+    const ok = accepted(form);
+    const buttons = {
+        force: "[data-sc-player-add-force-btn]",
+        dob: "[data-sc-player-add-dob-confirm]",
+    };
+    let moveFocus = false;
+    for (const [kind, selector] of Object.entries(buttons)) {
+        for (const button of form.querySelectorAll(selector)) {
+            if (ok[kind] && button.contains(document.activeElement)) {
+                moveFocus = true;
+            }
+            button.hidden = ok[kind];
+        }
+        for (const note of form.querySelectorAll(`[data-sc-check-accepted="${kind}"]`)) {
+            note.hidden = !ok[kind];
+        }
+    }
+    if (moveFocus) {
+        const submit = form.querySelector('button[type="submit"]:not([formaction])');
+        if (submit) {
+            submit.focus({ preventScroll: true });
+        }
+    }
+}
+
 // Task 1672: the check's first content, to put back on a reset.
 const checkHints = new WeakMap();
 
-document.addEventListener("sc:form-reset", (ev) => {
+document.addEventListener("pk:form-reset", (ev) => {
     const form = playerForm(ev.target);
     if (!form) {
         return;
@@ -297,8 +387,11 @@ document.addEventListener("sc:form-reset", (ev) => {
     clearTimeout(timers.get(form));
     delete form.dataset.scCheckedKey;
     delete form.dataset.scCheckedExact;
-    delete form.dataset.scCheckedTwin;
+    delete form.dataset.scCheckedExactIds;
+    delete form.dataset.scCheckedDobWarn;
     delete form.dataset.scCheckedNear;
+    delete form.dataset.scForceKey;
+    delete form.dataset.scDobOkKey;
     const region = form.querySelector("[data-sc-player-check]");
     if (region && checkHints.has(region)) {
         region.innerHTML = checkHints.get(region);
@@ -309,7 +402,7 @@ document.addEventListener("sc:form-reset", (ev) => {
 
 // A panel re-opened with typed values (a refused create): check at once.
 function boot() {
-    for (const form of document.querySelectorAll(".o_sc_app form[data-sc-player-add]")) {
+    for (const form of document.querySelectorAll(".o_pk_app form[data-sc-player-add]")) {
         const region = form.querySelector("[data-sc-player-check]");
         if (region && !checkHints.has(region) && !region.querySelector("[data-sc-check-results]")) {
             checkHints.set(region, region.innerHTML);

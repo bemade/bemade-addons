@@ -34,7 +34,7 @@ async function waitFor(check, message, timeout = 5000) {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function barBottom() {
-    return document.querySelector(".o_sc_appbar").getBoundingClientRect().bottom;
+    return document.querySelector(".o_pk_appbar").getBoundingClientRect().bottom;
 }
 
 function anchored(selector) {
@@ -55,14 +55,14 @@ function pad() {
     document.body.style.paddingBottom = "3000px";
 }
 
-const NOTES = 'details.o_sc_injury_item[open] [data-sc-edit-card="injury-notes-external"]';  // task 1675
+const NOTES = 'details.o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"]';  // task 1675
 const CARD = "details.o_sc_injury_item";
 
 tours.add("sc_1642_injury_notes_blur", {
     steps: () => [
         {
             content: "Open the Notes group (pencil)",
-            trigger: `${NOTES} button[data-sc-edit-toggle]`,
+            trigger: `${NOTES} button[data-pk-edit-toggle]`,
             run(helpers) {
                 pad();
                 return helpers.click();
@@ -70,12 +70,12 @@ tours.add("sc_1642_injury_notes_blur", {
         },
         {
             content: "Type a note",
-            trigger: `${NOTES} [data-sc-edit-view="edit"] textarea`,
+            trigger: `${NOTES} [data-pk-edit-view="edit"] textarea`,
             run: "edit Tour 1642 synthetic note",
         },
         {
             content: "The page jumps away, then the user leaves the field",
-            trigger: `${NOTES} [data-sc-edit-view="edit"] textarea`,
+            trigger: `${NOTES} [data-pk-edit-view="edit"] textarea`,
             async run() {
                 this.anchor.focus();
                 window.scrollTo(0, 0);
@@ -91,7 +91,7 @@ tours.add("sc_1642_injury_done", {
     steps: () => [
         {
             content: "Open the Notes group, focus its field",
-            trigger: `${NOTES} button[data-sc-edit-toggle]`,
+            trigger: `${NOTES} button[data-pk-edit-toggle]`,
             run(helpers) {
                 pad();
                 return helpers.click();
@@ -101,25 +101,25 @@ tours.add("sc_1642_injury_done", {
             // Task 1676: the card's bottom « Terminé » is gone; the group's
             // ✓ (its pencil in edit mode) closes it and anchors the block.
             content: "Jump away, then the ✓: back to the top of the Notes block",
-            trigger: `${NOTES}[data-sc-edit-open] button[data-sc-edit-toggle][data-sc-edit-toggle-done]`,
+            trigger: `${NOTES}[data-pk-edit-open] button[data-pk-edit-toggle][data-pk-edit-toggle-done]`,
             async run() {
                 window.scrollTo(0, 0);
                 await sleep(50);
                 this.anchor.click();
-                await waitFor(() => !document.querySelector(`${NOTES}[data-sc-edit-open]`), "the notes stayed open");
+                await waitFor(() => !document.querySelector(`${NOTES}[data-pk-edit-open]`), "the notes stayed open");
                 await waitFor(() => anchored(NOTES), `notes block not anchored: ${where(NOTES)}`);
             },
         },
     ],
 });
 
-const MEDICAL = 'section[data-sc-edit-card="medical"]';
+const MEDICAL = 'section[data-pk-edit-card="medical"]';
 
 tours.add("sc_1642_player_group_done", {
     steps: () => [
         {
             content: "Open the medical card (pencil)",
-            trigger: `${MEDICAL} button[data-sc-edit-toggle]`,
+            trigger: `${MEDICAL} button[data-pk-edit-toggle]`,
             run(helpers) {
                 pad();
                 return helpers.click();
@@ -127,7 +127,7 @@ tours.add("sc_1642_player_group_done", {
         },
         {
             content: "Jump away, then its « Done »: back to the top of the card",
-            trigger: `${MEDICAL} [data-sc-edit-view="edit"] [data-sc-edit-done]`,
+            trigger: `${MEDICAL} [data-pk-edit-view="edit"] [data-pk-edit-done]`,
             async run() {
                 window.scrollTo(0, 0);
                 await sleep(50);
@@ -137,7 +137,7 @@ tours.add("sc_1642_player_group_done", {
         },
         {
             content: "A touch after the edit wins: no anchor",
-            trigger: `${MEDICAL} button[data-sc-edit-toggle]`,
+            trigger: `${MEDICAL} button[data-pk-edit-toggle]`,
             async run() {
                 this.anchor.click(); // re-open (focuses its first field)
                 await sleep(100);
@@ -147,7 +147,7 @@ tours.add("sc_1642_player_group_done", {
                     document.activeElement.blur();
                 }
                 await sleep(1700);
-                const done = document.querySelector(`${MEDICAL} [data-sc-edit-view="edit"] [data-sc-edit-done]`);
+                const done = document.querySelector(`${MEDICAL} [data-pk-edit-view="edit"] [data-pk-edit-done]`);
                 window.scrollTo(0, 0);
                 done.click();
                 window.dispatchEvent(new Event("touchstart"));

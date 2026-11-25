@@ -1,6 +1,5 @@
 from . import access_control_mixin
 from . import app_shell
-from . import app_shell_account
 from . import team_staff_portal
 from . import patient_injury_portal
 from . import team_management_portal
@@ -15,3 +14,4 @@ from . import app_search
 from . import app_player_add
 from . import app_critical_items
 from . import knowledge_public
+from . import app_dashboard

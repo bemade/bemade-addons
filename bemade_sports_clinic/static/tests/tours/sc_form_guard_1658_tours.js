@@ -29,18 +29,18 @@ function q(selector) {
 }
 
 function submitOf(form) {
-    return form.querySelector("[data-sc-guard-submit]") || form.querySelector('button[type="submit"]:not([formaction])');
+    return form.querySelector("[data-pk-guard-submit]") || form.querySelector('button[type="submit"]:not([formaction])');
 }
 
 function reasonOf(form) {
-    const line = form.querySelector("[data-sc-guard-reason]");
+    const line = form.querySelector("[data-pk-guard-reason]");
     return line && !line.hidden ? line.textContent.trim() : "";
 }
 
 function assertBlocked(form, includes) {
     const submit = submitOf(form);
     assert(submit.getAttribute("aria-disabled") === "true", "the primary action is not greyed");
-    const line = form.querySelector("[data-sc-guard-reason]");
+    const line = form.querySelector("[data-pk-guard-reason]");
     assert(line && submit.getAttribute("aria-describedby") === line.id, "aria-describedby → reason line");
     const reason = reasonOf(form);
     assert(reason && (!includes || reason.includes(includes)), `reason « ${reason} » lacks « ${includes} »`);
@@ -56,8 +56,8 @@ function assertReady(form) {
 }
 
 function errorShown(form, includes) {
-    const box = form.querySelector("[data-sc-guard-error]");
-    const fieldError = form.querySelector("[data-sc-guard-field-error]");
+    const box = form.querySelector("[data-pk-guard-error]");
+    const fieldError = form.querySelector("[data-pk-guard-field-error]");
     const text = ((box && !box.hidden && box.textContent) || (fieldError && fieldError.textContent) || "").trim();
     return Boolean(text) && (!includes || text.includes(includes));
 }
@@ -68,7 +68,7 @@ tours.add("sc_1658_contact", {
     steps: () => [
         {
             content: "« + Ajouter » of the contacts",
-            trigger: 'button.o_sc_list_add[aria-controls="sc_contact_add"]',
+            trigger: 'button.o_pk_list_add[aria-controls="sc_contact_add"]',
             run: "click",
         },
         {
@@ -96,7 +96,7 @@ tours.add("sc_1658_contact", {
         },
         {
             content: "The refusal is in the form, values kept, same page",
-            trigger: `${CONTACT} [data-sc-guard-error]:not([hidden])`,
+            trigger: `${CONTACT} [data-pk-guard-error]:not([hidden])`,
             run() {
                 const form = q(CONTACT);
                 assert(errorShown(form), "no error text");
@@ -118,7 +118,7 @@ tours.add("sc_1658_contact", {
         },
         {
             content: "The contact is listed",
-            trigger: '[data-sc-section="player.contacts"] [data-sc-contact-id]',
+            trigger: '[data-pk-section="player.contacts"] [data-sc-contact-id]',
         },
     ],
 });
@@ -129,7 +129,7 @@ tours.add("sc_1658_timesheet", {
     steps: () => [
         {
             content: "Open the add sheet",
-            trigger: 'button[data-sc-action="timesheet.add"][data-sc-sheet-open]',
+            trigger: 'button[data-pk-action="timesheet.add"][data-pk-sheet-open]',
             run: "click",
         },
         {
@@ -157,7 +157,7 @@ tours.add("sc_1658_timesheet", {
         },
         {
             content: "The refusal is in the sheet, values kept, same page",
-            trigger: `${TS} [data-sc-guard-error]:not([hidden])`,
+            trigger: `${TS} [data-pk-guard-error]:not([hidden])`,
             run() {
                 const form = q(TS);
                 assert(errorShown(form), "no error text");
@@ -175,7 +175,7 @@ tours.add("sc_1658_injury", {
     steps: () => [
         {
             content: "« + Ajouter » of the injuries",
-            trigger: 'button.o_sc_list_add[aria-controls="sc_new_injury"]',
+            trigger: 'button.o_pk_list_add[aria-controls="sc_new_injury"]',
             run: "click",
         },
         {
@@ -202,7 +202,7 @@ tours.add("sc_1658_injury", {
         },
         {
             content: "The refusal is in the form, the diagnosis kept, same page",
-            trigger: `${INJ} [data-sc-guard-error]:not([hidden])`,
+            trigger: `${INJ} [data-pk-guard-error]:not([hidden])`,
             run() {
                 const form = q(INJ);
                 assert(form.querySelector('[name="diagnosis"]').value === "Synthetic sprain 1658", "value lost");
@@ -250,7 +250,7 @@ tours.add("sc_1658_event", {
         },
         {
             content: "The refusal is in the form, the name kept, same page",
-            trigger: `${EV} [data-sc-guard-error]:not([hidden])`,
+            trigger: `${EV} [data-pk-guard-error]:not([hidden])`,
             run() {
                 const form = q(EV);
                 assert(form.querySelector('[name="name"]').value === "Synthetic game 1658", "value lost");
@@ -261,12 +261,12 @@ tours.add("sc_1658_event", {
 });
 
 // -------------------------------------------------------- announcement
-const ANN = 'form[data-sc-guard][action$="/announcement"]';
+const ANN = 'form[data-pk-guard][action$="/announcement"]';
 tours.add("sc_1658_announcement", {
     steps: () => [
         {
             content: "Edit the announcement: empty → greyed",
-            trigger: '[data-sc-edit-card="announcement"] [data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="announcement"] [data-pk-edit-toggle]',
             run: "click",
         },
         {
@@ -296,48 +296,6 @@ tours.add("sc_1658_announcement", {
     ],
 });
 
-// ---------------------------------------------- activity (reassign sheet)
-const RE = 'dialog#sc_activity_reassign_sheet form[data-sc-form="activity.reassign"]';
-tours.add("sc_1658_activity", {
-    steps: () => [
-        {
-            content: "Reassign an activity",
-            trigger: 'button[data-sc-action="activity.reassign"]',
-            run: "click",
-        },
-        {
-            content: "No one chosen: greyed",
-            trigger: `dialog#sc_activity_reassign_sheet[open] select[name="new_user_id"]:not(:visible)`,
-            run() {
-                assertBlocked(q(RE), "");
-            },
-        },
-        {
-            content: "Someone the server will refuse: the refusal is in the sheet",
-            trigger: `${RE} select[name="new_user_id"]:not(:visible)`,
-            run() {
-                const form = q(RE);
-                const select = form.querySelector('select[name="new_user_id"]');
-                // A real user outside my assignable list (the test passes
-                // its id): the server answers ?error=invalid_user.
-                const outsider = new URLSearchParams(window.location.search).get("x1658");
-                const option = document.createElement("option");
-                option.value = outsider;
-                option.textContent = "Outsider 1658";
-                select.appendChild(option);
-                type(select, outsider);
-                assertReady(form);
-                window.__sc1658Url = window.location.href;
-                submitOf(form).click();
-            },
-        },
-        {
-            content: "In the sheet, same page",
-            trigger: `${RE} [data-sc-guard-error]:not([hidden])`,
-            run() {
-                assert(document.querySelector("dialog#sc_activity_reassign_sheet").open, "the sheet closed");
-                assert(window.location.href === window.__sc1658Url, "the page changed");
-            },
-        },
-    ],
-});
+// Task 1736 r1 (deliberate update): the activity « Reassign » sheet is gone
+// (the assignee is edited in place on the card) — its refusal is covered by
+// test_form_guard_1658.test_activity_reassign (server side).

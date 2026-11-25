@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 Bemade Inc. License LGPL-3.0 or later. -->
+<templates xml:space="preserve">
+
+    <t t-name="partner_phone_list.PartnerPhoneListField">
+        <div class="o_partner_phone_list_field d-flex flex-column">
+            <div class="d-flex align-items-baseline o_partner_phone_list_phone">
+                <i class="fa fa-fw me-1 fa-phone text-primary" title="Phone"/>
+                <t t-if="phone">
+                    <div class="d-inline-block o_partner_phone_list_value">
+                        <PhoneField t-props="phoneProps('phone', topLine and topLine.data.type === 'mobile')"/>
+                    </div>
+                    <small t-if="topTypeLabel" class="text-muted ms-2 text-nowrap o_partner_phone_list_type" t-esc="topTypeLabel"/>
+                </t>
+                <a t-else="" href="#" class="text-muted o_partner_phone_list_placeholder" t-on-click.prevent="openDialog">Phone</a>
+                <button type="button" class="btn btn-link p-0 ms-2 o_partner_phone_list_open" t-att-title="openTitle" t-att-aria-label="openTitle" t-on-click="openDialog">
+                    <i class="fa fa-address-book"/>
+                </button>
+            </div>
+            <div t-if="showMobile" class="d-flex align-items-baseline o_partner_phone_list_mobile">
+                <i class="fa fa-fw me-1 fa-mobile text-primary" title="Mobile"/>
+                <div class="d-inline-block o_partner_phone_list_value">
+                    <PhoneField t-props="phoneProps('mobile', true)"/>
+                </div>
+                <button type="button" class="btn btn-link p-0 ms-2 o_partner_phone_list_open" t-att-title="openTitle" t-att-aria-label="openTitle" t-on-click="openDialog">
+                    <i class="fa fa-address-book"/>
+                </button>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="partner_phone_list.PartnerPhoneListDialog">
+        <Dialog title="title" size="'lg'" contentClass="'o_partner_phone_list_dialog'">
+            <div class="o_field_widget o_field_one2many w-100" t-att-name="props.fieldProps.name">
+                <X2ManyField t-props="props.fieldProps"/>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary o_partner_phone_list_save" t-on-click="onSave" t-esc="saveLabel"/>
+                <button t-if="canDiscard" class="btn btn-secondary o_partner_phone_list_discard" t-on-click="onDiscard">Discard</button>
+            </t>
+        </Dialog>
+    </t>
+
+    <t t-name="partner_phone_list.PartnerPhoneNumberField">
+        <div class="d-flex align-items-center o_partner_phone_number">
+            <div class="d-inline-block" t-att-class="{'flex-grow-1': !props.readonly}">
+                <PhoneField t-props="innerProps"/>
+            </div>
+            <a t-if="showSms" href="#" class="ms-3 d-inline-flex align-items-center o_field_phone_sms o_partner_phone_sms" t-att-title="smsTitle" t-on-click.prevent.stop="onSms">
+                <i class="fa fa-mobile"/><small class="fw-bold ms-1">SMS</small>
+            </a>
+        </div>
+    </t>
+
+</templates>

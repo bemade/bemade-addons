@@ -99,6 +99,13 @@ class PatientCriticalItem(models.Model):
     def create(self, vals_list):
         self._sc_check_writer()
         vals_list = [self._sc_clean_vals(dict(vals)) for vals in vals_list]
+        # Task 1717: allergies wait for the EpiPen answer (scripts exempt).
+        if not self.env.su:
+            Patient = self.env['sports.patient'].sudo()
+            for vals in vals_list:
+                if vals.get('family') == 'allergy' and vals.get('patient_id') \
+                        and not Patient.browse(vals['patient_id']).allergy_epipen_state:
+                    raise ValidationError(Patient._sc_epipen_first_message())
         items = super().create(vals_list)
         # An item on the list: « none known » no longer holds.
         for (patient, family) in {(item.patient_id, item.family) for item in items}:

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2026 Bemade Inc. - License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html). -->
+<odoo>
+    <record id="portal_consent_publish_wizard_view_form" model="ir.ui.view">
+        <field name="name">portal.consent.publish.wizard.form</field>
+        <field name="model">portal.consent.publish.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Publish">
+                <field name="version_id" invisible="1"/>
+                <field name="is_first" invisible="1"/>
+                <p>
+                    Once published, the version is read-only: its text can no longer change and it cannot be
+                    deleted. Check that every translation of the text is complete.
+                </p>
+                <group>
+                    <field name="document_id"/>
+                    <field name="requires_resign" readonly="is_first" widget="boolean_toggle"/>
+                </group>
+                <p class="text-muted" invisible="not is_first">
+                    The first published version of a document always requires an acceptance.
+                </p>
+                <footer>
+                    <button name="action_confirm" type="object" string="Publish" class="btn-primary"
+                            data-hotkey="q"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel" data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

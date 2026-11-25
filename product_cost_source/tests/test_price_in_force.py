@@ -13,8 +13,12 @@ ACCEPTANCE CRITERIA
    age-based judgement.
 4. A price whose date_start is in the future is not yet in force, and does not
    make the cost Firm.
-5. An open-ended price (date_start set, no date_end) is in force from its start
-   date onward. A vendor who set no end date has not promised an end.
+5. A start-only price (date_start set, no date_end) is NOT in force: a vendor
+   who set no end date has promised nothing about tomorrow. It is a dated
+   last-known price, judged by the age of its start date -- Firm within the
+   price-age window, Estimated past it.
+5b. An end-only price (date_end set, no date_start) whose end has not passed is
+   in force: the end date is the promise.
 6. A price with no dates at all is not "in force" -- there is no agreement to
    point at, only a number. It falls through to age-based judgement.
 """
@@ -69,8 +73,23 @@ class TestPriceInForce(ProductCostSourceCommon):
         resolution = self._resolve()
         self.assertFalse(resolution.sources[0].in_force)
 
-    def test_open_ended_agreement_is_in_force(self):
+    def test_start_only_price_is_not_in_force(self):
         self._supplier_price(75.0, date_start=self._months_ago(24))
+        resolution = self._resolve()
+        self.assertFalse(resolution.sources[0].in_force)
+        self.assertEqual(resolution.sources[0].priced_on, self._months_ago(24))
+        self.assertEqual(resolution.confidence, "estimated")
+
+    def test_recent_start_only_price_is_a_firm_last_known_price(self):
+        self._supplier_price(75.0, date_start=self._months_ago(2))
+        resolution = self._resolve()
+        self.assertFalse(resolution.sources[0].in_force)
+        self.assertEqual(resolution.confidence, "firm")
+
+    def test_end_only_price_is_in_force(self):
+        self._supplier_price(
+            75.0, date_end=fields.Date.today() + relativedelta(months=2)
+        )
         resolution = self._resolve()
         self.assertTrue(resolution.sources[0].in_force)
         self.assertEqual(resolution.confidence, "firm")

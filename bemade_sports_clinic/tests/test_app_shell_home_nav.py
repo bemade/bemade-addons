@@ -57,6 +57,8 @@ class TestAppShellHomeNav(Parity1577Common):
             'date_start': start,
             'date_end': start + timedelta(hours=2),
             'team_ids': [Command.set([cls.team_a.id])],
+            # Task 1624: « Upcoming coverage » lists a therapist's ASSIGNED events.
+            'assigned_staff_ids': [Command.set([cls.tp.id])],
         })
 
     def setUp(self):
@@ -66,7 +68,7 @@ class TestAppShellHomeNav(Parity1577Common):
 
     @staticmethod
     def _back(tree):
-        return tree.xpath('//a[contains(concat(" ", @class, " "), " o_sc_back ")]/@href')
+        return tree.xpath('//a[contains(concat(" ", @class, " "), " o_pk_back ")]/@href')
 
     @staticmethod
     def _return_url(href):
@@ -75,8 +77,10 @@ class TestAppShellHomeNav(Parity1577Common):
     # -- UC-H2 -----------------------------------------------------------
     def test_upcoming_event_comes_back_home(self):
         _text, tree = self._get(HOME)
-        hrefs = tree.xpath('//*[@data-sc-section="home.upcoming"]//a/@href')
-        href = [h for h in hrefs if h.startswith('/my/event/%s' % self.upcoming.id)]
+        hrefs = tree.xpath('//*[@data-pk-section="dashboard.coverage"]//a/@href')
+        # Task 1624 review round 1: the row's link and its « Details »
+        # fold-out's « Open the event » — the same address.
+        href = sorted({h for h in hrefs if h.startswith('/my/event/%s' % self.upcoming.id)})
         self.assertEqual(len(href), 1, hrefs)
         self.assertEqual(self._return_url(href[0]), HOME)
         _text, tree = self._get(href[0])
@@ -84,7 +88,7 @@ class TestAppShellHomeNav(Parity1577Common):
 
     def test_upcoming_event_crumb_comes_back_home(self):
         _text, tree = self._get('/my/event/%s?return_url=%%2Fmy%%2Fhome' % self.upcoming.id)
-        self.assertIn(HOME, tree.xpath('//nav[contains(@class, "o_sc_crumbs")]//a/@href'))
+        self.assertIn(HOME, tree.xpath('//nav[contains(@class, "o_pk_crumbs")]//a/@href'))
 
     def test_event_from_list_still_goes_back_to_list(self):
         _text, tree = self._get('/my/event/%s' % self.upcoming.id)
@@ -93,24 +97,24 @@ class TestAppShellHomeNav(Parity1577Common):
     # -- UC-H3 -----------------------------------------------------------
     def test_calendar_link_comes_back_home(self):
         _text, tree = self._get(HOME)
-        more = tree.xpath('//*[@data-sc-section="home.upcoming"]'
+        more = tree.xpath('//*[@data-pk-section="dashboard.coverage"]'
                           '//a[starts-with(@href, "/my/events")]/@href')
         self.assertEqual(len(more), 1, more)
         self.assertEqual(self._return_url(more[0]), HOME)
         _text, tree = self._get(more[0])
         self.assertEqual(self._back(tree), [HOME])
-        segments = dict(zip(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'),
-                            tree.xpath('//nav[@data-sc-tabs]//a/@href')))
+        segments = dict(zip(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'),
+                            tree.xpath('//nav[@data-pk-tabs]//a/@href')))
         for key in ('upcoming', 'past', 'calendar'):
             self.assertEqual(self._return_url(segments[key]), HOME, key)
         for chip in tree.xpath('//a[@data-sc-event-type]/@href'):
             self.assertEqual(self._return_url(chip), HOME, chip)
         _text, tree = self._get(segments['calendar'])
         self.assertEqual(self._back(tree), [HOME])
-        node = tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_calendar"]')[0]
+        node = tree.xpath('//owl-component[@name="bemade_portal_kit.pk_calendar"]')[0]
         self.assertNotIn('return_url', json.loads(node.get('props'))['params'])
-        segments = dict(zip(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'),
-                            tree.xpath('//nav[@data-sc-tabs]//a/@href')))
+        segments = dict(zip(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'),
+                            tree.xpath('//nav[@data-pk-tabs]//a/@href')))
         for key in ('upcoming', 'past'):
             self.assertEqual(self._return_url(segments[key]), HOME, key)
 
@@ -128,24 +132,24 @@ class TestAppShellHomeNav(Parity1577Common):
 
     # -- UC-H5 -----------------------------------------------------------
     def _nav_hrefs(self, tree, key):
-        return tree.xpath('//nav[contains(@class, "o_sc_tabs") or contains(@class, "o_sc_rail_nav")]'
-                          '//a[@data-sc-nav-key="%s"]/@href' % key)
+        return tree.xpath('//nav[contains(@class, "o_pk_tabs") or contains(@class, "o_pk_rail_nav")]'
+                          '//a[@data-pk-nav-key="%s"]/@href' % key)
 
     def test_teams_nav_opens_teams_list(self):
         _text, tree = self._get(HOME)
         hrefs = self._nav_hrefs(tree, 'teams')
         self.assertTrue(hrefs)
         self.assertEqual(set(hrefs), {'/my/teams'})
-        self.assertIn(HOME, tree.xpath('//a[contains(@class, "o_sc_logo") or contains(@class, "o_sc_rail_brand")]/@href'))
+        self.assertIn(HOME, tree.xpath('//a[contains(@class, "o_pk_logo") or contains(@class, "o_pk_rail_brand")]/@href'))
         _text, tree = self._get('/my/teams')
         self.assertEqual(self._back(tree), [])
-        self.assertTrue(tree.xpath('//a[contains(@class, "o_sc_logo")][@href="%s"]' % HOME))
-        current = tree.xpath('//nav[contains(@class, "o_sc_rail_nav")]//a[@aria-current="page"]/@data-sc-nav-key')
+        self.assertTrue(tree.xpath('//a[contains(@class, "o_pk_logo")][@href="%s"]' % HOME))
+        current = tree.xpath('//nav[contains(@class, "o_pk_rail_nav")]//a[@aria-current="page"]/@data-pk-nav-key')
         self.assertEqual(current, ['teams'])
 
     def test_team_crumbs_point_to_teams_list(self):
         _text, tree = self._get('/my/team?team_id=%s' % self.team_a.id)
-        crumbs = tree.xpath('//nav[contains(@class, "o_sc_crumbs")]//a/@href')
+        crumbs = tree.xpath('//nav[contains(@class, "o_pk_crumbs")]//a/@href')
         self.assertIn('/my/teams', crumbs)
         self.assertNotIn(HOME, crumbs)
 
@@ -165,13 +169,13 @@ class TestAppShellHomeNav(Parity1577Common):
     @staticmethod
     def _player_ids(tree):
         return [int(x) for x in tree.xpath(
-            '//*[@data-sc-section="players.list"]//*[@data-sc-player-id]/@data-sc-player-id')]
+            '//*[@data-pk-section="players.list"]//*[@data-sc-player-id]/@data-sc-player-id')]
 
     @staticmethod
     def _sort_options(tree):
         # Task 1607 (deliberate update): the list header's sort menu.
-        return {a.get('data-sc-sort'): a for a in tree.xpath(
-            '//*[@data-sc-section="players.sort"]//a[@role="menuitemradio"]')}
+        return {a.get('data-pk-sort'): a for a in tree.xpath(
+            '//*[@data-pk-section="players.sort"]//a[@role="menuitemradio"]')}
 
     def test_players_list_most_injured_first(self):
         made = self._make_order_players()
@@ -206,30 +210,30 @@ class TestAppShellHomeNav(Parity1577Common):
     # -- UC-H7 -----------------------------------------------------------
     def test_phone_tabs_and_laptop_rail(self):
         _text, tree = self._get('/my/teams')
-        self.assertEqual(self._nav_keys(tree, 'o_sc_tabs'),
+        self.assertEqual(self._nav_keys(tree, 'o_pk_tabs'),
                          ['teams', 'players', 'notepad', 'activities', 'more'])
-        self.assertEqual(self._nav_keys(tree, 'o_sc_rail_nav'),
+        self.assertEqual(self._nav_keys(tree, 'o_pk_rail_nav'),
                          ['teams', 'players', 'notepad', 'activities',
                           'clinic', 'events', 'timesheets', 'more'])
         _text, tree = self._get('/my/app/more')
-        plus = tree.xpath('//main[@id="sc_content"]//a/@data-sc-nav-key')
+        plus = tree.xpath('//main[@id="pk_content"]//a/@data-pk-nav-key')
         for key in ('clinic', 'events', 'timesheets'):
             self.assertIn(key, plus, key)
         for key in ('teams', 'players', 'notepad', 'activities'):
             self.assertNotIn(key, plus, key)
         # Already on the laptop rail: marked so « More » hides them there.
-        railed = tree.xpath('//main[@id="sc_content"]//a[@data-sc-in-rail]/@data-sc-nav-key')
+        railed = tree.xpath('//main[@id="pk_content"]//a[@data-pk-in-rail]/@data-pk-nav-key')
         self.assertEqual(set(railed), {'clinic', 'events', 'timesheets'})
 
     def test_coach_tabs_and_rail(self):
         self._login_coach()
         _text, tree = self._get('/my/teams')
-        self.assertEqual(self._nav_keys(tree, 'o_sc_tabs'),
+        self.assertEqual(self._nav_keys(tree, 'o_pk_tabs'),
                          ['teams', 'players', 'activities', 'more'])
-        self.assertEqual(self._nav_keys(tree, 'o_sc_rail_nav'),
+        self.assertEqual(self._nav_keys(tree, 'o_pk_rail_nav'),
                          ['teams', 'players', 'activities', 'events', 'more'])
         _text, tree = self._get('/my/app/more')
-        self.assertIn('events', tree.xpath('//main[@id="sc_content"]//a/@data-sc-nav-key'))
+        self.assertIn('events', tree.xpath('//main[@id="pk_content"]//a/@data-pk-nav-key'))
 
     # -- UC-H8 -----------------------------------------------------------
     def test_digest_history_opens_the_list_page(self):

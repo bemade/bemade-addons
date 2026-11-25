@@ -16,10 +16,10 @@ Acceptance criteria:
   list is emptied — same markup on the player Documents tab and the injury
   card sheet (behaviour: tour ``sc_1018b_player_documents``).
 * C3 « Mon compte » like the rest of the app: no « Cancel » / « Save » in
-  the cards (``data-sc-account-save`` / ``data-sc-account-cancel`` gone),
-  each card has the usual « Done » (``data-sc-edit-done``) and its error box
-  (``data-sc-account-errors``); every field has a save-state holder next to
-  its label (``data-sc-account-state``) — each field autosaves on its own
+  the cards (``data-pk-account-save`` / ``data-pk-account-cancel`` gone),
+  each card has the usual « Done » (``data-pk-edit-done``) and its error box
+  (``data-pk-account-errors``); every field has a save-state holder next to
+  its label (``data-pk-account-state``) — each field autosaves on its own
   (behaviour: tour ``sc_1620_account``).
 * C4 Relaxed mandatory fields for app-shell users only: through the core
   ``/my/address/submit`` only the name and the email are required (street,
@@ -48,7 +48,8 @@ def _french(case, user):
     """fr_CA with this module's terms, on the website too (render tests)."""
     env = case.env
     lang = env['res.lang']._activate_lang('fr_CA')
-    env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+    # Task 5369: « Annuler » / « Terminé » are the kit's (pk_list_add_cancel, pk_edit_card_done).
+    env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
     if 'website' in env:
         env['website'].sudo().search([]).write({'language_ids': [Command.link(lang.id)]})
     user.sudo().lang = 'fr_CA'
@@ -63,7 +64,7 @@ class TestReturnPlaceholder1018c(AppShellCommon):
         self._switch(True)
 
     def _return(self, tree):
-        nodes = tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-section="player.return"]')
+        nodes = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-pk-section="player.return"]')
         self.assertEqual(len(nodes), 1)
         return nodes[0]
 
@@ -87,10 +88,10 @@ class TestReturnPlaceholder1018c(AppShellCommon):
                 empty = ret.xpath('.//*[@data-sc-return-empty]')
                 self.assertEqual(len(empty), 1, (login, vals))
                 self.assertEqual(empty[0].get('data-sc-return-empty'), kind)
-                self.assertIn('o_sc_muted', empty[0].get('class'))
+                self.assertIn('o_pk_muted', empty[0].get('class'))
                 self.assertEqual(_text(empty[0]), placeholder)
                 # No value line (and not the OTHER date).
-                self.assertFalse(ret.xpath('.//*[contains(@class, "o_sc_field_static")]'))
+                self.assertFalse(ret.xpath('.//*[contains(@class, "o_pk_field_static")]'))
                 self.assertNotIn('2029', _text(ret))
                 self.assertNotIn('2030', _text(ret))
 
@@ -103,7 +104,7 @@ class TestReturnPlaceholder1018c(AppShellCommon):
         self.assertFalse(ret.xpath('.//*[@data-sc-return-empty]'))
         self.assertIn('2030', _text(ret))
         # Coaches: no pencil on the header.
-        self.assertFalse(tree.xpath('//*[@data-sc-section="player.hero"]//button[@data-sc-edit-toggle]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="player.hero"]//button[@data-pk-edit-toggle]'))
 
     def test_placeholder_in_french(self):
         self._login_tp()
@@ -145,7 +146,7 @@ class TestDocPickerSharedGroup1018c(DocPicker1018bMixin, AppShellCommon):
 class Account1018cCommon(AccountShellCommon):
 
     def _card(self, tree, key):
-        cards = tree.xpath('//section[@data-sc-edit-card="%s"]' % key)
+        cards = tree.xpath('//section[@data-pk-edit-card="%s"]' % key)
         self.assertEqual(len(cards), 1, key)
         return cards[0]
 
@@ -171,19 +172,19 @@ class TestAccountAutosave1018c(Account1018cCommon):
     def test_cards_have_done_and_no_save_or_cancel(self):
         self._login_coach()
         _t, tree = self._get('/my/account')
-        self.assertFalse(tree.xpath('//*[@data-sc-account-save] | //*[@data-sc-account-cancel]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-account-save] | //*[@data-pk-account-cancel]'))
         for key, names in (('account-contact', {'name', 'email', 'phone'}),
                            ('account-address', {'street', 'street2', 'zip', 'city', 'country_id', 'state_id'})):
             card = self._card(tree, key)
-            edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
-            self.assertEqual(len(edit.xpath('.//button[@data-sc-edit-done]')), 1, key)
+            edit = card.xpath('.//*[@data-pk-edit-view="edit"]')[0]
+            self.assertEqual(len(edit.xpath('.//button[@data-pk-edit-done]')), 1, key)
             self.assertFalse(edit.xpath('.//button[@type="submit"]'), key)
-            self.assertTrue(edit.xpath('.//*[@data-sc-account-errors]'), key)
+            self.assertTrue(edit.xpath('.//*[@data-pk-account-errors]'), key)
             # One save-state holder per field, next to its label.
             for name in names:
                 field = edit.xpath('.//*[@name="%s"]' % name)[0]
-                box = field.xpath('ancestor::*[contains(@class, "o_sc_account_field")][1]')[0]
-                state = box.xpath('./label//*[@data-sc-account-state]')
+                box = field.xpath('ancestor::*[contains(@class, "o_pk_account_field")][1]')[0]
+                state = box.xpath('./label//*[@data-pk-account-state]')
                 self.assertEqual(len(state), 1, (key, name))
                 self.assertEqual(state[0].get('role'), 'status')
 
@@ -258,4 +259,4 @@ class TestAccountAutosave1018c(Account1018cCommon):
         _french(self, self.coach)
         text, tree = self._get('/my/account')
         card = self._card(tree, 'account-contact')
-        self.assertEqual(_text(card.xpath('.//button[@data-sc-edit-done]')[0]), 'Terminé')
+        self.assertEqual(_text(card.xpath('.//button[@data-pk-edit-done]')[0]), 'Terminé')

@@ -3,7 +3,7 @@ back (owner 2026-10-18). Synthetic fixtures only (this repository is public).
 
 ``/my/activities`` is a top-level page (logo, no back). Opened from the app
 bar clock (#1592) it shows the back arrow (phone AND laptop) to the page the
-user was on: ``sc_app_nav.js`` turns it into ``history.back()`` when the
+user was on: ``pk_app_nav.js`` turns it into ``history.back()`` when the
 previous entry of the tab is an in-app page; otherwise its href is the page
 the clock link was clicked on, passed along as ``sc_from``.
 
@@ -48,7 +48,7 @@ class Clock1622Common(Nav1579Common):
 
     def _clock_href(self, url):
         _text, tree = self._get(url)
-        bar = tree.xpath('//header[contains(@class, "o_sc_appbar")]//a[@data-sc-activity-clock-bar]')
+        bar = tree.xpath('//header[contains(@class, "o_pk_appbar")]//a[@data-sc-activity-clock-bar]')
         self.assertEqual(len(bar), 1, url)
         return bar[0].get('href')
 
@@ -88,14 +88,14 @@ class TestClockBack1622(Clock1622Common):
     def test_without_origin_stays_top_level(self):
         for url in ('/my/activities', CLOCK):
             _text, tree = self._get(url)
-            self.assertTrue(tree.xpath('//a[contains(@class, "o_sc_logo")]'), url)
+            self.assertTrue(tree.xpath('//a[contains(@class, "o_pk_logo")]'), url)
             back, crumbs, _current, _context = self._nav(url)
             self.assertEqual((back, crumbs), ([], []), url)
 
     # -- UC-C3 -----------------------------------------------------------
     def test_arrow_kept_across_tabs(self):
         _text, tree = self._get(CLOCK + '&sc_from=' + _q(self.player_url))
-        hrefs = tree.xpath('//a[@data-sc-tab]/@href')
+        hrefs = tree.xpath('//a[@data-pk-tab]/@href')
         self.assertTrue(hrefs)
         for href in hrefs:
             self.assertIn('sc_from=' + _q(self.player_url), href)

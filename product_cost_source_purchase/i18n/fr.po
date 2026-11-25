@@ -1,0 +1,50 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* product_cost_source_purchase
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-08 17:04+0000\n"
+"PO-Revision-Date: 2026-11-08 17:04+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: product_cost_source_purchase
+#: model:ir.model.fields,field_description:product_cost_source_purchase.field_product_product__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: product_cost_source_purchase
+#: model:ir.model.fields,field_description:product_cost_source_purchase.field_product_product__id
+msgid "ID"
+msgstr "ID"
+
+#. module: product_cost_source_purchase
+#. odoo-python
+#: code:addons/product_cost_source_purchase/models/product_product.py:0
+msgid "Indicative. Quoted %(price)s on %(name)s, not yet confirmed."
+msgstr "Indicatif. Coté à %(price)s sur %(name)s, pas encore confirmé."
+
+#. module: product_cost_source_purchase
+#. odoo-python
+#: code:addons/product_cost_source_purchase/models/product_product.py:0
+msgid "Price requested on %(name)s (%(date)s), no answer yet."
+msgstr "Prix demandé sur %(name)s (%(date)s), pas encore de réponse."
+
+#. module: product_cost_source_purchase
+#: model:ir.model,name:product_cost_source_purchase.model_product_product
+msgid "Product Variant"
+msgstr "Variante de produit"
+
+#. module: product_cost_source_purchase
+#. odoo-python
+#: code:addons/product_cost_source_purchase/models/product_product.py:0
+msgid "purchased on %(date)s (%(name)s)"
+msgstr "acheté le %(date)s (%(name)s)"

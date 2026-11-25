@@ -1,6 +1,6 @@
 /*
  * Task 1652 — a player card's red allergy / medical-alert pill opens the
- * player page's popup (inert outside .o_sc_app).
+ * player page's popup (inert outside .o_pk_app).
  *
  * button[data-sc-med-card-sheet] sits inside the card (often its link or its
  * <summary>): the tap opens the page-level sheet it names (sc_app_layout
@@ -13,7 +13,7 @@ document.addEventListener(
     "click",
     (ev) => {
         const pill = ev.target.closest && ev.target.closest("[data-sc-med-card-sheet]");
-        if (!pill || !pill.closest(".o_sc_app")) {
+        if (!pill || !pill.closest(".o_pk_app")) {
             return;
         }
         ev.preventDefault();

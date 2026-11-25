@@ -10,7 +10,7 @@ Acceptance criteria covered here:
 
 * UC-1 Read mode by default: the Info tab shows the Identity, Contact,
   Medical (therapists) and Teams cards; each card's edit view is hidden and
-  its read view shows the values (``data-sc-display`` hooks).
+  its read view shows the values (``data-pk-display`` hooks).
 * UC-2 Edit a card: the pencil toggles the card's edit view, « Done » hides
   it; a save answers a human ``display`` string (province name, formatted
   date) so the read view updates in place — no reload (browser half: the
@@ -58,7 +58,7 @@ from odoo.tools.misc import mute_logger
 
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
-SWITCH = 'bemade_sports_clinic.app_shell_enabled'
+SWITCH = 'bemade_portal_kit.enabled'
 
 
 class PlayerInlineCommon(AppShellCommon):
@@ -91,13 +91,13 @@ class PlayerInlineCommon(AppShellCommon):
 
     @staticmethod
     def _card(tree, key):
-        nodes = tree.xpath('//*[@data-sc-edit-card="%s"]' % key)
+        nodes = tree.xpath('//*[@data-pk-edit-card="%s"]' % key)
         return nodes[0] if nodes else None
 
     @staticmethod
     def _fields_in(node):
         return [props_field for props_field in node.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
 
 
 @tagged('post_install', '-at_install')
@@ -110,15 +110,15 @@ class TestPlayerInline(PlayerInlineCommon):
         for key in ('identity', 'contact', 'medical', 'teams'):
             card = self._card(tree, key)
             self.assertIsNotNone(card, key)
-            edit = card.xpath('.//*[@data-sc-edit-view="edit"]')
+            edit = card.xpath('.//*[@data-pk-edit-view="edit"]')
             self.assertEqual(len(edit), 1, key)
             self.assertEqual(edit[0].get('hidden'), 'hidden', key)
-            self.assertTrue(card.xpath('.//*[@data-sc-edit-view="read"]'), key)
-            self.assertTrue(card.xpath('.//button[@data-sc-edit-toggle]'), key)
+            self.assertTrue(card.xpath('.//*[@data-pk-edit-view="read"]'), key)
+            self.assertTrue(card.xpath('.//button[@data-pk-edit-toggle]'), key)
         # The status block was redundant with the hero and Overview (owner).
-        self.assertFalse(tree.xpath('//*[@data-sc-section="player.info.status"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="player.info.status"]'))
         identity = self._card(tree, 'identity')
-        position = identity.xpath('.//*[@data-sc-display="sports.patient:%s:position"]' % self.player.id)
+        position = identity.xpath('.//*[@data-pk-display="sports.patient:%s:position"]' % self.player.id)
         self.assertEqual(position[0].text_content().strip(), 'Linebacker')
 
     # -- UC-2 ------------------------------------------------------------
@@ -139,12 +139,12 @@ class TestPlayerInline(PlayerInlineCommon):
         self._login_coach()
         _text, tree = self._get(self._url())
         for key in ('identity', 'contact'):
-            self.assertTrue(self._card(tree, key).xpath('.//button[@data-sc-edit-toggle]'), key)
+            self.assertTrue(self._card(tree, key).xpath('.//button[@data-pk-edit-toggle]'), key)
         self.assertIsNone(self._card(tree, 'medical'))
         teams = self._card(tree, 'teams')
         self.assertIsNotNone(teams)
-        self.assertFalse(teams.xpath('.//button[@data-sc-edit-toggle]'))
-        self.assertFalse(teams.xpath('.//*[@data-sc-edit-view="edit"]'))
+        self.assertFalse(teams.xpath('.//button[@data-pk-edit-toggle]'))
+        self.assertFalse(teams.xpath('.//*[@data-pk-edit-view="edit"]'))
         with mute_logger('odoo.http'):
             for field, value in (('sc_team_ids', str(self.team_a.id)), ('medical_history_other', 'x')):
                 self.assertEqual(self._save(self.player, field, value).status_code, 403, field)
@@ -155,20 +155,20 @@ class TestPlayerInline(PlayerInlineCommon):
         # Owner review 2026-10-11: the status in the header, the training
         # recommendation on Info — both still live (no pencil).
         _text, tree = self._get(self._url(tab='info'))
-        panel = tree.xpath('//*[@data-sc-app-shell]')[0]
+        panel = tree.xpath('//*[@data-pk-app-shell]')[0]
         live = ' '.join(self._fields_in(panel))
         self.assertIn('"training_recommendation"', live)
-        # Task 1627: the status is the header's pill dropdowns (read view,
-        # outside the pencil), no autosave field.
+        # Task 1627: the status is the header's pill dropdowns (outside the
+        # pencil), no autosave field. Task 1753: outside the read view too.
         self.assertNotIn('"sc_status"', live)
-        self.assertEqual(len(panel.xpath('.//*[@data-sc-section="player.hero"]/*[@data-sc-edit-view="read"]'
-                                         '//*[@data-sc-pill-select][@data-sc-field="sc_status"]')), 2)
+        self.assertEqual(len(panel.xpath('.//*[@data-pk-section="player.hero"]/*[@data-pk-section="player.status"]'
+                                         '//*[@data-pk-pill-select][@data-pk-field="sc_status"]')), 2)
         # Review fixes 2026-10-18: the training recommendation behind the
         # HEADER's one pencil (its edit view), still an autosaving field.
         for node in panel.xpath('.//owl-component[contains(@props, \'"training_recommendation"\')]'):
-            self.assertEqual(node.xpath('ancestor::*[@data-sc-edit-card][1]/@data-sc-edit-card'),
+            self.assertEqual(node.xpath('ancestor::*[@data-pk-edit-card][1]/@data-pk-edit-card'),
                              ['player-header'])
-            self.assertTrue(node.xpath('ancestor::*[@data-sc-edit-view="edit"]'))
+            self.assertTrue(node.xpath('ancestor::*[@data-pk-edit-view="edit"]'))
 
     # -- UC-5 ------------------------------------------------------------
     def test_teams_checklist_only_touches_assignable_teams(self):
@@ -198,8 +198,8 @@ class TestPlayerInline(PlayerInlineCommon):
         self._login_tp()
         _text, tree = self._get(self._url())
         key = 'sports.patient:%s' % self.player.id
-        self.assertTrue(tree.xpath('//h1[@data-sc-fragment="%s:appbar"]' % key))
-        self.assertTrue(tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-fragment="%s:hero-head"]' % key))
+        self.assertTrue(tree.xpath('//h1[@data-pk-fragment="%s:appbar"]' % key))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-pk-fragment="%s:hero-head"]' % key))
         resp = self._save(self.player, 'jersey_number', '7')
         self.assertEqual(resp.status_code, 200, resp.text)
         self.assertNotIn('heading', resp.json())
@@ -231,7 +231,7 @@ class TestPlayerInline(PlayerInlineCommon):
     def test_contacts_inline(self):
         self._login_tp()
         _text, tree = self._get(self._url(tab='info'))
-        card = tree.xpath('//*[@data-sc-edit-card="contact-%s"]' % self.contact.id)
+        card = tree.xpath('//*[@data-pk-edit-card="contact-%s"]' % self.contact.id)
         self.assertEqual(len(card), 1)
         props = ' '.join(self._fields_in(card[0]))
         for field in ('"name"', '"contact_type"', '"mobile"', '"email"'):
@@ -268,17 +268,17 @@ class TestPlayerInline(PlayerInlineCommon):
         for url in (self._url(tab='activities'),
                     '/my/team?team_id=%s&tab=activities' % self.team_a.id):
             _text, tree = self._get(url)
-            panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
-            add = panel.xpath('.//details[@data-sc-section="activity.add"]//form')
+            panel = tree.xpath('//section[@data-pk-tab-panel="activities"]')[0]
+            add = panel.xpath('.//details[@data-pk-section="activity.add"]//form')
             self.assertEqual(len(add), 1, url)
             self.assertEqual(add[0].get('action'), '/my/activity/save', url)
-            self.assertFalse(panel.xpath('.//*[@data-sc-sheet-open="sc_activity_add_sheet"]'), url)
+            self.assertFalse(panel.xpath('.//*[@data-pk-sheet-open="sc_activity_add_sheet"]'), url)
             self.assertFalse(tree.xpath('//dialog[@id="sc_activity_add_sheet"]'), url)
             rows = panel.xpath('.//*[@data-sc-activity-row]')
             self.assertTrue(rows, url)
             for row in rows:
-                self.assertIn('o_sc_card', row.get('class').split(), url)
-                self.assertTrue(row.xpath('.//*[contains(@class, "o_sc_card_actions")]'
+                self.assertIn('o_pk_card', row.get('class').split(), url)
+                self.assertTrue(row.xpath('.//*[contains(@class, "o_pk_card_actions")]'
                                           '//button[@data-sc-action="activity.complete"]'), url)
 
     # -- UC-10 -----------------------------------------------------------
@@ -286,9 +286,9 @@ class TestPlayerInline(PlayerInlineCommon):
         for login in (self._login_tp, self._login_coach):
             login()
             _text, tree = self._get(self._url(tab='injuries', team_id=self.team_a.id))
-            self.assertFalse(tree.xpath('//header//*[@data-sc-action="injury.new"]'))
-            panel = tree.xpath('//section[@data-sc-tab-panel="injuries"]')[0]
-            card = panel.xpath('.//details[@id="sc_new_injury"][@data-sc-section="injury.new"]')
+            self.assertFalse(tree.xpath('//header//*[@data-pk-action="injury.new"]'))
+            panel = tree.xpath('//section[@data-pk-tab-panel="injuries"]')[0]
+            card = panel.xpath('.//details[@id="sc_new_injury"][@data-pk-section="injury.new"]')
             self.assertEqual(len(card), 1)
             form = card[0].xpath('.//form[@data-sc-form="injury.quick"]')[0]
             self.assertEqual(form.get('action'), '/my/patient/injury/create')
@@ -303,12 +303,12 @@ class TestPlayerInline(PlayerInlineCommon):
         self._login_coach()
         _text, tree = self._get(self._url(tab='info'))
         # Owner review 2026-10-11: the contacts are on the Info tab.
-        self.assertNotIn('contacts', tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'))
+        self.assertNotIn('contacts', tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'))
         for contact in (self.contact, second):
-            card = tree.xpath('//*[@data-sc-edit-card="contact-%s"]' % contact.id)
+            card = tree.xpath('//*[@data-pk-edit-card="contact-%s"]' % contact.id)
             self.assertEqual(len(card), 1, contact.name)
             self.assertIn('"sports.patient.contact"', ' '.join(self._fields_in(card[0])))
-            self.assertFalse(card[0].xpath('.//*[@data-sc-action="contact.delete"]'))
+            self.assertFalse(card[0].xpath('.//*[@data-pk-action="contact.delete"]'))
         self.assertTrue(tree.xpath('//form[@data-sc-form="contact.add"]'))
         resp = self._save(second, 'mobile', '514-555-0199')  # task 1645: a valid number
         self.assertEqual(resp.status_code, 200, resp.text)

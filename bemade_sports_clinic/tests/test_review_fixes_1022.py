@@ -81,8 +81,9 @@ class TestPlayerAddRefusals1022(_PanelMixin, PlayerAdd1655Common):
             self.assertEqual([_text(r) for r in reason],
                              ['Complete: first name, last name, date of birth'], url)
             strings = panel.xpath('.//*[@data-sc-player-add-reasons]')[0]
+            # Task 1716: a twin is a warning (« Create anyway »).
             self.assertEqual(strings.get('data-exact'),
-                             'This player already exists — open them or add them to the team above')
+                             'This player already exists — add them to the team or choose « Create anyway » above')
             self.assertEqual(strings.get('data-ec'),
                              'Emergency contact: name and mobile are required together')
 
@@ -102,7 +103,8 @@ class TestPlayerAddRefusals1022(_PanelMixin, PlayerAdd1655Common):
         self._login_cadmin()
         resp = self._xhr_create(first_name=' pat ', last_name='ONE', date_of_birth='2009-04-05')
         self.assertEqual(resp.status_code, 400, resp.text[:200])
-        self.assertEqual(resp.json()['message'], 'Another player already has this name and date of birth.')
+        # Task 1716: the create's twin warning names the team(s).
+        self.assertEqual(resp.json()['message'], 'A player with this name and date of birth already exists (PC Team A).')
         self.assertEqual(resp.json()['field'], '')
         self.assertEqual(self.env['sports.patient'].with_context(active_test=False).search_count(
             [('last_name', 'ilike', 'one'), ('first_name', 'ilike', 'pat')]), 1)
@@ -143,7 +145,8 @@ class TestPlayerAddRefusals1022(_PanelMixin, PlayerAdd1655Common):
         self.assertEqual(panel.xpath('.//input[@name="last_name"]/@value'), ['One'])
         box = panel.xpath('.//*[@data-sc-player-add-error]')[0]
         self.assertIsNone(box.get('hidden'))
-        self.assertEqual(_text(box), 'Another player already has this name and date of birth.')
+        # Task 1716: the create's twin warning names the team(s).
+        self.assertEqual(_text(box), 'A player with this name and date of birth already exists (PC Team A).')
 
     # -- BW-1 --------------------------------------------------------------
     def test_backend_form_warns_but_saves(self):
@@ -221,8 +224,9 @@ class TestReviewFixesI18n1022(i18n_1538.TestAppShellI18n1538):
         reason = tree.xpath('//*[@data-sc-player-add-reason]')[0]
         self.assertEqual(_text(reason), 'Complétez : prénom, nom, date de naissance')
         strings = tree.xpath('//*[@data-sc-player-add-reasons]')[0]
+        # Task 1716: a twin is a warning (« Créer quand même »).
         self.assertEqual(strings.get('data-exact'),
-                         "Ce joueur existe déjà — ouvrez-le ou ajoutez-le à l'équipe ci-dessus")
+                         "Ce joueur existe déjà — ajoutez-le à l'équipe ou choisissez « Créer quand même » ci-dessus")
         self.assertEqual(strings.get('data-ec'), "Contact d'urgence : nom et cellulaire requis ensemble")
         # The backend duplicate warning.
         self.player.sudo().write({'date_of_birth': '2009-04-05'})

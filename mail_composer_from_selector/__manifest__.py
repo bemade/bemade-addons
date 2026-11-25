@@ -3,7 +3,7 @@
 {
     "name": "Mail Composer From Address Selector",
     "summary": "Allow users to select from authorized email addresses when composing emails",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.2",
     "category": "Social",
     "author": "Bemade Inc. (Marc Durepos <marc@bemade.org>)",
     "license": "LGPL-3",

@@ -81,13 +81,12 @@ class TestPlayerAddInline1655(PlayerAdd1655Common):
         # row (test_adversarial_review_1022 AR-S2).
         self.assertEqual(row.xpath('.//*[@data-sc-check-dob]//text()')[-1].strip(), '02/03/2010')
         self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['0'])
-        # DOB refines + the exact twin — in the user's own teams only:
-        # Élodie (PC Team B) is outside them, so her date of birth never
-        # changes the answer, only a generic line (adversarial review
-        # 2026-10-22, test_adversarial_review_1022).
+        # DOB refines + the exact twin. Task 1716 (DOB-oracle concern
+        # waived): also for Élodie (PC Team B, outside the user's teams) —
+        # was « never exact, a generic line » (adversarial review 2026-10-22).
         resp, tree = self._check(first='Élodie', last='Synthé-Côté', dob='2010-02-03')
-        self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['0'])
-        self.assertTrue(tree.xpath('//*[@data-sc-check-twin-elsewhere]'))
+        self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['1'])
+        self.assertFalse(tree.xpath('//*[@data-sc-check-twin-elsewhere]'))
         self.assertNotIn(self.archived.id, [int(li.get('data-sc-check-player'))
                                             for li in tree.xpath('//li[@data-sc-check-player]')])
         # On the team.
@@ -117,8 +116,8 @@ class TestPlayerAddInline1655(PlayerAdd1655Common):
         self.assertIn('tab=info', location)
         self.assertIn('created_player=%s' % player.id, location)
         tree = lxml_html.fromstring(self.url_open(location).text)
-        self.assertEqual(tree.xpath('//*[@data-sc-edit-card="identity"]/@data-sc-edit-open-on-load'), ['1'])
-        undo = tree.xpath('//form[@data-sc-form="player.undo"]/@action')
+        self.assertEqual(tree.xpath('//*[@data-pk-edit-card="identity"]/@data-pk-edit-open-on-load'), ['1'])
+        undo = tree.xpath('//form[@data-pk-undo-offer="player"]/@action')
         self.assertEqual(undo, ['/my/player/%s/undo-create' % player.id])
         resp = self.url_open(undo[0], data={'csrf_token': self._csrf(), 'return_url': '/my/players'},
                              allow_redirects=False)
@@ -173,7 +172,7 @@ class TestPlayerAddInline1655(PlayerAdd1655Common):
         # The TP's only team pre-filled.
         self.assertEqual(panel[0].xpath('.//input[@name="team_ids"]/@value'), [str(self.team_a.id)])
         _text, tree = self._get('/my/team?team_id=%s&tab=players' % self.team_a.id)
-        panel = tree.xpath('//details[@id="sc_add_player"][@data-sc-section="team.add_player"][contains(@class, "o_sc_player_add")]')
+        panel = tree.xpath('//details[@id="sc_add_player"][@data-pk-section="team.add_player"][contains(@class, "o_sc_player_add")]')
         self.assertEqual(len(panel), 1)
         self.assertEqual(panel[0].xpath('.//input[@name="team_ids"]/@value'), [str(self.team_a.id)])
         self.assertEqual(panel[0].xpath('.//input[@name="context_team_id"]/@value'), [str(self.team_a.id)])

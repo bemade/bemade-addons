@@ -1,0 +1,48 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* fsm_product_category_flag
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 18:33+0000\n"
+"PO-Revision-Date: 2026-11-19 18:33+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: fsm_product_category_flag
+#: model:ir.model.fields,field_description:fsm_product_category_flag.field_product_category__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: fsm_product_category_flag
+#: model:ir.model.fields,field_description:fsm_product_category_flag.field_product_category__is_fsm_product
+msgid "FSM Product"
+msgstr "Article FSM"
+
+#. module: fsm_product_category_flag
+#: model:ir.model.fields,field_description:fsm_product_category_flag.field_product_category__id
+msgid "ID"
+msgstr "ID"
+
+#. module: fsm_product_category_flag
+#: model:ir.model.fields,help:fsm_product_category_flag.field_product_category__is_fsm_product
+msgid ""
+"If enabled, products in this category are considered FSM products and their "
+"sales order lines are included in FSM-related revenue calculations such as "
+"FSM job profitability."
+msgstr ""
+"Si activé, les articles de cette catégorie sont considérés comme des "
+"articles FSM et leurs lignes de commande sont incluses dans les calculs de "
+"revenus FSM, comme la rentabilité des travaux FSM."
+
+#. module: fsm_product_category_flag
+#: model:ir.model,name:fsm_product_category_flag.model_product_category
+msgid "Product Category"
+msgstr "Catégorie de produits"

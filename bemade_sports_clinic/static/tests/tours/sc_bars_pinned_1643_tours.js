@@ -58,14 +58,14 @@ tours.add("sc_1643_bars_pinned", {
     steps: () => [
         {
             content: "Make the page long, scroll the WINDOW, the bars stay put",
-            trigger: ".o_sc_app .o_sc_appbar",
+            trigger: ".o_pk_app .o_pk_appbar",
             async run() {
-                const bar = document.querySelector(".o_sc_appbar");
-                const tabs = document.querySelector(".o_sc_tabs");
+                const bar = document.querySelector(".o_pk_appbar");
+                const tabs = document.querySelector(".o_pk_tabs");
                 assert(tabs && tabs.getClientRects().length, "no bottom tabs at phone width");
                 const bad = [...offenders(bar), ...offenders(tabs)];
                 assert(!bad.length, `ancestors break sticky / fixed: ${[...new Set(bad)].join("; ")}`);
-                const content = document.querySelector(".o_sc_content");
+                const content = document.querySelector(".o_pk_content");
                 content.style.paddingBottom = "4000px";
                 await sleep(50);
                 window.scrollTo(0, 600);
@@ -99,13 +99,13 @@ tours.add("sc_1643_ribbon", {
     steps: () => [
         {
             content: "The banner is pinned at the bottom, the tabs sit right above it",
-            trigger: ".o_sc_app .o_sc_tabs",
+            trigger: ".o_pk_app .o_pk_tabs",
             async run() {
                 const banner = document.getElementById("oe_neutralize_banner");
                 assert(banner, "no neutralize banner rendered");
                 await sleep(100);
                 const b = banner.getBoundingClientRect();
-                const t = document.querySelector(".o_sc_tabs").getBoundingClientRect();
+                const t = document.querySelector(".o_pk_tabs").getBoundingClientRect();
                 assert(b.height > 0 && Math.abs(b.bottom - window.innerHeight) <= 1,
                     `the banner is not at the bottom: ${b.top}-${b.bottom} / ${window.innerHeight}`);
                 assert(t.bottom <= b.top + 1, `the banner covers the tabs: tabs ${t.top}-${t.bottom}, banner ${b.top}`);

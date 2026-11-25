@@ -1,0 +1,12 @@
+{
+  "stepsFile": "../../static/tests/tours/link_existing_document_product.steps.js",
+  "startPath": "/odoo/action-product.product_template_action_all",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "voice": "fr_FR-siwis-medium",
+  "lang": "fr_CA",
+  "title": "Lier un document existant à une fiche produit",
+  "introNarration": "Dans cette vidéo, vous verrez comment lier un document déjà présent dans Documents à une fiche produit, sans le téléverser de nouveau.",
+  "outroTitle": "C'est fait",
+  "outroNarration": "Le document est maintenant visible sur la fiche produit, dans ses pièces jointes et dans son bouton Documents. Le même document peut être lié à plusieurs fiches, et le retirer d'une fiche ne l'enlève pas des autres."
+}

@@ -33,7 +33,7 @@ class _Tour1540Common(Clinic1540Common):
     def setUpClass(cls):
         super().setUpClass()
         cls.env['ir.config_parameter'].sudo().set_param(
-            'bemade_sports_clinic.app_shell_enabled', 'True')
+            'bemade_portal_kit.enabled', 'True')
         now = fields.Datetime.now().replace(hour=15, minute=0, second=0, microsecond=0)
         cls.cal_event = cls.env['sports.event'].create({
             'name': 'SC 1540 Calendar Game', 'event_type': 'game',

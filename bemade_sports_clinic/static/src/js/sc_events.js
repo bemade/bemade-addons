@@ -1,17 +1,17 @@
 /*
  * Task 1540 (epic #1535, P3) — event form behaviours of the app shell
- * (progressive enhancement; inert outside .o_sc_app). Replaces, in the
+ * (progressive enhancement; inert outside .o_pk_app). Replaces, in the
  * shell only, the legacy create / edit pages' inline scripts:
  *
  * - task 1608: teams and assigned staff are form-mode tags fields
- *   (sc_autosave_field) writing the CSV hidden inputs the routes accept
+ *   (the kit's autosave field) writing the CSV hidden inputs the routes accept
  *   (team_ids, assigned_staff_ids) — the organization select narrows the
  *   teams through the field's ``groupSelect`` (task 1597);
- * - « Nouveau lieu »: the venue sheet's form posts through scFetch to the
+ * - « Nouveau lieu »: the venue sheet's form posts through pkFetch to the
  *   CSRF-checked /my/venue/create (JSON answer); the created venue is added
  *   to the venue select and selected, the sheet closes; on the event page
  *   (task 1612) the same request also sets it on the event — task 1611: the
- *   page then shows it in place (an « sc:saved » of the venue), no reload;
+ *   page then shows it in place (an « pk:saved » of the venue), no reload;
  * - task 1608: the coverage times follow the event times exactly as in the
  *   legacy portal: an empty start opens on « now » (create); a new start
  *   sets the coverage start to it, the end to start + 2 h and the coverage
@@ -20,10 +20,10 @@
  *   2026-10-14): left (blur), Enter, or picked — never while typing.
  */
 import { _t } from "@web/core/l10n/translation";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 
 function inShell(el) {
-    return Boolean(el && el.closest && el.closest(".o_sc_app"));
+    return Boolean(el && el.closest && el.closest(".o_pk_app"));
 }
 
 // ------------------------------------------------- task 1608: coverage snapping
@@ -181,7 +181,7 @@ async function createVenue(form) {
         error.hidden = true;
     }
     try {
-        const result = await scFetch(form.action, { method: "POST", data, toast: false });
+        const result = await pkFetch(form.action, { method: "POST", data, toast: false });
         if (!result || !result.success) {
             throw new Error((result && result.error) || "");
         }
@@ -193,7 +193,7 @@ async function createVenue(form) {
             const recordId = Number(form.dataset.scVenueEvent);
             const shown = { value: result.id, display: result.name, options: result.venue_options };
             document.dispatchEvent(
-                new CustomEvent("sc:saved", {
+                new CustomEvent("pk:saved", {
                     detail: {
                         model: "sports.event",
                         recordId,
@@ -224,6 +224,8 @@ async function createVenue(form) {
             option.textContent = result.name;
             select.appendChild(option);
             select.value = String(result.id);
+            // Task 1722: the picker's box follows the new venue.
+            select.dispatchEvent(new Event("change", { bubbles: true }));
         }
         form.reset();
         const dialog = form.closest("dialog");
@@ -252,7 +254,7 @@ document.addEventListener("submit", (ev) => {
 // Task 1612: keep the event page's venue sheet in step with the card's
 // autosaves (a sibling field moves the write date; a venue pick changes the
 // venue the sheet will be compared against).
-document.addEventListener("sc:saved", (ev) => {
+document.addEventListener("pk:saved", (ev) => {
     const detail = ev.detail || {};
     if (detail.model !== "sports.event" || !detail.result) {
         return;

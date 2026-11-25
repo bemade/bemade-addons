@@ -1,0 +1,97 @@
+unit;key;prompt;options;hint;answer;figure
+Figures planes et polygones;fp-01;Cette ligne est…;*une ligne brisée ouverte|une ligne brisée fermée|une ligne courbe;;;open pts=0,0/1,1.2/2,0/3,1.2 s=.8
+Figures planes et polygones;fp-02;Cette ligne est…;*une ligne courbe|une ligne brisée|un segment;;;curve kind=open
+Figures planes et polygones;fp-03;Cette figure est-elle un polygone ?;*Oui, une ligne brisée fermée|Non, elle n'est pas fermée|Non, elle a un côté courbe;;;regular n=5 rot=12 s=.8
+Figures planes et polygones;fp-04;Cette figure est-elle un polygone ?;*Non, elle est faite d'une ligne courbe|Oui, elle est fermée|Oui, elle n'a pas de sommet;;;curve kind=closed
+Figures planes et polygones;fp-05;Cette figure est-elle un polygone ?;*Non, un de ses côtés est courbe|Oui, elle est fermée|Oui, elle a 2 côtés;;;semidisk rot=20 s=.85
+Figures planes et polygones;fp-06;Cette figure est-elle un polygone ?;*Non, la ligne n'est pas fermée|Oui, elle a seulement des segments|Oui, elle a 4 sommets;;;open pts=0,0/1.5,1.4/3,0/2.2,-0.8 s=.9 rot=15
+Figures planes et polygones;fp-07;Combien de côtés a ce polygone ?;;;5;poly pts=0,0/2,0/2,1.4/1,2.3/0,1.4
+Figures planes et polygones;fp-08;Combien de sommets a ce polygone ?;;;6;regular n=6 rot=15 s=.7
+Figures planes et polygones;fp-09;Combien de côtés a ce polygone ?;;;6;poly pts=0,0/3,0/3,1/1,1/1,2.5/0,2.5 rot=90 s=.8
+Figures planes et polygones;fp-10;Ce polygone est…;*non convexe|convexe;;;poly pts=0,0/3,0/3,1/1,1/1,2.5/0,2.5
+Figures planes et polygones;fp-11;Ce polygone est…;*convexe|non convexe;;;regular n=6 s=.9
+Figures planes et polygones;fp-12;Ce polygone est…;*non convexe|convexe;;;poly pts=0,0/1.5,0.8/3,0/1.5,2.4 rot=180 s=.8
+Figures planes et polygones;fp-13;Quel est ce polygone ?;*un octogone|un hexagone|un pentagone;;;regular n=8 rot=10 s=.75
+Figures planes et polygones;fp-14;Quel est ce polygone ?;*un pentagone|un hexagone|un quadrilatère;;;poly pts=0,0/2,0/2,1.4/1,2.3/0,1.4 rot=160 s=.7
+Figures planes et polygones;fp-15;Quel est ce polygone ?;*un quadrilatère|un pentagone|un triangle;;;poly pts=0,0/3,0.5/2.4,2/0.3,1.6 rot=-20
+Figures planes et polygones;fp-16;Un polygone qui a 6 côtés s'appelle…;*un hexagone|un pentagone|un octogone;;;
+Les triangles;tr-01;Quel est ce triangle ?;*équilatéral|scalène|rectangle;;;tri kind=equilateral s=.8
+Les triangles;tr-02;Quel est ce triangle ?;*isocèle|équilatéral|scalène;;;tri kind=isosceles rot=20
+Les triangles;tr-03;Quel est ce triangle ?;*scalène|isocèle|équilatéral;Aucun petit trait : aucun côté n'est égal à un autre.;;tri kind=scalene
+Les triangles;tr-04;Quel est ce triangle ?;*rectangle|équilatéral|isocèle;;;tri kind=right rot=-15
+Les triangles;tr-05;Quel est ce triangle ?;*équilatéral|scalène|rectangle;;;tri kind=equilateral rot=180 s=.6
+Les triangles;tr-06;Quel est ce triangle ?;*isocèle|scalène|équilatéral;;;tri kind=isosceles-obtuse rot=200 s=.9
+Les triangles;tr-07;Quel est ce triangle ?;*scalène|isocèle|équilatéral;Aucun petit trait : aucun côté n'est égal à un autre.;;tri kind=obtuse rot=30
+Les triangles;tr-08;Ce triangle est…;*rectangle et isocèle|rectangle et scalène|équilatéral;;;tri kind=right-isosceles rot=45
+Les triangles;tr-09;Quel est ce triangle ?;*rectangle|isocèle|équilatéral;;;tri kind=right rot=160 s=.7
+Les triangles;tr-10;Un triangle qui a 3 côtés égaux est…;*équilatéral|scalène|rectangle;;;
+Les triangles;tr-11;Un triangle qui a exactement 2 côtés égaux est…;*isocèle|équilatéral|scalène;;;
+Les triangles;tr-12;Un triangle qui n'a aucun côté égal est…;*scalène|isocèle|équilatéral;;;
+Les triangles;tr-13;Un triangle équilatéral a aussi…;*3 angles égaux|un angle droit|aucun angle égal;Dans un triangle équilatéral, les 3 côtés sont égaux et les 3 angles aussi.;;
+Les triangles;tr-14;Un triangle rectangle a…;*un angle droit|3 angles droits|2 angles droits;;;
+Les triangles;tr-15;Un triangle peut-il être à la fois rectangle et isocèle ?;*Oui|Non;Un angle droit et 2 côtés égaux, c'est possible : c'est un triangle rectangle isocèle.;;
+Les triangles;tr-16;Un triangle peut-il avoir 2 angles droits ?;*Non|Oui;Avec 2 angles droits, les deux côtés ne se rejoindraient jamais.;;
+Les quadrilatères;q-01;Quel est le nom le plus précis de ce quadrilatère ?;*carré|rectangle|losange;;;quad kind=square s=.8
+Les quadrilatères;q-02;Quel est le nom le plus précis de ce quadrilatère ?;*rectangle|carré|parallélogramme;;;quad kind=rectangle rot=10
+Les quadrilatères;q-03;Quel est le nom le plus précis de ce quadrilatère ?;*carré|losange|rectangle;Un carré penché reste un carré : 4 côtés égaux et 4 angles droits.;;quad kind=square rot=45 s=.7
+Les quadrilatères;q-04;Quel est le nom le plus précis de ce quadrilatère ?;*losange|carré|rectangle;;;quad kind=rhombus rot=-10
+Les quadrilatères;q-05;Quel est le nom le plus précis de ce quadrilatère ?;*parallélogramme|rectangle|losange;;;quad kind=parallelogram
+Les quadrilatères;q-06;Quel est le nom le plus précis de ce quadrilatère ?;*trapèze|parallélogramme|rectangle;;;quad kind=trapezoid rot=180 s=.8
+Les quadrilatères;q-07;Quel est le nom le plus précis de ce quadrilatère ?;*trapèze|rectangle|carré;;;quad kind=right-trapezoid rot=90
+Les quadrilatères;q-08;Quel est le nom le plus précis de ce quadrilatère ?;*losange|parallélogramme|carré;;;quad kind=rhombus rot=60 s=.7
+Les quadrilatères;q-09;Quel est le nom le plus précis de ce quadrilatère ?;*quadrilatère (aucun autre nom)|trapèze|parallélogramme;Aucune marque : pas de côtés parallèles, pas de côtés égaux, pas d'angle droit.;;quad kind=any s=.8
+Les quadrilatères;q-10;Quel est le nom le plus précis de ce quadrilatère ?;*rectangle|carré|losange;;;quad kind=rectangle rot=90 s=.6
+Les quadrilatères;q-11;Quel quadrilatère a toujours 4 côtés égaux et 4 angles droits ?;*le carré|le losange|le parallélogramme;;;
+Les quadrilatères;q-12;Quel quadrilatère a toujours 4 angles droits ?;*le rectangle|le losange|le trapèze;;;
+Les quadrilatères;q-13;Quel quadrilatère a toujours 4 côtés égaux ?;*le losange|le rectangle|le trapèze;;;
+Les quadrilatères;q-14;Un carré est aussi…;*un rectangle et un losange|un trapèze seulement|un triangle;Le carré a 4 angles droits (comme le rectangle) et 4 côtés égaux (comme le losange).;;
+Les quadrilatères;q-15;Un rectangle est-il toujours un carré ?;*Non|Oui;Un rectangle a 4 angles droits, mais ses côtés ne sont pas toujours égaux.;;
+Les quadrilatères;q-16;Combien de paires de côtés parallèles a un parallélogramme ?;;Un parallélogramme : ses côtés opposés sont parallèles, 2 paires.;2;
+Le cercle;c-01;Comment s'appelle la partie en orange ?;*le centre|le rayon|le disque;;;circle mark=center
+Le cercle;c-02;Comment s'appelle la partie en orange ?;*le rayon|le diamètre|le centre;;;circle mark=radius rot=20
+Le cercle;c-03;Comment s'appelle la partie en orange ?;*le diamètre|le rayon|la circonférence;;;circle mark=diameter rot=-10
+Le cercle;c-04;Comment s'appelle la partie en orange ?;*la circonférence|le disque|le diamètre;;;circle mark=circumference s=.8
+Le cercle;c-05;Comment s'appelle la partie en orange ?;*le disque|la circonférence|le centre;;;circle mark=disk s=.7
+Le cercle;c-06;Comment s'appelle la partie en orange ?;*le rayon|le diamètre|la circonférence;;;circle mark=radius rot=200 s=.7
+Le cercle;c-07;Comment s'appelle la partie en orange ?;*le diamètre|le rayon|le disque;;;circle mark=diameter rot=80 s=.85
+Le cercle;c-08;Comment s'appelle la partie en orange ?;*un angle au centre|le rayon|le diamètre;;;circle mark=angle rot=30
+Le cercle;c-09;Le rayon mesure 7 cm. Le diamètre mesure ___ cm.;;;14;circle mark=radius rot=25 label=7_cm
+Le cercle;c-10;Le rayon mesure 5 cm. Le diamètre mesure ___ cm.;;;10;
+Le cercle;c-11;Le diamètre mesure 12 cm. Le rayon mesure ___ cm.;;;6;circle mark=diameter rot=15 label=12_cm s=.8
+Le cercle;c-12;Le diamètre mesure 30 m. Le rayon mesure ___ m.;;;15;
+Le cercle;c-13;Le rayon mesure 9 mm. Le diamètre mesure ___ mm.;;;18;
+Le cercle;c-14;Le diamètre d'un cercle mesure…;*2 fois le rayon|la moitié du rayon|3 fois le rayon;;;
+Le cercle;c-15;Un cercle, c'est…;*seulement la ligne (le contour)|la ligne et toute la surface à l'intérieur|un segment qui passe par le centre;"Le cercle est la ligne ; la surface à l'intérieur, c'est le disque.";;
+Le cercle;c-16;Tous les rayons d'un même cercle ont…;*la même longueur|des longueurs différentes;;;
+Les angles et les droites;a-01;Cet angle est…;*droit|aigu|obtus;;;angle deg=90
+Les angles et les droites;a-02;Cet angle est…;*aigu|droit|obtus;;;angle deg=40 rot=10
+Les angles et les droites;a-03;Cet angle est…;*obtus|aigu|droit;;;angle deg=130 rot=20
+Les angles et les droites;a-04;Cet angle est…;*droit|obtus|aigu;;;angle deg=90 rot=135 s=.7
+Les angles et les droites;a-05;Cet angle est…;*aigu|obtus|droit;;;angle deg=60 rot=200 s=.8
+Les angles et les droites;a-06;Cet angle est…;*obtus|droit|aigu;;;angle deg=150 rot=250
+Les angles et les droites;a-07;Cet angle est…;*obtus|aigu|droit;;;angle deg=110 rot=60 s=.7
+Les angles et les droites;a-08;Cet angle est…;*aigu|droit|obtus;;;angle deg=25 rot=100
+Les angles et les droites;a-09;Ces deux droites sont…;*parallèles|perpendiculaires;;;lines kind=parallel rot=15
+Les angles et les droites;a-10;Ces deux droites sont…;*perpendiculaires|parallèles;;;lines kind=perpendicular rot=30
+Les angles et les droites;a-11;Ces deux droites sont…;*parallèles|perpendiculaires;;;lines kind=parallel rot=100 s=.7
+Les angles et les droites;a-12;Ces deux droites sont…;*perpendiculaires|parallèles;;;lines kind=perpendicular s=.8
+Les angles et les droites;a-13;Ces droites sont-elles perpendiculaires ?;*Non, elles se croisent sans angle droit|Oui, elles se croisent à angle droit|Non, elles sont parallèles;;;lines kind=secant deg=60 rot=10
+Les angles et les droites;a-14;Le symbole // veut dire…;*parallèles|perpendiculaires;;;
+Les angles et les droites;a-15;Le symbole ⊥ veut dire…;*perpendiculaires|parallèles;;;
+Les angles et les droites;a-16;Deux droites perpendiculaires forment…;*4 angles droits|4 angles aigus|2 angles obtus;;;
+Les solides;s-01;Quel est ce solide ?;*un cube|une pyramide|un cylindre;;;solid kind=cube
+Les solides;s-02;Quel est ce solide ?;*un cylindre|un cône|une boule;;;solid kind=cylinder s=.8
+Les solides;s-03;Quel est ce solide ?;*un cône|un cylindre|une pyramide;;;solid kind=cone s=.9
+Les solides;s-04;Quel est ce solide ?;*une boule|un cylindre|un cône;;;solid kind=sphere s=.7
+Les solides;s-05;Quel est ce solide ?;*une pyramide|un prisme|un cube;;;solid kind=pyramid4 view=left
+Les solides;s-06;Quel est ce solide ?;*un prisme|une pyramide|un cône;;;solid kind=prism3
+Les solides;s-07;Quel est ce solide ?;*un prisme|une pyramide|un cylindre;;;solid kind=box view=left s=.8
+Les solides;s-08;Un cube a ___ arêtes.;;;12;solid kind=cube view=left s=.7
+Les solides;s-09;Combien de faces a ce solide ?;;;5;solid kind=pyramid4
+Les solides;s-10;Combien de sommets a ce solide ?;;;6;solid kind=prism3 view=left
+Les solides;s-11;Combien d'arêtes a ce solide ?;;;6;solid kind=pyramid3
+Les solides;s-12;Un cube a ___ faces.;;;6;
+Les solides;s-13;Combien de sommets a ce solide ?;;;8;solid kind=box s=.9
+Les solides;s-14;Lequel de ces solides a une surface courbe ?;*le cylindre|le cube|la pyramide;;;
+Les solides;s-15;Une pyramide a…;*une seule base|deux bases|aucune base;;;
+Les solides;s-16;Un prisme a…;*deux bases pareilles|une seule base|aucune face plane;;;solid kind=prism6 s=.75

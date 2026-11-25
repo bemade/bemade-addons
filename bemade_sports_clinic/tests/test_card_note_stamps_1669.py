@@ -7,8 +7,8 @@ Acceptance criteria:
 * AC-1 The shared player-card detail head (recent-changes detail, row
   detail) has no « Last consultation » line; the player file's Infos still
   shows it.
-* AC-2 The injury card's Notes read view (``data-sc-edit-view="read"``)
-  carries, under each note, its stamp as an ``o_sc_meta`` line
+* AC-2 The injury card's Notes read view (``data-pk-edit-view="read"``)
+  carries, under each note, its stamp as an ``o_pk_meta`` line
   (``data-sc-note-stamp="external" / "internal"``): a therapist sees both,
   a coach only the external one, nobody sees one when the note has no
   history.
@@ -48,7 +48,7 @@ class Stamps1669Common(AppShellCommon):
     def _notes_read(self, tree, injury=None):
         injury = injury or self.injury
         # Task 1675: the Notes section holds one card per note.
-        nodes = tree.xpath('//details[@id="injury-%s"]//section[@data-sc-section="injury.notes"]' % injury.id)
+        nodes = tree.xpath('//details[@id="injury-%s"]//section[@data-pk-section="injury.notes"]' % injury.id)
         self.assertEqual(len(nodes), 1)
         return nodes[0]
 
@@ -89,7 +89,7 @@ class TestCardNoteStamps1669(Stamps1669Common):
         internal = read.xpath('.//*[@data-sc-note-stamp="internal"]')
         self.assertEqual(len(ext), 1)
         self.assertEqual(len(internal), 1)
-        self.assertIn('o_sc_meta', ext[0].get('class'))
+        self.assertIn('o_pk_meta', ext[0].get('class'))
         self.assertEqual(_text(ext[0]), self.injury.last_external_note_info)
         self.assertEqual(_text(internal[0]), self.injury.last_internal_note_info)
         self.assertIn('PC TP', _text(ext[0]))
@@ -119,7 +119,7 @@ class TestCardNoteStampsI18n1669(Stamps1669Common):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

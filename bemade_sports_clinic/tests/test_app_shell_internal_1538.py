@@ -65,12 +65,13 @@ class TestAppShellInternal1538(AppShellCommon):
         text, tree = self._get('/my/home')
         self.assertIsNotNone(self._shell(tree))
         self.assertNotIn('o_portal_my_home', text)
-        tabs = self._nav_keys(tree, 'o_sc_tabs')
+        tabs = self._nav_keys(tree, 'o_pk_tabs')
         self.assertIn('notepad', tabs)
         self.assertEqual(tabs[-1], 'more')
-        self.assertIn('clinic', self._nav_keys(tree, 'o_sc_rail_nav'))
-        self.assertIn('PC Team A', text)
-        self.assertTrue(tree.xpath('//*[@data-sc-section="home.clinic_teaser"]'))
+        self.assertIn('clinic', self._nav_keys(tree, 'o_pk_rail_nav'))
+        # Task 1624 (deliberate update): the dashboard's sections, no team list.
+        self.assertTrue(tree.xpath('//section[@data-pk-dash-widget="indicators"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="home.clinic_teaser"]'))
         _text, tree = self._get('/my/teams')
         self.assertIsNotNone(self._shell(tree))
         self.assertTrue(tree.xpath('//a[@data-sc-team-id="%s"]' % self.team_a.id))
@@ -79,12 +80,12 @@ class TestAppShellInternal1538(AppShellCommon):
         self._switch(True)
         self._login_itp()
         _text, tree = self._get('/my/app/more')
-        backend = tree.xpath('//main//a[@data-sc-nav-key="backend"]')
+        backend = tree.xpath('//main//a[@data-pk-nav-key="backend"]')
         self.assertTrue(backend)
         self.assertEqual(backend[0].get('href'), '/odoo')
         self._login_tp()
         _text, tree = self._get('/my/app/more')
-        self.assertFalse(tree.xpath('//a[@data-sc-nav-key="backend"]'))
+        self.assertFalse(tree.xpath('//a[@data-pk-nav-key="backend"]'))
 
     # -- UC-N3 -----------------------------------------------------------
     def test_switch_off_internal_keeps_legacy(self):

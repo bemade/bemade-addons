@@ -117,7 +117,7 @@ class TestProductSupplierinfoTracking(TransactionCase):
         # Verify message content contains the changes
         message_body = template_messages[0].body
         self.assertIn("Price modified", message_body)
-        self.assertIn("min_qty", message_body)
+        self.assertIn("Quantity: 2", message_body)
 
     def test_chatter_message_content_structure(self):
         """Test the structure and content of generated chatter messages"""
@@ -155,8 +155,9 @@ class TestProductSupplierinfoTracking(TransactionCase):
             # Verify message content structure
             message_body = template_messages[0].body
             self.assertIn("Price modified", message_body)
-            self.assertIn("price --&gt; 80.0", message_body)
-            self.assertIn("min_qty --&gt; 10.0", message_body)
+            self.assertIn("Unit Price:", message_body)
+            self.assertIn("80.00", message_body)
+            self.assertIn("Quantity: 10", message_body)
 
     def test_chatter_message_without_variant(self):
         """Test chatter message generation when no product variant is specified"""
@@ -187,7 +188,7 @@ class TestProductSupplierinfoTracking(TransactionCase):
             # Verify message content
             message_body = template_messages[0].body
             self.assertIn("Price modified", message_body)
-            self.assertIn("price --&gt; 60.0", message_body)
+            self.assertIn("60.00", message_body)
 
     def test_supplierinfo_show_details_action(self):
         """Test the supplierinfo_show_details action method"""
@@ -298,7 +299,7 @@ class TestProductSupplierinfoTracking(TransactionCase):
 
             message_body = template_messages[0].body
             self.assertIn("Price modified", message_body)
-            self.assertIn("price --&gt; 30.0", message_body)
+            self.assertIn("30.00", message_body)
             # Should not contain qty, dates since they weren't set
             self.assertNotIn("Minimum qty", message_body)
             self.assertNotIn("Starting", message_body)

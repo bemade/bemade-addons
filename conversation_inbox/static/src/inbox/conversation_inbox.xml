@@ -173,8 +173,8 @@
                     />
                                     </div>
                                     <span
-                    class="text-muted flex-shrink-0"
-                    t-esc="item.date"
+                    class="text-muted flex-shrink-0 o_inbox_row_date"
+                    t-esc="formatItemDate(item)"
                   />
                                     <div
                     class="o_inbox_row_actions d-flex flex-shrink-0 gap-1 ms-2"

@@ -1,0 +1,129 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* sale_cost_source
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-08 17:10+0000\n"
+"PO-Revision-Date: 2026-11-08 17:10+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: sale_cost_source
+#. odoo-python
+#: code:addons/sale_cost_source/models/sale_order.py:0
+msgid "%(count)s line %(level)s"
+msgstr "%(count)s ligne %(level)s"
+
+#. module: sale_cost_source
+#. odoo-python
+#: code:addons/sale_cost_source/models/sale_order.py:0
+msgid "%(count)s lines %(level)s"
+msgstr "%(count)s lignes %(level)s"
+
+#. module: sale_cost_source
+#: model_terms:ir.ui.view,arch_db:sale_cost_source.view_order_form_cost_source
+msgid "<span class=\"text-muted me-2\">Cost basis:</span>"
+msgstr "<span class=\"text-muted me-2\">Fiabilité du coût :</span>"
+
+#. module: sale_cost_source
+#: model:ir.model.fields,field_description:sale_cost_source.field_sale_order_line__cost_source_confidence
+msgid "Cost Basis"
+msgstr "Fiabilité du coût"
+
+#. module: sale_cost_source
+#: model:ir.model.fields,field_description:sale_cost_source.field_sale_order_line__cost_source_explanation
+msgid "Cost Basis Details"
+msgstr "Détail de la fiabilité du coût"
+
+#. module: sale_cost_source
+#: model:ir.model.fields,field_description:sale_cost_source.field_sale_order_line__cost_source_reason
+msgid "Cost Basis Reason"
+msgstr "Raison de la fiabilité du coût"
+
+#. module: sale_cost_source
+#: model:ir.model.fields,field_description:sale_cost_source.field_sale_order__cost_source_summary
+msgid "Cost Basis Summary"
+msgstr "Résumé de la fiabilité du coût"
+
+#. module: sale_cost_source
+#. odoo-python
+#: code:addons/sale_cost_source/models/sale_order_line.py:0
+msgid "Cost basis"
+msgstr "Fiabilité du coût"
+
+#. module: sale_cost_source
+#: model:ir.model.fields,field_description:sale_cost_source.field_sale_order__display_name
+#: model:ir.model.fields,field_description:sale_cost_source.field_sale_order_line__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: sale_cost_source
+#: model:ir.model.fields.selection,name:sale_cost_source.selection__sale_order__cost_source_worst__estimated
+#: model:ir.model.fields.selection,name:sale_cost_source.selection__sale_order_line__cost_source_confidence__estimated
+msgid "Estimated"
+msgstr "Estimation"
+
+#. module: sale_cost_source
+#: model:ir.model.fields.selection,name:sale_cost_source.selection__sale_order__cost_source_worst__firm
+#: model:ir.model.fields.selection,name:sale_cost_source.selection__sale_order_line__cost_source_confidence__firm
+msgid "Firm"
+msgstr "Ferme"
+
+#. module: sale_cost_source
+#: model:ir.model.fields,help:sale_cost_source.field_sale_order_line__cost_source_confidence
+msgid ""
+"How far the cost behind this line can be trusted. Not stored: computed each "
+"time with today's prices and stock."
+msgstr ""
+"Dans quelle mesure on peut se fier au coût derrière cette ligne. Non stocké "
+": recalculé à chaque affichage avec les prix et le stock du jour."
+
+#. module: sale_cost_source
+#: model:ir.model.fields,field_description:sale_cost_source.field_sale_order__id
+#: model:ir.model.fields,field_description:sale_cost_source.field_sale_order_line__id
+msgid "ID"
+msgstr ""
+
+#. module: sale_cost_source
+#: model:ir.model.fields.selection,name:sale_cost_source.selection__sale_order__cost_source_worst__indicative
+#: model:ir.model.fields.selection,name:sale_cost_source.selection__sale_order_line__cost_source_confidence__indicative
+msgid "Indicative"
+msgstr "Indicatif"
+
+#. module: sale_cost_source
+#: model:ir.model.fields,help:sale_cost_source.field_sale_order__cost_source_summary
+msgid ""
+"Lines whose cost is not firm, counted per level, worst first. Empty when "
+"every line is firm."
+msgstr ""
+"Lignes dont le coût n'est pas ferme, comptées par niveau, la pire d'abord. "
+"Vide quand toutes les lignes sont fermes."
+
+#. module: sale_cost_source
+#: model:ir.model,name:sale_cost_source.model_sale_order
+msgid "Sales Order"
+msgstr "Commande client"
+
+#. module: sale_cost_source
+#: model:ir.model,name:sale_cost_source.model_sale_order_line
+msgid "Sales Order Line"
+msgstr "Ligne de commande"
+
+#. module: sale_cost_source
+#: model:ir.model.fields.selection,name:sale_cost_source.selection__sale_order__cost_source_worst__unknown
+#: model:ir.model.fields.selection,name:sale_cost_source.selection__sale_order_line__cost_source_confidence__unknown
+msgid "Unknown"
+msgstr "Inconnu"
+
+#. module: sale_cost_source
+#: model:ir.model.fields,field_description:sale_cost_source.field_sale_order__cost_source_worst
+msgid "Weakest Cost Basis"
+msgstr "Fiabilité du coût la plus faible"

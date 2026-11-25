@@ -11,7 +11,9 @@ Acceptance criteria:
   else « Retour réel », a muted « not set » line while that date is empty
   (review fixes 2026-10-18, 1018c). Task 1630: the allergies banner left
   the read view for the « Allergies » / « Medical alert » pills in the
-  header's top row (test_medical_alerts_1630).
+  header's top row (test_medical_alerts_1630). Task 1753: the play status
+  (with the medical pills) sits just above the read view, outside it, so
+  it stays shown while the pencil is open (test_hero_pills_edit_mode_1753).
 * AC-2 Edit view (therapists, behind the header's one pencil): the
   training recommendation (live; task 1627: no status selector), « Retour
   prévu », « Retour réel », « Remove player » (task 1630: no allergies) (edit view
@@ -51,7 +53,7 @@ class TestHeaderOrder1615(PlayerInlineCommon):
 
     @staticmethod
     def _hero(tree):
-        return tree.xpath('//*[@data-sc-section="player.hero"]')[0]
+        return tree.xpath('//*[@data-pk-section="player.hero"]')[0]
 
     @staticmethod
     def _children(node):
@@ -64,10 +66,15 @@ class TestHeaderOrder1615(PlayerInlineCommon):
         # actions last.
         self.assertIn('o_sc_hero_top', children[0].get('class'))
         self.assertIn('o_sc_hero_head', children[0][0].get('class'))
-        self.assertIn('o_sc_actions_row', children[-1].get('class'))
-        read = hero.xpath('./*[@data-sc-edit-view="read"]')[0]
-        blocks = self._children(read)
-        sections = [child.get('data-sc-section') for child in blocks]
+        self.assertIn('o_pk_actions_row', children[-1].get('class'))
+        read = hero.xpath('./*[@data-pk-edit-view="read"]')[0]
+        # Task 1753 (deliberate update): the play status sits right after
+        # the top row, OUTSIDE the read view (the pencil no longer hides
+        # it), immediately followed by the read view (training, return).
+        self.assertEqual(children[1].get('data-pk-section'), 'player.status')
+        self.assertIs(children[2], read)
+        blocks = [children[1]] + self._children(read)
+        sections = [child.get('data-pk-section') for child in blocks]
         self.assertEqual(sections, ORDER, sections)
         self.assertFalse(read.xpath('.//owl-component'))
         return hero, {s: b for s, b in zip(sections, blocks)}
@@ -76,17 +83,17 @@ class TestHeaderOrder1615(PlayerInlineCommon):
         self._login_tp()
         _text, tree = self._get(self._url(tab='injuries'))
         hero, read = self._assert_order(tree)
-        self.assertEqual(hero.get('data-sc-edit-card'), 'player-header')
-        self.assertEqual(len(hero.xpath('.//button[@data-sc-edit-toggle]')), 1)
+        self.assertEqual(hero.get('data-pk-edit-card'), 'player-header')
+        self.assertEqual(len(hero.xpath('.//button[@data-pk-edit-toggle]')), 1)
         self.assertFalse(read['player.status'].xpath('.//*[@data-sc-stage-chip]'))
-        self.assertEqual(len(read['player.status'].xpath('.//button[contains(@class, "o_sc_pill_select")]')), 2)
+        self.assertEqual(len(read['player.status'].xpath('.//button[contains(@class, "o_pk_pill_select")]')), 2)
         self.assertIn('Synthetic rowing', read['player.training'].text_content())
-        self.assertNotIn('Synthetic pollen', hero.xpath('./*[@data-sc-edit-view="read"]')[0].text_content())
-        edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
+        self.assertNotIn('Synthetic pollen', hero.xpath('./*[@data-pk-edit-view="read"]')[0].text_content())
+        edit = hero.xpath('./*[@data-pk-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden')
-        sections = [c.get('data-sc-section') for c in self._children(edit) if c.get('data-sc-section')]
+        sections = [c.get('data-pk-section') for c in self._children(edit) if c.get('data-pk-section')]
         self.assertEqual([s for s in sections if s in EDIT_ORDER], EDIT_ORDER, sections)
-        fields = {s: c for s, c in zip(sections, [c for c in self._children(edit) if c.get('data-sc-section')])}
+        fields = {s: c for s, c in zip(sections, [c for c in self._children(edit) if c.get('data-pk-section')])}
         self.assertNotIn('player.status.edit', sections)
         for section, field in (('player.training.edit', 'training_recommendation'),
                                ('player.predicted_return', 'predicted_return_date'),
@@ -94,18 +101,19 @@ class TestHeaderOrder1615(PlayerInlineCommon):
             self.assertTrue(fields[section].xpath('.//owl-component[contains(@props, \'"%s"\')]' % field),
                             section)
         # « Remove player » only in the edit view; « Done » closes it.
-        self.assertFalse(read['player.status'].getparent().xpath('.//*[@data-sc-action="player.remove"]'))
-        self.assertTrue(edit.xpath('.//button[@data-sc-edit-done]'))
+        self.assertFalse(hero.xpath('./*[@data-pk-edit-view="read"]//*[@data-sc-action="player.remove"]'))
+        self.assertFalse(read['player.status'].xpath('.//*[@data-sc-action="player.remove"]'))
+        self.assertTrue(edit.xpath('.//button[@data-pk-edit-done]'))
 
     def test_coach_order(self):
         self._login_coach()
         _text, tree = self._get(self._url(tab='injuries'))
         hero, read = self._assert_order(tree)
-        self.assertIsNone(hero.get('data-sc-edit-card'))
-        self.assertFalse(hero.xpath('.//*[@data-sc-edit-toggle] | .//*[@data-sc-edit-view="edit"]'))
+        self.assertIsNone(hero.get('data-pk-edit-card'))
+        self.assertFalse(hero.xpath('.//*[@data-pk-edit-toggle] | .//*[@data-pk-edit-view="edit"]'))
         self.assertFalse(hero.xpath('.//owl-component'))
-        self.assertTrue(read['player.status'].xpath('.//*[@data-sc-section="player.status.readonly"]'))
-        self.assertEqual(len(read['player.status'].xpath('.//*[@data-sc-pill-readonly]')), 2)
+        self.assertTrue(read['player.status'].xpath('.//*[@data-pk-section="player.status.readonly"]'))
+        self.assertEqual(len(read['player.status'].xpath('.//*[@data-pk-pill-readonly]')), 2)
         self.assertIn('Synthetic rowing', read['player.training'].text_content())
         self.assertIn('2030', read['player.return'].text_content())
 
@@ -142,13 +150,13 @@ class TestHeaderOrder1615(PlayerInlineCommon):
             login()
             _text, tree = self._get(self._url(tab='injuries'))
             hero = self._hero(tree)
-            keys = set(hero.xpath('.//@data-sc-fragment'))
+            keys = set(hero.xpath('.//@data-pk-fragment'))
             for part in ('hero-head', 'hero-chips', 'medical-pills', 'hero-actions', 'status', 'predicted-return',
                          'training'):
                 self.assertIn('sports.patient:%s:%s' % (pid, part), keys)
             # Never an island inside a read fragment.
-            for node in hero.xpath('.//*[@data-sc-fragment]'):
-                self.assertFalse(node.xpath('.//owl-component'), node.get('data-sc-fragment'))
+            for node in hero.xpath('.//*[@data-pk-fragment]'):
+                self.assertFalse(node.xpath('.//owl-component'), node.get('data-pk-fragment'))
 
 
 @tagged('post_install', '-at_install')
@@ -158,11 +166,13 @@ class TestDossierOrder1615(Clinic1540Common):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/clinic/%s?patient=%s&tab=dossier' % (self.clinic.id, self.player.id))
-        card = tree.xpath('//*[@data-sc-section="clinic.dossier.status"]')[0]
-        # Task 1627: the status pills first, then the live recommendation.
-        blocks = [child for child in card if isinstance(child.tag, str)]
-        self.assertEqual(blocks[0].get('data-sc-section'), 'clinic.dossier.status.pills')
-        self.assertEqual(len(blocks[0].xpath('.//*[@data-sc-pill-select]')), 2)
-        fields = card.xpath('.//owl-component/@props')
-        self.assertEqual(len(fields), 1, fields)
-        self.assertIn('"training_recommendation"', fields[0])
+        # Task 1721: the status card gave way to the team page's player card
+        # (its Match / Pratique quick-change pills, then its lines); the
+        # card comes before the injuries and the notes.
+        card = tree.xpath('//*[@data-pk-section="clinic.dossier.player"]')[0]
+        self.assertEqual(len(card.xpath('.//*[@data-pk-pill-select]')), 2)
+        self.assertFalse(card.xpath('.//owl-component'))
+        order = [el.get('data-pk-section') for el in tree.xpath(
+            '//*[@data-pk-section="clinic.dossier.player" or @data-pk-section="clinic.dossier.injuries"'
+            ' or @data-pk-section="clinic.dossier.notes"]')]
+        self.assertEqual(order, ['clinic.dossier.player', 'clinic.dossier.injuries', 'clinic.dossier.notes'])

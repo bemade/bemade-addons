@@ -3,9 +3,11 @@ from odoo import http, fields, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
-from .access_control_mixin import AccessControlMixin, parse_portal_date
-from .app_shell import AppShellMixin
-from ..models import sc_app_nav, sc_app_roles
+from .access_control_mixin import (
+    AccessControlMixin, parse_portal_date, sc_deadline_in_past, sc_past_deadline_message,
+)
+from .app_shell import AppShellMixin, sc_file_size
+from ..models import sc_app_nav
 from datetime import date, timedelta
 from urllib.parse import quote
 
@@ -74,14 +76,31 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return {u.id: u.partner_id.id in staff_partner_ids for u in users}
 
     @staticmethod
-    def _activity_team_access_domain(scope_teams):
+    def _activity_team_access_domain(scope_teams, user=None):
         """The team-based access domain of the activities lists (patients,
         teams and events of ``scope_teams``). Task 1409: activities live on
         patients, teams and events only — no injury branch (an explicit
         ?model=sports.patient.injury filter therefore yields an empty
         list). Record rules provide broad CRUD access, the controller
-        enforces team-based security."""
-        return [
+        enforces team-based security.
+
+        Task 1714: with ``user`` (not a coach-only viewer), also every
+        activity on an event ``user`` is assigned to (covering another
+        team's event) and the activities assigned to ``user`` on any event
+        — the portal therapist mail.activity rule's same two branches."""
+        covered = []
+        if user is not None:
+            covered = [
+                '&', '&',
+                ('res_model', '=', 'sports.event'),
+                ('res_id', '!=', False),
+                ('res_id', 'in', user.sudo().sc_assigned_event_ids.ids or [0]),
+                '&', '&',
+                ('res_model', '=', 'sports.event'),
+                ('res_id', '!=', False),
+                ('user_id', '=', user.id),
+            ]
+        return ['|', '|'] * bool(covered) + covered + [
             '|', '|',
             '&', '&',
             ('res_model', '=', 'sports.patient'),
@@ -97,6 +116,21 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             ('res_id', 'in', scope_teams.mapped('event_ids.id') or [0])
         ]
 
+    def _sc_my_activities_domain(self, extra=None):
+        """« My Activities » (bare /my/activities): the activities assigned
+        to me AND in my team scope (task 1714: with my covered events), OR
+        my notepad reminders (task 1664) — AND ``extra`` (e.g. a deadline
+        bound). ONE definition shared by the list, the app bar clock's
+        overdue badge and the dashboard's « À faire » (task 1624)."""
+        user = request.env.user
+        mine = ['&', ('user_id', '=', user.id)] + self._activity_team_access_domain(
+            self._activity_scope_teams(), self._activity_cover_user())
+        domain = ['|'] + mine + self._activity_quick_note_domain(user)
+        extra = list(extra or [])
+        if extra:
+            domain = ['&'] * len(extra) + extra + domain
+        return domain
+
     @http.route(['/my/activities/overdue/count'], type='http', auth='user', website=True,
                 methods=['GET'], multilang=False, sitemap=False)
     def sc_activities_overdue_count(self, **kw):
@@ -110,17 +144,12 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         env = request.env
         user = env.user
         roles = user._sc_app_roles()
-        if not sc_app_roles.can('app.activity_clock', roles,
-                                is_system=user.has_group('base.group_system')):
+        if not env['portal.kit'].pk_can('app.activity_clock', roles,
+                                        is_system=user.has_group('base.group_system')):
             response = request.make_json_response({'error': 'forbidden'}, status=403)
         else:
-            domain = ['&', '&', ('user_id', '=', user.id),
-                      ('date_deadline', '<', fields.Date.context_today(user))] \
-                + self._activity_team_access_domain(self._activity_scope_teams())
-            # Task 1664: the notepad reminders count too (as listed).
-            domain = ['|'] + domain + ['&', ('date_deadline', '<', fields.Date.context_today(user))] \
-                + self._activity_quick_note_domain(user)
-            count = env['mail.activity'].search_count(domain)
+            count = env['mail.activity'].search_count(self._sc_my_activities_domain(
+                [('date_deadline', '<', fields.Date.context_today(user))]))
             response = request.make_json_response({'count': count})
         response.headers['Cache-Control'] = 'no-store'
         return response
@@ -139,7 +168,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # as the other lists; never a bare search([]) for a non-admin.
         scope_teams = self._activity_scope_teams()
 
-        team_access_domain = self._activity_team_access_domain(scope_teams)
+        team_access_domain = self._activity_team_access_domain(scope_teams, self._activity_cover_user())
 
         # Activities are scoped strictly by the team-based access domain. We used to
         # OR-in `(user_id == self) AND res_model in [...]` so a portal user could see
@@ -162,10 +191,10 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # above), causing 403s. ANDing keeps My Activities to records the user
             # is assigned to AND can actually open. The per-context callers pass a
             # `model` and hit the branch above, keeping their broad context scope.
-            domain = ['&', ('user_id', '=', user.id)] + team_access_domain
             # Task 1664: plus MY notepad reminders (« Note rapide en attente »)
             # — on notes I may read (the mail.activity rules: my own notes).
-            domain = ['|'] + domain + self._activity_quick_note_domain(user)
+            # Task 1624: the one shared definition.
+            domain = self._sc_my_activities_domain()
         
         # Search for activities with both assignment and team-based access control
         activities = request.env['mail.activity'].search(domain, order='date_deadline asc')
@@ -231,7 +260,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         
         # Task 1539: the app shell (switch on) or today's template (off) —
         # also for the /my/team/activities and /my/event/activities wrappers.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_activities_values(values))
         return self._sc_render('bemade_sports_clinic.portal_my_activities',
                                'bemade_sports_clinic.sc_app_activities', values)
@@ -282,7 +311,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     quote(base + ('?' + query if query else ''), safe=''))
                 if values.get('context_model') and values.get('context_res_id') else False),
             'sc_context_title': context_title,
-            'sc_flash': self._sc_activity_flash(),
+            'pk_flash': self._sc_activity_flash(),
             # Task 1622: opened from the app bar clock — the page it was
             # tapped on (kept by the tab links), the way back. Not on the
             # record wrappers: they have their own parent.
@@ -306,6 +335,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'missing_fields': env._("Please fill in all required fields."),
                 'invalid_user': env._("You cannot assign this activity to that user."),
                 'not_allowed': env._("You cannot change this activity."),
+                # Task 1744.
+                'past_deadline': sc_past_deadline_message(env),
             }.get(params.get('error')),
         }
 
@@ -401,7 +432,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         
         # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_activity_form_values(values))
         return self._sc_render('bemade_sports_clinic.portal_create_activity',
                                'bemade_sports_clinic.sc_app_activity_form', values)
@@ -419,7 +450,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             values.setdefault(key, False)
         return {
             'sc_no_access_ids': ' '.join(str(uid) for uid, ok in access.items() if not ok),
-            'sc_flash': TaskManagementPortal._sc_activity_flash(),
+            'pk_flash': TaskManagementPortal._sc_activity_flash(),
         }
 
     @http.route(['/my/player/activities'], type='http', auth='user', website=True)
@@ -514,8 +545,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             
         record = self._check_access_to_task_model(model, res_id)
 
-        # Validate required fields
-        activity_type_id = post.get('activity_type_id')
+        # Validate required fields. Task 1739 (owner 2026-11-02): no type
+        # choice — every clinic activity is a To-Do (a posted
+        # activity_type_id, e.g. from a stale page, is ignored).
         summary = post.get('summary')
         user_id = post.get('user_id')
         date_deadline = post.get('date_deadline')
@@ -536,7 +568,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         elif model == 'sports.event':
             default_return_url = f'/my/event/{int(res_id)}'
 
-        if not activity_type_id or not summary or not user_id or not date_deadline:
+        if not summary or not user_id or not date_deadline:
             return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
             return request.redirect(_append_query(return_url, 'error=missing_fields'))
             
@@ -562,12 +594,17 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
             return request.redirect(_append_query(return_url, 'error=invalid_model'))
             
+        deadline = parse_portal_date(date_deadline)  # task 1640
+        # Task 1744: never a due date in the past.
+        if sc_deadline_in_past(deadline):
+            return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
+            return request.redirect(_append_query(return_url, 'error=past_deadline'))
         vals = {
-            'activity_type_id': int(activity_type_id),
+            'activity_type_id': request.env['mail.activity']._sc_todo_type().id,
             'summary': summary,
             'note': post.get('note', ''),
             'user_id': int(user_id),
-            'date_deadline': parse_portal_date(date_deadline),  # task 1640
+            'date_deadline': deadline,
             'res_model_id': model_id,
             'res_id': int(res_id),
         }
@@ -617,6 +654,10 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             update_vals['note'] = post['note']
         if 'date_deadline' in post:
             update_vals['date_deadline'] = parse_portal_date(post['date_deadline'])  # task 1640
+            # Task 1744: a CHANGED due date may not be in the past.
+            if sc_deadline_in_past(update_vals['date_deadline'], activity.date_deadline):
+                return request.redirect(_append_query(
+                    f'/my/activity/{activity.id}/edit', 'error=past_deadline'))
 
         # Assignee change from the edit page (task 1500): honoured, and
         # validated with the SAME per-actor rule as save / reassign. Outside
@@ -718,6 +759,16 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         new_deadline = post.get('new_deadline')
         if not new_deadline:
             return request.redirect('/my/activities')
+        # Task 1744: parsed like the other routes (task 1640); never a NEW
+        # due date in the past.
+        try:
+            new_deadline = parse_portal_date(new_deadline)
+        except ValidationError:
+            new_deadline = False
+        if not new_deadline or sc_deadline_in_past(new_deadline, activity.date_deadline):
+            return_url = self._safe_return_url(post.get('return_url'), '/my/activities')
+            return request.redirect(_append_query(
+                return_url, 'error=past_deadline' if new_deadline else 'error=missing_fields'))
 
         activity.sudo().write({'date_deadline': new_deadline})
         
@@ -777,7 +828,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             raise request.not_found()
         # Owner review 2026-10-11: in the app shell the activity is edited
         # in place (pencil card) on its page.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             return request.redirect('/my/activity/%s' % activity.id)
             
         # Task 1589: editing is acting — the one act rule.
@@ -814,7 +865,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         
         # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_activity_form_values(values))
         return self._sc_render('bemade_sports_clinic.portal_edit_activity',
                                'bemade_sports_clinic.sc_app_activity_form', values)
@@ -834,6 +885,27 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             raise request.not_found()
         stream = request.env['ir.binary']._get_stream_from(attachment)
         return stream.get_response(as_attachment=True)
+
+    @http.route(['/my/activity/<int:activity_id>/popout'], type='http', auth='user', website=True,
+                methods=['GET'])
+    def activity_detail_popout(self, activity_id, **kw):
+        """Task 1736 r1 (owner 2026-11-01): the body of an activity card's
+        details popout — the page's read-only details (related record,
+        dates, creator, note, attachments), fetched on every open. Same gate
+        as the page (``_activity_view_access``): anyone else gets a 404.
+        The page (/my/activity/<id>) stays for deep links and notifications."""
+        activity = request.env['mail.activity'].browse(activity_id)
+        if not activity.exists() or not self._activity_view_access(activity):
+            raise request.not_found()
+        today = fields.Date.context_today(request.env.user)
+        deadline = activity.sudo().date_deadline
+        return request.render('bemade_sports_clinic.sc_activity_popout', {
+            'activity': activity,
+            'act_links': self._sc_activity_related(activity),
+            'act_state': 'overdue' if deadline < today else ('today' if deadline == today else 'planned'),
+            'attachments': self._activity_attachments(activity),
+            'sc_file_size': lambda size: sc_file_size(size, request.env),
+        })
 
     @http.route(['/my/activity/<int:activity_id>'], type='http', auth='user', website=True)
     def view_activity_detail(self, activity_id, **kw):
@@ -895,7 +967,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         
         # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             # Task 1595: the related records' links, each gated by the
             # page it leads to (no link to a record the viewer may not open).
             related_links = self._sc_activity_related(activity)
@@ -906,7 +978,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'sc_related_url': related_url,
                 'sc_related_links': related_links,
                 'today_date': fields.Date.context_today(request.env.user),
-                'sc_flash': self._sc_activity_flash(),
+                'pk_flash': self._sc_activity_flash(),
                 # Owner review 2026-10-11: the pencil card's assignee choices.
                 # Task 1589: pencil + Cancel / Reschedule / Done follow the
                 # one act rule.

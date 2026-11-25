@@ -137,3 +137,15 @@ class TestCompanySignatureUI(HttpCase):
         body = mails.body_html
         self.assertEqual(body.count('class="o-signature-container"'), 1)
         self.assertIn(PHONE, body.split('class="o-signature-container"')[1])
+
+    def test_copy_signature_html(self):
+        """My Preferences: « Copy signature HTML » puts the rendered HTML in the clipboard."""
+        self.assertIn(PHONE, self.user.signature)
+        # With every repo addon installed (CI), other addons put user fields on
+        # My Preferences that they do not register as self-readable (e.g.
+        # caldav_sync's caldav_*). The form then loads without hr's self-read
+        # sudo and fails on private employee fields for a plain user. This tour
+        # tests the copy button, not those addons, so let the user read
+        # employees.
+        self.user.group_ids = [(4, self.env.ref("hr.group_hr_user").id)]
+        self.start_tour("/odoo", "mail_company_signature_copy_html", login="sig_tour")

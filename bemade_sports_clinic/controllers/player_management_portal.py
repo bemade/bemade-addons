@@ -3,6 +3,7 @@ from odoo import http, fields, _, Command
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
+from odoo.addons.bemade_portal_kit.tools import pk_form_props
 from .access_control_mixin import AccessControlMixin
 from .app_shell import AppShellMixin
 from dateutil.relativedelta import relativedelta
@@ -24,7 +25,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Task 1655: in the app the page is retired — the Joueurs list's
         # inline panel creates players (search as you type, then create).
         pending = request.session.get('portal_flash')
-        if self._sc_app_shell_active() and self._sc_player_add_allowed() and not (
+        if self._pk_shell_active() and self._sc_player_add_allowed() and not (
                 isinstance(pending, dict) and pending.get('scope') == ['player_create']):
             return request.redirect('/my/players?add=1')
         user = request.env.user
@@ -77,7 +78,16 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         countries = canada if canada else request.env['res.country'].search([], order='name')
 
         values = self._prepare_portal_layout_values()
+        # Task 1726: the app form picks the teams with the tag picker (one
+        # hidden ``team_ids`` = the chosen ids, comma separated); a single
+        # team is chosen up front, as the lone checkbox used to be.
+        team_csv = str(all_teams.id) if len(all_teams) == 1 else ''
         values.update({
+            'sc_team_csv': team_csv,
+            'sc_team_props': pk_form_props(
+                'sc_new_team_ids', _("Teams"), value=team_csv,
+                options=[(t.id, t.name) for t in all_teams],
+                placeholder=_("Add a team…")),
             'page_name': 'create_player',
             'is_treatment_prof': is_treatment_prof,
             'is_coach': is_coach,
@@ -132,7 +142,10 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         # Team selection (optional). Restrict to staff teams to avoid tampering
         try:
-            selected_team_ids = [int(tid) for tid in request.httprequest.form.getlist('team_ids')]
+            # One value per checkbox (portal form) or one comma-separated
+            # value (the app's tag picker, task 1726).
+            selected_team_ids = [int(tid) for raw in request.httprequest.form.getlist('team_ids')
+                                 for tid in str(raw).split(',') if tid.strip()]
         except Exception:
             selected_team_ids = []
         allowed_team_ids = self._team_targets().ids
@@ -313,7 +326,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         # Owner review 2026-10-10: in the app shell every field is edited
         # inline on the player page — this page is retired there.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             return request.redirect(self._sc_player_tab_url(
                 patient.id, 'info', team_context_id, clinic_event))
 
@@ -744,7 +757,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def add_contact_form(self, patient_id, **post):
         """Show form to add a new emergency contact for a player"""
         patient = self._check_access_to_patient(patient_id)
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             # Owner review 2026-10-10: added inline on the Contacts tab.
             return request.redirect(self._sc_player_tab_url(patient.id, 'info'))
             
@@ -837,7 +850,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return request.redirect('/my/players')
             
         patient = self._check_access_to_patient(contact.patient_id.id)
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             # Owner review 2026-10-10: edited inline on the Contacts tab.
             return request.redirect(self._sc_player_tab_url(patient.id, 'info'))
             

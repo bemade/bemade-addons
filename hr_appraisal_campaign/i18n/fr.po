@@ -1,0 +1,1734 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* hr_appraisal_campaign
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-24 22:37+0000\n"
+"PO-Revision-Date: 2026-11-24 22:37+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign.py:0
+msgid "%(count)s evaluations are not closed yet."
+msgstr "%(count)s évaluations ne sont pas encore fermées."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign_line.py:0
+msgid "%(grade)s is not a level of the rating scale « %(scale)s »."
+msgstr "%(grade)s n'est pas un niveau de l'échelle de cotation « %(scale)s »."
+
+#. module: hr_appraisal_campaign
+#. odoo-javascript
+#: code:addons/hr_appraisal_campaign/static/src/word_picture/word_picture_lines.js:0
+msgid "%(graded)s of %(total)s criteria graded"
+msgstr "%(graded)s critères cotés sur %(total)s"
+
+#. module: hr_appraisal_campaign
+#: model:ir.actions.report,print_report_name:hr_appraisal_campaign.action_report_campaign_appraisal
+msgid "'%s - %s' % (object.campaign_id.name or 'Evaluation', object.employee_id.name)"
+msgstr "'%s - %s' % (object.campaign_id.name or 'Évaluation', object.employee_id.name)"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "<em>Employee comment:</em>"
+msgstr "<em>Commentaire de l'employé :</em>"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "<em>Examples:</em>"
+msgstr "<em>Exemples :</em>"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "<em>Remarks:</em>"
+msgstr "<em>Remarques :</em>"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign_line.py:0
+msgid "A closed evaluation cannot be changed."
+msgstr "Une évaluation fermée ne peut plus être modifiée."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.constraint,message:hr_appraisal_campaign.constraint_hr_appraisal_campaign_criterion_level_level_unique
+msgid "A criterion has one word picture per level."
+msgstr "Un critère a une description par niveau."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.actions.act_window,help:hr_appraisal_campaign.action_campaign_scale
+msgid "A scale lists the levels a criterion is graded with (e.g. 1 Unsatisfactory to 4 Superior)."
+msgstr "Une échelle liste les niveaux avec lesquels un critère est coté (p. ex. 1 Insatisfaisant à 4 Supérieur)."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid ""
+"A score reaches a rating level from the number of points shown. Lines without a\n"
+"                                section rate the overall total; a score below every threshold gets the lowest level."
+msgstr ""
+"Un pointage atteint un niveau à partir du nombre de points indiqué. Les lignes sans\n"
+"                                section cotent le total global ; un pointage sous tous les seuils obtient le niveau le plus bas."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__count_acknowledged model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal__campaign_step__acknowledged model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign_remark_log__step__acknowledged
+msgid "Acknowledged"
+msgstr "Signée"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__employee_ack_user_id
+msgid "Acknowledged By"
+msgstr "Signée par"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "Acknowledgement"
+msgstr "Signature"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__message_needaction
+msgid "Action Needed"
+msgstr "Action nécessaire"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__active model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__active model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_section__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Add All Employees"
+msgstr "Ajouter tous les employés"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign.py:0
+msgid "Add the employees (with an Odoo user) to evaluate."
+msgstr "Ajoutez les employés (avec un utilisateur Odoo) à évaluer."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__new_remarks
+msgid "After"
+msgstr "Après"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__ui_aligned
+msgid "Alignment"
+msgstr "Alignement"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__alignment_gap model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__default_alignment_gap
+msgid "Alignment Gap"
+msgstr "Écart d'alignement"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__appraisal_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__appraisal_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__appraisal_id
+msgid "Appraisal"
+msgstr "Évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:res.groups.privilege,name:hr_appraisal_campaign.res_groups_privilege_campaign_calibration
+msgid "Appraisal Calibration"
+msgstr "Calibration des évaluations"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__appraisal_count
+msgid "Appraisal Count"
+msgstr "Nombre d'évaluations"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__appraisal_ids
+msgid "Appraisals"
+msgstr "Évaluations"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_criterion_view_form model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_criterion_view_search model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_scale_view_form model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_section_view_form
+msgid "Archived"
+msgstr "Archivé"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__message_attachment_count
+msgid "Attachment Count"
+msgstr "Nombre de pièces jointes"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale_level__color
+msgid "Badge Colour"
+msgstr "Couleur de la pastille"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__old_remarks
+msgid "Before"
+msgstr "Avant"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign_scale_level__color__info
+msgid "Blue"
+msgstr "Bleu"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "Both the employee and the manager must acknowledge the evaluation first."
+msgstr "L'employé et le gestionnaire doivent d'abord signer l'évaluation."
+
+#. module: hr_appraisal_campaign
+#: model:res.groups,name:hr_appraisal_campaign.group_campaign_calibration
+msgid "Calibrate evaluations"
+msgstr "Calibrer les évaluations"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_list_calibration
+msgid "Calibrated"
+msgstr "Calibrée"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_search
+msgid "Calibrated (changed)"
+msgstr "Calibrées (modifiées)"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__calibrated_grade
+msgid "Calibrated Grade"
+msgstr "Cote calibrée"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Calibrated evaluations move to the meeting step and managers get a to-do. Continue?"
+msgstr "Les évaluations calibrées passent à l'étape de la rencontre et les gestionnaires reçoivent une tâche. Continuer ?"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal__campaign_step__calibration model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign__state__calibration model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign_remark_log__step__calibration
+msgid "Calibration"
+msgstr ""
+
+#. module: hr_appraisal_campaign
+#: model:ir.actions.act_window,name:hr_appraisal_campaign.action_campaign_calibration_board model:ir.ui.menu,name:hr_appraisal_campaign.menu_campaign_calibration_board model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Calibration Board"
+msgstr "Tableau de calibration"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign_line.py:0 model:ir.actions.act_window,name:hr_appraisal_campaign.action_campaign_calibration_log model:ir.ui.menu,name:hr_appraisal_campaign.menu_campaign_calibration_log
+msgid "Calibration Changes"
+msgstr "Modifications de calibration"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__deadline_calibration
+msgid "Calibration Deadline"
+msgstr "Échéance de la calibration"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__final_vs_manager
+msgid "Calibration Delta"
+msgstr "Écart de calibration"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__calibration_log_ids
+msgid "Calibration Log"
+msgstr "Journal de calibration"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_pivot_calibration
+msgid "Calibration Matrix"
+msgstr "Matrice de calibration"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__calibration_note
+msgid "Calibration Note"
+msgstr "Note de calibration"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid ""
+"Calibration is done. Schedule the meeting and present the evaluation from your screen or the\n"
+"                        printout; you can still amend your remarks, with the employee if need be. After the meeting,\n"
+"                        click « Meeting held — share with the employee »: only then does the employee see it in Odoo."
+msgstr "La calibration est terminée. Planifiez la rencontre et présentez l'évaluation depuis votre écran ou l'imprimé ; vous pouvez encore modifier vos remarques, avec l'employé au besoin. Après la rencontre, cliquez sur « Rencontre tenue — partager avec l'employé » : c'est seulement alors que l'employé la voit dans Odoo."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_threshold__campaign_id model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_search model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.hr_appraisal_view_search_campaign
+msgid "Campaign"
+msgstr "Campagne"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_can_edit_manager
+msgid "Campaign Can Edit Manager"
+msgstr "Peut modifier l'évaluation du gestionnaire"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_can_edit_self
+msgid "Campaign Can Edit Self"
+msgstr "Peut modifier l'auto-évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_can_see_manager
+msgid "Campaign Can See Manager"
+msgstr "Voit l'évaluation du gestionnaire"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_can_see_self
+msgid "Campaign Can See Self"
+msgstr "Voit l'auto-évaluation"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_scale_view_form
+msgid "Campaign Defaults"
+msgstr "Valeurs par défaut des campagnes"
+
+#. module: hr_appraisal_campaign
+#: model:ir.actions.report,name:hr_appraisal_campaign.action_report_campaign_appraisal
+msgid "Campaign Evaluation"
+msgstr "Évaluation de campagne"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model,name:hr_appraisal_campaign.model_report_hr_appraisal_campaign_report_campaign_appraisal
+msgid "Campaign Evaluation Report"
+msgstr "Rapport d'évaluation de campagne"
+
+#. module: hr_appraisal_campaign
+#: model:ir.actions.act_window,name:hr_appraisal_campaign.action_campaign_appraisals
+msgid "Campaign Evaluations"
+msgstr "Évaluations de la campagne"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_is_employee
+msgid "Campaign Is Employee"
+msgstr "Est l'employé évalué"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_is_hr
+msgid "Campaign Is Hr"
+msgstr "Est RH"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_is_manager
+msgid "Campaign Is Manager"
+msgstr "Est l'évaluateur"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_needs_evaluator
+msgid "Campaign Needs Evaluator"
+msgstr "Évaluateur à désigner"
+
+#. module: hr_appraisal_campaign
+#: model:ir.ui.menu,name:hr_appraisal_campaign.menu_campaign_campaigns
+msgid "Campaigns"
+msgstr "Campagnes"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__can_edit_employee
+msgid "Can Edit Employee"
+msgstr "Peut modifier (employé)"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__can_edit_manager
+msgid "Can Edit Manager"
+msgstr "Peut modifier (gestionnaire)"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__can_edit_remarks
+msgid "Can Edit Remarks"
+msgstr "Peut modifier les remarques"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__can_see_employee
+msgid "Can See Employee"
+msgstr "Peut voir (employé)"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__can_see_manager
+msgid "Can See Manager"
+msgstr "Peut voir (gestionnaire)"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__criterion_id
+msgid "Catalogue Criterion"
+msgstr "Critère du catalogue"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_list_calibration
+msgid "Change log of this grade"
+msgstr "Historique des modifications de cette cote"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__user_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__user_id
+msgid "Changed by"
+msgstr "Modifié par"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_criterion_view_form
+msgid ""
+"Changes apply to the next campaigns only: every evaluation keeps the wording it was graded with.\n"
+"                        Save the criterion to get one line per level of the section's scale."
+msgstr ""
+"Les modifications s'appliquent aux prochaines campagnes seulement : chaque évaluation garde le libellé avec lequel elle a été cotée.\n"
+"                        Enregistrez le critère pour obtenir une ligne par niveau de l'échelle de la section."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.actions.act_window,help:hr_appraisal_campaign.action_campaign_remark_log
+msgid ""
+"Changes the evaluator (or HR) makes to the remarks after « Submit for Calibration »,\n"
+"            until the employee acknowledges the evaluation."
+msgstr "Modifications que l'évaluateur (ou les RH) apporte aux remarques après « Soumettre pour calibration », jusqu'à ce que l'employé signe l'évaluation."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "Click this after the meeting with the employee. From then on, the employee sees the final grades and your remarks in Odoo and acknowledges the evaluation; you can still amend a remark until they do. Confirm the meeting was held?"
+msgstr "Cliquez ici après la rencontre avec l'employé. Dès lors, l'employé voit les cotes finales et vos remarques dans Odoo et signe l'évaluation ; vous pouvez encore modifier une remarque jusqu'à sa signature. Confirmez-vous que la rencontre a eu lieu ?"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Close Calibration"
+msgstr "Terminer la calibration"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Close Campaign"
+msgstr "Fermer la campagne"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "Close Evaluation"
+msgstr "Fermer l'évaluation"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "Close the evaluation of %s"
+msgstr "Fermer l'évaluation de %s"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__count_closed model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal__campaign_step__closed model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign__state__closed model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign_remark_log__step__closed
+msgid "Closed"
+msgstr "Fermée"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__company_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__company_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__company_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__company_id
+msgid "Company"
+msgstr "Société"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign.py:0
+msgid "Complete your self-evaluation"
+msgstr "Complétez votre auto-évaluation"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.actions.act_window,help:hr_appraisal_campaign.action_campaign
+msgid ""
+"Create a campaign (e.g. « Annual 2026 »), add the employees and the deadlines, then launch it:\n"
+"            every employee gets their evaluation form and a to-do."
+msgstr ""
+"Créez une campagne (p. ex. « Annuelle 2026 »), ajoutez les employés et les échéances, puis lancez-la :\n"
+"            chaque employé reçoit son formulaire d'évaluation et une tâche."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__create_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__create_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__create_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion_level__create_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__create_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line_level__create_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__create_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__create_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale_level__create_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_section__create_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_threshold__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__create_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__create_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__create_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion_level__create_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__create_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line_level__create_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__create_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__create_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale_level__create_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_section__create_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_threshold__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_line_ids model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_section__criterion_ids model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_scale_view_form model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_section_view_form model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_section_view_list
+msgid "Criteria"
+msgstr "Critères"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__criterion_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion_level__criterion_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__criterion_name model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_search model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "Criterion"
+msgstr "Critère"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_section__criterion_count
+msgid "Criterion Count"
+msgstr "Nombre de critères"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_calibration_log_view_list model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_remark_log_view_list
+msgid "Date"
+msgstr ""
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Deadlines"
+msgstr "Échéances"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__default_alignment_gap
+msgid "Default alignment gap of a new campaign: self and final totals within this many points are « aligned »."
+msgstr "Écart d'alignement par défaut d'une nouvelle campagne : des totaux auto et final à moins de ce nombre de points sont « alignés »."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__threshold_ids
+msgid "Default overall thresholds of a new campaign (points of the final total)."
+msgstr "Seuils globaux par défaut d'une nouvelle campagne (points du total final)."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__default_target_score
+msgid "Default target score (overall points) of a new campaign."
+msgstr "Pointage cible par défaut (points globaux) d'une nouvelle campagne."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_section_view_form
+msgid "Default thresholds (points of the section's final total)"
+msgstr "Seuils par défaut (points du total final de la section)"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign_section__threshold_ids
+msgid "Default thresholds of this section (points of the section's final total) copied by new campaigns."
+msgstr "Seuils par défaut de cette section (points du total final de la section), copiés par les nouvelles campagnes."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.actions.act_window,help:hr_appraisal_campaign.action_campaign_scale
+msgid "Define the rating scale"
+msgstr "Définissez l'échelle de cotation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__department_id model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_search model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "Department"
+msgstr "Département"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__description model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__description
+msgid "Description"
+msgstr ""
+
+#. module: hr_appraisal_campaign
+#: model:res.groups,comment:hr_appraisal_campaign.group_campaign_calibration
+msgid ""
+"Directors and HR who compare and adjust the grades of a campaign\n"
+"during its calibration phase. Grants read access to the appraisals of campaigns in or past\n"
+"calibration."
+msgstr ""
+"Directeurs et RH qui comparent et ajustent les cotes d'une campagne\n"
+"pendant sa phase de calibration. Donne accès en lecture aux évaluations des campagnes en\n"
+"calibration ou après."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale_level__display_color
+msgid "Display Color"
+msgstr "Couleur affichée"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__display_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__display_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__display_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__display_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion_level__display_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__display_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line_level__display_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__display_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__display_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale_level__display_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_section__display_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_threshold__display_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_report_hr_appraisal_campaign_report_campaign_appraisal__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign__state__draft
+msgid "Draft"
+msgstr "Brouillon"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_scale_view_form
+msgid "Each level is a grade (value) with its name. Criteria get one word picture per level."
+msgstr "Chaque niveau est une cote (valeur) avec son nom. Les critères ont une description par niveau."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.constraint,message:hr_appraisal_campaign.constraint_hr_appraisal_campaign_scale_level_value_unique
+msgid "Each level of a scale has its own value."
+msgstr "Chaque niveau d'une échelle a sa propre valeur."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__employee_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__employee_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__employee_id model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_search model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "Employee"
+msgstr "Employé"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__employee_ack_date
+msgid "Employee Acknowledged On"
+msgstr "Signée par l'employé le"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model,name:hr_appraisal_campaign.model_hr_appraisal
+msgid "Employee Appraisal"
+msgstr "Évaluation des employés"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__employee_ack_comment
+msgid "Employee Comment"
+msgstr "Commentaire de l'employé"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__employee_ids model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Employees"
+msgstr "Employés"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__employee_without_manager_ids
+msgid "Employees Without Manager"
+msgstr "Employés sans gestionnaire"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__employee_without_user_ids
+msgid "Employees Without User"
+msgstr "Employés sans utilisateur"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign__employee_ids
+msgid "Employees evaluated in this campaign. Employees without an Odoo user are listed for HR to handle on paper."
+msgstr "Employés évalués dans cette campagne. Les employés sans utilisateur Odoo sont listés pour que les RH les traitent sur papier."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign_threshold__section_id
+msgid "Empty: the overall (total) score."
+msgstr "Vide : le pointage global (total)."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "Evaluate %s"
+msgstr "Évaluer %s"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__ui_final_total model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "Evaluation"
+msgstr "Évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__ui_final_percent
+msgid "Evaluation %"
+msgstr "Évaluation %"
+
+#. module: hr_appraisal_campaign
+#: model:ir.actions.act_window,name:hr_appraisal_campaign.action_campaign_grade_analysis model:ir.ui.menu,name:hr_appraisal_campaign.menu_campaign_grade_analysis
+msgid "Evaluation Analysis"
+msgstr "Analyse des évaluations"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model,name:hr_appraisal_campaign.model_hr_appraisal_campaign_calibration_log
+msgid "Evaluation Calibration Change"
+msgstr "Modification de calibration"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model,name:hr_appraisal_campaign.model_hr_appraisal_campaign model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__campaign_id
+msgid "Evaluation Campaign"
+msgstr "Campagne d'évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.actions.act_window,name:hr_appraisal_campaign.action_campaign model:ir.ui.menu,name:hr_appraisal_campaign.menu_campaign_config model:ir.ui.menu,name:hr_appraisal_campaign.menu_campaign_root
+msgid "Evaluation Campaigns"
+msgstr "Campagnes d'évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.actions.act_window,name:hr_appraisal_campaign.action_campaign_criterion model:ir.ui.menu,name:hr_appraisal_campaign.menu_campaign_criteria
+msgid "Evaluation Criteria"
+msgstr "Critères d'évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model,name:hr_appraisal_campaign.model_hr_appraisal_campaign_criterion
+msgid "Evaluation Criterion"
+msgstr "Critère d'évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model,name:hr_appraisal_campaign.model_hr_appraisal_campaign_line
+msgid "Evaluation Criterion Grade"
+msgstr "Cote d'un critère d'évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model,name:hr_appraisal_campaign.model_hr_appraisal_campaign_line_level
+msgid "Evaluation Criterion Grade Word Picture"
+msgstr "Description de niveau d'un critère coté"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model,name:hr_appraisal_campaign.model_hr_appraisal_campaign_criterion_level
+msgid "Evaluation Criterion Word Picture"
+msgstr "Description de niveau d'un critère"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_graph model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_pivot
+msgid "Evaluation Grades"
+msgstr "Cotes d'évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model,name:hr_appraisal_campaign.model_hr_appraisal_campaign_scale_level
+msgid "Evaluation Rating Level"
+msgstr "Niveau de cotation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model,name:hr_appraisal_campaign.model_hr_appraisal_campaign_scale
+msgid "Evaluation Rating Scale"
+msgstr "Échelle de cotation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model,name:hr_appraisal_campaign.model_hr_appraisal_campaign_threshold
+msgid "Evaluation Rating Threshold"
+msgstr "Seuil de cotation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model,name:hr_appraisal_campaign.model_hr_appraisal_campaign_remark_log
+msgid "Evaluation Remark Change"
+msgstr "Modification de remarque d'évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model,name:hr_appraisal_campaign.model_hr_appraisal_campaign_section
+msgid "Evaluation Section"
+msgstr "Section d'évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.actions.act_window,name:hr_appraisal_campaign.action_campaign_section
+msgid "Evaluation Sections"
+msgstr "Sections d'évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_step model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__campaign_step model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__step model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.hr_appraisal_view_search_campaign
+msgid "Evaluation Step"
+msgstr "Étape de l'évaluation"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign.py:0
+msgid "Evaluation campaign created"
+msgstr "Campagne d'évaluation créée"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign_line.py:0
+msgid "Evaluation lines are changed from the evaluation form."
+msgstr "Les lignes d'évaluation se modifient depuis le formulaire d'évaluation."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_list
+msgid "Evaluations"
+msgstr "Évaluations"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__evaluator_id model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_search model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.hr_appraisal_view_list_campaign model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "Evaluator"
+msgstr "Évaluateur"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Every selected employee with an Odoo user gets an evaluation and a to-do. Launch?"
+msgstr "Chaque employé sélectionné ayant un utilisateur Odoo reçoit une évaluation et une tâche. Lancer ?"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__employee_examples_ui
+msgid "Examples"
+msgstr "Exemples"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__employee_examples
+msgid "Examples (employee)"
+msgstr "Exemples (employé)"
+
+#. module: hr_appraisal_campaign
+#. odoo-javascript
+#: code:addons/hr_appraisal_campaign/static/src/word_picture/word_picture_lines.xml:0
+msgid "Examples (observable facts)"
+msgstr "Exemples (faits observables)"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign_line.py:0
+msgid "Explain the calibration of « %s » in the calibration note."
+msgstr "Expliquez la calibration de « %s » dans la note de calibration."
+
+#. module: hr_appraisal_campaign
+#. odoo-javascript
+#: code:addons/hr_appraisal_campaign/static/src/word_picture/word_picture_lines.js:0 model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.hr_appraisal_view_list_campaign
+msgid "Final"
+msgstr "Finale"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__final_grade
+msgid "Final Grade"
+msgstr "Cote finale"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__final_grade_ui
+msgid "Final Grade (shown)"
+msgstr "Cote finale (affichée)"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__band_final_id
+msgid "Final Overall Rating"
+msgstr "Appréciation finale globale"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__score_final_total
+msgid "Final Total Score"
+msgstr "Pointage final total"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_results_table model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "Final evaluation"
+msgstr "Évaluation finale"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__message_follower_ids
+msgid "Followers"
+msgstr "Abonnés"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Abonnés (partenaires)"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid ""
+"For each criterion, click the description that best matches your work this year, and give\n"
+"                        concrete examples. Your job profile is one click away (« Job Profile » button). When every\n"
+"                        criterion is graded, click « Submit to my Manager »."
+msgstr ""
+"Pour chaque critère, cliquez sur la description qui correspond le mieux à votre travail cette année et donnez\n"
+"                        des exemples concrets. Votre profil de poste est à un clic (bouton « Profil de poste »). Quand tous\n"
+"                        les critères sont cotés, cliquez sur « Soumettre à mon gestionnaire »."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__old_grade
+msgid "From"
+msgstr "De"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_threshold__min_score
+msgid "From (points)"
+msgstr "À partir de (points)"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__ui_gap
+msgid "Gap (final − self)"
+msgstr "Écart (finale − auto)"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal__score_aligned__discuss model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal__ui_aligned__discuss model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_results_table
+msgid "Gap to discuss in the 1-on-1"
+msgstr "Écart à discuter en 1-à-1"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign.py:0
+msgid "Give every criterion a word picture for each level of the scale: %s"
+msgstr "Donnez à chaque critère une description pour chaque niveau de l'échelle : %s"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "Grade every criterion before submitting: %s"
+msgstr "Cotez chaque critère avant de soumettre : %s"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.constraint,message:hr_appraisal_campaign.constraint_hr_appraisal_campaign_line_grades_positive
+msgid "Grades are levels of the rating scale."
+msgstr "Les cotes sont des niveaux de l'échelle de cotation."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign_line.py:0
+msgid "Grades of %s can only be calibrated during the calibration phase."
+msgstr "Les cotes de %s ne peuvent être calibrées que pendant la phase de calibration."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign_scale_level__color__success
+msgid "Green"
+msgstr "Vert"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign_scale_level__color__secondary
+msgid "Grey"
+msgstr "Gris"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__user_id
+msgid "HR Responsible"
+msgstr "Responsable RH"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "HR closes the evaluations."
+msgstr "Les RH ferment les évaluations."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__has_message
+msgid "Has Message"
+msgstr "A un message"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__max_value
+msgid "Highest Value"
+msgstr "Valeur la plus haute"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "Hold the evaluation meeting with %s"
+msgstr "Tenir la rencontre d'évaluation avec %s"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "I have read and discussed this evaluation"
+msgstr "J'ai lu et discuté cette évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion_level__id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line_level__id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale_level__id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_section__id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_threshold__id model:ir.model.fields,field_description:hr_appraisal_campaign.field_report_hr_appraisal_campaign_report_campaign_appraisal__id
+msgid "ID"
+msgstr ""
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si coché, de nouveaux messages demandent votre attention."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign__message_has_error model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si coché, certains messages ont une erreur de livraison."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__count_calibration model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_search
+msgid "In calibration"
+msgstr "En calibration"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__message_is_follower
+msgid "Is Follower"
+msgstr "Est un abonné"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__job_id
+msgid "Job"
+msgstr "Poste"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_search model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "Job Position"
+msgstr "Poste"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__write_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__write_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__write_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion_level__write_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__write_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line_level__write_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__write_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__write_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale_level__write_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_section__write_uid model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_threshold__write_uid
+msgid "Last Updated by"
+msgstr "Dernière mise à jour par"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__write_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__write_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__write_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion_level__write_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__write_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line_level__write_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__write_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__write_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale_level__write_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_section__write_date model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_threshold__write_date
+msgid "Last Updated on"
+msgstr "Dernière mise à jour le"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Launch"
+msgstr "Lancer"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.actions.act_window,help:hr_appraisal_campaign.action_campaign
+msgid "Launch the yearly evaluation"
+msgstr "Lancez l'évaluation annuelle"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign_scale_level__color
+msgid "Leave empty for an automatic colour (lowest red, highest green)."
+msgstr "Laissez vide pour une couleur automatique (le plus bas en rouge, le plus haut en vert)."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion_level__level_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line_level__level_id
+msgid "Level"
+msgstr "Niveau"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__level_count
+msgid "Level Count"
+msgstr "Nombre de niveaux"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.constraint,message:hr_appraisal_campaign.constraint_hr_appraisal_campaign_scale_level_value_positive
+msgid "Level values start at 1 (0 means « not graded »)."
+msgstr "Les valeurs des niveaux commencent à 1 (0 signifie « non coté »)."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__level_ids model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_scale_view_form model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_scale_view_list
+msgid "Levels"
+msgstr "Niveaux"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__levels_data
+msgid "Levels Data"
+msgstr "Données des niveaux"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__line_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line_level__line_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_remark_log__line_id
+msgid "Line"
+msgstr "Ligne"
+
+#. module: hr_appraisal_campaign
+#. odoo-javascript
+#: code:addons/hr_appraisal_campaign/static/src/word_picture/word_picture_lines.js:0 model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_list_calibration
+msgid "Manager"
+msgstr "Gestionnaire"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__deadline_manager
+msgid "Manager Evaluation Deadline"
+msgstr "Échéance de l'évaluation du gestionnaire"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__manager_grade
+msgid "Manager Grade"
+msgstr "Cote du gestionnaire"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__manager_grade_ui
+msgid "Manager Grade (shown)"
+msgstr "Cote du gestionnaire (affichée)"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__manager_remarks
+msgid "Manager Remarks"
+msgstr "Remarques du gestionnaire"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__score_manager_total
+msgid "Manager Total Score"
+msgstr "Pointage total du gestionnaire"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__manager_validated_date
+msgid "Manager Validated On"
+msgstr "Validée par le gestionnaire le"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal__campaign_step__manager_eval model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign_remark_log__step__manager_eval
+msgid "Manager evaluation"
+msgstr "Évaluation du gestionnaire"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_pivot_calibration
+msgid "Manager grade"
+msgstr "Cote du gestionnaire"
+
+#. module: hr_appraisal_campaign
+#. odoo-javascript
+#: code:addons/hr_appraisal_campaign/static/src/word_picture/word_picture_lines.xml:0
+msgid "Manager remarks / improvement"
+msgstr "Remarques / amélioration (gestionnaire)"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_max_total
+msgid "Maximum Score"
+msgstr "Pointage maximal"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__count_meeting model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal__campaign_step__meeting model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign_remark_log__step__meeting
+msgid "Meeting"
+msgstr "Rencontre"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_shared
+msgid "Meeting Held (shared with the employee)"
+msgstr "Partagée avec l'employé"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_shared_on
+msgid "Meeting Held On"
+msgstr "Partagée le"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "Meeting held — share with the employee"
+msgstr "Rencontre tenue — partager avec l'employé"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "Meeting held — the evaluation is now shared with the employee."
+msgstr "Rencontre tenue — l'évaluation est maintenant partagée avec l'employé."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign__state__meetings
+msgid "Meetings"
+msgstr "Rencontres"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__deadline_meetings
+msgid "Meetings Deadline"
+msgstr "Échéance des rencontres"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__message_has_error
+msgid "Message Delivery error"
+msgstr "Erreur de livraison du message"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__min_value
+msgid "Min Value"
+msgstr "Valeur minimale"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion_level__level_name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale_level__name model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_section__name
+msgid "Name"
+msgstr "Nom"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_scale_view_form
+msgid ""
+"New campaigns copy these values and the thresholds of the sections; each campaign\n"
+"                                then keeps its own."
+msgstr ""
+"Les nouvelles campagnes copient ces valeurs et les seuils des sections ; chaque campagne\n"
+"                                garde ensuite les siens."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.actions.act_window,help:hr_appraisal_campaign.action_campaign_calibration_board
+msgid "No evaluation in calibration"
+msgstr "Aucune évaluation en calibration"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "No evaluator is set on this evaluation; HR must choose one first."
+msgstr "Aucun évaluateur n'est défini sur cette évaluation ; les RH doivent d'abord en choisir un."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.actions.act_window,help:hr_appraisal_campaign.action_campaign_remark_log
+msgid "No remark changed after submission"
+msgstr "Aucune remarque modifiée après la soumission"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__note
+msgid "Note"
+msgstr ""
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Nombre d'actions"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__message_has_error_counter
+msgid "Number of errors"
+msgstr "Nombre d'erreurs"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Nombre de messages nécessitant une action"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Nombre de messages avec une erreur de livraison"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.actions.act_window,help:hr_appraisal_campaign.action_campaign_calibration_board
+msgid ""
+"Once managers submit their evaluations and HR starts the calibration, the grades of the\n"
+"            campaign appear here: one row per employee, one column per criterion. Click a grade to open\n"
+"            it, change the « Calibrated » grade and explain it in the note; every change is logged."
+msgstr "Dès que les gestionnaires soumettent leurs évaluations et que les RH lancent la calibration, les cotes de la campagne apparaissent ici : une ligne par employé, une colonne par critère. Cliquez sur une cote pour l'ouvrir, changez la cote « Calibrée » et expliquez-la dans la note ; chaque modification est consignée."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "Once submitted, you can no longer change your self-evaluation. Continue?"
+msgstr "Une fois soumise, votre auto-évaluation ne peut plus être modifiée. Continuer ?"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "Once submitted, your grades go to calibration and can no longer be changed. Continue?"
+msgstr "Une fois soumises, vos cotes passent en calibration et ne peuvent plus être modifiées. Continuer ?"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign.py:0
+msgid "Only a draft campaign can be launched."
+msgstr "Seule une campagne en brouillon peut être lancée."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign_line.py:0
+msgid "Only calibrators adjust grades."
+msgstr "Seuls les calibrateurs ajustent les cotes."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "Only the employee acknowledges their evaluation."
+msgstr "Seul l'employé signe son évaluation."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "Only the employee submits their self-evaluation."
+msgstr "Seul l'employé soumet son auto-évaluation."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "Only the evaluator records that the meeting was held."
+msgstr "Seul l'évaluateur indique que la rencontre a eu lieu."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "Only the evaluator submits the manager evaluation."
+msgstr "Seul l'évaluateur soumet l'évaluation du gestionnaire."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "Only the evaluator validates the evaluation."
+msgstr "Seul l'évaluateur valide l'évaluation."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "Optional comment on your evaluation"
+msgstr "Commentaire facultatif sur votre évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign_scale_level__color__warning
+msgid "Orange"
+msgstr "Orange"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__ui_band_final_id
+msgid "Overall Rating"
+msgstr "Appréciation globale"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__threshold_ids
+msgid "Overall Thresholds"
+msgstr "Seuils globaux"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign__target_score
+msgid "Overall points the company expects (shown on the evaluation)."
+msgstr "Points globaux attendus par l'entreprise (affichés sur l'évaluation)."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_scale_view_form
+msgid "Overall thresholds (points of the final total)"
+msgstr "Seuils globaux (points du total final)"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Overall total"
+msgstr "Total global"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__count_overdue model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_list
+msgid "Overdue"
+msgstr "En retard"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.hr_appraisal_view_search_campaign
+msgid "Overdue step"
+msgstr "Étape en retard"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "Performance Evaluation"
+msgstr "Évaluation du rendement"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Period"
+msgstr "Période"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__date_end
+msgid "Period End"
+msgstr "Fin de la période"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__date_start
+msgid "Period Start"
+msgstr "Début de la période"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "Print"
+msgstr "Imprimer"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Progress"
+msgstr "Avancement"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign_scale_level__color__primary
+msgid "Purple"
+msgstr "Violet"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_results_table
+msgid "Rating"
+msgstr "Appréciation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_threshold__level_id
+msgid "Rating Level"
+msgstr "Niveau de cotation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__scale_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__scale_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_section__scale_id
+msgid "Rating Scale"
+msgstr "Échelle de cotation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.actions.act_window,name:hr_appraisal_campaign.action_campaign_scale model:ir.ui.menu,name:hr_appraisal_campaign.menu_campaign_scales
+msgid "Rating Scales"
+msgstr "Échelles de cotation"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "Read and acknowledge your evaluation"
+msgstr "Lisez et signez votre évaluation"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "Read and discussed by"
+msgstr "Lue et discutée par"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign__user_id
+msgid "Receives the HR to-dos of the campaign (appraisals to close)."
+msgstr "Reçoit les tâches RH de la campagne (évaluations à fermer)."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign_scale_level__color__danger
+msgid "Red"
+msgstr "Rouge"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Reload the Default Thresholds"
+msgstr "Recharger les seuils par défaut"
+
+#. module: hr_appraisal_campaign
+#: model:ir.actions.act_window,name:hr_appraisal_campaign.action_campaign_remark_log model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__remark_log_ids model:ir.ui.menu,name:hr_appraisal_campaign.menu_campaign_remark_log
+msgid "Remark Changes"
+msgstr "Modifications de remarques"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__manager_remarks_ui
+msgid "Remarks / Improvement"
+msgstr "Remarques / amélioration"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Replace the thresholds of this campaign with the defaults of its scale and sections?"
+msgstr "Remplacer les seuils de cette campagne par ceux, par défaut, de son échelle et de ses sections ?"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_results_html model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "Results"
+msgstr "Résultats"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign__state__running
+msgid "Running"
+msgstr "En cours"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "Erreur de livraison SMS"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale_level__scale_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_threshold__scale_id
+msgid "Scale"
+msgstr "Échelle"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__score_aligned
+msgid "Score Alignment"
+msgstr "Alignement du pointage"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__score_gap
+msgid "Score Gap"
+msgstr "Écart de pointage"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Scoring"
+msgstr "Pointage"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__section_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__section_id model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_threshold__section_id model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_criterion_view_search model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_search
+msgid "Section"
+msgstr ""
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__section_sequence
+msgid "Section Sequence"
+msgstr "Séquence de la section"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__section_ids model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__section_ids model:ir.ui.menu,name:hr_appraisal_campaign.menu_campaign_sections model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_scale_view_form
+msgid "Sections"
+msgstr ""
+
+#. module: hr_appraisal_campaign
+#. odoo-javascript
+#: code:addons/hr_appraisal_campaign/static/src/word_picture/word_picture_lines.xml:0 model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_list_calibration model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.hr_appraisal_view_list_campaign
+msgid "Self"
+msgstr "Auto"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__ui_self_percent
+msgid "Self %"
+msgstr "Auto %"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__employee_grade
+msgid "Self Grade"
+msgstr "Auto-cote"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__employee_grade_ui
+msgid "Self Grade (shown)"
+msgstr "Auto-cote (affichée)"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__score_self_total
+msgid "Self Total Score"
+msgstr "Auto-pointage total"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign__alignment_gap
+msgid "Self and final totals within this many points are « aligned »; beyond, the gap is to be discussed in the meeting."
+msgstr "Si les totaux de l'auto-évaluation et de l'évaluation finale sont à ce nombre de points ou moins, l'évaluation est « alignée » ; au-delà, l'écart est à discuter en rencontre."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_pivot_calibration
+msgid "Self grade"
+msgstr "Auto-cote"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__ui_self_total model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal__campaign_step__self_eval model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal_campaign_remark_log__step__self_eval model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_results_table model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "Self-evaluation"
+msgstr "Auto-évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__deadline_self_eval
+msgid "Self-evaluation Deadline"
+msgstr "Échéance de l'auto-évaluation"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__section_sequence model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__sequence model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__sequence model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__sequence model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_section__sequence
+msgid "Sequence"
+msgstr "Séquence"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "Share the evaluation with the employee first."
+msgstr "Partagez d'abord l'évaluation avec l'employé."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "Start Calibration"
+msgstr "Démarrer la calibration"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__state
+msgid "State"
+msgstr "État"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__campaign_deadline
+msgid "Step Deadline"
+msgstr "Échéance de l'étape"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "Submit for Calibration"
+msgstr "Soumettre pour calibration"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "Submit to my Manager"
+msgstr "Soumettre à mon gestionnaire"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__ui_target_score
+msgid "Target"
+msgstr "Cible"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__target_score model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale__default_target_score
+msgid "Target Score"
+msgstr "Pointage cible"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_results_table
+msgid "Target:"
+msgstr "Cible :"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign.py:0
+msgid "The campaign is not in calibration."
+msgstr "La campagne n'est pas en calibration."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign.py:0
+msgid "The criteria catalogue of this scale is empty."
+msgstr "Le catalogue de critères de cette échelle est vide."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid ""
+"The employee's choice is marked on each criterion. Click the description that matches your own\n"
+"                        assessment and add your remarks, then « Submit for Calibration ». The employee sees nothing\n"
+"                        of your evaluation in Odoo until you record, after the meeting, « Meeting held — share with\n"
+"                        the employee »."
+msgstr "Le choix de l'employé est indiqué sur chaque critère. Cliquez sur la description qui correspond à votre propre appréciation et ajoutez vos remarques, puis « Soumettre pour calibration ». L'employé ne voit rien de votre évaluation dans Odoo tant que vous n'avez pas indiqué, après la rencontre, « Rencontre tenue — partager avec l'employé »."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "The evaluation has not been shared with you yet."
+msgstr "L'évaluation ne vous a pas encore été partagée."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "The evaluation is shared with the employee after the meeting, at the meeting step."
+msgstr "L'évaluation est partagée avec l'employé après la rencontre, à l'étape de la rencontre."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "The evaluation is shared with the employee. You can still amend a remark until they acknowledge it."
+msgstr "L'évaluation est partagée avec l'employé. Vous pouvez encore modifier une remarque jusqu'à sa signature."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "The evaluation steps are changed with its buttons."
+msgstr "Les étapes de l'évaluation se changent avec ses boutons."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion_level__value model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign_line_level__value model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign_scale_level__value
+msgid "The grade this level stands for (1, 2, 3…)."
+msgstr "La cote que représente ce niveau (1, 2, 3…)."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign_line.py:0
+msgid "The manager's grades are locked once submitted for calibration; only the calibrated grade can change, during the calibration."
+msgstr "Les cotes du gestionnaire sont verrouillées une fois soumises à la calibration ; seule la cote calibrée peut changer, pendant la calibration."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign_section.py:0
+msgid "The rating level %s does not belong to the scale %s."
+msgstr "Le niveau %s n'appartient pas à l'échelle %s."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign.py:0
+msgid "The rating scale needs at least two levels."
+msgstr "L'échelle de cotation doit avoir au moins deux niveaux."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "The self-evaluation was already submitted."
+msgstr "L'auto-évaluation a déjà été soumise."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "These employees have no Odoo user and get no evaluation in Odoo: handle them on paper or give them a user first."
+msgstr "Ces employés n'ont pas d'utilisateur Odoo et ne reçoivent pas d'évaluation dans Odoo : traitez-les sur papier ou créez-leur d'abord un utilisateur."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "These employees have no manager: after the launch, set the evaluator (Appraisers) on their evaluation."
+msgstr "Ces employés n'ont pas de gestionnaire : après le lancement, définissez l'évaluateur (Évaluateurs) sur leur évaluation."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "This employee has no manager: HR must choose the evaluator (Appraisers) before the self-evaluation is submitted."
+msgstr "Cet employé n'a pas de gestionnaire : les RH doivent choisir l'évaluateur (Évaluateurs) avant la soumission de l'auto-évaluation."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal.py:0
+msgid "This evaluation is not waiting for the manager."
+msgstr "Cette évaluation n'attend pas le gestionnaire."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__threshold_ids model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_section__threshold_ids
+msgid "Thresholds"
+msgstr "Seuils"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign.py:0
+msgid "Thresholds are reloaded before the launch only."
+msgstr "Les seuils ne se rechargent qu'avant le lancement."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_calibration_log__new_grade
+msgid "To"
+msgstr "À"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__count_manager_eval
+msgid "To evaluate (manager)"
+msgstr "À évaluer (gestionnaire)"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__count_self_eval
+msgid "To self-evaluate"
+msgstr "À auto-évaluer"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_results_table
+msgid "Total"
+msgstr ""
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid "Validate"
+msgstr "Valider"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal__manager_validated_user_id
+msgid "Validated By"
+msgstr "Validée par"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "Validated by"
+msgstr "Validée par"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion_level__value model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line_level__value model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_scale_level__value
+msgid "Value"
+msgstr "Valeur"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal__score_aligned__aligned model:ir.model.fields.selection,name:hr_appraisal_campaign.selection__hr_appraisal__ui_aligned__aligned model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_results_table
+msgid "Very aligned evaluation"
+msgstr "Évaluation très alignée"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign__website_message_ids
+msgid "Website Messages"
+msgstr "Messages du site web"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign__website_message_ids
+msgid "Website communication history"
+msgstr "Historique des communications du site web"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion_level__description
+msgid "What this level looks like for this criterion."
+msgstr "À quoi ressemble ce niveau pour ce critère."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion_level__description model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line_level__description
+msgid "Word Picture"
+msgstr "Description"
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_criterion__level_ids model:ir.model.fields,field_description:hr_appraisal_campaign.field_hr_appraisal_campaign_line__level_text_ids
+msgid "Word Pictures"
+msgstr "Descriptions"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_criterion_view_form
+msgid "Word pictures (one description per level)"
+msgstr "Descriptions (une par niveau)"
+
+#. module: hr_appraisal_campaign
+#. odoo-javascript
+#: code:addons/hr_appraisal_campaign/static/src/word_picture/word_picture_lines.js:0
+msgid "Word-picture grades"
+msgstr "Cotes par description"
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign_line.py:0
+msgid "You cannot calibrate your own evaluation."
+msgstr "Vous ne pouvez pas calibrer votre propre évaluation."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign_line.py:0
+msgid "You cannot change the manager evaluation of %s at this step."
+msgstr "Vous ne pouvez pas modifier l'évaluation du gestionnaire de %s à cette étape."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign_line.py:0
+msgid "You cannot change the remarks of %s at this step: the evaluator edits them until the employee acknowledges the evaluation."
+msgstr "Vous ne pouvez pas modifier les remarques de %s à cette étape : l'évaluateur les modifie jusqu'à ce que l'employé signe l'évaluation."
+
+#. module: hr_appraisal_campaign
+#. odoo-python
+#: code:addons/hr_appraisal_campaign/models/hr_appraisal_campaign_line.py:0
+msgid "You cannot change the self-evaluation of %s at this step."
+msgstr "Vous ne pouvez pas modifier l'auto-évaluation de %s à cette étape."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid ""
+"Your grades are in calibration and can no longer be changed. You can still refine your remarks\n"
+"                        until the employee acknowledges the evaluation."
+msgstr "Vos cotes sont en calibration et ne peuvent plus être modifiées. Vous pouvez encore préciser vos remarques jusqu'à ce que l'employé signe l'évaluation."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid ""
+"Your manager shared your evaluation after your meeting. Compare your choices with the final\n"
+"                        grades and read the remarks, then confirm you have read and discussed it. The remarks are frozen\n"
+"                        once you confirm."
+msgstr "Votre gestionnaire a partagé votre évaluation après votre rencontre. Comparez vos choix aux cotes finales et lisez les remarques, puis confirmez que vous l'avez lue et discutée. Les remarques sont figées dès votre confirmation."
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.view_hr_appraisal_form_campaign
+msgid ""
+"Your self-evaluation was submitted. Your manager will go over the evaluation with you at your\n"
+"                        meeting; you will see it here after the meeting."
+msgstr "Votre auto-évaluation a été soumise. Votre gestionnaire passera l'évaluation en revue avec vous lors de votre rencontre ; vous la verrez ici après la rencontre."
+
+#. module: hr_appraisal_campaign
+#: model:ir.model.fields,help:hr_appraisal_campaign.field_hr_appraisal_campaign__name model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_view_form
+msgid "e.g. Annual 2026"
+msgstr "p. ex. Annuelle 2026"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_scale_view_form
+msgid "e.g. Four-level scale"
+msgstr "p. ex. Échelle à quatre niveaux"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.report_campaign_appraisal_document
+msgid "on"
+msgstr "le"
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_list_calibration
+msgid "Δ"
+msgstr ""
+
+#. module: hr_appraisal_campaign
+#: model_terms:ir.ui.view,arch_db:hr_appraisal_campaign.campaign_line_view_pivot_calibration
+msgid "Δ (calibrated − manager)"
+msgstr "Δ (calibrée − gestionnaire)"

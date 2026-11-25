@@ -6,3 +6,4 @@ from . import test_company_notice
 from . import test_manage_own_signature
 from . import test_regeneration_triggers
 from . import test_employees_only
+from . import test_show_mobile

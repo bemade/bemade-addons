@@ -22,7 +22,7 @@ class TestAppShellI18n1538(AppShellCommon):
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_portal_kit_pwa', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):
@@ -41,8 +41,10 @@ class TestAppShellI18n1538(AppShellCommon):
         self._theme_choice(True)  # task 1602: the theme labels need the toggles
         self._login_tp()
         text = self._fr('/my/home')
+        # Task 1624 (deliberate update): the dashboard's widget sections
+        # replaced « Mes équipes » / « À venir » on the home.
         for term in ('Équipes', 'Joueurs', 'Clinique', 'Activités', 'Plus',
-                     'Mes équipes', 'À venir', 'Blessés', 'Disponibles',
+                     'Aujourd&#39;hui', 'Couvertures à venir', 'Blessés', 'Disponibles',
                      'Basculer le thème'):
             self.assertIn(term, text, term)
         self.assertNotIn('>My teams<', text)
@@ -84,5 +86,6 @@ class TestAppShellI18n1538(AppShellCommon):
             self.assertIn(term, text.replace('&#39;', "'"), term)
         # Task 1606: the settings moved to « Paramètres ».
         text = self._fr('/my/app/settings')
-        for term in ('Apparence', 'Sombre', 'Clair', 'Mon compte', 'Sécurité'):
+        # Task 1726: « Apparence » is a « Mode sombre » switch.
+        for term in ('Apparence', 'Mode sombre', 'Mon compte', 'Sécurité'):
             self.assertIn(term, text.replace('&#39;', "'"), term)

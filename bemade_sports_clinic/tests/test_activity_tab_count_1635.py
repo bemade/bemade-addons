@@ -41,12 +41,12 @@ class TabCount1635Mixin(Clock1592Mixin):
 
     @staticmethod
     def _tab(tree, key):
-        tabs = tree.xpath('//nav[@data-sc-tabs]/a[@data-sc-tab="%s"]' % key)
+        tabs = tree.xpath('//nav[@data-pk-tabs]/a[@data-pk-tab="%s"]' % key)
         return tabs[0] if tabs else None
 
     @staticmethod
     def _badge(tab):
-        badges = tab.xpath('.//span[contains(@class, "o_sc_tab_badge")]')
+        badges = tab.xpath('.//span[contains(@class, "o_pk_tab_badge")]')
         return badges[0] if badges else None
 
     def _assert_badge(self, tree, key, count, overdue):
@@ -59,18 +59,18 @@ class TabCount1635Mixin(Clock1592Mixin):
         self.assertIsNotNone(badge, 'no pill on the %s tab' % key)
         self.assertEqual(_text(badge), str(count))
         classes = badge.get('class').split()
-        tone = 'o_sc_tab_badge_red' if overdue else 'o_sc_tab_badge_neutral'
-        other = 'o_sc_tab_badge_neutral' if overdue else 'o_sc_tab_badge_red'
+        tone = 'o_pk_tab_badge_red' if overdue else 'o_pk_tab_badge_neutral'
+        other = 'o_pk_tab_badge_neutral' if overdue else 'o_pk_tab_badge_red'
         self.assertIn(tone, classes)
         self.assertNotIn(other, classes)
         self.assertTrue(badge.get('aria-label'))
         # Task 1647: the pill comes first, the label right after it.
-        self.assertTrue(badge.getnext() is not None and 'o_sc_tab_label' in badge.getnext().get('class'))
+        self.assertTrue(badge.getnext() is not None and 'o_pk_tab_label' in badge.getnext().get('class'))
         self.assertTrue(badge.getnext().text_content().strip())
         return badge
 
     def _panel_rows(self, tree):
-        panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="activities"]')[0]
         return panel.xpath('.//*[@data-sc-activity-row]')
 
     def _player_activities(self):
@@ -156,8 +156,8 @@ class TestActivityTabCount1635(TabCount1635Mixin, AppShellCommon):
             self.assertIsNone(self._badge(self._tab(tree, key)), key)
         for url in ('/my/activities', '/my/events?no_default_dates=1'):
             _t, tree = self._get(url)
-            self.assertTrue(tree.xpath('//nav[@data-sc-tabs]/a'), url)
-            self.assertFalse(tree.xpath('//*[contains(@class, "o_sc_tab_badge")]'), url)
+            self.assertTrue(tree.xpath('//nav[@data-pk-tabs]/a'), url)
+            self.assertFalse(tree.xpath('//*[contains(@class, "o_pk_tab_badge")]'), url)
 
     # -- UC-5 ------------------------------------------------------------
     def test_count_follows_completion(self):

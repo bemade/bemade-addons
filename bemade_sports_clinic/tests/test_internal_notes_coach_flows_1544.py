@@ -30,7 +30,7 @@ from odoo.tests import tagged
 from .portal_cov_common import PortalCovCommon
 
 SECRET = 'ZZ-1544-coach-flow-secret'
-SWITCH = 'bemade_sports_clinic.app_shell_enabled'
+SWITCH = 'bemade_portal_kit.enabled'
 
 
 @tagged('-at_install', 'post_install')

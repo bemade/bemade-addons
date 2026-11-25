@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_order_form_package_format" model="ir.ui.view">
+        <field name="name">sale.order.form.package.format</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale_stock.view_order_form_inherit_sale_stock" />
+        <field name="arch" type="xml">
+            <xpath
+        expr="//field[@name='order_line']//list//field[@name='qty_delivered']"
+        position="after"
+      >
+                <field
+          name="package_format_availability"
+          optional="show"
+          string="Packages"
+        />
+                <field name="package_format_proposal" column_invisible="True" />
+                <field name="package_format_to_buy" column_invisible="True" />
+                <field name="package_format_free_stock" column_invisible="True" />
+            </xpath>
+            <xpath
+        expr="//field[@name='order_line']//form//field[@name='product_uom_id']"
+        position="after"
+      >
+                <field
+          name="package_format_availability"
+          invisible="not package_format_availability"
+        />
+                <field
+          name="package_format_proposal"
+          invisible="not package_format_proposal"
+        />
+                <field
+          name="package_format_free_stock"
+          invisible="not package_format_free_stock"
+        />
+            </xpath>
+        </field>
+    </record>
+</odoo>

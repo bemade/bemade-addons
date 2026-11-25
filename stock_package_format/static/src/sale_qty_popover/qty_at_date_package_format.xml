@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t
+    t-name="stock_package_format.QtyAtDatePopover"
+    t-inherit="sale_stock.QtyAtDatePopover"
+    t-inherit-mode="extension"
+  >
+        <xpath expr="//table" position="before">
+            <div t-if="props.record.data.package_format_availability" class="mb-2">
+                <strong>Packages: </strong><span
+          t-out="props.record.data.package_format_availability"
+        />
+            </div>
+            <!-- Free stock and the proposal list one format per line (the
+                 fields are newline-separated), never a run-on sentence. -->
+            <div t-if="props.record.data.package_format_free_stock" class="mb-2">
+                <strong>Free stock:</strong>
+                <ul class="mb-0 ps-3">
+                    <li
+            t-foreach="props.record.data.package_format_free_stock.split('\n')"
+            t-as="free_line"
+            t-key="free_line_index"
+            t-out="free_line"
+          />
+                </ul>
+            </div>
+            <div
+        t-if="props.record.data.package_format_proposal"
+        class="mb-2 text-warning"
+      >
+                <t
+          t-set="proposal_lines"
+          t-value="props.record.data.package_format_proposal.split('\n')"
+        />
+                <span t-out="proposal_lines[0]" />
+                <ul class="mb-0 ps-3">
+                    <li
+            t-foreach="proposal_lines.slice(1)"
+            t-as="proposal_line"
+            t-key="proposal_line_index"
+            t-out="proposal_line"
+          />
+                </ul>
+            </div>
+        </xpath>
+    </t>
+    <t
+    t-name="stock_package_format.QtyAtDate"
+    t-inherit="sale_stock.QtyAtDate"
+    t-inherit-mode="extension"
+  >
+        <xpath expr="//a" position="attributes">
+            <attribute name="t-attf-class" add="{{ props.record.data.package_format_to_buy ? 'text-danger' : '' }}" separator=" " />
+        </xpath>
+    </t>
+</templates>

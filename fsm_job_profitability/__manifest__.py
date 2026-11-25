@@ -1,7 +1,7 @@
 {
     "name": "FSM Job Profitability",
     "summary": "FSM job profitability analysis (revenue per hour, margin, KPIs) for field service projects",
-    "version": "19.0.1.0.2",
+    "version": "19.0.1.0.3",
     "author": "Bemade Inc.",
     "license": "LGPL-3",
     "website": "https://www.bemade.org",

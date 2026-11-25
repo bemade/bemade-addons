@@ -280,6 +280,10 @@ class SportsTeamDigest(models.Model):
                     "jersey_number": player.get("jersey_number") or "",
                     "position": player.get("position"),
                     "predicted_return_date": player.get("predicted_return_date", ""),
+                    # Task 1727: already passed on the snapshot's day (« · Dépassé »).
+                    "predicted_return_overdue": bool(
+                        player.get("predicted_return_date") and self.snapshot_date
+                        and player["predicted_return_date"] < fields.Date.to_string(self.snapshot_date)),
                     "training_recommendation": player.get("training_recommendation", ""),
                     "last_consultation_date": player.get("last_consultation_date", ""),
                     "active_injuries": active_injuries,

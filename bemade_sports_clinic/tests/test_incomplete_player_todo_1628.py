@@ -57,7 +57,7 @@ class IncompleteTodoCommon(HttpCase):
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
 
         portal = env.ref('base.group_portal').id
         internal = env.ref('base.group_user').id

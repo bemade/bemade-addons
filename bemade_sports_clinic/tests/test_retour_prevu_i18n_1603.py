@@ -53,7 +53,7 @@ class TestRetourPrevuI18n1603(TestAppShellI18n1538):
             self.assertIn(term, text, term)
         # The therapist's field: the label travels in the island's props.
         field = lxml_html.fromstring(text).xpath(
-            '//*[@data-sc-section="player.predicted_return"]//owl-component')[0]
+            '//*[@data-pk-section="player.predicted_return"]//owl-component')[0]
         self.assertEqual(json.loads(field.get('props'))['label'], 'Retour prévu')
         # Review fixes 2026-10-18: the read view shows « Retour prévu » while
         # the player is not Play OK and the date is set.

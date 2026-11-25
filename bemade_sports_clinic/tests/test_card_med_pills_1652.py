@@ -41,7 +41,7 @@ class TestCardMedPills1652(MedicalCards1630Common):
                     sheet_id = 'sc_med_card_%s_%s' % (key, self.player.id)
                     sheets = tree.xpath('//dialog[@id="%s"]' % sheet_id)
                     self.assertEqual(len(sheets), 1, (url, key))
-                    self.assertFalse(sheets[0].xpath('ancestor::*[@data-sc-fragment]'), (url, key))
+                    self.assertFalse(sheets[0].xpath('ancestor::*[@data-pk-fragment]'), (url, key))
                     self.assertTrue(tree.xpath('//button[@data-sc-med-card-sheet="%s"]' % sheet_id), (url, key))
 
     def test_editable_for_therapist_read_only_for_coach(self):
@@ -49,22 +49,23 @@ class TestCardMedPills1652(MedicalCards1630Common):
         self._login_tp()
         with self._presence():
             tree = self._page(self.team_url)
-        self.assertTrue(tree.xpath(sheet + '//button[@data-sc-edit-toggle]'))
+        self.assertTrue(tree.xpath(sheet + '//button[@data-pk-edit-toggle]'))
         self.assertTrue(tree.xpath(sheet + '//form[@data-sc-med-add]'))
         self._login_coach()
         with self._presence():
             tree = self._page(self.team_url)
         self.assertTrue(tree.xpath(sheet))
-        self.assertFalse(tree.xpath(sheet + '//button[@data-sc-edit-toggle] | ' + sheet + '//form'))
+        self.assertFalse(tree.xpath(sheet + '//button[@data-pk-edit-toggle] | ' + sheet + '//form'))
 
-    def test_non_urgent_player_has_no_pill_nor_sheet(self):
+    def test_non_urgent_player_has_pills_and_sheets(self):
+        # Review round 2 (owner 2026-10-27): a therapist sees the pills of
+        # every card (yellow / grey too), each opening its popup.
         self._login_tp()
         tree = self._page('/my/players')
-        self.assertFalse(tree.xpath('//button[@data-sc-med-card-sheet][contains(@data-sc-med-card-sheet, "_%s")]'
-                                    % self.other.id))
-        self.assertFalse(tree.xpath('//dialog[starts-with(@id, "sc_med_card_")][substring(@id, string-length(@id) - %d) = "_%s"]'
-                                    % (len(str(self.other.id)), self.other.id)))
-
+        for key in ('allergy', 'medical_alert'):
+            sheet_id = 'sc_med_card_%s_%s' % (key, self.other.id)
+            self.assertEqual(len(tree.xpath('//button[@data-sc-med-card-sheet="%s"]' % sheet_id)), 1)
+            self.assertEqual(len(tree.xpath('//dialog[@id="%s"]' % sheet_id)), 1)
 
 @tagged('post_install', '-at_install')
 class TestCardMedPillsTour1652(MedicalCards1630Common):

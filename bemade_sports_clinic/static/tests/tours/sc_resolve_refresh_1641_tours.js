@@ -43,8 +43,8 @@ function card(diagnosis) {
 
 function pillValue(diagnosis) {
     const node = card(diagnosis);
-    const pill = node && node.querySelector("summary [data-sc-pill-value]");
-    return pill ? pill.dataset.scPillValue : null;
+    const pill = node && node.querySelector("summary [data-pk-pill-value]");
+    return pill ? pill.dataset.pkPillValue : null;
 }
 
 function resolveSteps(diagnosis, { open, focus }) {
@@ -73,7 +73,7 @@ function resolveSteps(diagnosis, { open, focus }) {
         },
         {
             content: "The card reads « resolved », its « Resolve » button gone — no reload",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => !document.querySelector(`${SHEET}[open]`), "sheet closed");
                 await waitFor(

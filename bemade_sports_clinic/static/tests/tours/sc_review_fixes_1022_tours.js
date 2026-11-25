@@ -129,12 +129,12 @@ tours.add("sc_1022_player_add_team", {
     steps: () => [
         {
             content: "The team's dashboard: open the Joueurs tab",
-            trigger: '[data-sc-tabs] a[data-sc-tab="players"]',
+            trigger: '[data-pk-tabs] a[data-pk-tab="players"]',
             run: "click",
         },
         {
             content: "« + Add »",
-            trigger: 'button.o_sc_list_add[aria-controls="sc_add_player"]',
+            trigger: 'button.o_pk_list_add[aria-controls="sc_add_player"]',
             run: "click",
         },
         ...panelSteps(),

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    The homeschool portal as a Bemade portal kit app (19.0.3.0.0).
+
+    hs_app_layout    the kit's app layout (bemade_portal_kit.pk_app_layout)
+                     with the homeschool pieces: the home (« Today »), the
+                     brand mark, the learner switcher (a tutor with more than
+                     one learner) and « More » in the user menu. The brand
+                     NAME is the company's (portal.kit._pk_brand).
+    hs_dash_page     « Today »: the kit's dashboard of the learner's day.
+    hs_dash_*        the dashboard widgets' bodies (portal.kit.dashboard
+                     _pk_widgets, builders in controllers/portal.py).
+-->
+<odoo>
+    <template id="hs_brand_mark" name="Homeschool: brand mark">
+        <svg viewBox="0 0 24 24" class="o_pk_icon o_pk_logo_mark" aria-hidden="true" focusable="false"><path d="M3 10.5L12 4l9 6.5"/><path d="M5.5 9v11h13V9"/><path d="M10 20v-5h4v5"/></svg>
+    </template>
+
+    <!-- The open book of « Reading » (Feather Icons 4.29 « book-open », MIT). -->
+    <template id="hs_icon_extra" inherit_id="bemade_portal_kit.pk_icon_extra" name="Homeschool: icons">
+        <xpath expr="//t[@t-else]" position="before">
+            <t t-elif="icon == 'hs_book'"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></t>
+        </xpath>
+    </template>
+
+    <template id="hs_app_layout" name="Homeschool: app layout">
+        <t t-call="bemade_portal_kit.pk_app_layout">
+            <t t-set="hs_home_label">Today</t>
+            <t t-set="pk_brand" t-value="{'home_url': '/my/home', 'home_label': hs_home_label,
+                                          'theme_colors': {'light': '#ffffff', 'dark': '#0f172a'}}"/>
+            <t t-set="pk_brand_mark"><t t-call="homeschool_portal.hs_brand_mark"/></t>
+            <t t-set="pk_home_url" t-value="'/my/home'"/>
+            <!-- The brand slots (portal.scss) apply under this class only. -->
+            <t t-set="pk_content_class" t-value="'o_hs_content %s' % (pk_content_class or '')"/>
+            <t t-set="pk_appbar_actions">
+                <!-- A tutor following several learners: the learner he is
+                     looking at, and the others (the same section). -->
+                <details t-if="hs_switcher" class="o_hs_switcher" data-hs-switcher="1">
+                    <t t-set="hs_switch_label">Change learner</t>
+                    <summary class="o_pk_btn o_pk_btn_ghost o_hs_switcher_toggle" t-att-title="hs_switch_label"
+                             t-att-aria-label="hs_switch_label">
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'user'"/></t>
+                        <span class="o_hs_switcher_name" t-out="hs_current_student.name if hs_current_student else ''"/>
+                    </summary>
+                    <ul class="o_hs_switcher_menu">
+                        <li t-foreach="hs_switcher" t-as="learner">
+                            <a t-att-href="learner['url']" t-att-aria-current="'true' if learner['active'] else None"
+                               t-att-data-hs-learner="learner['id']" t-out="learner['name']"/>
+                        </li>
+                    </ul>
+                </details>
+            </t>
+            <t t-set="pk_user_menu_extra">
+                <a role="menuitem" href="/my/app/more" class="o_pk_user_menu_item" tabindex="-1">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'more'"/></t>
+                    <span>More</span>
+                </a>
+            </t>
+            <t t-out="0"/>
+        </t>
+    </template>
+
+    <!-- The « Configure » link only when the page passes its URL (a learner's Today
+         has none: it is set up for him). -->
+    <template id="hs_dash_home_configure" inherit_id="bemade_portal_kit_dashboard.pk_dash_home"
+              name="Homeschool: no « Configure » without its URL">
+        <xpath expr="//a[hasclass('o_pk_dash_configure')]" position="attributes">
+            <attribute name="t-if">pk_dash_configure_url</attribute>
+        </xpath>
+    </template>
+
+    <!-- « Today »: the learner's day on the kit's dashboard. -->
+    <template id="hs_dash_page" name="Homeschool: today">
+        <t t-call="homeschool_portal.hs_app_layout">
+            <p t-if="hs_student" class="o_pk_meta o_hs_dash_intro text-capitalize">
+                <strong t-out="hs_student.name"/> · <span t-out="hs_today_label"/>
+            </p>
+            <t t-call="bemade_portal_kit_dashboard.pk_dash_home"/>
+        </t>
+    </template>
+
+    <!-- Today's list: tick-boxes for the learner himself (the day page's tick
+         route, back to « Today »), read-only for a tutor. -->
+    <template id="hs_dash_list" name="Homeschool: today's list widget">
+        <t t-if="not section['hs_lines']" t-call="bemade_portal_kit.pk_empty_state">
+            <t t-set="message">Nothing on the list today.</t>
+        </t>
+        <t t-else="">
+            <p class="o_pk_meta o_hs_dash_count" data-hs-list-count="1">
+                <t t-out="section['hs_done_count']"/> / <t t-out="len(section['hs_lines'])"/>
+            </p>
+            <ul class="o_pk_list o_hs_dash_list list-unstyled mb-0">
+                <li t-foreach="section['hs_lines']" t-as="line"
+                    t-attf-class="o_pk_card o_hs_dash_line #{'o_hs_done' if line.done else ''}"
+                    t-att-data-hs-line="line.id">
+                    <form t-if="section['hs_can_tick']" method="post" class="o_hs_tick_form" data-pk-no-dirty="1"
+                          t-att-action="'%s/deliverable/%d/tick' % (section['hs_base_url'], line.id)">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="return_url" t-att-value="section['hs_return_url']"/>
+                        <t t-if="line.done">
+                            <t t-set="hs_untick_label">Untick</t>
+                            <button type="submit" name="done" value="0" class="o_pk_icon_btn o_hs_tick o_hs_done"
+                                    t-att-title="hs_untick_label" t-att-aria-label="hs_untick_label">
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'check'"/></t>
+                            </button>
+                        </t>
+                        <t t-else="">
+                            <t t-set="hs_tick_label">Tick</t>
+                            <button type="submit" name="done" value="1" class="o_pk_icon_btn o_hs_tick"
+                                    t-att-title="hs_tick_label" t-att-aria-label="hs_tick_label"/>
+                        </t>
+                    </form>
+                    <span t-else="" t-attf-class="o_hs_tick o_hs_tick_static #{'o_hs_done' if line.done else ''}">
+                        <t t-if="line.done" t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'check'"/></t>
+                    </span>
+                    <span class="o_hs_dash_line_text">
+                        <span class="o_pk_row_title o_hs_deliverable_name"><t t-out="line.name"/>
+                            <span t-if="line.bonus" class="o_pk_chip o_pk_chip_yellow">Bonus</span>
+                        </span>
+                        <span t-if="line.when or line.detail" class="o_pk_row_subtitle">
+                            <t t-out="line.when or ''"/><t t-if="line.when and line.detail"> · </t><t t-out="line.detail or ''"/>
+                        </span>
+                    </span>
+                </li>
+            </ul>
+        </t>
+    </template>
+
+    <!-- Today's blocks, in sequence. -->
+    <template id="hs_dash_blocks" name="Homeschool: today's blocks widget">
+        <t t-if="section['hs_day'] and section['hs_day'].is_off" t-call="bemade_portal_kit.pk_empty_state">
+            <t t-set="message">Day off</t>
+        </t>
+        <t t-elif="not section['hs_blocks']" t-call="bemade_portal_kit.pk_empty_state">
+            <t t-set="message">No block on this day.</t>
+        </t>
+        <ul t-else="" class="o_pk_list o_hs_dash_blocks list-unstyled mb-0">
+            <li t-foreach="section['hs_blocks']" t-as="block"
+                t-attf-class="o_pk_card o_hs_block o_hs_kind_#{block.kind}" t-att-data-hs-block="block.id">
+                <span class="o_pk_row_subtitle o_hs_time">
+                    <t t-out="section['hs_fmt_hour'](block.start_time)"/>–<t t-out="section['hs_fmt_hour'](block.end_time)"/>
+                </span>
+                <span class="o_pk_row_title"><t t-out="block.name"/></span>
+                <span class="o_pk_chip o_pk_chip_ghost"><t t-out="section['hs_kind_labels'].get(block.kind, block.kind)"/></span>
+                <span t-if="block.subject_id" class="o_pk_chip o_pk_chip_secondary"><t t-out="block.subject_id.name"/></span>
+            </li>
+        </ul>
+    </template>
+
+    <!-- Today's reading entry: written or still to write, per book in progress. -->
+    <template id="hs_dash_reading" name="Homeschool: today's reading widget">
+        <t t-if="not section['hs_books']" t-call="bemade_portal_kit.pk_empty_state">
+            <t t-set="message">No book in progress.</t>
+        </t>
+        <ul t-else="" class="o_pk_list o_hs_dash_reading list-unstyled mb-0">
+            <li t-foreach="section['hs_books']" t-as="row" class="o_pk_card" t-att-data-hs-book="row['book'].id">
+                <a t-att-href="row['url']" class="o_pk_row_title"><t t-out="row['book'].title"/></a>
+                <span t-if="row['done']" class="o_pk_chip o_pk_chip_green" data-hs-reading="done">Entry written</span>
+                <span t-else="" class="o_pk_chip o_pk_chip_yellow" data-hs-reading="todo">Entry to write</span>
+            </li>
+        </ul>
+    </template>
+</odoo>

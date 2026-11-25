@@ -27,7 +27,7 @@ class _Tour1539Common(AppShellCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.env['ir.config_parameter'].sudo().set_param(
-            'bemade_sports_clinic.app_shell_enabled', 'True')
+            'bemade_portal_kit.enabled', 'True')
 
 
 @tagged('post_install', '-at_install')

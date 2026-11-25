@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Calibration list: one row per employee × criterion. It is what a click on a cell
+         of the calibration matrix opens (the board action's list view). -->
+    <record id="campaign_line_view_list_calibration" model="ir.ui.view">
+        <field name="name">hr.appraisal.campaign.line.list.calibration</field>
+        <field name="model">hr.appraisal.campaign.line</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" create="0" delete="0">
+                <field name="campaign_step" column_invisible="True"/>
+                <field name="employee_id" readonly="1"/>
+                <field name="department_id" optional="show" readonly="1"/>
+                <field name="job_id" optional="hide" readonly="1"/>
+                <field name="evaluator_id" optional="show" readonly="1"/>
+                <field name="section_id" optional="hide" readonly="1"/>
+                <field name="name" readonly="1"/>
+                <field name="employee_grade" string="Self" readonly="1"/>
+                <field name="manager_grade" string="Manager" readonly="1"/>
+                <field name="calibrated_grade" string="Calibrated" readonly="campaign_step != 'calibration'"/>
+                <field name="final_vs_manager" string="Δ" optional="show" readonly="1"/>
+                <field name="calibration_note" readonly="campaign_step != 'calibration'"/>
+                <button name="action_campaign_open_calibration_log" type="object" icon="fa-history"
+                        title="Change log of this grade"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Calibration matrix: employees in rows, criteria in columns (catalogue order), the
+         cell is the final grade (average of one line = the grade). Clicking a cell opens
+         the calibration list for that employee and criterion. -->
+    <record id="campaign_line_view_pivot_calibration" model="ir.ui.view">
+        <field name="name">hr.appraisal.campaign.line.pivot.calibration</field>
+        <field name="model">hr.appraisal.campaign.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Calibration Matrix">
+                <field name="employee_id" type="row"/>
+                <field name="criterion_id" type="col"/>
+                <!-- a cell (one line) shows the grade; totals show the average with one decimal -->
+                <field name="final_grade" type="measure" widget="float" digits="[3,1]"/>
+                <field name="manager_grade" string="Manager grade" widget="float" digits="[3,1]"/>
+                <field name="employee_grade" string="Self grade" widget="float" digits="[3,1]"/>
+                <field name="calibrated_grade" widget="float" digits="[3,1]"/>
+                <field name="final_vs_manager" string="Δ (calibrated − manager)"/>
+                <field name="sequence" invisible="1"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="campaign_line_view_pivot" model="ir.ui.view">
+        <field name="name">hr.appraisal.campaign.line.pivot</field>
+        <field name="model">hr.appraisal.campaign.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Evaluation Grades" sample="1">
+                <field name="employee_id" type="row"/>
+                <field name="criterion_id" type="col"/>
+                <field name="final_grade" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="campaign_line_view_graph" model="ir.ui.view">
+        <field name="name">hr.appraisal.campaign.line.graph</field>
+        <field name="model">hr.appraisal.campaign.line</field>
+        <field name="arch" type="xml">
+            <graph string="Evaluation Grades" type="bar">
+                <field name="criterion_id"/>
+                <field name="final_grade" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="campaign_line_view_search" model="ir.ui.view">
+        <field name="name">hr.appraisal.campaign.line.search</field>
+        <field name="model">hr.appraisal.campaign.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="employee_id"/>
+                <field name="evaluator_id"/>
+                <field name="department_id"/>
+                <field name="job_id"/>
+                <field name="campaign_id"/>
+                <field name="criterion_id"/>
+                <filter name="in_calibration" string="In calibration" domain="[('campaign_step', '=', 'calibration')]"/>
+                <filter name="calibrated" string="Calibrated (changed)" domain="[('final_vs_manager', '!=', 0)]"/>
+                <field name="section_id"/>
+                <group>
+                    <filter name="group_employee" string="Employee" context="{'group_by': 'employee_id'}"/>
+                    <filter name="group_evaluator" string="Evaluator" context="{'group_by': 'evaluator_id'}"/>
+                    <filter name="group_department" string="Department" context="{'group_by': 'department_id'}"/>
+                    <filter name="group_job" string="Job Position" context="{'group_by': 'job_id'}"/>
+                    <filter name="group_section" string="Section" context="{'group_by': 'section_id'}"/>
+                    <filter name="group_criterion" string="Criterion" context="{'group_by': 'criterion_id'}"/>
+                    <filter name="group_campaign" string="Campaign" context="{'group_by': 'campaign_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_campaign_calibration_board" model="ir.actions.act_window">
+        <field name="name">Calibration Board</field>
+        <field name="res_model">hr.appraisal.campaign.line</field>
+        <field name="view_mode">pivot,list,graph</field>
+        <field name="view_ids" eval="[Command.clear(),
+            Command.create({'view_mode': 'pivot', 'view_id': ref('campaign_line_view_pivot_calibration')}),
+            Command.create({'view_mode': 'list', 'view_id': ref('campaign_line_view_list_calibration')}),
+            Command.create({'view_mode': 'graph', 'view_id': ref('campaign_line_view_graph')})]"/>
+        <field name="search_view_id" ref="campaign_line_view_search"/>
+        <field name="context">{'search_default_in_calibration': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No evaluation in calibration</p>
+            <p>Once managers submit their evaluations and HR starts the calibration, the grades of the
+            campaign appear here: one row per employee, one column per criterion. Click a grade to open
+            it, change the « Calibrated » grade and explain it in the note; every change is logged.</p>
+        </field>
+    </record>
+
+    <record id="action_campaign_grade_analysis" model="ir.actions.act_window">
+        <field name="name">Evaluation Analysis</field>
+        <field name="res_model">hr.appraisal.campaign.line</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="view_ids" eval="[Command.clear(),
+            Command.create({'view_mode': 'pivot', 'view_id': ref('campaign_line_view_pivot')}),
+            Command.create({'view_mode': 'graph', 'view_id': ref('campaign_line_view_graph')}),
+            Command.create({'view_mode': 'list', 'view_id': ref('campaign_line_view_list_calibration')})]"/>
+        <field name="search_view_id" ref="campaign_line_view_search"/>
+        <field name="context">{'pivot_row_groupby': ['department_id'], 'pivot_column_groupby': ['criterion_id']}</field>
+    </record>
+
+    <record id="campaign_calibration_log_view_list" model="ir.ui.view">
+        <field name="name">hr.appraisal.campaign.calibration.log.list</field>
+        <field name="model">hr.appraisal.campaign.calibration.log</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="create_date" string="Date"/>
+                <field name="employee_id"/>
+                <field name="criterion_name"/>
+                <field name="old_grade"/>
+                <field name="new_grade"/>
+                <field name="user_id"/>
+                <field name="note"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_campaign_calibration_log" model="ir.actions.act_window">
+        <field name="name">Calibration Changes</field>
+        <field name="res_model">hr.appraisal.campaign.calibration.log</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="campaign_remark_log_view_list" model="ir.ui.view">
+        <field name="name">hr.appraisal.campaign.remark.log.list</field>
+        <field name="model">hr.appraisal.campaign.remark.log</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="create_date" string="Date"/>
+                <field name="employee_id"/>
+                <field name="criterion_name"/>
+                <field name="step"/>
+                <field name="user_id"/>
+                <field name="old_remarks"/>
+                <field name="new_remarks"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_campaign_remark_log" model="ir.actions.act_window">
+        <field name="name">Remark Changes</field>
+        <field name="res_model">hr.appraisal.campaign.remark.log</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No remark changed after submission</p>
+            <p>Changes the evaluator (or HR) makes to the remarks after « Submit for Calibration »,
+            until the employee acknowledges the evaluation.</p>
+        </field>
+    </record>
+</odoo>

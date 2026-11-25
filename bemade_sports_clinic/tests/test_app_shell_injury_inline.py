@@ -59,8 +59,8 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         return self._url(tab='injuries', team_id=self.team_a.id, **extra)
 
     def _add_card(self, tree):
-        panel = tree.xpath('//section[@data-sc-tab-panel="injuries"]')[0]
-        cards = panel.xpath('.//details[@id="sc_new_injury"][@data-sc-section="injury.new"]')
+        panel = tree.xpath('//section[@data-pk-tab-panel="injuries"]')[0]
+        cards = panel.xpath('.//details[@id="sc_new_injury"][@data-pk-section="injury.new"]')
         self.assertEqual(len(cards), 1)
         return cards[0]
 
@@ -90,7 +90,7 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         step = form.xpath('.//*[@data-sc-step="diagnosis"]')[0]
         self.assertTrue(step.xpath('.//input[@name="diagnosis"][@required]'))
         self.assertTrue(step.xpath('.//button[@type="submit"][@data-sc-action="injury.create"]'))
-        self.assertFalse(card.xpath('.//*[contains(@class, "o_sc_banner")]'))
+        self.assertFalse(card.xpath('.//*[contains(@class, "o_pk_banner")]'))
         self.assertFalse(card.xpath('.//owl-component'))
         self._login_coach()
         _text, tree = self._get(self._tab())
@@ -118,9 +118,9 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         item = tree.xpath('//details[@id="injury-%s"]' % injury.id)[0]
         self.assertIsNotNone(item.get('open'))
         self.assertEqual(item.get('data-sc-created-injury'), str(injury.id))
-        edit = item.xpath('.//*[@data-sc-edit-view="edit"]')[0]
+        edit = item.xpath('.//*[@data-pk-edit-view="edit"]')[0]
         self.assertIsNone(edit.get('hidden'))
-        self.assertTrue(item.xpath('.//form[@data-sc-form="injury.undo"]'))
+        self.assertTrue(item.xpath('.//form[@data-pk-undo-offer="injury"]'))
         self._create(diagnosis='Synthetic wrist', coach_visibility='visible')
         self.assertFalse(self._new_injury('Synthetic wrist').hidden_from_coaches)
 
@@ -173,13 +173,13 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         item = item[0]
         self.assertIsNotNone(item.get('open'))
         self.assertEqual(item.get('data-sc-created-injury'), str(report.id))
-        self.assertTrue(item.xpath('.//form[@data-sc-form="injury.undo"]'))
+        self.assertTrue(item.xpath('.//form[@data-pk-undo-offer="injury"]'))
         # « Unverified » status chip, diagnosis editable, no therapist action.
         stages = dict(report._fields['stage']._description_selection(self.env))
         self.assertIn(stages['unverified'], item.xpath('.//summary')[0].text_content())
         self.assertIn('"diagnosis"', ' '.join(self._fields_in(item)))
         self.assertFalse(item.xpath('.//*[@data-sc-injury-quick]'))
-        self.assertFalse(item.xpath('.//*[@data-sc-edit-card="injury-notes-internal"]'))
+        self.assertFalse(item.xpath('.//*[@data-pk-edit-card="injury-notes-internal"]'))
         fields_ = ' '.join(self._fields_in(item))
         self.assertNotIn('"internal_notes"', fields_)
         self.assertNotIn('"hidden_from_coaches"', fields_)
@@ -262,23 +262,23 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
                                   'parental_consent': False})
         self._login_tp()
         _text, tree = self._get(self._tab())
-        item = tree.xpath('//details[@id="injury-%s"][@data-sc-edit-card]' % self.injury.id)[0]
+        item = tree.xpath('//details[@id="injury-%s"][@data-pk-edit-card]' % self.injury.id)[0]
         self.assertIsNone(item.get('open'))
         # Task 1616: the read views (Details, then Notes), one pencil per
         # group; together they edit what the card's single pencil did.
-        reads = ' '.join(r.text_content() for r in item.xpath('.//*[@data-sc-edit-view="read"]'))
+        reads = ' '.join(r.text_content() for r in item.xpath('.//*[@data-pk-edit-view="read"]'))
         self.assertIn('Synthetic ext', reads)
         self.assertIn('Synthetic int', reads)
         # Task 1675: Details + one pencil per note (external, internal).
-        self.assertEqual(len(item.xpath('.//button[@data-sc-edit-toggle]')), 3)
-        edits = item.xpath('.//*[@data-sc-edit-view="edit"]')
+        self.assertEqual(len(item.xpath('.//button[@data-pk-edit-toggle]')), 3)
+        edits = item.xpath('.//*[@data-pk-edit-view="edit"]')
         self.assertTrue(all(edit.get('hidden') == 'hidden' for edit in edits))
         fields_ = ' '.join(f for edit in edits for f in self._fields_in(edit))
         for name in ('"sc_injury_date"', '"predicted_resolution_date"',
                      '"external_notes"', '"internal_notes"'):
             self.assertIn(name, fields_)
         # Task 1631: status / consent / visibility are pill dropdowns.
-        self.assertEqual(sorted(item.xpath('.//*[@data-sc-pill-select]/@data-sc-field')),
+        self.assertEqual(sorted(item.xpath('.//*[@data-pk-pill-select]/@data-pk-field')),
                          ['hidden_from_coaches', 'parental_consent', 'stage'])
         self.assertFalse(item.xpath('.//a[contains(@href, "/my/injury/edit")]'))
         self.assertTrue(item.xpath('.//summary//*[contains(@class, "o_sc_consent_todo")]'))

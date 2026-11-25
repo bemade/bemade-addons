@@ -40,14 +40,14 @@ class _ActivityRowsMixin:
 
     @staticmethod
     def _row(tree, activity):
-        rows = tree.xpath('//section[@data-sc-tab-panel="all"]//*[@data-sc-activity-row="%s"]'
+        rows = tree.xpath('//section[@data-pk-tab-panel="all"]//*[@data-sc-activity-row="%s"]'
                           % activity.id) or tree.xpath('//*[@data-sc-activity-row="%s"]' % activity.id)
         return rows[0] if rows else None
 
     @staticmethod
     def _related(row):
-        return [(a.get('data-sc-row-link'), a.get('href'), _text(a))
-                for a in row.xpath('.//a[contains(@class, "o_sc_row_link")]')]
+        return [(a.get('data-pk-row-link'), a.get('href'), _text(a))
+                for a in row.xpath('.//a[contains(@class, "o_pk_row_link")]')]
 
 
 @tagged('post_install', '-at_install')
@@ -66,13 +66,14 @@ class TestAppShellActivityRows1595(_ActivityRowsMixin, AppShellCommon):
         for activity, link in expected.items():
             row = self._row(tree, activity)
             self.assertIsNotNone(row, activity.summary)
-            main = row.xpath('.//a[contains(@class, "o_sc_link_row_main")]')
+            main = row.xpath('.//a[contains(@class, "o_pk_link_row_main")]')
             self.assertEqual(len(main), 1, activity.summary)
             self.assertEqual(main[0].get('href'), '/my/activity/%s' % activity.id)
             self.assertEqual(_text(main[0]), activity.summary)
-            # The type, now that the summary is the title.
-            self.assertEqual(row.xpath('string(.//*[contains(@class, "o_sc_activity_type")])'),
-                             activity.activity_type_id.name)
+            # Task 1739 review (owner 2026-11-02): no type label — every
+            # activity is a To-Do « À faire » now.
+            self.assertFalse(row.xpath('.//*[contains(@class, "o_sc_activity_type")]'),
+                             activity.summary)
             self.assertEqual(self._related(row), [link], activity.summary)
             # No nested anchors anywhere in the row.
             self.assertFalse(row.xpath('.//a//a'), activity.summary)
@@ -83,7 +84,7 @@ class TestAppShellActivityRows1595(_ActivityRowsMixin, AppShellCommon):
         self._login_tp()
         _text_, tree = self._get('/my/activities')
         row = self._row(tree, self.act_team)
-        self.assertEqual(_text(row.xpath('.//a[contains(@class, "o_sc_link_row_main")]')[0]),
+        self.assertEqual(_text(row.xpath('.//a[contains(@class, "o_pk_link_row_main")]')[0]),
                          self.act_team.activity_type_id.name)
         # Not repeated in the subtitle.
         self.assertFalse(row.xpath('.//*[contains(@class, "o_sc_activity_type")]'))
@@ -123,7 +124,7 @@ class TestAppShellActivityRows1595(_ActivityRowsMixin, AppShellCommon):
         self.assertIsNotNone(row)
         self.assertEqual(self._related(row), [
             ('sports.patient', '/my/player?player_id=%s' % self.player.id, 'One, Pat')])
-        self.assertFalse(row.xpath('.//*[@data-sc-row-link-plain="sports.patient.injury"]'))
+        self.assertFalse(row.xpath('.//*[@data-pk-row-link-plain="sports.patient.injury"]'))
         self.assertNotIn('/my/injury/edit', lxml_html.tostring(row).decode())
 
     def test_refused_record_is_plain_text(self):
@@ -134,7 +135,7 @@ class TestAppShellActivityRows1595(_ActivityRowsMixin, AppShellCommon):
             _text_, tree = self._get('/my/activities')
         row = self._row(tree, self.act_player)
         self.assertEqual(self._related(row), [])
-        plain = row.xpath('.//*[@data-sc-row-link-plain="sports.patient"]')
+        plain = row.xpath('.//*[@data-pk-row-link-plain="sports.patient"]')
         self.assertEqual(len(plain), 1)
         self.assertEqual(_text(plain[0]), self.act_player.res_name)
         self.assertNotIn('/my/player?player_id=', lxml_html.tostring(row).decode())
@@ -149,7 +150,7 @@ class TestAppShellActivityRows1595(_ActivityRowsMixin, AppShellCommon):
         self.assertIn(str(self.act_injury.create_date.year), _text(created[0]))
         dt = created[0].xpath('ancestor::dd[1]/preceding-sibling::dt[1]')[0]
         self.assertEqual(_text(dt), 'Created')
-        related = tree.xpath('//*[@data-sc-section="activity.related"]//a/@href')
+        related = tree.xpath('//*[@data-pk-section="activity.related"]//a/@href')
         self.assertEqual(related, ['/my/player?player_id=%s' % self.player.id,
                                    '/my/player?player_id=%s&tab=injuries&injury=%s#injury-%s' % (
                                        self.player.id, self.injury.id, self.injury.id)])
@@ -170,6 +171,6 @@ class TestAppShellActivityRowsI18n1595(_ActivityRowsMixin, TestAppShellI18n1538)
         self._switch(True)
         self._login_tp()
         tree = lxml_html.fromstring(self._fr('/my/activity/%s' % self.act_player.id))
-        terms = [_text(dt) for dt in tree.xpath('//*[@data-sc-section="activity.detail"]//dt')]
+        terms = [_text(dt) for dt in tree.xpath('//*[@data-pk-section="activity.detail"]//dt')]
         self.assertIn('Créée le', terms)
         self.assertIn('Enregistrement associé', terms)

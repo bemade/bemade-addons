@@ -19,7 +19,7 @@ Acceptance criteria covered here:
   review fixes 2026-10-18 b / 1018c),
   callback back to the page.
 * UC-A2 A valid save through the core route updates the partner and sends
-  the browser back to ``/my/account?sc_saved=1``, which shows the
+  the browser back to ``/my/account?pk_saved=1``, which shows the
   « saved » toast. An explicit ``redirect`` is kept (core behaviour).
 * UC-A3 An invalid email is refused by the core validation (nothing saved,
   ``email`` flagged).
@@ -51,7 +51,7 @@ from odoo.tools import mute_logger
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_user_menu_1606 import UserMenuCommon
 
-SAVED_URL = '/my/account?sc_saved=1'
+SAVED_URL = '/my/account?pk_saved=1'
 
 
 class AccountShellCommon(UserMenuCommon):
@@ -101,11 +101,11 @@ class AccountShellCommon(UserMenuCommon):
     def _assert_shell_sub_page_of_settings(self, tree, title):
         self.assertIsNotNone(self._shell(tree))
         self.assertFalse(tree.xpath('//header[@id="top"]'), 'website header in the shell')
-        self.assertEqual(tree.xpath('//a[@data-sc-back]/@href'), ['/my/app/settings'])
-        crumbs = tree.xpath('//nav[contains(@class, "o_sc_crumbs")]//a/@href')
+        self.assertEqual(tree.xpath('//a[@data-pk-back]/@href'), ['/my/app/settings'])
+        crumbs = tree.xpath('//nav[contains(@class, "o_pk_crumbs")]//a/@href')
         self.assertIn('/my/app/settings', crumbs)
         self.assertEqual(
-            tree.xpath('normalize-space(//*[contains(@class, "o_sc_appbar_title_text")])'), title)
+            tree.xpath('normalize-space(//*[contains(@class, "o_pk_appbar_title_text")])'), title)
 
 
 @tagged('post_install', '-at_install')
@@ -133,7 +133,7 @@ class TestAccountShell1620(AccountShellCommon):
             # name / VAT. Round 2 (1018c): each field autosaves, each card
             # has the usual « Done ».
             self.assertFalse(form[0].xpath('.//button[@id="save_address"]'))
-            self.assertEqual(len(form[0].xpath('.//button[@data-sc-edit-done]')), 2)
+            self.assertEqual(len(form[0].xpath('.//button[@data-pk-edit-done]')), 2)
             names = set(form[0].xpath('.//input/@name | .//select/@name'))
             self.assertFalse({'company_name', 'vat'} & names)
             for name in ('name', 'email', 'phone', 'street', 'street2',
@@ -171,13 +171,13 @@ class TestAccountShell1620(AccountShellCommon):
         self.assertEqual(result, {'redirectUrl': SAVED_URL})
         self.assertIn('555-0199', self.coach.partner_id.phone)
         _text, tree = self._get(SAVED_URL)
-        toast = tree.xpath('//*[contains(@class, "o_sc_toast")]')
+        toast = tree.xpath('//*[contains(@class, "o_pk_toast")]')
         self.assertEqual(len(toast), 1)
-        self.assertEqual(toast[0].get('data-sc-notify'), 'Your details have been saved.')
-        self.assertEqual(toast[0].get('data-sc-notify-tone'), 'success')
+        self.assertEqual(toast[0].get('data-pk-notify'), 'Your details have been saved.')
+        self.assertEqual(toast[0].get('data-pk-notify-tone'), 'success')
         # A plain visit: no toast.
         _text, tree = self._get('/my/account')
-        self.assertIsNone(tree.xpath('//*[contains(@class, "o_sc_toast")]')[0].get('data-sc-notify'))
+        self.assertIsNone(tree.xpath('//*[contains(@class, "o_pk_toast")]')[0].get('data-pk-notify'))
 
     def test_explicit_redirect_is_kept(self):
         self._switch(True)
@@ -200,7 +200,7 @@ class TestAccountShell1620(AccountShellCommon):
         self._login_coach()
         text, tree = self._get('/my/account')
         self.assertIsNone(self._shell(tree))
-        self.assertNotIn('data-sc-app-shell', text)
+        self.assertNotIn('data-pk-app-shell', text)
         self.assertTrue(tree.xpath('//div[@name="address_div"]'))
         self.assertEqual(self._form_values(tree)['callback'], '/my')
 
@@ -247,17 +247,17 @@ class TestSecurityShell1620(AccountShellCommon):
             # API keys: debug mode + the system parameter only (core rule).
             self.assertFalse(body[0].xpath('.//*[contains(@class, "o_portal_new_api_key")]'))
             # Delete account: portal users only (core rule), in a sheet.
-            sheet = tree.xpath('//dialog[@id="sc_deactivate_account_sheet"]')
+            sheet = tree.xpath('//dialog[@id="pk_deactivate_account_sheet"]')
             self.assertEqual(bool(sheet), portal, user.name)
             if portal:
                 self.assertTrue(tree.xpath(
-                    '//button[@data-sc-sheet-open="sc_deactivate_account_sheet"]'))
+                    '//button[@data-pk-sheet-open="pk_deactivate_account_sheet"]'))
                 dform = sheet[0].xpath('.//form[@action="/my/deactivate_account"]')
                 self.assertEqual(len(dform), 1)
                 self.assertLessEqual(
                     {'csrf_token', 'password', 'validation', 'request_blacklist'},
                     set(dform[0].xpath('.//input/@name')))
-                self.assertIsNone(sheet[0].get('data-sc-sheet-open-on-load'))
+                self.assertIsNone(sheet[0].get('data-pk-sheet-open-on-load'))
 
     # -- UC-S2 -----------------------------------------------------------
     @mute_logger('odoo.addons.base.models.res_users', 'odoo.http')
@@ -267,10 +267,10 @@ class TestSecurityShell1620(AccountShellCommon):
         _text, tree = self._security_post('not-the-password', 'pc-coach-new-1620',
                                           'pc-coach-new-1620')
         self.assertIsNotNone(self._shell(tree))
-        error = tree.xpath('normalize-space(//*[@data-sc-error-for="old"])')
+        error = tree.xpath('normalize-space(//*[@data-pk-error-for="old"])')
         self.assertIn('incorrect', error)
         self.assertEqual(tree.xpath('//input[@name="old"]/@aria-invalid'), ['true'])
-        self.assertFalse(tree.xpath('//*[@data-sc-section="security.password.done"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="security.password.done"]'))
         self.authenticate('pc.coach@example.com', 'pc-coach')
 
     def test_mismatched_confirmation(self):
@@ -278,7 +278,7 @@ class TestSecurityShell1620(AccountShellCommon):
         self._login_coach()
         _text, tree = self._security_post('pc-coach', 'pc-coach-new-1620', 'something-else')
         self.assertIsNotNone(self._shell(tree))
-        error = tree.xpath('normalize-space(//*[@data-sc-error-for="new2"])')
+        error = tree.xpath('normalize-space(//*[@data-pk-error-for="new2"])')
         self.assertIn('identical', error)
         self.authenticate('pc.coach@example.com', 'pc-coach')
 
@@ -286,7 +286,7 @@ class TestSecurityShell1620(AccountShellCommon):
         self._switch(True)
         self._login_coach()
         _text, tree = self._security_post('pc-coach', '', '')
-        error = tree.xpath('normalize-space(//*[@data-sc-error-for="new1"])')
+        error = tree.xpath('normalize-space(//*[@data-pk-error-for="new1"])')
         self.assertIn('empty', error)
 
     # -- UC-S3 -----------------------------------------------------------
@@ -295,8 +295,8 @@ class TestSecurityShell1620(AccountShellCommon):
         self._login_coach()
         _text, tree = self._security_post('pc-coach', 'pc-coach-new-1620', 'pc-coach-new-1620')
         self.assertIsNotNone(self._shell(tree))
-        self.assertTrue(tree.xpath('//*[@data-sc-section="security.password.done"]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-error-for]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="security.password.done"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-error-for]'))
         # The session survives the change (core updates its token).
         _text, tree = self._get('/my/security')
         self.assertIsNotNone(self._shell(tree))
@@ -314,11 +314,11 @@ class TestSecurityShell1620(AccountShellCommon):
         self.assertEqual(resp.status_code, 200)
         tree = lxml_html.fromstring(resp.text)
         self.assertIsNotNone(self._shell(tree))
-        sheet = tree.xpath('//dialog[@id="sc_deactivate_account_sheet"]')
+        sheet = tree.xpath('//dialog[@id="pk_deactivate_account_sheet"]')
         self.assertEqual(len(sheet), 1)
-        self.assertEqual(sheet[0].get('data-sc-sheet-open-on-load'), '1')
+        self.assertEqual(sheet[0].get('data-pk-sheet-open-on-load'), '1')
         self.assertIn('Wrong password',
-                      sheet[0].xpath('normalize-space(.//*[@data-sc-error-for="password"])'))
+                      sheet[0].xpath('normalize-space(.//*[@data-pk-error-for="password"])'))
         self.assertTrue(self.coach.active)
 
     def test_delete_account_wrong_login(self):
@@ -329,10 +329,10 @@ class TestSecurityShell1620(AccountShellCommon):
             'password': 'pc-coach',
         })
         tree = lxml_html.fromstring(resp.text)
-        sheet = tree.xpath('//dialog[@id="sc_deactivate_account_sheet"]')[0]
-        self.assertEqual(sheet.get('data-sc-sheet-open-on-load'), '1')
-        self.assertIn('exactly', sheet.xpath('normalize-space(.//*[@data-sc-error-for="validation"])'))
-        self.assertIn('pc.coach@example.com', sheet.xpath('normalize-space(.//label[@for="sc_deactivate_validation"])'))
+        sheet = tree.xpath('//dialog[@id="pk_deactivate_account_sheet"]')[0]
+        self.assertEqual(sheet.get('data-pk-sheet-open-on-load'), '1')
+        self.assertIn('exactly', sheet.xpath('normalize-space(.//*[@data-pk-error-for="validation"])'))
+        self.assertIn('pc.coach@example.com', sheet.xpath('normalize-space(.//label[@for="pk_deactivate_validation"])'))
         self.assertTrue(self.coach.active)
 
     # -- UC-O1 -----------------------------------------------------------
@@ -340,10 +340,10 @@ class TestSecurityShell1620(AccountShellCommon):
     def test_security_shell_off_is_the_core_page(self):
         self._login_coach()
         text, tree = self._get('/my/security')
-        self.assertNotIn('data-sc-app-shell', text)
+        self.assertNotIn('data-pk-app-shell', text)
         self.assertTrue(tree.xpath('//section[@name="portal_change_password"]'))
         text, tree = self._security_post('not-the-password', 'x-1620-x', 'x-1620-x')
-        self.assertNotIn('data-sc-app-shell', text)
+        self.assertNotIn('data-pk-app-shell', text)
         self.assertTrue(tree.xpath('//section[@name="portal_change_password"]'))
         self.assertIn('incorrect', text)
 
@@ -351,7 +351,7 @@ class TestSecurityShell1620(AccountShellCommon):
         self._switch(True)
         self._login_plain()
         text, tree = self._get('/my/security')
-        self.assertNotIn('data-sc-app-shell', text)
+        self.assertNotIn('data-pk-app-shell', text)
         self.assertTrue(tree.xpath('//section[@name="portal_change_password"]'))
 
 
@@ -364,8 +364,9 @@ class TestAccountSecurityFrench1620(AppShellCommon):
         from odoo import Command
         env = cls.env
         fr = env['res.lang']._activate_lang('fr_CA')
+        # Task 5369: « Annuler » / « Terminé » are the kit's (pk_list_add_cancel, pk_edit_card_done).
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             for website in env['website'].sudo().search([]):
                 website.language_ids = [Command.link(fr.id)]

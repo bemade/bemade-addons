@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0\n"
+"Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 15:23+0000\n"
-"PO-Revision-Date: 2026-10-20 15:23+0000\n"
+"POT-Creation-Date: 2026-10-29 19:17+0000\n"
+"PO-Revision-Date: 2026-10-29 19:17+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -72,6 +72,7 @@ msgstr ""
 #. module: conversation_draft
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__attachment_ids
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
 msgid "Attachments"
 msgstr ""
 
@@ -93,6 +94,11 @@ msgstr ""
 #. module: conversation_draft
 #: model:ir.model.fields.selection,name:conversation_draft.selection__mail_conversation_draft_recipient__mode__cc
 msgid "Cc"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
+msgid "Close"
 msgstr ""
 
 #. module: conversation_draft
@@ -125,6 +131,11 @@ msgid "Conversation Reply Draft"
 msgstr ""
 
 #. module: conversation_draft
+#: model:ir.model,name:conversation_draft.model_conversation_transport
+msgid "Conversation Transport"
+msgstr ""
+
+#. module: conversation_draft
 #: model_terms:ir.actions.server,help:conversation_draft.mail_reply_template_server_action
 msgid "Create your first reply template"
 msgstr ""
@@ -144,12 +155,20 @@ msgid "Created on"
 msgstr ""
 
 #. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "Date"
+msgstr ""
+
+#. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
 msgid "Discard"
 msgstr ""
 
 #. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
 msgid "Discard this reply draft?"
 msgstr ""
 
@@ -160,6 +179,7 @@ msgstr ""
 
 #. module: conversation_draft
 #: model:ir.model.fields,field_description:conversation_draft.field_conversation_draft_access_mixin__display_name
+#: model:ir.model.fields,field_description:conversation_draft.field_conversation_transport__display_name
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__display_name
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__display_name
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__display_name
@@ -229,6 +249,12 @@ msgid "Followers (Partners)"
 msgstr ""
 
 #. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "From"
+msgstr ""
+
+#. module: conversation_draft
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__has_message
 msgid "Has Message"
 msgstr ""
@@ -251,6 +277,7 @@ msgstr ""
 
 #. module: conversation_draft
 #: model:ir.model.fields,field_description:conversation_draft.field_conversation_draft_access_mixin__id
+#: model:ir.model.fields,field_description:conversation_draft.field_conversation_transport__id
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__id
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__id
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__id
@@ -272,6 +299,17 @@ msgstr ""
 #. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
 msgid "If the email did go out, sending again will send it twice. Continue?"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__reply_to_message_id
+msgid "In Reply To"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
+msgid "In reply to:"
 msgstr ""
 
 #. module: conversation_draft
@@ -365,6 +403,11 @@ msgid "Number of messages with delivery error"
 msgstr ""
 
 #. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
+msgid "Open full view"
+msgstr ""
+
+#. module: conversation_draft
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__participant_id
 msgid "Participant"
 msgstr ""
@@ -388,12 +431,14 @@ msgstr ""
 
 #. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
 msgid "Reachable"
 msgstr ""
 
 #. module: conversation_draft
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__recipient_ids
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
 msgid "Recipients"
 msgstr ""
 
@@ -403,6 +448,12 @@ msgid "Replace text"
 msgstr ""
 
 #. module: conversation_draft
+#. odoo-javascript
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation.py:0
+#: code:addons/conversation_draft/static/src/chatter_patch.xml:0
+#: code:addons/conversation_draft/static/src/reply_message_action.js:0
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_view_form
 msgid "Reply"
 msgstr ""
@@ -415,6 +466,11 @@ msgstr ""
 #. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_list
 msgid "Reply Drafts"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__reply_to_label
+msgid "Reply To Label"
 msgstr ""
 
 #. module: conversation_draft
@@ -453,6 +509,7 @@ msgstr ""
 
 #. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
 msgid "Send"
 msgstr ""
 
@@ -500,11 +557,20 @@ msgid ""
 msgstr ""
 
 #. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
+msgid ""
+"Some recipients have no email address and will not\n"
+"                    receive this reply."
+msgstr ""
+
+#. module: conversation_draft
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__state
 msgid "State"
 msgstr ""
 
 #. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__subject
 msgid "Subject"
 msgstr ""
@@ -515,9 +581,23 @@ msgid "Template"
 msgstr ""
 
 #. module: conversation_draft
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft__reply_to_message_id
+msgid ""
+"The message this reply answers. Empty for a reply to the conversation as a "
+"whole."
+msgstr ""
+
+#. module: conversation_draft
 #. odoo-python
 #: code:addons/conversation_draft/models/mail_conversation_draft.py:0
 msgid "This draft is being saved by someone else, try again in a moment."
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation.py:0
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "This message cannot be answered from the conversation."
 msgstr ""
 
 #. module: conversation_draft
@@ -530,6 +610,7 @@ msgstr ""
 
 #. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
 msgid "This reply is being sent by"
 msgstr ""
 
@@ -578,6 +659,8 @@ msgid "This reply was discarded."
 msgstr ""
 
 #. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
 #: model:ir.model.fields.selection,name:conversation_draft.selection__mail_conversation_draft_recipient__mode__to
 msgid "To"
 msgstr ""
@@ -594,6 +677,7 @@ msgstr ""
 
 #. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
 msgid "Use template"
 msgstr ""
 
@@ -617,6 +701,7 @@ msgstr ""
 
 #. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form_dialog
 msgid "Write the reply..."
 msgstr ""
 

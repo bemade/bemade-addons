@@ -1,9 +1,12 @@
-from odoo.tests import common
+from odoo.tests import common, tagged
 from odoo import fields, Command
 from odoo.exceptions import ValidationError
 from datetime import timedelta
 
 
+# post_install: loading a chart template before the registry is fully loaded
+# logs a warning (and is not supported by account).
+@tagged("post_install", "-at_install")
 class TestPurchaseOrderOverdue(common.TransactionCase):
 
     @classmethod

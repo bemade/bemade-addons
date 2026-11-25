@@ -290,15 +290,22 @@
                     <table class="table table-sm o_main_table">
                         <thead>
                             <tr>
-                                <th width="7%">Status</th>
-                                <th width="39%">Task</th>
+                                <th width="12%">Status</th>
+                                <th width="34%">Task</th>
                                 <th width="54%">Comments</th>
                             </tr>
                         </thead>
                         <tbody>
                             <t t-foreach="tasks" t-as="task">
                                 <tr class="p-1 m-1">
-                                    <td t-out="task.stage_id.name" />
+                                    <td class="o_fsm_task_state">
+                                        <t t-set="state_indicator" t-value="task._get_report_state_indicator(lang)" />
+                                        <span
+                      class="o_fsm_task_state_dot"
+                      t-attf-style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; background-color: {{ state_indicator[1] }};"
+                    />
+                                        <span t-out="state_indicator[0]" />
+                                    </td>
                                     <td>
                                         <span t-out="task.name" />
                                     </td>

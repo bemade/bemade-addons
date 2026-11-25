@@ -556,7 +556,7 @@ msgstr "Courriel normalisé"
 #. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_domain
 msgid "Email domain e.g. 'example.com' in 'odoo@example.com'"
-msgstr "Domaine de l'courriel e.g. 'example.com' dans 'odoo@example.com'"
+msgstr "Domaine du courriel e.g. 'example.com' dans 'odoo@example.com'"
 
 #. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_mail_mail__external_id
@@ -1097,7 +1097,7 @@ msgid ""
 "channels\n"
 msgstr ""
 "Politique de publication d'un message sur le document via la passerelle "
-"d'courriels.\n"
+"de courriels.\n"
 "- tout le monde : tout le monde peut publier\n"
 "- partenaires : seulement les partenaires authentifiés\n"
 "- abonnés : seulement les abonnés aux canaux suivis\n"
@@ -1642,6 +1642,36 @@ msgstr "Vous ne pouvez retirer que vos propres boîtes courriel."
 #: model_terms:ir.ui.view,arch_db:conversation_base.conversation_transport_view_form
 msgid "e.g. Support Inbox"
 msgstr "p. ex. Boîte du soutien"
+
+#. module: conversation_base
+#: model:ir.model,name:conversation_base.model_ir_filters
+msgid "Filters"
+msgstr "Filtres"
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/ir_filters.py:0
+msgid "Mine (saved filter)"
+msgstr "Assignées à moi"
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/ir_filters.py:0
+msgid "Oldest unanswered first (saved filter)"
+msgstr "Sans réponse, les plus anciennes d'abord"
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/ir_filters.py:0
+msgid "Unanswered (saved filter)"
+msgstr "Sans réponse"
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/ir_filters.py:0
+msgid "Unread (saved filter)"
+msgstr "Non lues"
+
 
 #~ msgid "Automatic"
 #~ msgstr "Automatique"

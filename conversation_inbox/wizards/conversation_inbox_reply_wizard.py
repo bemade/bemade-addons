@@ -1,4 +1,5 @@
 import base64
+import datetime
 import email
 import email.policy
 import logging
@@ -8,7 +9,8 @@ from markupsafe import Markup
 from odoo import _, api, fields, models
 from odoo.addons.conversation_base.tools import mime
 from odoo.exceptions import UserError
-from odoo.tools import format_datetime, html_sanitize
+from odoo.tools import format_datetime, get_lang, html_sanitize
+from odoo.tools.misc import babel_locale_parse, posix_to_ldml
 
 _logger = logging.getLogger(__name__)
 
@@ -209,12 +211,33 @@ class ConversationInboxReplyWizard(models.TransientModel):
         }
 
     def _format_stub_date(self, value):
+        """The original's date as the acting user reads it: converted to
+        the user's own time zone (``res.users.tz``, UTC when unset), in
+        the user's language date-time format, followed by the zone name
+        in that language (``HNE``/``HAE`` in French, ``EST``/``EDT`` in
+        English, the numeric offset where the locale has no abbreviation).
+
+        The value is the AWARE datetime ``mime.parse_date`` returns, which
+        ``format_datetime`` cannot take as is (it expects naive UTC), so it
+        is normalised to naive UTC first. A missing or unusable date gives
+        an empty string, never a raw header: the text goes to external
+        recipients.
+        """
         if not value:
             return ""
         try:
-            return format_datetime(self.env, value)
-        except (TypeError, ValueError):
-            return str(value)
+            if isinstance(value, datetime.datetime) and value.tzinfo is not None:
+                value = value.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+            lang = get_lang(self.env)
+            locale = babel_locale_parse(lang.code)
+            dt_format = "%s %s z" % (
+                posix_to_ldml(lang.date_format, locale=locale),
+                posix_to_ldml(lang.time_format, locale=locale),
+            )
+            return format_datetime(self.env, value, dt_format=dt_format)
+        except Exception:  # noqa: BLE001 - never quote a raw value outward
+            _logger.warning("Could not format the quoted date %r", value, exc_info=True)
+            return ""
 
     # ------------------------------------------------------------
     # Send

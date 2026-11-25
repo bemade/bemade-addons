@@ -23,6 +23,8 @@ Acceptance criteria:
 * AC-I6 Clinic dossier: a resolved injury drops out of « Active injuries »
   (list fragment).
 """
+from lxml import html as lxml_html
+
 from odoo.tests import tagged
 
 from odoo.addons.bemade_sports_clinic.tests.fragments_common_1611 import FragmentsCommon, FragmentsMixin
@@ -60,7 +62,7 @@ class TestFragmentsInjury1611(FragmentsCommon):
         for part in ('summary', 'read'):
             self.assertRefreshes(payload, self._ikey(self.injury, part))
         summary = self._fragment(self._url(), self._ikey(self.injury, 'summary'))
-        self.assertTrue(summary.xpath('.//*[contains(@class, "o_sc_tone_green")]'))
+        self.assertTrue(summary.xpath('.//*[contains(@class, "o_pk_tone_green")]'))
         self.assertIn('Resolved', self._text(summary))
         read = self._fragment(self._url(), self._ikey(self.injury, 'read'))
         self.assertIn('Resolution Date', [self._text(dt) for dt in read.xpath('.//dt')])
@@ -88,8 +90,8 @@ class TestFragmentsInjury1611(FragmentsCommon):
         self._login_tp()
         def order():
             node = self._fragment(self._url(), self._pkey('injuries'))
-            self.assertEqual(node.get('data-sc-fragment-mode'), 'list')
-            return node.xpath('.//*[@data-sc-fragment-item]/@data-sc-fragment-item')
+            self.assertEqual(node.get('data-pk-fragment-mode'), 'list')
+            return node.xpath('.//*[@data-pk-fragment-item]/@data-pk-fragment-item')
         self.assertEqual(order(), [self._ikey(self.injury, 'card'), self._ikey(self.injury_b, 'card')])
         payload = self._saved(self.injury, 'stage', 'resolved')
         self.assertRefreshes(payload, self._pkey('injuries'))
@@ -145,14 +147,21 @@ class TestFragmentsDossier1611(FragmentsMixin, ClinicDossier1590Common):
     def test_resolved_injury_drops_out_of_active_list(self):
         from odoo.addons.bemade_sports_clinic.tests.fragments_common_1611 import FragmentsCommon, FragmentsMixin
         self._login_tp()
-        key = 'sports.patient:%s:active-injuries' % self.player.id
+        # Task 1721 (review round 1): ONE list fragment holds the active
+        # cards and the resolved fold-out — a resolved card moves into the
+        # fold-out (it no longer sits in the active list).
+        key = 'sports.patient:%s:injury-lists' % self.player.id
         item = 'sports.patient.injury:%s:card' % self.injury.id
         tree = self._get(self._dossier_url())[1]
-        node = tree.xpath('//*[@data-sc-fragment="%s"]' % key)[0]
-        self.assertEqual(node.get('data-sc-fragment-mode'), 'list')
-        self.assertTrue(node.xpath('.//*[@data-sc-fragment-item="%s"]' % item))
+        node = tree.xpath('//*[@data-pk-fragment="%s"]' % key)[0]
+        self.assertEqual(node.get('data-pk-fragment-mode'), 'list')
+        self.assertTrue(node.xpath('.//*[@data-pk-section="clinic.dossier.injury_list"]'
+                                   '//*[@data-pk-fragment-item="%s"]' % item))
         payload = self._saved(self.injury, 'stage', 'resolved')
         self.assertRefreshes(payload, key)
         answer = self._fragments(self._dossier_url(), [key])
-        self.assertIn(key, answer['missing'] + list(answer['fragments']))
-        self.assertNotIn(item, ''.join(answer['fragments'].values()))
+        fresh = lxml_html.fragment_fromstring(answer['fragments'][key])
+        self.assertFalse(fresh.xpath('.//*[@data-pk-section="clinic.dossier.injury_list"]'
+                                     '//*[@data-pk-fragment-item="%s"]' % item))
+        self.assertTrue(fresh.xpath('.//details[@data-sc-resolved-injuries]'
+                                    '//*[@data-pk-fragment-item="%s"]' % item))

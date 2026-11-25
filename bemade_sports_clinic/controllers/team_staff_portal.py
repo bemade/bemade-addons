@@ -6,8 +6,7 @@ from odoo import fields, http, _
 from odoo.tools import format_date, format_datetime
 from odoo.exceptions import UserError, AccessError, MissingError
 
-from .access_control_mixin import AccessControlMixin
-from ..models import sc_app_roles
+from .access_control_mixin import AccessControlMixin, sc_past_deadline_message
 from ..models.sc_name_match import NEAR, NameIndex, words as sc_words_of
 from .app_shell import AppShellMixin, sc_country_options, sc_state_options
 
@@ -277,7 +276,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                        # Task 1592: the rows' activity clocks
                                        # (one query, the shell only).
                                        'sc_team_clocks': (self._sc_team_clocks(teams)
-                                                          if self._sc_app_shell_active() else {}),
+                                                          if self._pk_shell_active() else {}),
                                        'page': page,
                                        # 1577 review: a refused team lands
                                        # here with a CODE, never raw text.
@@ -403,6 +402,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         - organization_id (team parent partner)
         - match_status (exact)
         - practice_status (exact)
+        - followed (``1``: only the players the user follows — task 1738;
+          ignored for a user who may not follow players)
         """
         Patients = http.request.env['sports.patient']
         user = http.request.env.user
@@ -430,6 +431,12 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Task 1421: jersey-number filter — exact on the normalised value
         # (« #12 » and « 12 » both find #12; « 1 » does not list 10, 11, …).
         jersey_number = Patients._normalize_jersey_number(kw.get('jersey_number')) or ''
+        # Task 1738: « Suivis ★ » — the players the user follows (staff
+        # roles only; off by default, never remembered). The followed ids
+        # are read ONCE (rows' ★ included), never per row.
+        can_follow = Patients._sc_follow_allowed()
+        followed_ids = set(user.sudo().sc_followed_patient_ids.ids) if can_follow else set()
+        followed_only = can_follow and kw.get('followed') == '1'
 
         # Task 1225 / 640: when a TP/admin searches by name, broaden beyond the
         # user's own teams so out-of-team players are *findable* (to be added to
@@ -465,6 +472,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             filters.append(('practice_status', '=', practice_status))
         if jersey_number:
             filters.append(('jersey_number', '=', jersey_number))
+        if followed_only:
+            filters.append(('id', 'in', sorted(followed_ids)))
 
         domain = ([] if broaden else list(base_players_domain)) + filters
 
@@ -483,6 +492,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'match_status': match_status,
                 'practice_status': practice_status,
                 'jersey_number': jersey_number,
+                'followed': '1' if followed_only else None,
             },
         )
 
@@ -492,7 +502,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # 2026-10-10).
         order = 'last_name asc, first_name asc'
         sort_mode = None
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             sort_mode = self._sc_players_resolve_sort(kw.get('sort'))
             order = SC_PLAYERS_SORT_ORDERS[sort_mode]
         players = Patients_search.search(
@@ -558,6 +568,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'match_status': match_status,
                 'practice_status': practice_status,
                 'jersey_number': jersey_number,
+                'followed_only': followed_only,
+                'can_follow': can_follow,
+                'followed_ids': followed_ids,
                 # options
                 'teams': teams,
                 'organizations': organizations,
@@ -567,7 +580,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         # Task 1539: the app shell (switch on) or today's template, byte for
         # byte (switch off). Shell rows are computed only for the shell.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_players_values(values, is_tp_admin))
             # Task 1674: the near matches of a name search (first page).
             if name_search and int(page or 1) == 1:
@@ -659,10 +672,15 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'changed': player.id in (values.get('changed_player_ids') or ()),
                 'status': (extras[player.id]['status'] if player.id in extras
                            else player._sc_row_status(labels)),
+                # Task 1738: the ★ of a followed player.
+                'followed': player.id in values['followed_ids'],
                 'url': '/my/player?player_id=%s' % player.id if accessible else False,
             })
-        active_filters = any(values.get(key) for key in (
-            'team_id', 'organization_id', 'match_status', 'practice_status', 'jersey_number'))
+        # Task 1743: the « Filters (N) » disclosure — every filter but the
+        # name boxes (« Suivis » included); open when one is set.
+        active_filters = sum(1 for key in (
+            'team_id', 'organization_id', 'match_status', 'practice_status', 'jersey_number',
+            'followed_only') if values.get(key))
         # Task 1607: the sort menu (sc_sort_options) keeps the active filters
         # and resets the page itself.
         return {
@@ -670,9 +688,27 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_can_create_player': is_tp_admin and self._is_treatment_professional(),
             # Task 1655: the inline « create a player » panel.
             'sc_player_add': self._sc_player_add_panel(),
-            'sc_filters_open': active_filters,
+            'sc_filters_open': bool(active_filters),
+            'sc_filters_count': active_filters,
             'sc_players_count_label': env._("%(count)s player(s)", count=values['players_count']),
+            # Task 1738: the « Suivis ★ » chip toggles the filter, keeping
+            # the others (page reset); none for a user who may not follow.
+            'sc_players_followed_url': (
+                self._sc_players_followed_url(not values['followed_only'])
+                if values['can_follow'] else False),
+            'sc_players_followed_none': values['followed_only'] and not values['followed_ids'],
         }
+
+    def _sc_players_followed_url(self, followed):
+        """/my/players with the current filters, ``followed=1`` set
+        (``followed``) or dropped; the pager and flash arguments dropped."""
+        args = http.request.httprequest.args
+        keep = [(key, value) for key, value in args.items(multi=True)
+                if key not in ('followed', 'page', 'success', 'error', 'error_files')
+                and value not in (None, '')]
+        if followed:
+            keep.append(('followed', '1'))
+        return '/my/players?%s' % urllib.parse.urlencode(keep) if keep else '/my/players'
 
     @http.route(route=['/my/player/<int:player_id>/recent-changes'], type='http',
                 auth='user', website=True)
@@ -1058,7 +1094,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Task 1539: the app shell (switch on) or today's template, byte for
         # byte (switch off — including the e-mail deep links). The shell-only
         # values are computed only when the shell renders.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_player_values(player, values, kw))
         return self._sc_render('bemade_sports_clinic.portal_my_player_injuries',
                                'bemade_sports_clinic.sc_app_player', values)
@@ -1158,9 +1194,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         tabs = [('injuries', env._("Injuries"))]
         tabs.append(('info', env._("Info")))
         tabs.append(('documents', env._("Documents")))
-        if is_tp and sc_app_roles.can('patient.notes.tab', roles):
+        kit = env['portal.kit']
+        if is_tp and kit.pk_can('patient.notes.tab', roles):
             tabs.append(('notes', env._("Notes")))
-        if can_activities and sc_app_roles.can('patient.activities.tab', roles):
+        if can_activities and kit.pk_can('patient.activities.tab', roles):
             tabs.append(('activities', env._("Activities")))
         keys = [key for key, _label in tabs]
         requested = self.SC_PLAYER_TAB_MOVED.get(kw.get('tab'), kw.get('tab'))
@@ -1172,7 +1209,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         badges = {'activities': self._sc_activity_tab_badge(values['player_activities'])}
         # Task 1647: a short label on a phone (« Docs »).
         shorts = {'documents': env._("Docs")}
-        sc_tabs = [(key, label, '%s&tab=%s' % (base_url, key), aliases.get(key, ''),
+        player_tabs = [(key, label, '%s&tab=%s' % (base_url, key), aliases.get(key, ''),
                     badges.get(key), shorts.get(key))
                    for key, label in tabs]
 
@@ -1190,8 +1227,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'url': '/my/team?team_id=%s' % team.id if team.id in readable else False,
         } for team in all_teams]
 
+        # Task 1432: edit / delete (archive) for the uploader or an admin.
         document_rows = [{
             'doc': doc,
+            'can_manage': doc._sc_can_manage(user),
             'meta': ' · '.join(part for part in (
                 dict(doc._fields['category']._description_selection(env)).get(doc.category, ''),
                 format_date(env, doc.create_date),
@@ -1212,7 +1251,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # first (the tags widget's confirmRemove).
             'sc_team_confirm': self._sc_team_confirm_remove(player),
             'sc_contact_add_data': contact_data or {},
-            'sc_player_tabs': sc_tabs,
+            'sc_player_tabs': player_tabs,
             'sc_player_active_tab': active_tab,
             'sc_player_url': base_url,
             'sc_contacts_return': '%s&tab=info' % base_url,
@@ -1251,7 +1290,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 values['default_activity_type'].id if values['default_activity_type'] else False),
             'sc_activities_return': '%s&tab=activities' % base_url,
             'today_date': fields.Date.context_today(player),
-            'sc_flash': self._sc_player_flash(kw),
+            'pk_flash': self._sc_player_flash(kw),
         })
 
     @staticmethod
@@ -1281,6 +1320,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'upload_failed': env._("The upload failed."),
             'missing_fields': env._("Please fill in all required fields."),
             'invalid_user': env._("You cannot assign this activity to that user."),
+            'past_deadline': sc_past_deadline_message(env),  # task 1744
             'injury_visibility': env._("Please choose whether coaches can see this injury."),
             'injury_diagnosis': env._("Please enter a diagnosis."),
             'undo_expired': env._("This injury can no longer be undone; delete it from its card."),

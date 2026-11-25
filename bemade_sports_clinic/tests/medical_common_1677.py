@@ -23,6 +23,10 @@ def set_medical(player, allergies=(), conditions=(), epipen=None, epipen_note=No
     vals = {}
     if epipen is not None:
         vals['allergy_epipen'] = epipen
+    elif not player.allergy_epipen_state:
+        # Task 1717: allergies wait for the EpiPen answer — a fixture with
+        # allergies answers it (« no ») unless it says otherwise.
+        vals['allergy_epipen_state'] = 'no'
     if epipen_note is not None:
         vals['allergy_epipen_note'] = epipen_note
     if none_allergy is not None:

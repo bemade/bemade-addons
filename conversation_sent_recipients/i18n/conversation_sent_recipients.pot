@@ -1,0 +1,115 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* conversation_sent_recipients
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-29 16:26+0000\n"
+"PO-Revision-Date: 2026-10-29 16:26+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: conversation_sent_recipients
+#: model:ir.model.constraint,message:conversation_sent_recipients.constraint_mail_conversation_sent_recipient_message_mode_email_unique
+msgid "A recipient can be listed once per message and mode."
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model.fields.selection,name:conversation_sent_recipients.selection__mail_conversation_sent_recipient__mode__cc
+msgid "Cc"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#. odoo-javascript
+#: code:addons/conversation_sent_recipients/static/src/message_patch.xml:0
+msgid "Cc:"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model,name:conversation_sent_recipients.model_mail_conversation
+msgid "Conversation"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model,name:conversation_sent_recipients.model_conversation_transport
+msgid "Conversation Transport"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_conversation_transport__display_name
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation__display_name
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__display_name
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_message__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__email
+msgid "Email"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_conversation_transport__id
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation__id
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__id
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_message__id
+msgid "ID"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model,name:conversation_sent_recipients.model_mail_message
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__message_id
+msgid "Message"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__mode
+msgid "Mode"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__name
+msgid "Name"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model,name:conversation_sent_recipients.model_mail_conversation_sent_recipient
+msgid "Recipient of a mail sent from a conversation"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#: model:ir.model.fields.selection,name:conversation_sent_recipients.selection__mail_conversation_sent_recipient__mode__to
+msgid "To"
+msgstr ""
+
+#. module: conversation_sent_recipients
+#. odoo-javascript
+#: code:addons/conversation_sent_recipients/static/src/message_patch.xml:0
+msgid "To:"
+msgstr ""

@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 5202 (kit P7): the configurable dashboard (models/portal_kit_dashboard.py).
+
+    pk_dash_home       the dashboard's body: the « Configure » link, the
+                       three zones of sections, the empty state, then the
+                       caller's body (the page parts slot).
+    pk_dash_page       pk_dash_home on the app layout (/my/home, this
+                       addon's home).
+    pk_dash_section    the frame of one widget instance: title, scope line,
+                       « no scope » hint, then the widget's body template.
+    pk_dash_configure  the configure sheet (/my/app/dashboard/configure).
+
+    pk_dash_section and pk_dash_configure were the first consumer's
+    templates: their records keep their ids (tools/adopt.py).
+-->
+<odoo>
+
+    <!-- Variables: pk_dash_sections, pk_dash_zones, pk_dash_configure_url
+         (PortalKitDashboard._pk_dash_values). The caller's body is drawn
+         after the sections: the page parts (sheets, hidden holders…). -->
+    <template id="pk_dash_home" name="Portal Kit: dashboard">
+        <div class="o_pk_dash_head" data-pk-section="dashboard.head">
+            <a t-att-href="pk_dash_configure_url" class="o_pk_btn o_pk_btn_ghost o_pk_dash_configure"
+               data-pk-action="dashboard.configure">
+                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'settings'"/></t>
+                <span>Configure</span>
+            </a>
+        </div>
+        <!-- Three zones: left and right side by side on a laptop
+             (independent columns: a fold-out never moves a section to the
+             other column), bottom full width under both; a phone reads
+             left, right, bottom. -->
+        <div class="o_pk_dash" data-pk-dashboard="1">
+            <t t-foreach="pk_dash_zones" t-as="zone">
+                <div t-if="zone['sections']" t-attf-class="o_pk_dash_zone o_pk_dash_zone_#{zone['zone']} #{'o_pk_dash_zone_solo' if zone.get('solo') else ''}"
+                     t-att-data-pk-dash-zone="zone['zone']">
+                    <t t-foreach="zone['sections']" t-as="section">
+                        <t t-call="bemade_portal_kit_dashboard.pk_dash_section"/>
+                    </t>
+                </div>
+            </t>
+            <t t-if="not pk_dash_sections" t-call="bemade_portal_kit.pk_empty_state">
+                <t t-set="message">Every section is switched off. Use « Configure » to show some.</t>
+            </t>
+        </div>
+        <t t-out="0"/>
+    </template>
+
+    <template id="pk_dash_page" name="Portal Kit: dashboard page">
+        <t t-call="{{ pk_layout }}">
+            <t t-set="pk_title">Dashboard</t>
+            <t t-call="bemade_portal_kit_dashboard.pk_dash_home"/>
+        </t>
+    </template>
+
+    <!-- The frame of one widget instance: the title (custom or the
+         widget's), the scope line, then the widget's own body
+         (section['template']). A section with a ``fragment_key`` is a LIST
+         read fragment (pk_fragments.js): refreshed in place, its cards
+         kept, added, dropped. -->
+    <template id="pk_dash_section" name="Portal Kit: dashboard section">
+        <t t-set="pk_dash_live" t-value="section.get('fragment_key')"/>
+        <section t-attf-class="o_pk_section o_pk_dash_section o_pk_dash_section_#{section['widget']}"
+                 t-att-data-pk-dash-widget="section['widget']" t-att-data-pk-dash-instance="section['id']"
+                 t-att-data-pk-section="'dashboard.%s' % section['widget']"
+                 t-att-data-pk-fragment="pk_dash_live or None"
+                 t-att-data-pk-fragment-mode="'list' if pk_dash_live else None"
+                 t-att-data-pk-fragment-keep-empty="'1' if pk_dash_live else None">
+            <h2 class="o_pk_section_header o_pk_dash_section_header">
+                <span class="o_pk_dash_title">
+                    <span class="o_pk_dash_title_text" t-out="section['title']"/>
+                    <small t-if="section.get('window_label')" class="o_pk_section_sub" t-out="section['window_label']"/>
+                    <small t-if="section.get('count_label')" class="o_pk_section_sub o_pk_dash_count"
+                           data-pk-dash-count="1" t-out="section['count_label']"/>
+                </span>
+                <a t-if="section.get('history_url')" t-att-href="section['history_url']"
+                   class="o_pk_section_more o_pk_link_btn" data-pk-action="dashboard.history">History</a>
+                <a t-if="section.get('calendar_url')" t-att-href="section['calendar_url']"
+                   class="o_pk_section_more" data-pk-action="dashboard.calendar">Calendar</a>
+                <a t-if="section.get('list_url')" t-att-href="section['list_url']"
+                   class="o_pk_section_more" data-pk-action="dashboard.list">See all</a>
+            </h2>
+            <p t-if="section['scope_label']" class="o_pk_meta o_pk_dash_scope" data-pk-dash-scope="1" t-out="section['scope_label']"/>
+            <!-- One body box: the first card of every widget sits one card
+                 gap under what is above it. -->
+            <div class="o_pk_dash_body">
+                <t t-if="section['no_scope']" t-call="bemade_portal_kit.pk_empty_state">
+                    <t t-set="message" t-value="section['no_scope_label']"/>
+                </t>
+                <t t-else="" t-call="{{ section['template'] }}"/>
+            </div>
+        </section>
+    </template>
+
+    <!-- /my/app/dashboard/configure — « Configure the dashboard ».
+         One row per instance (pk_dash_rows): ▲ / ▼ (POST forms), the title,
+         the on / off switch and, folded under « Section settings », the
+         custom title, the scope (tag pickers) and the widget's filters —
+         one form per instance, saved as you go by pk_dashboard_config.js
+         (fetch; a refusal shows inside the form; the « Save » button is
+         the no-JS fallback). Laptop: drag a row by its handle within a
+         zone or to another one (the drop saves by fetch). Keyboard and
+         phone: ▲ / ▼ within the zone and « Move to ». -->
+    <template id="pk_dash_configure" name="Portal Kit: configure the dashboard">
+        <t t-call="{{ pk_layout }}">
+            <t t-set="pk_title">Configure the dashboard</t>
+            <t t-if="pk_dash_error" t-call="bemade_portal_kit.pk_banner">
+                <t t-set="flash_error" t-value="True"/>
+                <t t-set="tone" t-value="'warn'"/>
+                <t t-out="pk_dash_error"/>
+            </t>
+            <p class="o_pk_meta o_pk_dash_cfg_intro" t-out="pk_dash_intro"/>
+            <!-- « Remove » asks first (texts of its confirmation). -->
+            <t t-set="pk_dash_remove_title">Remove this section?</t>
+            <t t-set="pk_dash_remove_ok">Remove</t>
+            <t t-set="pk_dash_remove_cancel">Cancel</t>
+            <div class="o_pk_dash_cfg_zones" data-pk-section="dashboard.configure" data-pk-dash-zones="1"
+                 t-att-data-pk-dash-move-url="'%s/move' % pk_dash_url">
+                <section t-foreach="pk_dash_cfg_zones" t-as="cfg_zone"
+                         t-attf-class="o_pk_dash_cfg_zone o_pk_dash_cfg_zone_#{cfg_zone['zone']}"
+                         t-att-data-pk-dash-cfg-zone="cfg_zone['zone']">
+                    <h2 class="o_pk_section_header o_pk_dash_cfg_zone_title" t-out="cfg_zone['label']"/>
+                    <ol class="o_pk_dash_cfg" t-att-data-pk-dash-zone="cfg_zone['zone']">
+                        <t t-foreach="cfg_zone['rows']" t-as="row">
+                            <li t-attf-class="o_pk_card o_pk_dash_cfg_item #{'' if row['enabled'] else 'o_pk_dash_cfg_off'}"
+                                t-att-id="'pk-dash-%s' % row['id']" t-att-data-pk-dash-item="row['id']"
+                                t-att-data-pk-dash-widget="row['widget']">
+                                <div class="o_pk_dash_cfg_head">
+                                    <t t-set="pk_drag_label">Drag to move</t>
+                                    <button type="button" class="o_pk_icon_btn o_pk_dash_cfg_drag" data-pk-dash-drag="1"
+                                            t-att-aria-label="pk_drag_label" t-att-title="pk_drag_label" tabindex="-1">
+                                        <span class="o_pk_dash_cfg_grip" aria-hidden="true"/>
+                                    </button>
+                                    <div class="o_pk_dash_cfg_moves">
+                                        <t t-set="pk_up_label">Move up</t>
+                                        <t t-set="pk_down_label">Move down</t>
+                                        <form t-att-action="'%s/move' % pk_dash_url" method="post" class="o_pk_inline_form">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="instance_id" t-att-value="row['id']"/>
+                                            <button type="submit" name="step" value="up" class="o_pk_icon_btn"
+                                                    data-pk-dash-move="up" t-att-disabled="'disabled' if row['first'] else None"
+                                                    t-att-aria-label="pk_up_label" t-att-title="pk_up_label">
+                                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'up'"/></t>
+                                            </button>
+                                        </form>
+                                        <form t-att-action="'%s/move' % pk_dash_url" method="post" class="o_pk_inline_form">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="instance_id" t-att-value="row['id']"/>
+                                            <button type="submit" name="step" value="down" class="o_pk_icon_btn"
+                                                    data-pk-dash-move="down" t-att-disabled="'disabled' if row['last'] else None"
+                                                    t-att-aria-label="pk_down_label" t-att-title="pk_down_label">
+                                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <!-- « Remove » is the red trash of the item's top bar
+                                     (right of its switch), and asks first. -->
+                                <t t-call="bemade_portal_kit.pk_card_icons">
+                                    <t t-set="pk_dash_remove_label">Remove</t>
+                                    <t t-set="ci_trash" t-value="row['removable'] and {'form': 'pk_dash_remove_%s' % row['id'], 'key': 'dashboard.remove', 'always': True, 'label': pk_dash_remove_label, 'attrs': {'data-pk-dash-remove': '1'}}"/>
+                                </t>
+                                <form t-att-action="'%s/save' % pk_dash_url" method="post" class="o_pk_form o_pk_dash_cfg_form"
+                                      t-att-data-pk-dash-instance="row['id']">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="instance_id" t-att-value="row['id']"/>
+                                    <t t-call="bemade_portal_kit.pk_switch">
+                                        <t t-set="sw_label" t-value="row['title'] or row['widget_title']"/>
+                                        <t t-set="sw_hint" t-value="row['widget_title'] if row['title'] else None"/>
+                                        <t t-set="sw_name" t-value="'enabled'"/>
+                                        <t t-set="sw_value" t-value="'1'"/>
+                                        <t t-set="sw_off" t-value="'0'"/>
+                                        <t t-set="sw_checked" t-value="row['enabled']"/>
+                                        <t t-set="sw_id" t-value="'pk_dash_%s_enabled' % row['id']"/>
+                                        <t t-set="sw_class" t-value="'o_pk_dash_cfg_switch'"/>
+                                    </t>
+                                    <details class="o_pk_disclosure o_pk_dash_cfg_settings">
+                                        <summary class="o_pk_disclosure_summary" data-pk-dash-settings="1">
+                                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'filter'"/></t>
+                                            <span>Section settings</span>
+                                        </summary>
+                                        <div class="o_pk_dash_cfg_fields">
+                                            <label class="o_pk_field_label" t-att-for="'pk_dash_%s_title' % row['id']">Title</label>
+                                            <input type="text" name="title" class="o_pk_input" maxlength="80"
+                                                   t-att-id="'pk_dash_%s_title' % row['id']" t-att-value="row['title']"
+                                                   t-att-placeholder="row['widget_title']"/>
+                                            <t t-if="row['scoped']">
+                                                <fieldset class="o_pk_dash_cfg_scope" data-pk-dash-scope="1">
+                                                    <legend class="o_pk_field_label">Scope</legend>
+                                                    <small class="o_pk_hint" t-out="pk_dash_scope_hint"/>
+                                                    <t t-foreach="row['scope']" t-as="scope_field">
+                                                        <input type="hidden" t-att-name="scope_field['name']" t-att-id="scope_field['target']" t-att-value="scope_field['csv']"/>
+                                                        <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="scope_field['props']"/></t>
+                                                    </t>
+                                                </fieldset>
+                                            </t>
+                                            <t t-foreach="row['filters']" t-as="flt">
+                                                <fieldset t-if="flt['type'] == 'multi'" t-attf-class="o_pk_dash_cfg_multi o_pk_dash_cfg_#{flt['name']}"
+                                                          t-att-data-pk-dash-filter="flt['name']">
+                                                    <legend class="o_pk_field_label" t-out="flt['label']"/>
+                                                    <input type="hidden" t-att-name="'%s_present' % flt['name']" value="1"/>
+                                                    <t t-foreach="flt['choices']" t-as="choice">
+                                                        <t t-call="bemade_portal_kit.pk_switch">
+                                                            <t t-set="sw_label" t-value="choice[1]"/>
+                                                            <t t-set="sw_name" t-value="flt['name']"/>
+                                                            <t t-set="sw_value" t-value="choice[0]"/>
+                                                            <t t-set="sw_off" t-value="None"/>
+                                                            <t t-set="sw_hint" t-value="None"/>
+                                                            <t t-set="sw_checked" t-value="choice[2]"/>
+                                                            <t t-set="sw_id" t-value="'%s_%s' % (flt['id'], choice[0])"/>
+                                                            <t t-set="sw_class" t-value="None"/>
+                                                        </t>
+                                                    </t>
+                                                </fieldset>
+                                                <t t-else="">
+                                                    <label class="o_pk_field_label" t-att-for="flt['id']" t-out="flt['label']"/>
+                                                    <select t-att-name="flt['name']" class="o_pk_input" t-att-id="flt['id']"
+                                                            t-att-data-pk-dash-filter="flt['name']">
+                                                        <option t-foreach="flt['choices']" t-as="choice" t-att-value="choice[0]"
+                                                                t-att-selected="'selected' if choice[2] else None" t-out="choice[1]"/>
+                                                    </select>
+                                                </t>
+                                            </t>
+                                        </div>
+                                    </details>
+                                    <div class="o_pk_dash_cfg_actions">
+                                        <span class="o_pk_hint o_pk_dash_cfg_status" data-pk-dash-status="1" aria-live="polite"/>
+                                        <button type="submit" class="o_pk_btn o_pk_btn_ghost o_pk_dash_cfg_save" data-pk-dash-save="1">Save</button>
+                                    </div>
+                                    <t t-call="bemade_portal_kit.pk_form_guard_slots"><t t-set="guard_id" t-value="'pk_dash_%s' % row['id']"/></t>
+                                </form>
+                                <form t-att-action="'%s/move' % pk_dash_url" method="post"
+                                      class="o_pk_inline_form o_pk_dash_cfg_zone_form" data-pk-dash-zone-form="1">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="instance_id" t-att-value="row['id']"/>
+                                    <label class="o_pk_hint" t-att-for="'pk_dash_%s_zone' % row['id']">Move to</label>
+                                    <select name="zone" class="o_pk_input o_pk_dash_cfg_zone_select"
+                                            t-att-id="'pk_dash_%s_zone' % row['id']" data-pk-dash-zone-select="1">
+                                        <option t-foreach="pk_dash_zone_choices" t-as="choice" t-att-value="choice[0]"
+                                                t-att-selected="'selected' if choice[0] == row['zone'] else None"
+                                                t-out="choice[1]"/>
+                                    </select>
+                                    <button type="submit" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm" data-pk-dash-zone-go="1">OK</button>
+                                </form>
+                                <form t-if="row['removable']" t-att-action="'%s/remove' % pk_dash_url" method="post"
+                                      t-att-id="'pk_dash_remove_%s' % row['id']" hidden="hidden"
+                                      class="o_pk_inline_form o_pk_dash_cfg_remove" data-pk-dash-remove-form="1"
+                                      t-att-data-pk-confirm-title="pk_dash_remove_title" t-att-data-pk-confirm-message="row['title'] or row['widget_title']"
+                                      t-att-data-pk-confirm-ok="pk_dash_remove_ok" t-att-data-pk-confirm-cancel="pk_dash_remove_cancel">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="instance_id" t-att-value="row['id']"/>
+                                </form>
+                            </li>
+                        </t>
+                    </ol>
+                </section>
+            </div>
+
+            <form t-att-action="'%s/add' % pk_dash_url" method="post" class="o_pk_card o_pk_form o_pk_dash_cfg_add"
+                  data-pk-section="dashboard.add">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <label class="o_pk_field_label" for="pk_dash_add_widget">Add a section</label>
+                <div class="o_pk_dash_cfg_add_row">
+                    <select name="widget" id="pk_dash_add_widget" class="o_pk_input">
+                        <option t-foreach="pk_dash_add_choices" t-as="choice" t-att-value="choice[0]" t-out="choice[1]"/>
+                    </select>
+                    <!-- Which zone (default: the shorter column). -->
+                    <t t-set="pk_add_zone_label">Zone</t>
+                    <select name="zone" id="pk_dash_add_zone" class="o_pk_input" t-att-aria-label="pk_add_zone_label"
+                            t-att-title="pk_add_zone_label">
+                        <option t-foreach="pk_dash_zone_choices" t-as="choice" t-att-value="choice[0]"
+                                t-att-selected="'selected' if choice[0] == pk_dash_add_zone else None"
+                                t-out="choice[1]"/>
+                    </select>
+                    <button type="submit" class="o_pk_btn o_pk_btn_primary" data-pk-dash-add="1">
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'plus'"/></t>
+                        <span>Add a section</span>
+                    </button>
+                </div>
+            </form>
+
+            <t t-set="pk_reset_title">Restore the default dashboard?</t>
+            <t t-set="pk_reset_message">Your sections, their order, titles and scopes will be replaced by the default ones.</t>
+            <t t-set="pk_reset_ok">Restore the default</t>
+            <t t-set="pk_reset_cancel">Cancel</t>
+            <form t-att-action="'%s/reset' % pk_dash_url" method="post" class="o_pk_dash_cfg_reset"
+                  data-pk-dash-reset-form="1" data-pk-section="dashboard.reset"
+                  t-att-data-pk-confirm-title="pk_reset_title" t-att-data-pk-confirm-message="pk_reset_message"
+                  t-att-data-pk-confirm-ok="pk_reset_ok" t-att-data-pk-confirm-cancel="pk_reset_cancel">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <button type="submit" class="o_pk_btn o_pk_btn_ghost" data-pk-dash-reset="1">Restore the default</button>
+            </form>
+            <p class="o_pk_dash_cfg_back"><a t-att-href="pk_dash_home_url" class="o_pk_link_btn" data-pk-action="dashboard.back">Back to the dashboard</a></p>
+        </t>
+    </template>
+
+</odoo>

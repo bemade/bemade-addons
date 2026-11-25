@@ -3,6 +3,8 @@ from markupsafe import Markup
 from odoo import api, fields, models, Command, _
 from odoo.exceptions import UserError
 
+from .patient import PAST_RETURN_OK
+
 
 # Fields resolved by an explicit rule rather than by destination-precedence.
 # Never reported as conflicts: the rule, not the user, decides them.
@@ -43,6 +45,8 @@ QUIET = {
     "mail_notrack": True,
     "mail_auto_subscribe_no_notify": True,
     "mail_create_nosubscribe": True,
+    # Task 1727: the merge copies « Retour prévu » as-is, even a past one.
+    PAST_RETURN_OK: True,
 }
 
 

@@ -4,17 +4,9 @@
 #    Copyright (C) October 2023 Bemade Inc. (<https://www.bemade.org>).
 #    Author: Marc Durepos (Contact : marc@bemade.org)
 #
-#    This program is under the terms of the Odoo Proprietary License v1.0 (OPL-1)
-#    It is forbidden to publish, distribute, sublicense, or sell copies of the Software
-#    or modified copies of the Software.
-#
-#    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-#    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-#    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-#    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-#    DEALINGS IN THE SOFTWARE.
+#    This program is free software: you can redistribute it and/or modify it under the terms of the
+#    GNU Lesser General Public License as published by the Free Software Foundation, version 3 (LGPL-3).
+#    See https://www.gnu.org/licenses/lgpl-3.0.html.
 #
 
 from odoo import http, _, fields
@@ -22,7 +14,7 @@ from odoo.exceptions import UserError, AccessError, MissingError, ValidationErro
 from odoo.http import request
 from odoo.tools import format_date
 
-from ..models import sc_app_nav, sc_app_roles
+from odoo.addons.bemade_portal_kit.tools import pk_form_props, pk_safe_return_url
 from datetime import datetime, time
 import time as systime
 import logging
@@ -31,7 +23,7 @@ import pytz
 _logger = logging.getLogger(__name__)
 
 # Task 1640: the date range a portal / app form may post (the browser's
-# date inputs carry the same 4-digit-year bounds, sc_date_bounds.js).
+# date inputs carry the same 4-digit-year bounds, pk_date_bounds.js).
 PORTAL_MIN_YEAR = 1900
 PORTAL_MAX_YEAR = 9999
 
@@ -60,6 +52,21 @@ def parse_portal_date(value):
         raise ValidationError(_("Please enter a valid date."))
     _check_portal_year(day.year)
     return day
+
+
+def sc_deadline_in_past(day, current=None):
+    """Task 1744 (owner 2026-11-02): True when ``day`` is a NEW activity due
+    date (not the stored ``current`` one: an overdue activity saved without
+    touching its date is fine) before the user's today (their timezone,
+    Québec). The portal routes refuse it; crons / internal code do not go
+    through them."""
+    if not day or day == current:
+        return False
+    return day < fields.Date.context_today(http.request.env.user)
+
+
+def sc_past_deadline_message(env):
+    return env._("The due date cannot be in the past.")
 
 
 class AccessControlMixin:
@@ -146,13 +153,10 @@ class AccessControlMixin:
         elif view_type == 'unassigned':
             base_domain.append(('assigned_staff_ids', '=', False))
         elif view_type == 'missing_timesheets':
-            shared_users = http.request.env['res.users'].search([('partner_id', '=', partner.id)])
-            shared_user_ids = shared_users.ids or [user.id]
-            base_domain.extend([
-                ('assigned_staff_ids', 'in', shared_user_ids),
-                '!',
-                ('timesheet_ids.user_id', 'in', shared_user_ids),
-            ])
+            # Task 1624 review round 1: the one shared definition (the
+            # dashboard's « Feuilles de temps manquantes » uses it too).
+            base_domain.extend(
+                http.request.env['sports.event']._sc_missing_timesheet_domain(user))
         # 'all' view uses base domain only
 
         # Drop cancelled events from the default surfaces unless explicitly
@@ -289,16 +293,29 @@ class AccessControlMixin:
             and not self._is_tp_or_system()
             and not self._is_clinic_admin())
 
-    def _activity_in_scope(self, activity):
+    def _activity_cover_user(self):
+        """Task 1714: the user whose covered events (and own event
+        activities) widen the activity lists — the viewer, unless a
+        coach-only viewer (the #1589 coach rule is unchanged)."""
+        if self._activity_coach_only():
+            return None
+        return http.request.env.user
+
+    def _activity_in_scope(self, activity, covered=True):
         """Is ``activity``'s related patient / team / event in the viewer's
         team scope (``_activity_scope_teams``)? sudo(): only to read the
-        related record's teams for the comparison."""
+        related record's teams for the comparison. Task 1714: an event the
+        viewer is assigned to (covers) is in scope too (``covered``; never
+        for a coach-only viewer)."""
         activity = activity.sudo()
         if activity.res_model not in ('sports.patient', 'sports.team', 'sports.event'):
             return False
         record = http.request.env[activity.res_model].sudo().browse(activity.res_id)
         if not activity.res_id or not record.exists():
             return False
+        if covered and activity.res_model == 'sports.event' \
+                and http.request.env.user in record.assigned_staff_ids:
+            return True
         teams = self._activity_scope_teams()
         if activity.res_model == 'sports.team':
             return bool(teams & record)
@@ -316,7 +333,7 @@ class AccessControlMixin:
         user = env.user
         if self._activity_coach_only():
             return ((activity.user_id == user or activity.create_uid == user)
-                    and self._activity_in_scope(activity))
+                    and self._activity_in_scope(activity, covered=False))
         if activity.user_id == user:
             return True
         return self._activity_in_scope(activity)
@@ -343,7 +360,7 @@ class AccessControlMixin:
         return attached | activity.sudo().attachment_ids
 
     # Task 1595: the record(s) an activity row / detail links to. Kind →
-    # (portal URL pattern, sc_icon key).
+    # (portal URL pattern, pk_icon key).
     _SC_ACTIVITY_RELATED_KINDS = {
         'sports.patient': ('/my/player?player_id=%s', 'players'),
         'sports.team': ('/my/team?team_id=%s', 'teams'),
@@ -399,7 +416,7 @@ class AccessControlMixin:
         if not allowed:
             return link
         link['url'] = pattern % record.id
-        if model == 'sports.patient.injury' and self._sc_app_shell_active():
+        if model == 'sports.patient.injury' and self._pk_shell_active():
             # Task 1616: the injury's open card (no injury page any more).
             link['url'] = self._sc_injury_card_url(record)
         if model == 'sports.patient':
@@ -522,8 +539,9 @@ class AccessControlMixin:
         user = request.env.user
         if not (self._is_treatment_professional() or self._is_clinic_admin()):
             return False
-        return sc_app_roles.can('patient.status.edit', user._sc_app_roles(),
-                                is_system=user.has_group('base.group_system'))
+        return request.env['portal.kit'].pk_can(
+            'patient.status.edit', user._sc_app_roles(),
+            is_system=user.has_group('base.group_system'))
 
     def _sc_player_row_extras(self, players, team_links=True, team=None, status_edit=False,
                               labels=None):
@@ -536,6 +554,8 @@ class AccessControlMixin:
           truncates it; the expanded detail shows it whole);
         * ``injured`` / ``return_label``: « Retour prévu » for an injured
           player — the date, or « — » when unset (the legacy hint);
+        * ``return_overdue`` (task 1727): that date has passed — the row
+          reads « … · Dépassé » in orange;
         * ``team_links``: the player's teams as links (``_sc_team_links``),
           empty when ``team_links`` is False (a team's own page, as legacy);
         * ``detail_url``: the lazy expanded detail (``row-detail`` route),
@@ -551,8 +571,9 @@ class AccessControlMixin:
         dropdowns (``_sc_status_pills``); the selection labels are computed
         ONCE for the whole list (or given: ``labels``).
 
-        Task 1630 (review round 1): ``status['medical']`` — the RED
-        allergy / medical-alert pills of the card
+        Task 1630 (review round 1): ``status['medical']`` — the
+        allergy / medical-alert pills of the card (review round 2, owner
+        2026-10-27: every level, grey included, for a therapist)
         (``sports.patient._sc_card_medical_pills``: ONE batched read as the
         viewer, nothing when the viewer may not read the fields)."""
         env = request.env
@@ -561,7 +582,9 @@ class AccessControlMixin:
         team_qs = '&team_id=%s' % team.id if team else ''
         clocks = self._sc_activity_clocks(
             players, lambda p: '/my/player?player_id=%s%s&tab=activities' % (p.id, team_qs))
-        medical = players._sc_card_medical_pills()
+        # Review round 2 (owner 2026-10-27): both pills in EVERY card, grey
+        # included (a therapist; a coach: yellow / red only).
+        medical = players._sc_card_medical_pills(tp=bool(self._is_treatment_professional()))
         # Task 1652: a red card pill opens the player page's popup — the
         # page renders those sheets once per player (sc_app_layout, outside
         # the read fragments); the pill falls back to the player's Info tab.
@@ -589,6 +612,8 @@ class AccessControlMixin:
                 'training': text,
                 'injured': injured,
                 'return_label': return_label,
+                # Task 1727: a past « Retour prévu » reads « · Dépassé ».
+                'return_overdue': bool(injured and player.predicted_return_overdue),
                 'team_links': [links[t.id] for t in player.sudo().team_ids if t.id in links],
                 'detail_url': detail_url,
                 'clock': clocks.get(player.id),
@@ -652,7 +677,7 @@ class AccessControlMixin:
 
     @staticmethod
     def _sc_activity_tab_badge(activities):
-        """Task 1635 — the Activities tab's count pill (``sc_page_tabs``'
+        """Task 1635 — the Activities tab's count pill (``pk_page_tabs``'
         optional 5th tuple item): ``{'count', 'tone', 'label'}``, or None at
         0. ``activities`` is the recordset the tab itself lists — searched
         as the viewer, so the record rules make the count per viewer (no
@@ -834,7 +859,7 @@ class AccessControlMixin:
             'data': data,
             'team_target': target_id,
             'team_csv': chosen,
-            'team_props': self._sc_form_props(
+            'team_props': pk_form_props(
                 target_id, env._("Teams"), value=chosen,
                 options=[(t.id, t.name) for t in targets],
                 placeholder=env._("Add a team…")),
@@ -1123,9 +1148,9 @@ class AccessControlMixin:
         (task 1544: no open redirect through a posted ``return_url``).
 
         Task 1579: ONE validator for the whole addon —
-        ``models/sc_app_nav.safe_return_url`` (same rule as before, plus the
-        optional ``prefixes`` the events pages restrict themselves to)."""
-        return sc_app_nav.safe_return_url(value, fallback, prefixes=prefixes)
+        the kit's ``pk_safe_return_url`` (task 5196; same rule as before, plus
+        the optional ``prefixes`` the events pages restrict themselves to)."""
+        return pk_safe_return_url(value, fallback, prefixes=prefixes)
 
     @classmethod
     def _local_return_url(cls, value, default):

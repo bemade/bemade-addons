@@ -18,21 +18,21 @@ function assert(condition, message) {
     }
 }
 
-const TEAMS = 'section[data-sc-edit-card="teams"]';
-const REMOVE = `${TEAMS} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="sc_team_ids"] .o_sc_tag:contains("PC Team A") button.o_sc_tag_remove`;
+const TEAMS = 'section[data-pk-edit-card="teams"]';
+const REMOVE = `${TEAMS} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-pk-autosave-field="sc_team_ids"] .o_pk_tag:contains("PC Team A") button.o_pk_tag_remove`;
 
 function removeButton() {
     const tag = [...document.querySelectorAll(
-        `${TEAMS} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="sc_team_ids"] .o_sc_tag`
+        `${TEAMS} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-pk-autosave-field="sc_team_ids"] .o_pk_tag`
     )].find((li) => li.textContent.includes("PC Team A"));
-    return tag ? tag.querySelector("button.o_sc_tag_remove") : null;
+    return tag ? tag.querySelector("button.o_pk_tag_remove") : null;
 }
 
 tours.add("sc_1656_lose_access", {
     steps: () => [
         {
             content: "From the team page, open the player",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             run() {
                 const link = document.querySelector('a[href*="/my/player?player_id="]');
                 assert(link, "no player link on the team page");
@@ -42,7 +42,7 @@ tours.add("sc_1656_lose_access", {
         },
         {
             content: "Teams pencil",
-            trigger: `${TEAMS} button[data-sc-edit-toggle]`,
+            trigger: `${TEAMS} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
@@ -50,13 +50,13 @@ tours.add("sc_1656_lose_access", {
             trigger: REMOVE,
             run() {
                 window.__sc1656Saves = 0;
-                document.addEventListener("sc:saved", () => (window.__sc1656Saves += 1));
+                document.addEventListener("pk:saved", () => (window.__sc1656Saves += 1));
                 this.anchor.click();
             },
         },
         {
             content: "Cancel: the tag stays, nothing saved",
-            trigger: "dialog[data-sc-confirm][open] [data-sc-confirm-cancel]",
+            trigger: "dialog[data-pk-confirm][open] [data-pk-confirm-cancel]",
             async run() {
                 this.anchor.click();
                 await new Promise((resolve) => setTimeout(resolve, 400));
@@ -70,13 +70,13 @@ tours.add("sc_1656_lose_access", {
             run: "click",
         },
         {
-            trigger: "dialog[data-sc-confirm][open] [data-sc-confirm-ok]",
+            trigger: "dialog[data-pk-confirm][open] [data-pk-confirm-ok]",
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "Back on the team page, the toast",
-            trigger: '.o_sc_app .o_sc_toast:not([hidden]):contains("removed from")',
+            trigger: '.o_pk_app .o_pk_toast:not([hidden]):contains("removed from")',
             run() {
                 assert(window.location.pathname === "/my/team", window.location.pathname);
             },

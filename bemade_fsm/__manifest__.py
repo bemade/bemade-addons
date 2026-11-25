@@ -5,22 +5,14 @@
 #    Copyright (C) 2023-June Bemade Inc. (<https://www.bemade.org>).
 #    Author: Marc Durepos (Contact : mdurepos@durpro.com)
 #
-#    This program is under the terms of the Odoo Proprietary License v1.0 (OPL-1)
-#    It is forbidden to publish, distribute, sublicense, or sell copies of the Software
-#    or modified copies of the Software.
-#
-#    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-#    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-#    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-#    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-#    DEALINGS IN THE SOFTWARE.
+#    This program is free software: you can redistribute it and/or modify it under the terms of the
+#    GNU Lesser General Public License as published by the Free Software Foundation, version 3 (LGPL-3).
+#    See https://www.gnu.org/licenses/lgpl-3.0.html.
 #
 ########################################################################################
 {
     "name": "Improved Field Service Management",
-    "version": "19.0.0.4.10",
+    "version": "19.0.0.11.1",
     "summary": (
         "Adds functionality necessary for managing field service operations at Durpro."
     ),
@@ -55,11 +47,14 @@
         "reports/worksheet_custom_report_templates.xml",
         "reports/worksheet_custom_reports.xml",
         "wizard/new_task_from_template.xml",
+        "wizard/fsm_site_note_wizard.xml",
+        "wizard/fsm_site_note_edit_wizard.xml",
         "wizard/res_config_settings.xml",
     ],
     "assets": {
         "web.report_assets_common": ["bemade_fsm/static/src/scss/bemade_fsm.scss"],
         "web.assets_backend": [
+            "bemade_fsm/static/src/scss/fsm_site_note.scss",
             # OWL list view extension for Project Tasks
             "bemade_fsm/static/src/views/project_task_list_view.js",
             # Ensure buttons template is available in the backend bundle

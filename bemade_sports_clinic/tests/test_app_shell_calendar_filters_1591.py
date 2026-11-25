@@ -89,7 +89,7 @@ class TestCalendarFilters1591(Calendar1591Common):
 
     @staticmethod
     def _segment(tree, key):
-        return tree.xpath('//nav[@data-sc-tabs]//a[@data-sc-tab="%s"]/@href' % key)[0]
+        return tree.xpath('//nav[@data-pk-tabs]//a[@data-pk-tab="%s"]/@href' % key)[0]
 
     # -- UC-1 ------------------------------------------------------------
     def test_feed_honours_each_filter(self):
@@ -115,12 +115,12 @@ class TestCalendarFilters1591(Calendar1591Common):
         self._login_tp()
         _text, tree = self._get(
             '/my/events/calendar?event_type=game&team_id=%s&show_cancelled=1&search=lighthouse'
-            '&date_from=2000-01-01&date_to=2000-01-31&sortby=name' % self.team_a.id)
-        chips = tree.xpath('//*[@data-sc-section="events.types"]//a[@aria-pressed="true"]/@data-sc-event-type')
+            '&date_from=2000-01-01&date_to=2000-01-31&sortby=name&view_type=all' % self.team_a.id)
+        chips = tree.xpath('//*[@data-pk-section="events.types"]//a[@aria-pressed="true"]/@data-sc-event-type')
         self.assertEqual(chips, ['game'])
-        views = tree.xpath('//*[@data-sc-section="events.views"]//a/@data-sc-view')
+        views = tree.xpath('//*[@data-pk-section="events.views"]//a/@data-sc-view')
         self.assertEqual(views, ['all', 'my', 'unassigned', 'missing_timesheets'])
-        form = tree.xpath('//form[@data-sc-section="events.filters"]')[0]
+        form = tree.xpath('//form[@data-pk-section="events.filters"]')[0]
         self.assertEqual(form.get('action'), '/my/events/calendar')
         names = set(form.xpath('.//*[@name]/@name'))
         for name in ('organization_id', 'team_id', 'assigned_user_id', 'show_cancelled',
@@ -132,14 +132,17 @@ class TestCalendarFilters1591(Calendar1591Common):
         self.assertEqual(form.xpath('.//input[@name="show_cancelled"]/@checked'), ['checked'])
         self.assertEqual(form.xpath('.//input[@name="event_type"]/@value'), ['game'])
         self.assertTrue(form.xpath('.//details[@open]'))
-        props = json.loads(tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_calendar"]/@props')[0])
+        props = json.loads(tree.xpath('//owl-component[@name="bemade_portal_kit.pk_calendar"]/@props')[0])
+        # Task 1730 (deliberate update): a professional's calendar opens on
+        # « My events » unless the URL names a view — « All » here.
         self.assertEqual(props['params'], {
-            'event_type': 'game', 'team_id': str(self.team_a.id), 'show_cancelled': '1', 'search': 'lighthouse'})
+            'event_type': 'game', 'team_id': str(self.team_a.id), 'show_cancelled': '1', 'search': 'lighthouse',
+            'view_type': 'all'})
         # The coach gets no « Missing timesheets » view, as on the list.
         self._login_coach()
         _text, tree = self._get('/my/events/calendar')
-        self.assertNotIn('missing_timesheets', tree.xpath('//*[@data-sc-section="events.views"]//a/@data-sc-view'))
-        self.assertFalse(tree.xpath('//form[@data-sc-section="events.filters"]//details[@open]'))
+        self.assertNotIn('missing_timesheets', tree.xpath('//*[@data-pk-section="events.views"]//a/@data-sc-view'))
+        self.assertFalse(tree.xpath('//form[@data-pk-section="events.filters"]//details[@open]'))
 
     # -- UC-3 ------------------------------------------------------------
     def test_list_to_calendar_keeps_filters_not_dates(self):
@@ -155,22 +158,27 @@ class TestCalendarFilters1591(Calendar1591Common):
         # Explicit dates, sort, grouping and the past segment stay on the list.
         _text, tree = self._get(
             '/my/events?segment=past&no_default_dates=1&sortby=date_desc&date_to=2026-01-01'
-            '&date_from=2025-01-01&group_by=team&organization_id=%s&show_cancelled=1' % self.org.id)
+            '&date_from=2025-01-01&group_by=team&organization_id=%s&show_cancelled=1&view_type=all' % self.org.id)
         self.assertEqual(self._query(self._segment(tree, 'calendar')), {
-            'organization_id': str(self.org.id), 'show_cancelled': '1'})
+            'organization_id': str(self.org.id), 'show_cancelled': '1', 'view_type': 'all'})
         # The home's return_url travels too.
+        # Task 1730: with no view in the URL a professional is on « My
+        # events », and the calendar link names it.
         _text, tree = self._get('/my/events?team_id=%s&return_url=%%2Fmy%%2Fhome' % self.team_a.id)
         self.assertEqual(self._query(self._segment(tree, 'calendar')), {
-            'team_id': str(self.team_a.id), 'return_url': '/my/home'})
+            'team_id': str(self.team_a.id), 'return_url': '/my/home', 'view_type': 'my',
+            'assigned_user_id': str(self.tp.id)})
 
     def test_calendar_to_list_keeps_filters(self):
         self._login_tp()
+        # Task 1730 (deliberate update): « All » named, a professional's
+        # default being « My events ».
         _text, tree = self._get('/my/events/calendar?team_id=%s&event_type=practice&show_cancelled=1'
-                                '&date_from=2000-01-01' % self.team_a.id)
+                                '&date_from=2000-01-01&view_type=all' % self.team_a.id)
         upcoming = self._segment(tree, 'upcoming')
         self.assertTrue(upcoming.startswith('/my/events?'), upcoming)
         self.assertEqual(self._query(upcoming), {
-            'team_id': str(self.team_a.id), 'event_type': 'practice', 'show_cancelled': '1'})
+            'team_id': str(self.team_a.id), 'event_type': 'practice', 'show_cancelled': '1', 'view_type': 'all'})
         past = self._query(self._segment(tree, 'past'))
         self.assertEqual(past['team_id'], str(self.team_a.id))
         self.assertEqual(past['event_type'], 'practice')
@@ -179,17 +187,17 @@ class TestCalendarFilters1591(Calendar1591Common):
         self.assertNotIn('date_from', past)
         # The list opened from there applies its own default range and the filters.
         _text, list_tree = self._get(upcoming)
-        ids = {int(x) for x in list_tree.xpath('//*[@data-sc-section="events.list"]//@data-sc-event-id')}
+        ids = {int(x) for x in list_tree.xpath('//*[@data-pk-section="events.list"]//@data-sc-event-id')}
         self.assertIn(self.ev_practice_a.id, ids)
         self.assertNotIn(self.ev_game_a.id, ids)
-        self.assertEqual(list_tree.xpath('//form[@data-sc-section="events.filters"]//select[@name="team_id"]'
+        self.assertEqual(list_tree.xpath('//form[@data-pk-section="events.filters"]//select[@name="team_id"]'
                                          '/option[@selected]/@value'), [str(self.team_a.id)])
         # The calendar's chips stay on the calendar and keep the other filters.
-        chip = tree.xpath('//*[@data-sc-section="events.types"]//a[@data-sc-event-type="game"]/@href')[0]
+        chip = tree.xpath('//*[@data-pk-section="events.types"]//a[@data-sc-event-type="game"]/@href')[0]
         self.assertTrue(chip.startswith('/my/events/calendar?'), chip)
         self.assertEqual(self._query(chip), {
-            'team_id': str(self.team_a.id), 'event_type': 'game', 'show_cancelled': '1'})
-        mine = tree.xpath('//*[@data-sc-section="events.views"]//a[@data-sc-view="missing_timesheets"]/@href')[0]
+            'team_id': str(self.team_a.id), 'event_type': 'game', 'show_cancelled': '1', 'view_type': 'all'})
+        mine = tree.xpath('//*[@data-pk-section="events.views"]//a[@data-sc-view="missing_timesheets"]/@href')[0]
         self.assertTrue(mine.startswith('/my/events/calendar?'), mine)
         self.assertNotIn('no_default_dates', self._query(mine))
 
@@ -200,7 +208,8 @@ class TestCalendarFiltersTourPhone1591(Calendar1591Common):
 
     def test_list_calendar_list_phone(self):
         self._switch(True)
-        self.start_tour('/my/events?event_type=game&team_id=%s' % self.team_a.id,
+        # Task 1730: « All » named (a professional's default is « My events »).
+        self.start_tour('/my/events?event_type=game&team_id=%s&view_type=all' % self.team_a.id,
                         'sc_1591_calendar_filters', login='pc.tp@example.com')
 
 
@@ -210,7 +219,8 @@ class TestCalendarFiltersTourLaptop1591(Calendar1591Common):
 
     def test_list_calendar_list_laptop(self):
         self._switch(True)
-        self.start_tour('/my/events?event_type=game&team_id=%s' % self.team_a.id,
+        # Task 1730: « All » named (a professional's default is « My events »).
+        self.start_tour('/my/events?event_type=game&team_id=%s&view_type=all' % self.team_a.id,
                         'sc_1591_calendar_filters', login='pc.tp@example.com')
 
 
@@ -225,11 +235,11 @@ class TestCalendarFiltersI18n1591(TestAppShellI18n1538):
         self._switch(True)
         self._login_tp()
         tree = lxml_html.fromstring(self._fr('/my/events/calendar'))
-        form = tree.xpath('//form[@data-sc-section="events.filters"]')[0]
+        form = tree.xpath('//form[@data-pk-section="events.filters"]')[0]
         text = ' '.join(form.text_content().split())
         for term in ('Filtres', 'Afficher les événements annulés', 'Appliquer les filtres',
                      'Toutes les organisations', 'Toutes les équipes'):
             self.assertIn(term, text)
         views = [' '.join(a.text_content().split())
-                 for a in tree.xpath('//*[@data-sc-section="events.views"]//a')]
+                 for a in tree.xpath('//*[@data-pk-section="events.views"]//a')]
         self.assertIn('Mes événements', views)

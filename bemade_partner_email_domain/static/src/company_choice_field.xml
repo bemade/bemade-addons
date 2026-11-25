@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="bemade_partner_email_domain.CompanyChoiceField">
+        <div class="d-flex flex-wrap gap-1">
+            <t t-if="props.readonly">
+                <span t-esc="string" />
+            </t>
+            <t t-else="">
+                <t t-foreach="options" t-as="option" t-key="option[0]">
+                    <span
+            class="o_selection_badge btn btn-sm"
+            t-att-class="value === option[0] ? 'btn-primary active' : 'btn-outline-secondary'"
+            t-att-value="stringify(option[0])"
+            t-esc="option[1]"
+            t-on-click="(ev) => this.onChoose(ev, option[0])"
+          />
+                </t>
+                <span t-if="!options.length" class="text-muted fst-italic">—</span>
+            </t>
+        </div>
+    </t>
+</templates>

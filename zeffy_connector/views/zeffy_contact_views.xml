@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="zeffy_contact_view_list" model="ir.ui.view">
+        <field name="name">zeffy.contact.list</field>
+        <field name="model">zeffy.contact</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <field name="name" />
+                <field name="email" />
+                <field name="zip" optional="show" />
+                <field name="partner_id" />
+                <field name="donation_count" />
+                <field name="total_contribution" sum="Total" />
+                <field name="currency_id" column_invisible="1" />
+                <field name="last_donation_date" optional="show" />
+                <field name="company_id" groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="zeffy_contact_view_form" model="ir.ui.view">
+        <field name="name">zeffy.contact.form</field>
+        <field name="model">zeffy.contact</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" /></h1>
+                    </div>
+                    <group>
+                        <group string="Zeffy">
+                            <field name="email" widget="email" />
+                            <field name="phone" widget="phone" />
+                            <field name="street" />
+                            <field name="city" />
+                            <field name="zip" />
+                            <field name="state_code" />
+                            <field name="country_code" />
+                        </group>
+                        <group string="Giving">
+                            <field name="partner_id" />
+                            <field name="donor_type" />
+                            <field name="donation_count" />
+                            <field name="total_contribution" />
+                            <field name="currency_id" invisible="1" />
+                            <field name="first_donation_date" />
+                            <field name="last_donation_date" />
+                            <field name="zeffy_id" />
+                            <field
+                name="company_id"
+                groups="base.group_multi_company"
+              />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Payments" name="payments">
+                            <field name="payment_ids" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="zeffy_contact_view_search" model="ir.ui.view">
+        <field name="name">zeffy.contact.search</field>
+        <field name="model">zeffy.contact</field>
+        <field name="arch" type="xml">
+            <search>
+                <field
+          name="name"
+          filter_domain="['|', ('name', 'ilike', self), ('email', 'ilike', self)]"
+        />
+                <field name="partner_id" />
+                <field name="zip" />
+                <filter
+          name="unlinked"
+          string="Not linked to a contact"
+          domain="[('partner_id', '=', False)]"
+        />
+            </search>
+        </field>
+    </record>
+
+    <record id="zeffy_contact_action" model="ir.actions.act_window">
+        <field name="name">Zeffy Contacts</field>
+        <field name="res_model">zeffy.contact</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

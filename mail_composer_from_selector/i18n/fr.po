@@ -1,0 +1,169 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* mail_composer_from_selector
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 18:33+0000\n"
+"PO-Revision-Date: 2026-11-19 18:33+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_from_address__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_res_users__from_address_ids
+#: model_terms:ir.ui.view,arch_db:mail_composer_from_selector.res_users_view_form_inherit
+msgid "Allowed From Addresses"
+msgstr "Adresses d'expédition autorisées"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_from_address__user_ids
+#: model_terms:ir.ui.view,arch_db:mail_composer_from_selector.mail_from_address_view_form
+msgid "Allowed Users"
+msgstr "Utilisateurs autorisés"
+
+#. module: mail_composer_from_selector
+#: model_terms:ir.ui.view,arch_db:mail_composer_from_selector.mail_from_address_view_form
+msgid "Archived"
+msgstr "Archivé"
+
+#. module: mail_composer_from_selector
+#: model:ir.model,name:mail_composer_from_selector.model_mail_from_address
+#: model_terms:ir.ui.view,arch_db:mail_composer_from_selector.mail_from_address_view_form
+msgid "Authorized From Address"
+msgstr "Adresse d'expédition autorisée"
+
+#. module: mail_composer_from_selector
+#: model:ir.actions.act_window,name:mail_composer_from_selector.mail_from_address_action
+#: model_terms:ir.ui.view,arch_db:mail_composer_from_selector.mail_from_address_view_tree
+msgid "Authorized From Addresses"
+msgstr "Adresses d'expédition autorisées"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_from_address__company_id
+msgid "Company"
+msgstr "Société"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_from_address__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_from_address__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_compose_message__display_name
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_from_address__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,help:mail_composer_from_selector.field_mail_from_address__name
+msgid "Display name for this From address (e.g., 'Customer Service')"
+msgstr ""
+"Nom affiché pour cette adresse d'expédition (p. ex. « Service à la clientèle"
+" »)"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_from_address__email
+msgid "Email Address"
+msgstr "Adresse e-mail"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.constraint,message:mail_composer_from_selector.constraint_mail_from_address_email_unique
+msgid "Email address must be unique per company."
+msgstr "L'adresse courriel doit être unique par société."
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,help:mail_composer_from_selector.field_res_users__from_address_ids
+msgid "Email addresses this user can use as From address in mail composer"
+msgstr ""
+"Adresses courriel que cet utilisateur peut utiliser comme expéditeur dans la"
+" fenêtre de rédaction"
+
+#. module: mail_composer_from_selector
+#: model:ir.model,name:mail_composer_from_selector.model_mail_compose_message
+msgid "Email composition wizard"
+msgstr "Assistant de composition de courriel"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_compose_message__from_address_id
+msgid "From Address"
+msgstr "Adresse d'expédition"
+
+#. module: mail_composer_from_selector
+#: model:ir.ui.menu,name:mail_composer_from_selector.mail_from_address_menu
+msgid "From Addresses"
+msgstr "Adresses d'expédition"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_compose_message__id
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_from_address__id
+msgid "ID"
+msgstr "ID"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_from_address__write_uid
+msgid "Last Updated by"
+msgstr "Mis à jour par"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_from_address__write_date
+msgid "Last Updated on"
+msgstr "Mis à jour le"
+
+#. module: mail_composer_from_selector
+#: model_terms:ir.ui.view,arch_db:mail_composer_from_selector.mail_from_address_view_form
+msgid "Leave empty to allow all users"
+msgstr "Laissez vide pour autoriser tous les utilisateurs"
+
+#. module: mail_composer_from_selector
+#: model_terms:ir.ui.view,arch_db:mail_composer_from_selector.res_users_view_form_inherit
+msgid "Select allowed From addresses"
+msgstr "Sélectionnez les adresses d'expédition autorisées"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,help:mail_composer_from_selector.field_mail_compose_message__from_address_id
+msgid "Select which authorized email address to use as the From address"
+msgstr "Sélectionnez l'adresse courriel autorisée à utiliser comme expéditeur"
+
+#. module: mail_composer_from_selector
+#: model_terms:ir.ui.view,arch_db:mail_composer_from_selector.mail_compose_message_wizard_form_inherit
+msgid "Send As"
+msgstr "Envoyer en tant que"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_from_address__name
+msgid "Sender Name"
+msgstr "Nom de l'expéditeur"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,field_description:mail_composer_from_selector.field_mail_from_address__sequence
+msgid "Sequence"
+msgstr "Séquence"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,help:mail_composer_from_selector.field_mail_from_address__email
+msgid "The email address to use as From address"
+msgstr "L'adresse courriel à utiliser comme expéditeur"
+
+#. module: mail_composer_from_selector
+#: model:ir.model.fields,help:mail_composer_from_selector.field_mail_from_address__user_ids
+msgid "Users allowed to send from this address. Leave empty for all users."
+msgstr ""
+"Utilisateurs autorisés à envoyer depuis cette adresse. Laissez vide pour "
+"tous les utilisateurs."

@@ -63,10 +63,14 @@ class TestAppShellI18n1542(TestAppShellI18n1538):
         self.assertNotIn('&lt;!DOCTYPE', text)
 
     def test_owl_strings_served_in_french(self):
-        resp = self.url_open('/web/webclient/translations?lang=fr_CA&mods=bemade_sports_clinic')
+        # Task 5382 (kit P4c3): the autosave field's texts are the kit's.
+        resp = self.url_open('/web/webclient/translations?lang=fr_CA'
+                             '&mods=bemade_portal_kit,bemade_sports_clinic')
+        modules = resp.json()['modules']
         messages = {
             m['id']: m['string']
-            for m in resp.json()['modules']['bemade_sports_clinic']['messages']}
+            for name in ('bemade_portal_kit', 'bemade_sports_clinic')
+            for m in modules[name]['messages']}
         for source, french in (('Draft restored', 'Brouillon restauré'),
                                ('Saving…', 'Enregistrement…'),
                                ('Offline — pending', 'Hors ligne — en attente'),

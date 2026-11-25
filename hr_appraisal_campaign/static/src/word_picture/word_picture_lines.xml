@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="hr_appraisal_campaign.WordPictureLines">
+        <div class="o_campaign_wp">
+            <div t-if="progress" class="o_campaign_wp_progress text-muted mb-2" t-esc="progress"/>
+            <t t-foreach="sections" t-as="section" t-key="section.key">
+                <h4 t-if="section.label" class="o_campaign_wp_section mt-3 mb-2" t-esc="section.label"/>
+                <t t-foreach="section.records" t-as="rec" t-key="rec.id">
+                    <div class="o_campaign_wp_criterion card mb-3" t-att-data-criterion="rec.data.name">
+                        <div class="card-body p-2 p-md-3">
+                            <h5 class="card-title mb-1" t-esc="rec.data.name"/>
+                            <p t-if="rec.data.description" class="text-muted small mb-2" t-esc="rec.data.description"/>
+                            <div class="o_campaign_wp_levels row g-2" role="radiogroup" t-att-aria-label="rec.data.name">
+                                <t t-foreach="levels(rec)" t-as="level" t-key="level.value">
+                                    <div t-att-class="columnClass(rec)">
+                                        <div t-att-class="levelClass(rec, level)"
+                                             role="radio"
+                                             t-att-data-level="level.value"
+                                             t-att-aria-checked="mainGrade(rec) === level.value ? 'true' : 'false'"
+                                             t-att-aria-disabled="gradeField(rec) ? 'false' : 'true'"
+                                             t-att-tabindex="gradeField(rec) ? 0 : -1"
+                                             t-on-click="() => this.select(rec, level.value)"
+                                             t-on-keydown="(ev) => this.onKeydown(ev, rec, level.value)">
+                                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-1 mb-1">
+                                                <span t-att-class="'o_campaign_wp_badge badge ' + badgeClass(level)" t-esc="level.value + ' · ' + level.name"/>
+                                                <span class="d-flex gap-1">
+                                                    <span t-if="rec.data.can_see_employee and rec.data.employee_grade_ui === level.value"
+                                                          class="badge text-bg-primary o_campaign_wp_mark_self">Self</span>
+                                                    <span t-if="rec.data.can_see_manager and managerGrade(rec) === level.value"
+                                                          class="badge text-bg-dark o_campaign_wp_mark_manager" t-esc="managerMark(rec)"/>
+                                                </span>
+                                            </div>
+                                            <div class="o_campaign_wp_text small" t-esc="level.text"/>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+                            <div class="row g-2 mt-1">
+                                <div t-if="rec.data.can_see_employee and (rec.data.can_edit_employee and !props.readonly or rec.data.employee_examples_ui)" class="col-12 col-md-6">
+                                    <label class="form-label small fw-bold mb-0">Examples (observable facts)</label>
+                                    <textarea t-if="rec.data.can_edit_employee and !props.readonly"
+                                              class="form-control form-control-sm o_campaign_wp_examples" rows="2"
+                                              t-att-value="rec.data.employee_examples_ui or ''"
+                                              t-on-change="(ev) => this.onCommentChange(rec, 'employee_examples_ui', ev)"/>
+                                    <div t-else="" class="small o_campaign_wp_comment" t-esc="rec.data.employee_examples_ui"/>
+                                </div>
+                                <div t-if="rec.data.can_see_manager and (canEditRemarks(rec) or rec.data.manager_remarks_ui)" class="col-12 col-md-6">
+                                    <label class="form-label small fw-bold mb-0">Manager remarks / improvement</label>
+                                    <textarea t-if="canEditRemarks(rec)"
+                                              class="form-control form-control-sm o_campaign_wp_remarks" rows="2"
+                                              t-att-value="rec.data.manager_remarks_ui or ''"
+                                              t-on-change="(ev) => this.onCommentChange(rec, 'manager_remarks_ui', ev)"/>
+                                    <div t-else="" class="small o_campaign_wp_comment" t-esc="rec.data.manager_remarks_ui"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </div>
+    </t>
+</templates>

@@ -2,7 +2,7 @@ from odoo import http, fields, _
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
-from .access_control_mixin import AccessControlMixin, parse_portal_date
+from .access_control_mixin import AccessControlMixin, parse_portal_date, sc_past_deadline_message
 from .app_shell import AppShellMixin
 import logging
 from datetime import date, timedelta
@@ -425,12 +425,17 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 values['success'] = _("Player has been added to the team.")
                 
             if error:
-                values['error'] = error
+                # Task 1744: the activity add panel's refusals in words.
+                values['error'] = {
+                    'past_deadline': sc_past_deadline_message(request.env),
+                    'missing_fields': _("Please fill in all required fields."),
+                    'invalid_user': _("You cannot assign this activity to that user."),
+                }.get(error, error)
             
             # Task 1542: the app shell (switch on) or today's template, byte
             # for byte (switch off). The shell-only values are computed only
             # when the shell renders.
-            if self._sc_app_shell_active():
+            if self._pk_shell_active():
                 values.update(self._sc_team_values(team, values))
             return self._sc_render('bemade_sports_clinic.portal_my_team_players',
                                    'bemade_sports_clinic.sc_app_team', values)
@@ -536,6 +541,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_announcement_deadline': (
                 format_date(env, team.announcement_deadline)
                 if team.announcement_deadline else ''),
+            # Task 1719: the compact « Jusqu'au <date> » line.
+            'sc_announcement_until': (
+                env._("Until %(date)s", date=format_date(env, team.announcement_deadline))
+                if team.announcement_deadline else ''),
             'sc_team_url': '/my/team?team_id=%s' % team.id,
             # Task 1635: the Activities tab counts what its panel lists.
             'sc_team_activities_badge': self._sc_activity_tab_badge(values['team_activities']),
@@ -601,7 +610,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         # Task 1540: the app shell (switch on) or today's template (off);
         # team_digest_render is rendered unchanged inside the shell card.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values['sc_digest_date'] = format_date(request.env, digest.snapshot_date)
         return self._sc_render('bemade_sports_clinic.portal_team_digest',
                                'bemade_sports_clinic.sc_app_team_digest', values)
@@ -730,7 +739,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         # Task 1540: the full history on the app shell (the modal fragment
         # above — also the P1b sheet — is unchanged).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             # Task 1614: each date expands in place (lazy body) with its
             # counts as the subtitle — a coach's re-gated (see _sc_counts).
             role = ('tp' if (self._is_treatment_professional()
@@ -1515,7 +1524,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # links a chosen result (existing_id) or, with force_new, creates
             # exactly the typed player (no fuzzy re-match), then lands on the
             # Players tab / the new player's page.
-            sc_inline = bool(post.get('sc_inline')) and self._sc_app_shell_active()
+            sc_inline = bool(post.get('sc_inline')) and self._pk_shell_active()
             force_new = sc_inline and bool(post.get('force_new'))
             if force_new and not (first_name and last_name):
                 raise UserError(_('First name and last name are required'))

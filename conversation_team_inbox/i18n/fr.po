@@ -92,7 +92,7 @@ msgstr "Alias de messagerie"
 #. module: conversation_team_inbox
 #: model:ir.model.fields,help:conversation_team_inbox.field_mail_conversation_team__alias_domain
 msgid "Email domain e.g. 'example.com' in 'odoo@example.com'"
-msgstr "Domaine de l'courriel e.g. 'example.com' dans 'odoo@example.com'"
+msgstr "Domaine du courriel e.g. 'example.com' dans 'odoo@example.com'"
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__from_address

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Task 5382 (P4c3): the kit's autosave field — see pk_autosave_field.js. -->
+<templates xml:space="preserve">
+    <t t-name="bemade_portal_kit.PkAutosaveField">
+        <div class="o_pk_field o_pk_autosave" t-att-data-pk-autosave="props.mode or 'draft'"
+             t-att-hidden="isHidden ? 'hidden' : undefined"
+             t-att-data-pk-autosave-field="props.field or props.name"
+             t-att-data-pk-autosave-state="state.status" t-att-data-pk-autosave-restored="state.restored ? '1' : '0'">
+            <!-- A group change that would drop chosen options asks first
+                 (never a browser confirm); « Cancel » restores the group
+                 select. The warning sits at the top of the field — right
+                 under the group select, above the tags (disabled while it
+                 waits for an answer). -->
+            <div t-if="state.groupConfirm" class="o_pk_field_message o_pk_group_confirm" role="alert"
+                 data-pk-group-confirm-box="1">
+                <p class="o_pk_group_confirm_text" t-esc="groupConfirmText"/>
+                <div class="o_pk_group_confirm_actions">
+                    <button type="button" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm" data-pk-group-cancel="1"
+                            t-on-click="cancelGroup">Cancel</button>
+                    <button type="button" class="o_pk_btn o_pk_btn_primary o_pk_btn_sm" data-pk-group-confirm="1"
+                            t-on-click="confirmGroup" t-esc="groupConfirmLabel"/>
+                </div>
+            </div>
+            <label class="o_pk_field_label" t-att-for="props.inputId">
+                <!-- labelHidden: a title sits above the field; the label
+                     stays as the input's accessible name. -->
+                <span t-att-class="props.labelHidden ? 'visually-hidden' : undefined" t-esc="props.label"/>
+                <span t-if="statusLabel" t-attf-class="o_pk_save_state o_pk_save_state_{{ state.status }}" role="status" t-esc="statusLabel"/>
+                <button t-if="canClear" type="button"
+                        class="o_pk_link_btn o_pk_clear_btn" t-on-click="clear">Clear</button>
+                <button t-if="props.historySheet and !isReplace" type="button" class="o_pk_link_btn o_pk_field_history"
+                        t-att-data-pk-sheet-open="props.historySheet" t-esc="props.historyLabel"/>
+            </label>
+            <div t-if="state.restored" class="o_pk_banner o_pk_draft_banner" role="status">
+                <strong class="o_pk_banner_title">Draft restored</strong>
+                <span>Your unpublished text was kept on this device.</span>
+                <button type="button" class="o_pk_link_btn" t-on-click="discardDraft">Discard the draft</button>
+            </div>
+            <div t-if="state.conflict" class="o_pk_banner o_pk_banner_warn o_pk_conflict_banner" role="alert">
+                <strong class="o_pk_banner_title">Changed elsewhere</strong>
+                <span t-esc="conflictText"/>
+                <div class="o_pk_banner_actions">
+                    <button type="button" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm" t-on-click="keepMine">Keep mine</button>
+                    <button type="button" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm" t-on-click="takeTheirs">Take theirs</button>
+                </div>
+            </div>
+            <!-- A 428 answer: the change is written only once confirmed. -->
+            <div t-if="state.confirm" class="o_pk_banner o_pk_banner_warn o_pk_confirm_banner" role="alert">
+                <strong class="o_pk_banner_title" t-esc="state.confirm.message"/>
+                <span class="o_pk_confirm_change" t-esc="confirmChangeText"/>
+                <span t-if="state.confirm.detail" class="o_pk_confirm_detail" t-esc="state.confirm.detail"/>
+                <div class="o_pk_banner_actions">
+                    <button type="button" class="o_pk_btn o_pk_btn_primary o_pk_btn_sm o_pk_confirm_ok" t-on-click="confirmChange">Confirm</button>
+                    <button type="button" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm o_pk_confirm_cancel" t-on-click="cancelChange">Cancel</button>
+                </div>
+            </div>
+            <!-- The « replace » editor — the current text read-only above an
+                 EMPTY editor; saving replaces the text. -->
+            <t t-if="isReplace">
+                <div t-if="state.current" class="o_pk_replace_current" data-pk-replace="current">
+                    <span class="o_pk_replace_caption" t-esc="replaceCurrentLabel"/>
+                    <div class="o_pk_replace_current_text o_pk_pre" t-esc="state.current"/>
+                    <small t-if="state.hint" class="o_pk_hint" t-esc="state.hint"/>
+                </div>
+                <div class="o_pk_replace_new_head">
+                    <span class="o_pk_replace_caption" t-esc="replaceNewLabel"/>
+                    <button t-if="state.current and !state.value and !isDisabled" type="button"
+                            class="o_pk_link_btn o_pk_replace_reuse" t-on-click="reuseCurrent" t-esc="replaceReuseLabel"/>
+                </div>
+                <textarea t-ref="input" class="o_pk_input o_pk_textarea" rows="4" data-pk-replace="new"
+                          t-att-id="props.inputId" t-att-name="props.name" t-att-placeholder="props.placeholder"
+                          t-att-disabled="isDisabled"
+                          t-model="state.value" t-on-input="onInput" t-on-blur="commit"/>
+                <small class="o_pk_hint o_pk_replace_hint">
+                    <span>Replaces the previous text; the old one is kept in the history.</span>
+                    <button t-if="props.historySheet" type="button" class="o_pk_link_btn o_pk_field_history"
+                            t-att-data-pk-sheet-open="props.historySheet" t-esc="props.historyLabel"/>
+                </small>
+            </t>
+            <textarea t-elif="type === 'textarea'" t-ref="input" class="o_pk_input o_pk_textarea" rows="4"
+                      t-att-id="props.inputId" t-att-name="props.name" t-att-placeholder="props.placeholder"
+                      t-att-required="props.required" t-att-disabled="isDisabled"
+                      t-model="state.value" t-on-input="onInput" t-on-blur="commit"/>
+            <!-- The picker hook: ``picker`` / ``pickerKey`` mark the select
+                 for a consumer's type-to-filter picker; ``optionMeta``
+                 ({value: {key: text}}) gives each option its
+                 data-pk-meta-<key> attributes. -->
+            <select t-elif="type === 'select'" t-ref="input" class="o_pk_input o_pk_select"
+                    t-att-id="props.inputId" t-att-name="props.name" t-att-required="props.required"
+                    t-att-data-pk-picker="props.picker ? '1' : undefined"
+                    t-att-data-pk-picker-key="props.pickerKey"
+                    t-att-data-pk-picker-narrow="props.pickerNarrow"
+                    t-att-data-pk-picker-hint="props.pickerHint"
+                    t-att-disabled="isDisabled" t-model="state.value" t-on-change="onChange">
+                <t t-foreach="options" t-as="opt" t-key="opt_index">
+                    <option t-att-value="opt[0]"
+                            t-att-disabled="props.lockEmpty and opt[0] === '' ? 'disabled' : undefined"
+                            t-att="optionAttrs(opt[0])"
+                            t-esc="opt[1]"/>
+                </t>
+            </select>
+            <div t-elif="type === 'segmented'" t-ref="input" class="o_pk_segmented o_pk_segmented_full o_pk_seg_input"
+                 role="group" t-att-id="props.inputId" t-att-aria-label="props.label">
+                <t t-foreach="options" t-as="opt" t-key="opt_index">
+                    <button type="button" t-att-data-pk-value="opt[0]" t-att-disabled="isDisabled"
+                            t-att-aria-pressed="state.value === opt[0] ? 'true' : 'false'"
+                            t-on-click="() => this.onPick(opt[0])" t-esc="opt[1]"/>
+                </t>
+                <input t-if="props.name" type="hidden" t-att-name="props.name" t-att-value="state.value"/>
+            </div>
+            <!-- tags: the value is the CSV of the chosen option keys —
+                 removable chips + a search box; each add / remove saves
+                 (server) or fills the form's hidden input (form). Focusing
+                 the box opens the FULL list (browse), grouped, scrollable,
+                 keyboard navigable; typing narrows it. -->
+            <div t-elif="type === 'tags'" class="o_pk_tags_field" t-att-data-pk-tags-open="state.open ? '1' : '0'"
+                 t-on-focusout="onTagsFocusout" t-on-keydown="onTagKeydown">
+                <ul class="o_pk_tags" t-att-aria-label="props.label">
+                    <li t-foreach="chosenOptions" t-as="opt" t-key="opt[0]" class="o_pk_tag">
+                        <span t-esc="opt[1]"/>
+                        <button type="button" class="o_pk_tag_remove" t-att-disabled="isDisabled"
+                                t-att-aria-label="removeLabel(opt[1])" t-att-title="removeLabel(opt[1])"
+                                t-on-click="() => this.onRemoveTag(opt[0])">×</button>
+                    </li>
+                </ul>
+                <input t-ref="input" type="search" class="o_pk_input o_pk_tags_search" autocomplete="off"
+                       role="combobox" aria-autocomplete="list"
+                       t-att-aria-expanded="state.open ? 'true' : 'false'" t-att-aria-controls="tagsListId"
+                       t-att-aria-activedescendant="tagsActiveId"
+                       t-att-id="props.inputId" t-att-placeholder="props.placeholder"
+                       t-att-disabled="isDisabled" t-model="state.query" t-on-input="onTagsInput"
+                       t-on-focus="openTags" t-on-click="openTags"/>
+                <ul t-if="state.open and tagRows.length" t-ref="list" class="o_pk_tags_options" role="listbox"
+                    tabindex="-1" t-att-id="tagsListId" t-att-aria-label="props.label"
+                    t-on-mousedown.prevent="() => {}">
+                    <t t-foreach="tagRows" t-as="row" t-key="row.key">
+                        <li t-if="row.heading" role="presentation" class="o_pk_tags_group" t-esc="row.label"/>
+                        <li t-else="" role="option" t-att-id="tagsListId + '_' + row.index"
+                            t-att-data-pk-tags-index="row.index"
+                            t-att-aria-selected="row.index === state.active ? 'true' : 'false'">
+                            <button type="button" tabindex="-1" t-att-data-pk-value="row.value"
+                                    t-attf-class="o_pk_tags_option #{row.index === state.active ? 'o_pk_tags_option_active' : ''}"
+                                    t-on-click="(ev) => this.addTag(row.value, ev)" t-esc="row.label"/>
+                        </li>
+                    </t>
+                </ul>
+                <small t-elif="state.open and state.query.trim()" class="o_pk_hint" t-esc="noMatchLabel"/>
+                <!-- Typed text that matches nothing; the choices a group
+                     change dropped. -->
+                <p t-if="state.typedError" class="o_pk_field_message o_pk_field_error" role="alert"
+                   data-pk-tags-typed-error="1" t-esc="state.typedError"/>
+                <p t-if="state.groupNotice" class="o_pk_field_message o_pk_hint" role="status"
+                   data-pk-tags-group-notice="1" t-esc="state.groupNotice"/>
+            </div>
+            <div t-elif="type === 'date_na'" class="o_pk_date_na">
+                <input t-ref="input" class="o_pk_input" type="date" t-att-id="props.inputId"
+                       t-att-name="props.name" t-att-value="dateValue" t-att-disabled="isNa or isDisabled"
+                       t-att-min="dateBounds.min" t-att-max="dateBounds.max"
+                       t-att-required="!isNa and props.required"
+                       t-on-input="(ev) => { this.state.value = ev.target.value; this.onInput(); }"
+                       t-on-change="(ev) => { this.state.value = ev.target.value; this.onChange(); }"
+                       t-on-blur="commit" t-on-keydown="onDateKeydown" t-on-pointerdown="onDatePointer"/>
+                <!-- The « N/A » box is the kit's switch (pk_switch). -->
+                <label class="o_pk_switch o_pk_switch_inline">
+                    <span class="o_pk_switch_text"><span class="o_pk_switch_label" t-esc="naLabel"/></span>
+                    <span class="o_pk_switch_control">
+                        <input type="checkbox" role="switch" class="o_pk_switch_input" t-att-name="props.naName" value="1"
+                               t-att-checked="isNa" t-att-aria-checked="isNa ? 'true' : 'false'"
+                               t-att-disabled="isDisabled" t-on-change="onNaToggle"/>
+                        <span class="o_pk_switch_track" aria-hidden="true"><span class="o_pk_switch_thumb"/></span>
+                    </span>
+                </label>
+            </div>
+            <input t-else="" t-ref="input" class="o_pk_input" t-att-type="type"
+                   t-att-id="props.inputId" t-att-name="props.name" t-att-placeholder="props.placeholder"
+                   t-att-required="props.required" t-att-disabled="isDisabled"
+                   t-att-min="dateBounds.min" t-att-max="dateBounds.max"
+                   t-att-inputmode="type === 'tel' ? 'tel' : undefined"
+                   t-model="state.value" t-on-input="onInput" t-on-change="onChange" t-on-blur="commit"
+                   t-on-keydown="onDateKeydown" t-on-pointerdown="onDatePointer"/>
+            <small t-if="state.hint and !isReplace" class="o_pk_hint" t-esc="state.hint"/>
+            <div t-if="state.message" class="o_pk_field_message" role="status" t-esc="state.message"/>
+            <div t-if="state.error" class="o_pk_field_message o_pk_field_error" role="alert" t-esc="state.error"/>
+        </div>
+    </t>
+</templates>
