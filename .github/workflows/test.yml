@@ -48,9 +48,17 @@ jobs:
       image: registry.bemade.org/bemade/docker-odoo-enterprise/odoo-enterprise-ci:${{ github.base_ref }}
       options: --user root
     name: Install addons
-    services:
+    services: &services
       postgres:
-        image: pgvector/pgvector:pg16
+        # Pinned by digest, and shared with the test shards below: a shard can
+        # run on a runner host that still caches an older build of a tag, and a
+        # dump taken on a newer PostgreSQL minor does not always restore on an
+        # older one (16.16 writes a `pg_attver` column option that 16.15
+        # rejects). Keep the tag in the reference: the runner names the service
+        # container after the part of the image name before the first `:`. To
+        # update, take the index digest from
+        #   docker buildx imagetools inspect pgvector/pgvector:pg16
+        image: pgvector/pgvector:pg16@sha256:484e838076e04939d27d3e176e91c86eea96236126023be8d3059761122e579f
         env:
           POSTGRES_USER: odoo
           POSTGRES_PASSWORD: odoo
@@ -140,6 +148,8 @@ jobs:
         run: |
           : "${CI_ARTIFACT_KEY:?CI_ARTIFACT_KEY is not set; refusing to upload the database unencrypted}"
           DATA_DIR=$(python3 -c "from odoo.tools import config; config.parse_config([]); print(config['data_dir'])" | tail -1)
+          psql -Atc 'select version()'
+          pg_dump --version
           pg_dump -Fc -f /tmp/odoo-db/db.dump ${PGDATABASE}
           tar -C "${DATA_DIR}" -cf /tmp/odoo-db/data-dir.tar .
           mkdir -p /tmp/odoo-db-upload
@@ -167,13 +177,7 @@ jobs:
       fail-fast: false
       matrix:
         shard: ${{ fromJSON(needs.install.outputs.shards) }}
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_USER: odoo
-          POSTGRES_PASSWORD: odoo
-          POSTGRES_DB: odoo
+    services: *services
     steps:
       - uses: actions/checkout@v4
         with:
@@ -195,6 +199,8 @@ jobs:
             | tar -C /tmp/odoo-db -xf -
           DATA_DIR=$(python3 -c "from odoo.tools import config; config.parse_config([]); print(config['data_dir'])" | tail -1)
           oca_wait_for_postgres
+          psql -Atc 'select version()'
+          pg_restore --version
           dropdb --if-exists ${PGDATABASE}
           createdb ${PGDATABASE}
           pg_restore --no-owner -j 4 -d ${PGDATABASE} /tmp/odoo-db/db.dump
