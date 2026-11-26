@@ -627,7 +627,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         ``/digest-history/recent`` sibling, no longer routed) is gone: 404.
         """
         if preview:
-            return request.not_found()
+            raise request.not_found()
         try:
             team = self._check_team_access(team_id)
         except MissingError:

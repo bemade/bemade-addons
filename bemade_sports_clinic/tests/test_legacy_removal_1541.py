@@ -252,7 +252,9 @@ class TestLegacyRemoval1541(AppShellCommon):
             '/my/team/%s/digest-history/recent' % self.team_a.id,
             '/my/player/%s/recent-changes' % self.player.id,
         ):
-            with self.subTest(url=url):
+            # Review 2026-11-26: raised, not returned (no « returns an
+            # HTTPException instead of raising it » warning).
+            with self.subTest(url=url), self.assertNoLogs('odoo.http', 'WARNING'):
                 self.assertEqual(self._no_redirect(url).status_code, 404, url)
 
     def test_app_twins_of_the_fragments_stay(self):

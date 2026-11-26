@@ -664,7 +664,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         gone with the legacy cards: 404.
         """
         if not kw.get('detail'):
-            return http.request.not_found()
+            raise http.request.not_found()
         try:
             player = self._check_access_to_patient(int(player_id))
         except UserError as e:
