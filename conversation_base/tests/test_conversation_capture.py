@@ -15,7 +15,8 @@
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
-from odoo.tests import TransactionCase
+from odoo.addons.mail.tests.common import MailCommon
+from odoo.tests import TransactionCase, tagged
 
 
 class TestConversationCapture(TransactionCase):
@@ -244,3 +245,63 @@ class TestConversationCapture(TransactionCase):
         self.assertNotIn("watcher@example.com", reply_only)
         self.assertIn("watcher@example.com", reply_all)
         self.assertIn("customer@example.com", reply_all)
+
+
+@tagged("post_install", "-at_install")
+class TestCaptureSkipsAliasParticipants(MailCommon):
+    # Acceptance criteria:
+    #   - a captured reply-all whose To or Cc holds an Odoo alias adds no
+    #     participant for that alias; the other addresses are added as before;
+    #   - the next reply draft does not list the alias;
+    #   - the gateway path is unchanged (covered by test_conversation_gateway).
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.Conversation = cls.env["mail.conversation"]
+        cls.transport = cls.env["conversation.transport"].create(
+            {"name": "Alias Capture Transport"}
+        )
+        cls.alias = cls.env["mail.alias"].create(
+            {
+                "alias_name": "team-inbox",
+                "alias_model_id": cls.env["ir.model"]._get("mail.conversation").id,
+                "alias_domain_id": cls.mail_alias_domain.id,
+            }
+        )
+        cls.alias_email = "%s@%s" % (cls.alias.alias_name, cls.mail_alias_domain.name)
+
+    def _capture(self, **overrides):
+        stub = {
+            "subject": "Reply all",
+            "body": "<p>Hello</p>",
+            "email_from": "customer@example.com",
+            "to": ["Sales <sales@example.com>"],
+            "cc": ["watcher@example.com"],
+            "external_id": "alias-ext-1",
+        }
+        stub.update(overrides)
+        return self.Conversation._capture_stub(self.transport, stub, mode="new")
+
+    def _emails(self, conversation):
+        return set(conversation.participant_ids.mapped("email_normalized"))
+
+    def test_alias_in_to_is_not_a_participant(self):
+        conversation = self._capture(
+            to=["sales@example.com", "Team <%s>" % self.alias_email]
+        )
+        self.assertEqual(
+            self._emails(conversation),
+            {"customer@example.com", "sales@example.com", "watcher@example.com"},
+        )
+
+    def test_alias_in_cc_is_not_a_participant(self):
+        conversation = self._capture(cc=[self.alias_email.upper(), "w@example.com"])
+        self.assertEqual(
+            self._emails(conversation),
+            {"customer@example.com", "sales@example.com", "w@example.com"},
+        )
+
+    def test_alias_only_recipients_leave_just_the_sender(self):
+        conversation = self._capture(to=[self.alias_email], cc=[])
+        self.assertEqual(self._emails(conversation), {"customer@example.com"})

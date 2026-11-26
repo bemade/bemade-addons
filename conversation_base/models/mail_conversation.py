@@ -607,9 +607,28 @@ class MailConversation(models.Model):
         self._sync_participants(
             from_email=stub.get("email_from") or stub.get("author"),
             from_partner=author_partner,
-            to_emails=stub.get("to") or [],
-            cc_emails=stub.get("cc") or [],
+            to_emails=self._stub_recipients_without_aliases(stub, "to"),
+            cc_emails=self._stub_recipients_without_aliases(stub, "cc"),
         )
+
+    def _stub_recipients_without_aliases(self, stub, key):
+        """The ``to``/``cc`` addresses of a captured stub without those of
+        Odoo's own mail aliases (a team inbox, a helpdesk alias), as the
+        gateway path does through ``to_filtered``/``cc_filtered``. The
+        aliases are looked up over To and Cc together, the way
+        ``mail.thread.message_parse`` does, with the same
+        ``mail.alias.domain`` helper.
+        """
+        emails = stub.get(key) or []
+        all_normalized = tools.email_normalize_all(
+            ",".join((stub.get("to") or []) + (stub.get("cc") or []))
+        )
+        alias_emails = set(
+            self.env["mail.alias.domain"].sudo()._find_aliases(all_normalized)
+        )
+        return [
+            email for email in emails if tools.email_normalize(email) not in alias_emails
+        ]
 
     def _sync_participants(
         self, from_email=None, from_partner=None, to_emails=None, cc_emails=None
