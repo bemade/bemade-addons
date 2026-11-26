@@ -510,12 +510,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if not (is_therapist or is_coach or user.has_group('base.group_system')):
             raise AccessError(_("You don't have access to events."))
         
-        # Get the event. If it cannot be found via the query-string based
-        # entry (/my/event?event_id=..), fall back to the path-style URL so
-        # existing links continue to work without a hard 404.
+        # An event that does not exist (deleted, or an edited URL) is not
+        # found. Review 2026-11-26: it used to redirect to its own path URL,
+        # i.e. to itself — an endless redirect loop.
         event = http.request.env['sports.event'].browse(event_id)
         if not event.exists():
-            return http.request.redirect(f'/my/event/{event_id}')
+            raise http.request.not_found()
         
         # Check team access for coaches
         if is_coach and not is_therapist:
