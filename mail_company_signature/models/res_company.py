@@ -79,6 +79,20 @@ class ResCompany(models.Model):
         "removes it afterwards. Leave empty to show it until it is cleared.",
     )
 
+    mail_send_from_signature_address = fields.Boolean(
+        string="Send from the signature address",
+        default=False,
+        groups="base.group_system",
+        help="When an internal user's email would go out from their personal "
+        "address, send it from the address their signature shows instead (a "
+        "team inbox: the user's sending address, the ticket team's...), as "
+        "\"Name (Team)\" <inbox>, with replies to that inbox. A template's "
+        "fixed sender (purchasing@...) is kept. Users whose signature shows "
+        "their own address are not changed. Replies that answer an email of "
+        "a document stay on that document even when they are addressed to "
+        "an inbox that creates other records (a helpdesk alias).",
+    )
+
     def _company_signature_notice_value(self):
         """The notice as ``Markup`` while it is shown, else an empty string."""
         self.ensure_one()

@@ -1,7 +1,10 @@
 from contextlib import contextmanager
 
+from markupsafe import Markup
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import email_normalize
 
 
 class ResUsers(models.Model):
@@ -36,6 +39,20 @@ class ResUsers(models.Model):
         related="employee_id.signature_show_mobile",
         readonly=False,
         related_sudo=False,
+    )
+    mail_send_as_alias_id = fields.Many2one(
+        "mail.alias",
+        string="Sending address",
+        domain="[('alias_name', '!=', False), ('alias_domain_id', '!=', False)]",
+        ondelete="set null",
+        copy=False,
+        help="Team inbox this user's emails show instead of their personal "
+        "address: the {{work_email}} placeholder of the company signature "
+        "prints it. When the company setting \"Send from the signature "
+        "address\" is on, the emails also go out from it (\"Name (Team)\" "
+        "<inbox>) with replies to it. A document can impose its own address "
+        "(a helpdesk ticket: its team's), and so can a template with a fixed "
+        "sender (purchasing@).",
     )
     signature_is_generated = fields.Boolean(
         groups="base.group_system",
@@ -176,6 +193,8 @@ class ResUsers(models.Model):
         "employee_ids.mobile_phone",
         "employee_ids.signature_show_mobile",
         "employee_ids.work_email",
+        "mail_send_as_alias_id",
+        "mail_send_as_alias_id.alias_full_name",
     )
     def _compute_signature(self):
         enforced = self._company_signature_enforced_users()
@@ -234,7 +253,10 @@ class ResUsers(models.Model):
                     emp.mobile_phone if emp and emp.signature_show_mobile else ""
                 )
                 or "",
-                "work_email": (emp.work_email if emp else "") or user.email or "",
+                "work_email": user.mail_send_as_alias_id.alias_full_name
+                or (emp.work_email if emp else "")
+                or user.email
+                or "",
                 "company_name": company.name or "",
                 "company_phone": company.phone or "",
                 "company_email": company.email or "",
@@ -261,6 +283,124 @@ class ResUsers(models.Model):
             return french
         return "%s / %s" % (french, english)
 
+    # ------------------------------------------------------------------
+    # Sending address (signature, and From when the company asks for it)
+    # ------------------------------------------------------------------
+    def _mail_personal_emails(self):
+        """The user's personal addresses, normalized: email, login (when it is
+        an address) and employee work emails."""
+        self.ensure_one()
+        user = self.sudo()
+        employees = (
+            self.env["hr.employee"]
+            .sudo()
+            .with_context(active_test=False)
+            .search([("user_id", "=", user.id)])
+        )
+        candidates = [user.email, user.login, *employees.mapped("work_email")]
+        return {email for email in map(email_normalize, filter(None, candidates)) if email}
+
+    def _mail_sender_info(self, record=None, email_from=None):
+        """The address this user sends from (and shows in the signature) on an
+        email about ``record``, sent with a template whose sender is
+        ``email_from``. Pure, no write.
+
+        In priority:
+
+        a. the record's override (``mail.thread._mail_sender_override``, e.g.
+           a helpdesk ticket: its team's address);
+        b. the template's fixed sender (``email_from`` or the context key
+           ``mail_signature_email_from``) when it is not personal (a
+           purchasing@ template);
+        c. the user's "Sending address" (``mail_send_as_alias_id``);
+        d. the user's own address (employee work email, else user email).
+
+        Portal users always get d.
+
+        :return: dict ``email`` (address as shown), ``label`` (team name shown
+            after the person's name in From, may be empty), ``personal``
+            (True for d), ``source`` (``record``, ``template``, ``user``,
+            ``personal``)
+        """
+        self.ensure_one()
+        user = self.sudo()
+        if not user.share:
+            if record is not None and len(record) == 1 and hasattr(record, "_mail_sender_override"):
+                override = record._mail_sender_override(user)
+                if override and email_normalize(override.get("email") or ""):
+                    return {
+                        "email": email_normalize(override["email"]),
+                        "label": override.get("label") or "",
+                        "personal": False,
+                        "source": "record",
+                    }
+            fixed = email_from or self.env.context.get("mail_signature_email_from")
+            fixed = email_normalize(fixed or "") if fixed and "{" not in fixed else False
+            if fixed and fixed not in user._mail_personal_emails():
+                return {"email": fixed, "label": "", "personal": False, "source": "template"}
+            alias = user.mail_send_as_alias_id
+            alias_email = email_normalize(alias.alias_full_name or "") if alias else False
+            if alias_email:
+                return {
+                    "email": alias_email,
+                    "label": alias._mail_send_as_label(),
+                    "personal": False,
+                    "source": "user",
+                }
+        emp = user._company_signature_employees().get(user.id)
+        return {
+            "email": (emp.work_email if emp else "") or user.email or "",
+            "label": "",
+            "personal": True,
+            "source": "personal",
+        }
+
+    def _mail_sender_address(self, record=None, email_from=None):
+        """See ``_mail_sender_info``: the address only."""
+        return self._mail_sender_info(record, email_from)["email"]
+
+    def _mail_signature_for(self, record=None, email_from=None):
+        """The signature this user's email about ``record`` carries.
+
+        Users under the company signature policy: the company template
+        rendered with ``{{work_email}}`` = the sending address for this
+        context (the same render as the stored signature, which is the
+        context-free one). Other users: their stored signature, unchanged.
+        """
+        self.ensure_one()
+        user = self.sudo()
+        signature = user.signature
+        if user not in user._company_signature_enforced_users():
+            return signature
+        address = user._mail_sender_address(record, email_from)
+        # The stored signature is the context-free one (no record, no
+        # template sender, whatever the context carries).
+        if address == user.with_context(mail_signature_email_from=False)._mail_sender_address():
+            return signature
+        values = user._company_signature_values()[user.id]
+        values["work_email"] = address
+        company = user.company_id
+        return company._company_signature_compact(company._company_signature_render(values))
+
+    @api.model
+    def _mail_signature_swap_printed(self, html, users, record=None, email_from=None):
+        """``html`` (a rendered template) with each verbatim copy of a stored
+        signature of ``users`` replaced by that user's signature for this
+        context (``_mail_signature_for``). Only the signature fragments
+        change."""
+        if not html:
+            return html
+        result = str(html)
+        for user in users.sudo():
+            stored = str(user.signature or "")
+            if not stored or stored not in result:
+                continue
+            built = str(user._mail_signature_for(record, email_from) or "")
+            if built != stored:
+                result = result.replace(stored, built)
+        if result == str(html):
+            return html
+        return Markup(result) if isinstance(html, Markup) else result
     # ------------------------------------------------------------------
     # Guards
     # ------------------------------------------------------------------

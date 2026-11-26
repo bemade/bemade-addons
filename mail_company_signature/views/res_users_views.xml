@@ -11,6 +11,11 @@
             <field name="signature" position="before">
                 <field name="company_signature_enforced" invisible="1" />
                 <field name="company_signature_manual" groups="base.group_system" />
+                <field
+          name="mail_send_as_alias_id"
+          groups="base.group_system"
+          options="{'no_create': True}"
+        />
             </field>
             <field name="signature" position="after">
                 <div

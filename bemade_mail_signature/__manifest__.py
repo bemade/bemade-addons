@@ -1,6 +1,6 @@
 {
     "name": "Mail Signature: Shown as Sent",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Productivity/Discuss",
     "summary": "Show the email signature in the composer exactly as it is sent, "
     "and keep it (folded) in the logged chatter message.",

@@ -1,0 +1,57 @@
+# Translation of Odoo Server.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-24 17:39+0000\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: mail_company_signature_helpdesk
+#: model:ir.model.fields,help:mail_company_signature_helpdesk.field_helpdesk_team__mail_send_as_alias_id
+msgid ""
+"Address of the emails written on this team's tickets, whoever writes them "
+"(it wins over the user's own sending address): the signature shows it and, "
+"when the company setting \"Send from the signature address\" is on, the "
+"emails go out from it with replies to it. Empty: the team's own alias."
+msgstr ""
+"Adresse des courriels écrits sur les billets de cette équipe, peu importe "
+"qui les écrit (elle a priorité sur l'adresse d'envoi de l'utilisateur) : la "
+"signature l'affiche et, quand le paramètre de l'entreprise « Envoyer depuis "
+"l'adresse de la signature » est activé, les courriels partent de cette "
+"adresse, avec les réponses vers elle. Vide : l'alias de l'équipe."
+
+#. module: mail_company_signature_helpdesk
+#: model:ir.model.fields,field_description:mail_company_signature_helpdesk.field_helpdesk_team__display_name
+#: model:ir.model.fields,field_description:mail_company_signature_helpdesk.field_helpdesk_ticket__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: mail_company_signature_helpdesk
+#: model:ir.model,name:mail_company_signature_helpdesk.model_helpdesk_team
+msgid "Helpdesk Team"
+msgstr "Équipe d'assistance"
+
+#. module: mail_company_signature_helpdesk
+#: model:ir.model,name:mail_company_signature_helpdesk.model_helpdesk_ticket
+msgid "Helpdesk Ticket"
+msgstr "Ticket d'assistance"
+
+#. module: mail_company_signature_helpdesk
+#: model:ir.model.fields,field_description:mail_company_signature_helpdesk.field_helpdesk_team__id
+#: model:ir.model.fields,field_description:mail_company_signature_helpdesk.field_helpdesk_ticket__id
+msgid "ID"
+msgstr "ID"
+
+#. module: mail_company_signature_helpdesk
+#: model:ir.model.fields,field_description:mail_company_signature_helpdesk.field_helpdesk_team__mail_send_as_alias_id
+msgid "Sending address"
+msgstr "Adresse d'envoi"
+
+#. module: mail_company_signature_helpdesk
+#: model_terms:ir.ui.view,arch_db:mail_company_signature_helpdesk.helpdesk_team_view_form
+msgid "Team alias"
+msgstr "Alias de l'équipe"
