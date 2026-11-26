@@ -1,3 +1,10 @@
+## 1.0.4 (2026-11-25)
+
+- The synchronization from the server never writes to it. A series whose rule
+  was changed on the server used to be deleted there, then in Odoo.
+- A series turned into a single event on the server is no longer deleted from
+  Odoo by the next poll. Both fixes by Sabrine Mbarek (JumpTo).
+
 ## 1.0.3 (2026-11-25)
 
 - An occurrence changed on its own in an all-day series (`RECURRENCE-ID` is a

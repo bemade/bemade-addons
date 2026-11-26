@@ -231,7 +231,19 @@ class CalendarEvent(models.Model):
             events._to_sync()._sync_create_to_caldav()
         return events
 
+    def _is_import_from_server(self) -> bool:
+        """Whether we are applying the CalDAV server's state to Odoo (poll).
+
+        Odoo's own machinery may then archive, detach or rewrite events (e.g.
+        when the server changed a recurrence rule). None of that may reach the
+        server: it already holds the truth, and pushing it back used to delete
+        whole series there (and, on the next poll, in Odoo too).
+        """
+        return bool(self.env.context.get("caldav_from_server"))
+
     def _sync_create_to_caldav(self):
+        if self._is_import_from_server():
+            return
         for event in self:
             for user in event.caldav_user_ids:
                 calendar = user._get_caldav_calendar()
@@ -289,6 +301,8 @@ class CalendarEvent(models.Model):
         return res
 
     def _sync_write_to_caldav(self):
+        if self._is_import_from_server():
+            return
         ical_event_data = self._create_event_data()
         for user in self.caldav_user_ids:
             calendar = user._get_caldav_calendar()
@@ -381,6 +395,8 @@ class CalendarEvent(models.Model):
                 return index
 
     def _sync_unlink_to_caldav(self):
+        if self._is_import_from_server():
+            return
         delete_all = self.env.context.get("caldav_delete_all", False)
         if self.caldav_uid:
             for user in self.caldav_user_ids:
@@ -635,6 +651,9 @@ class CalendarEvent(models.Model):
         :param user: The res.user record for whom to synchronize events.
         """
         _logger.info(f"Polling CalDAV server for user {user.name}")
+        # Everything below applies the server's state to Odoo: nothing may be
+        # written to or deleted from the server (see _is_import_from_server).
+        self = self.with_context(caldav_from_server=True)
         calendar = user._get_caldav_calendar()
         events = calendar.events()
         synced_events = self.env["calendar.event"]
@@ -688,6 +707,7 @@ class CalendarEvent(models.Model):
         :param user: The res.user record for whom to synchronize the event.
         :return: The calendar.event records that were synchronized.
         """
+        self = self.with_context(caldav_from_server=True)
         synced_events = self.env["calendar.event"]
         event_components = [
             component for component in ical_event.walk() if component.name == "VEVENT"
@@ -730,7 +750,7 @@ class CalendarEvent(models.Model):
                     caldav_no_sync=True, caldav_keep_ids=True
                 ).create(values | recurrency_vals)
                 self.env["calendar.event"].flush_model()
-                if new_event.recurrency:
+                if new_event.recurrence_id:
                     synced_events |= new_event.recurrence_id.calendar_event_ids
                 else:
                     synced_events |= new_event
@@ -747,7 +767,9 @@ class CalendarEvent(models.Model):
                         caldav_keep_ids=True,
                     ).write(changed_vals)
 
-            if existing_instance.recurrency and existing_instance.is_base_event:
+            # recurrence_id, not recurrency (see _get_existing_instance): an
+            # event left with recurrency but no series must count as seen.
+            if existing_instance.recurrence_id and existing_instance.is_base_event:
                 synced_events |= existing_instance.recurrence_id.calendar_event_ids
             else:
                 synced_events |= existing_instance
@@ -811,24 +833,24 @@ class CalendarEvent(models.Model):
                 [("caldav_uid", "=", uid), *slot_domain]
             )
         else:
-            instance = self.env["calendar.event"].search(
+            # The series comes first: an occurrence detached from it keeps the
+            # UID, and must not be taken for the series.
+            series_base = (
+                self.env["calendar.recurrence"]
+                .search([("base_event_id.caldav_uid", "=", uid)], limit=1)
+                .base_event_id
+            )
+            if series_base:
+                return series_base
+            # recurrence_id, not recurrency: Odoo leaves recurrency set on the
+            # event that remains when a series is turned into a single event.
+            # Missed here, it was deleted as an orphan.
+            return self.env["calendar.event"].search(
                 [
                     ("caldav_uid", "=", uid),
-                    ("recurrency", "=", False),
+                    ("recurrence_id", "=", False),
                 ]
             )
-            if instance:
-                return instance
-            else:
-                return (
-                    self.env["calendar.recurrence"]
-                    .search(
-                        [
-                            ("base_event_id.caldav_uid", "=", uid),
-                        ]
-                    )
-                    .base_event_id
-                )
 
         if len(instance) == 1:
             return instance
