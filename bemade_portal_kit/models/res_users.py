@@ -1,5 +1,5 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class ResUsers(models.Model):
@@ -22,10 +22,17 @@ class ResUsers(models.Model):
         default=False,
         copy=False,
     )
+    # Task 5546 (kit 1.18): the one-time « get notified on this phone? »
+    # prompt was answered (either way): it never comes back, on any device.
+    pk_push_prompted = fields.Boolean(
+        string="Phone notification prompt answered",
+        default=False,
+        copy=False,
+    )
 
     @property
     def SELF_READABLE_FIELDS(self):
-        return super().SELF_READABLE_FIELDS + ['pk_theme', 'pk_show_done_buttons']
+        return super().SELF_READABLE_FIELDS + ['pk_theme', 'pk_show_done_buttons', 'pk_push_prompted']
 
     @property
     def SELF_WRITEABLE_FIELDS(self):
@@ -84,3 +91,45 @@ class ResUsers(models.Model):
             if pref.mode in spec['modes']
         }
         return self.filtered(lambda user: stored.get(user.id, self._pk_kind_default(spec, user)) == mode)
+
+    # ------------------------------------------------------------------
+    # Task 5546 (kit 1.18): the phone switch of a kind of notification
+    # ------------------------------------------------------------------
+    def _pk_notification_push(self, kind):
+        """Is the phone switch of notification kind ``kind`` (a key) on for
+        the user? Off for a kind that does not declare ``push``, an unknown
+        kind and without a stored row (the default)."""
+        self.ensure_one()
+        return bool(self._pk_notification_push_users(kind))
+
+    def _pk_notification_push_users(self, kind):
+        """The users of ``self`` whose phone switch of ``kind`` is on (one
+        query)."""
+        spec = self.env['portal.kit'].pk_notification_kind(kind)
+        if not spec or not spec.get('push') or not self:
+            return self.browse()
+        on = self.env['portal.kit.notification.pref'].sudo().search(
+            [('user_id', 'in', self.ids), ('kind', '=', kind), ('push', '=', True)]).user_id
+        return self & on
+
+    @api.model
+    def _pk_notification_push_partners(self, kind, partners):
+        """The partners of ``partners`` one of whose active users has the
+        phone switch of ``kind`` on."""
+        users = partners.sudo().user_ids.filtered('active')
+        return users._pk_notification_push_users(kind).partner_id & partners
+
+    def _pk_notification_set_push(self, kinds, value):
+        """Set the phone switch of each of ``kinds`` (keys) to ``value`` for
+        each user of ``self`` (sudo: a caller's own rows; the routes check
+        the kinds)."""
+        Pref = self.env['portal.kit.notification.pref'].sudo()
+        for user in self:
+            for kind in kinds:
+                pref = Pref.search([('user_id', '=', user.id), ('kind', '=', kind)], limit=1)
+                if pref:
+                    if pref.push != bool(value):
+                        pref.push = bool(value)
+                else:
+                    Pref.create({'user_id': user.id, 'kind': kind, 'push': bool(value)})
+        return True

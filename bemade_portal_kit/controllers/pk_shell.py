@@ -355,25 +355,43 @@ class PortalKitShell(PortalKitApp):
     # ------------------------------------------------------------------
     @http.route(['/my/app/notify-pref'], type='http', auth='user', website=True,
                 methods=['POST'], multilang=False)
-    def pk_app_notify_pref(self, kind=None, mode=None, redirect=None, **post):
+    def pk_app_notify_pref(self, kind=None, mode=None, redirect=None, push=None, **post):
         """Task 5516 (kit 1.17): store the CALLER's mode for notification
         kind ``kind`` (one of ``portal.kit.pk_notification_kinds()`` of the
         current app, a mode it allows). Anything else answers 400 and
         writes nothing. A JSON caller gets ``{kind, mode}``; a plain form
         post is redirected to ``redirect`` (same-site; default: the
-        settings' « Notifications » section). CSRF: the http POST route."""
+        settings' « Notifications » section). CSRF: the http POST route.
+
+        Task 5546 (kit 1.18): ``push`` (``'1'`` / ``'0'``) sets the kind's
+        phone switch instead of (or with) the mode: only for a kind that
+        declares ``push`` while ``portal.kit._pk_push_available()``. The
+        JSON answer then also holds ``push``."""
         user = request.env.user
-        spec = next((k for k in request.env['portal.kit'].pk_notification_kinds() if k['key'] == kind), None)
-        if not spec or mode not in spec['modes']:
+        kit = request.env['portal.kit']
+        spec = next((k for k in kit.pk_notification_kinds() if k['key'] == kind), None)
+        if not spec or (mode is None and push is None):
+            return request.make_json_response({'error': 'bad_request'}, status=400)
+        if mode is not None and mode not in spec['modes']:
+            return request.make_json_response({'error': 'bad_request'}, status=400)
+        if push is not None and (push not in ('0', '1') or not spec.get('push') or not kit._pk_push_available()):
             return request.make_json_response({'error': 'bad_request'}, status=400)
         Pref = request.env['portal.kit.notification.pref']
         pref = Pref.search([('user_id', '=', user.id), ('kind', '=', kind)], limit=1)
+        vals = {}
+        if mode is not None:
+            vals['mode'] = mode
+        if push is not None:
+            vals['push'] = push == '1'
         if pref:
-            pref.write({'mode': mode})
+            pref.write(vals)
         else:
-            Pref.create({'user_id': user.id, 'kind': kind, 'mode': mode})
+            Pref.create(dict(vals, user_id=user.id, kind=kind))
         if 'application/json' in request.httprequest.headers.get('Accept', ''):
-            return request.make_json_response({'kind': kind, 'mode': mode})
+            answer = {'kind': kind, 'mode': user._pk_notification_mode(kind)}
+            if push is not None:
+                answer['push'] = push == '1'
+            return request.make_json_response(answer)
         return request.redirect(self._pk_safe_url(redirect, '/my/app/settings#pk_notifications'), code=303)
 
     @staticmethod
