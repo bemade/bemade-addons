@@ -234,3 +234,13 @@
         gap: var(--pk-space-2, 8px);
     }
 }
+
+// Review 2026-11-26: « Pas d'accès » follows the device when the user has no
+// theme of their own (data-sc-theme-auto): rendered dark, light here.
+@media (prefers-color-scheme: light) {
+    .o_pk_app.o_sc_no_access[data-sc-theme-auto],
+    body.o_pk_app_body.o_pk_app_body_dark.o_sc_no_access_auto {
+        @include pk-theme-light;
+        @include sc-theme-light;
+    }
+}

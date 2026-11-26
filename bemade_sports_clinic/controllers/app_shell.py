@@ -1055,9 +1055,25 @@ class AppShellMixin:
     def _sc_no_access():
         """Task 1541: « Pas d'accès » (HTTP 403) for a user without a clinic
         app role."""
-        response = request.render('bemade_sports_clinic.sc_no_access', {})
+        response = request.render('bemade_sports_clinic.sc_no_access', {
+            'sc_theme': AppShellMixin._sc_no_access_theme(),
+        })
         response.status_code = 403
         return response
+
+    @staticmethod
+    def _sc_no_access_theme():
+        """Review 2026-11-26: the theme of « Pas d'accès » — the user's
+        own ``pk_theme`` when the theme choice is on and they picked the
+        non-default theme (the only choice the app can tell from the
+        default), else ``'auto'``: the device's light / dark preference
+        (``prefers-color-scheme``, applied in the page)."""
+        kit = request.env['portal.kit']
+        if kit._pk_theme_choice_enabled():
+            theme = kit._pk_effective_theme()
+            if theme in ('dark', 'light') and theme != kit._pk_default_theme():
+                return theme
+        return 'auto'
 
     def _sc_booking_enabled(self):
         """The bookings addon (appointment_portal_staff) flags its home card

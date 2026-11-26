@@ -15,13 +15,24 @@
             <t t-set="no_footer" t-value="True"/>
             <t t-set="no_livechat" t-value="True"/>
             <t t-set="html_data" t-value="{'lang': (request.env.lang or 'en_US').replace('_', '-')}"/>
-            <t t-set="body_classname" t-value="'o_pk_app_body o_pk_app_body_dark'"/>
+            <!-- Review 2026-11-26: the theme follows the device (sc_theme
+                 'auto': dark, light under prefers-color-scheme: light, in
+                 sc_pages.scss — no script), or the user's own pick
+                 (_sc_no_access_theme). -->
+            <t t-set="sc_theme_auto" t-value="sc_theme not in ('dark', 'light')"/>
+            <t t-set="sc_page_theme" t-value="'dark' if sc_theme_auto else sc_theme"/>
+            <t t-set="body_classname" t-value="'o_pk_app_body o_pk_app_body_%s%s' % (sc_page_theme, ' o_sc_no_access_auto' if sc_theme_auto else '')"/>
             <t t-set="title">No access</t>
             <t t-set="head">
-                <meta name="theme-color" content="#120e12"/>
+                <t t-if="sc_theme_auto">
+                    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#243925"/>
+                    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#120e12"/>
+                </t>
+                <meta t-else="" name="theme-color" t-att-content="'#243925' if sc_page_theme == 'light' else '#120e12'"/>
                 <meta name="robots" content="noindex"/>
             </t>
-            <div class="o_pk_app o_sc_no_access" data-pk-theme="dark" data-sc-no-access-page="1">
+            <div class="o_pk_app o_sc_no_access" t-att-data-pk-theme="sc_page_theme" data-sc-no-access-page="1"
+                 t-att-data-sc-theme-auto="sc_theme_auto and '1'">
                 <main class="o_sc_no_access_main">
                     <div class="o_sc_no_access_brand">
                         <t t-call="bemade_sports_clinic.sc_logo_mark"/>
