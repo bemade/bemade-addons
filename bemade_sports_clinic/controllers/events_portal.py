@@ -65,6 +65,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                    date_from=None, date_to=None, sortby=None, group_by=None, search=None, no_default_dates=None,
                    show_cancelled=None, **kw):
         """Main events view with filtering and pagination"""
+        # Review 2026-11-26: a malformed filter id (an edited URL) is ignored.
+        team_id, organization_id, assigned_user_id = (
+            self._int_or_none(v) for v in (team_id, organization_id, assigned_user_id))
         
         # Check access
         user = http.request.env.user
@@ -326,6 +329,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         (team / organization / assigned professional / date range) are
         rendered here; their current values seed the calendar's data fetch.
         """
+        # Review 2026-11-26: a malformed filter id (an edited URL) is ignored.
+        team_id, organization_id, assigned_user_id = (
+            self._int_or_none(v) for v in (team_id, organization_id, assigned_user_id))
         user = http.request.env.user
         is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
                       user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
@@ -488,13 +494,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         if not event_id:
             # If not provided in the path, try to get it from the query string
-            raw_id = http.request.httprequest.args.get('event_id')
-            if not raw_id:
+            event_id = http.request.httprequest.args.get('event_id')
+            if not event_id:
                 return http.request.redirect('/my/events')
-            try:
-                event_id = int(raw_id)
-            except Exception:
-                return http.request.redirect('/my/events')
+        # Review 2026-11-26: a malformed id is an id that does not exist
+        # (« not found » below), never a 500.
+        event_id = self._sc_record_id(event_id)
 
         # Check access
         user = http.request.env.user

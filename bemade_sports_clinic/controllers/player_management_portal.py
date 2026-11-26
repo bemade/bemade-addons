@@ -181,10 +181,16 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
     @http.route(['/my/player/edit'], type='http', auth='user', website=True)
     @sc_app_page
-    def edit_player_form(self, patient_id, **post):
+    def edit_player_form(self, patient_id=None, **post):
         """Task 1541: an old link / bookmark of the retired edit page — the
         player's Info tab, where every field is edited inline (owner review
-        2026-10-10), in the validated team / clinic context."""
+        2026-10-10), in the validated team / clinic context.
+
+        Review 2026-11-26: no id → the players list; a malformed or unknown
+        id → not found (``player_id`` is accepted too)."""
+        patient_id = patient_id or post.get('player_id')
+        if not patient_id:
+            return request.redirect('/my/players')
         patient = self._check_access_to_patient(patient_id)
         teams = patient.team_ids
         # A team context only if the user is staff on that team and the
@@ -542,10 +548,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
     @http.route(['/my/player/contact/add'], type='http', auth='user', website=True)
     @sc_app_page
-    def add_contact_form(self, patient_id, **post):
+    def add_contact_form(self, patient_id=None, **post):
         """Task 1541: an old link / bookmark of the retired add-contact page —
         the contacts are added inline on the player's Info tab (owner review
-        2026-10-10)."""
+        2026-10-10). No id → the players list; a malformed one → not found."""
+        if not patient_id:
+            return request.redirect('/my/players')
         patient = self._check_access_to_patient(patient_id)
         return request.redirect(self._sc_player_tab_url(patient.id, 'info'), code=301)
 
@@ -601,12 +609,15 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     
     @http.route(['/my/player/contact/edit'], type='http', auth='user', website=True)
     @sc_app_page
-    def edit_contact_form(self, contact_id, **post):
+    def edit_contact_form(self, contact_id=None, **post):
         """Task 1541: an old link / bookmark of the retired edit-contact page
-        — the contacts are edited inline on the player's Info tab."""
-        contact = request.env['sports.patient.contact'].browse(int(contact_id))
-        if not contact.exists():
+        — the contacts are edited inline on the player's Info tab. No id →
+        the players list; a malformed or unknown id → not found."""
+        if not contact_id:
             return request.redirect('/my/players')
+        contact = request.env['sports.patient.contact'].browse(self._sc_record_id(contact_id))
+        if not contact.exists():
+            raise request.not_found()
         patient = self._check_access_to_patient(contact.patient_id.id)
         return request.redirect(self._sc_player_tab_url(patient.id, 'info'), code=301)
 

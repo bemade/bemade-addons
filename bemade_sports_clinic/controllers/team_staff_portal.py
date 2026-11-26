@@ -763,16 +763,22 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     @http.route(route=['/my/player'], type='http',
                 auth='user', website=True)
     @sc_app_page
-    def view_player(self, player_id, team_id=None,**kw):
+    def view_player(self, player_id=None, team_id=None, **kw):
         """ Display the active injuries for a given player. """
-        player_id = int(player_id)
-        team_id = team_id and int(team_id)
+        # Review 2026-11-26: no id → the players list; a malformed or
+        # unknown id → not found (_check_access_to_patient); a malformed
+        # team context is dropped.
+        if not player_id:
+            return http.request.redirect('/my/players')
+        team_id = self._int_or_none(team_id)
         # Team-gated record access (task 640): being findable in the broadened
         # player search does NOT grant access to the full record. Mirror the
         # edit/sub-routes — only users who staff one of the player's teams (or
         # admins) may open the detail page.
         try:
             player = self._check_access_to_patient(player_id)
+        except MissingError:
+            raise http.request.not_found()
         except UserError as e:
             response = http.request.render('http_routing.http_error', {
                 'status_code': 403,
