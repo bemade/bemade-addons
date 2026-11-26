@@ -261,6 +261,8 @@ nothing; PDF reports never carry it.
         # switch) — components, layout, then the pages that t-call them.
         "views/sc_components.xml",
         "views/sc_app_layout.xml",
+        # Task 1541 (P4): « Pas d'accès » for a user without a clinic app role.
+        "views/sc_no_access.xml",
         "views/instance_banner.xml",
         "views/sc_app_player_add.xml",
         "views/sc_app_pages.xml",

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1541 (epic #1535, P4) — « Pas d'accès ». The clinic portal is the app
+    only: a logged-in user without a clinic app role (a portal user with no
+    team role, an internal user without a clinic group) who opens a clinic
+    URL gets this page, HTTP 403 (AppShellMixin._sc_no_access). No app
+    navigation (the user has no app): the Fit Crew mark, the message, « My
+    account » (the stock portal home) and « Sign out ».
+-->
+<odoo>
+
+    <template id="sc_no_access" name="Sports Clinic App: no access">
+        <t t-call="bemade_portal_kit.pk_frontend_layout">
+            <t t-set="no_header" t-value="True"/>
+            <t t-set="no_footer" t-value="True"/>
+            <t t-set="no_livechat" t-value="True"/>
+            <t t-set="html_data" t-value="{'lang': (request.env.lang or 'en_US').replace('_', '-')}"/>
+            <t t-set="body_classname" t-value="'o_pk_app_body o_pk_app_body_dark'"/>
+            <t t-set="title">No access</t>
+            <t t-set="head">
+                <meta name="theme-color" content="#120e12"/>
+                <meta name="robots" content="noindex"/>
+            </t>
+            <div class="o_pk_app o_sc_no_access" data-pk-theme="dark" data-sc-no-access="1">
+                <main class="o_sc_no_access_main">
+                    <div class="o_sc_no_access_brand">
+                        <t t-call="bemade_sports_clinic.sc_logo_mark"/>
+                        <span class="o_sc_no_access_name">Le Fit Crew</span>
+                    </div>
+                    <div class="o_pk_card o_sc_no_access_card">
+                        <h1 class="o_sc_no_access_title">No access</h1>
+                        <p class="o_sc_no_access_text">Your account does not have access to the Le Fit Crew app. If this is a mistake, contact Le Fit Crew.</p>
+                        <div class="o_sc_no_access_actions">
+                            <a href="/my" class="o_pk_btn o_pk_btn_primary" data-sc-action="no_access.account">My account</a>
+                            <a href="/web/session/logout?redirect=/" class="o_pk_btn o_pk_btn_ghost" data-sc-action="no_access.logout">Sign out</a>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </t>
+    </template>
+
+</odoo>

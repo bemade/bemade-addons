@@ -168,3 +168,69 @@
 .o_pk_app [data-pk-edit-toggle].o_pk_edit_toggle_done {
     color: var(--pk-accent, currentColor);
 }
+
+// Task 1541 (P4): « Pas d'accès » (sc_no_access) — a lone card on the app
+// background, no rail / tabs (the user has no app).
+.o_pk_app.o_sc_no_access {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--pk-space-4, 16px);
+    background: var(--pk-bg);
+    color: var(--pk-fg);
+    font-family: var(--pk-font-text);
+
+    .o_sc_no_access_main {
+        width: 100%;
+        max-width: 440px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--pk-space-4, 16px);
+    }
+
+    .o_sc_no_access_brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .o_pk_logo_mark {
+            width: 48px;
+            height: 48px;
+        }
+    }
+
+    .o_sc_no_access_name {
+        font-family: var(--pk-font-title);
+        text-transform: var(--pk-title-transform);
+        letter-spacing: var(--pk-title-spacing);
+        font-size: 1.6rem;
+    }
+
+    .o_sc_no_access_card {
+        width: 100%;
+        text-align: center;
+    }
+
+    .o_sc_no_access_title {
+        font-family: var(--pk-font-title);
+        text-transform: var(--pk-title-transform);
+        letter-spacing: var(--pk-title-spacing);
+        font-size: 1.8rem;
+        margin: 0 0 var(--pk-space-2, 8px);
+    }
+
+    .o_sc_no_access_text {
+        color: var(--pk-fg-2);
+        margin: 0 0 var(--pk-space-4, 16px);
+    }
+
+    .o_sc_no_access_actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--pk-space-2, 8px);
+    }
+}
