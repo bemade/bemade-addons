@@ -619,8 +619,13 @@ class CalendarEvent(models.Model):
         synchronize them with their Odoo calendar."""
         all_users = self.env["res.users"].search([("is_caldav_enabled", "=", True)])
         for user in all_users:
-            self.with_context(dont_notify=True)._poll_user_caldav_server(user)
-            # self._poll_user_caldav_server(user)
+            try:
+                # One calendar that cannot be read must not stop the others. The
+                # savepoint drops what was half done for this user.
+                with self.env.cr.savepoint():
+                    self.with_context(dont_notify=True)._poll_user_caldav_server(user)
+            except Exception:
+                _logger.exception("Failed to poll the CalDAV server for %s", user.name)
 
     @api.model
     def _poll_user_caldav_server(self, user) -> None:
@@ -787,17 +792,23 @@ class CalendarEvent(models.Model):
         return last + duration
 
     @api.model
-    def _get_existing_instance(self, uid, recurrence_id: datetime | None):
+    def _get_existing_instance(self, uid, recurrence_id: date | None):
         """Find the Odoo calendar.event record matching uid and,
-        if set, recurrence_id.
+        if set, recurrence_id (a date in an all-day series).
         """
         if recurrence_id:
-            recurrence_id = recurrence_id.astimezone(utc).replace(tzinfo=None)
-            instance = self.env["calendar.event"].search(
-                [
-                    ("caldav_uid", "=", uid),
-                    ("caldav_recurrence_id", "=", recurrence_id),
+            if isinstance(recurrence_id, datetime):
+                recurrence_id = recurrence_id.astimezone(utc).replace(tzinfo=None)
+                slot_domain = [("caldav_recurrence_id", "=", recurrence_id)]
+            else:
+                # An all-day occurrence has a time of day in Odoo, not on the server.
+                day = datetime.combine(recurrence_id, datetime.min.time())
+                slot_domain = [
+                    ("caldav_recurrence_id", ">=", day),
+                    ("caldav_recurrence_id", "<", day + timedelta(days=1)),
                 ]
+            instance = self.env["calendar.event"].search(
+                [("caldav_uid", "=", uid), *slot_domain]
             )
         else:
             instance = self.env["calendar.event"].search(

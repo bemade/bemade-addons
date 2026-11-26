@@ -7,3 +7,4 @@ from . import test_sync_edge_cases
 from . import test_scheduling_scenarios
 from . import test_transp_show_as
 from . import test_rrule_until
+from . import test_poll_robustness
