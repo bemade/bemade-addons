@@ -619,14 +619,38 @@ class MailConversation(models.Model):
         ``to_filtered``/``cc_filtered``. The aliases are looked up once, over
         To and Cc together, the way ``mail.thread.message_parse`` does, with
         the same ``mail.alias.domain`` helper.
+
+        Only Odoo's own addresses are left out. For an alias with
+        ``alias_incoming_local`` set, ``_find_aliases`` also matches on the
+        local part alone, on any domain, when ``mail.catchall.domain.allowed``
+        is unset; so an outside ``sales@customer.example`` would be dropped
+        because some alias is called ``sales``. Its result is therefore kept
+        only for the bounce, catchall and default-from addresses of an alias
+        domain, and for addresses whose domain is one of the instance's alias
+        domains.
         """
         to_emails = list(stub.get("to") or [])
         cc_emails = list(stub.get("cc") or [])
-        alias_emails = set(
-            self.env["mail.alias.domain"]
-            .sudo()
-            ._find_aliases(tools.email_normalize_all(",".join(to_emails + cc_emails)))
+        AliasDomain = self.env["mail.alias.domain"].sudo()
+        found = AliasDomain._find_aliases(
+            tools.email_normalize_all(",".join(to_emails + cc_emails))
         )
+        alias_emails = set()
+        if found:
+            alias_domains = AliasDomain.search([])
+            own_domains = {name.lower() for name in alias_domains.mapped("name") if name}
+            own_addresses = {
+                email.lower()
+                for email in alias_domains.mapped("bounce_email")
+                + alias_domains.mapped("catchall_email")
+                + alias_domains.mapped("default_from_email")
+                if email
+            }
+            alias_emails = {
+                email
+                for email in found
+                if email in own_addresses or email.rpartition("@")[2] in own_domains
+            }
 
         def without_aliases(emails):
             return [
