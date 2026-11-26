@@ -9,7 +9,7 @@ from .access_control_mixin import (
 from .app_shell import AppShellMixin, sc_app_page, sc_file_size
 from ..models import sc_app_nav
 from datetime import date, timedelta
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 _logger = logging.getLogger(__name__)
 
@@ -823,7 +823,12 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def edit_activity_form(self, activity_id, **kw):
         """Task 1541: an old link / bookmark — the activity is edited in
         place (pencil card) on its page (owner review 2026-10-11)."""
-        return request.redirect('/my/activity/%s' % int(activity_id), code=301)
+        url = '/my/activity/%s' % int(activity_id)
+        # A refused /my/activity/update still lands here with its message.
+        flash = [(key, kw[key]) for key in ('error', 'success') if kw.get(key)]
+        if flash:
+            url += '?' + urlencode(flash)
+        return request.redirect(url, code=301)
 
     @http.route(['/my/activity/<int:activity_id>/attachment/<int:attachment_id>'],
                 type='http', auth='user', methods=['GET'])

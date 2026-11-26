@@ -21,7 +21,7 @@
                 <meta name="theme-color" content="#120e12"/>
                 <meta name="robots" content="noindex"/>
             </t>
-            <div class="o_pk_app o_sc_no_access" data-pk-theme="dark" data-sc-no-access="1">
+            <div class="o_pk_app o_sc_no_access" data-pk-theme="dark" data-sc-no-access-page="1">
                 <main class="o_sc_no_access_main">
                     <div class="o_sc_no_access_brand">
                         <t t-call="bemade_sports_clinic.sc_logo_mark"/>
