@@ -39,6 +39,8 @@ from odoo.addons.odoo_herd_portal.models.k8s_odoo_backup import (
     PORTAL_VISIBLE_BACKUP_FIELDS,
 )
 
+from .common import NoClusterMixin
+
 # CR-creation hooks that hit the live cluster; stubbed in every test that
 # creates a backup or restore record so no Kubernetes API call is made.
 _BACKUP_CR = (
@@ -190,7 +192,7 @@ def _common_fixtures(cls):
 
 
 @tagged("post_install", "-at_install", "odoo_herd_portal")
-class TestBackupSecrecy(TransactionCase):
+class TestBackupSecrecy(NoClusterMixin, TransactionCase):
     """ORM-level field secrecy + isolation + drift-guard (b, a)."""
 
     @classmethod
@@ -271,7 +273,7 @@ class TestBackupSecrecy(TransactionCase):
 
 
 @tagged("post_install", "-at_install", "odoo_herd_portal")
-class TestBackupSelfService(HttpCase):
+class TestBackupSelfService(NoClusterMixin, HttpCase):
     """End-to-end portal controller: list/download/backup-now/restore (c-f)."""
 
     @classmethod
@@ -383,6 +385,7 @@ class TestBackupSelfService(HttpCase):
         new = Restore.search([], order="create_date desc", limit=1)
         self.assertEqual(new.target_instance_id, self.inst_a_staging)
 
+    @mute_logger("odoo.addons.odoo_herd_portal.controllers.portal")
     def test_restore_production_refused(self):
         """Restore targeting a production instance is refused (never exposed)."""
         self.authenticate("backup_user_a", "backup_user_a")

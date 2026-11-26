@@ -84,23 +84,16 @@ class K8sOdooInstanceBackupSchedule(models.Model):
         compute="_compute_backup_count",
     )
 
-    _sql_constraints = [
-        (
-            "instance_unique",
-            "UNIQUE(instance_id)",
-            "A backup schedule already exists for this instance.",
-        ),
-        (
-            "interval_positive",
-            "CHECK(interval_number > 0)",
-            "Interval must be a positive number.",
-        ),
-        (
-            "keep_count_positive",
-            "CHECK(keep_count > 0)",
-            "Keep count must be at least 1.",
-        ),
-    ]
+    # No unique(instance_id): an instance may combine schedules, e.g. a daily
+    # dump kept for a week with a daily full backup kept for a day.
+    _interval_positive = models.Constraint(
+        "CHECK(interval_number > 0)",
+        "Interval must be a positive number.",
+    )
+    _keep_count_positive = models.Constraint(
+        "CHECK(keep_count > 0)",
+        "Keep count must be at least 1.",
+    )
 
     @api.depends("last_backup_time", "interval_number", "interval_type", "active")
     def _compute_next_backup_time(self):

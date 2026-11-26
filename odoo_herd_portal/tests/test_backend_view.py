@@ -17,9 +17,11 @@ record-rule behaviour itself is covered by test_access_ownership.
 
 from odoo.tests import Form, TransactionCase, tagged
 
+from .common import NoClusterMixin
+
 
 @tagged("post_install", "-at_install", "odoo_herd_portal")
-class TestBackendView(TransactionCase):
+class TestBackendView(NoClusterMixin, TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

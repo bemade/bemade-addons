@@ -1,6 +1,6 @@
 {
     "name": "Odoo Herd Portal",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Administration/Kubernetes",
     "summary": "Client self-service portal for Bemade-hosted Odoo instances",
     "description": """

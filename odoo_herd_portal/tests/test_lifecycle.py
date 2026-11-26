@@ -46,6 +46,8 @@ from odoo.addons.odoo_herd_portal.models.k8s_odoo_staging_refresh import (
     PORTAL_VISIBLE_REFRESH_FIELDS,
 )
 
+from .common import NoClusterMixin
+
 # CR-creation hooks that hit the live cluster; stubbed in every test that
 # creates a job record so no Kubernetes API call is made.
 _BACKUP_CR = (
@@ -178,7 +180,7 @@ def _common_fixtures(cls):
 
 
 @tagged("post_install", "-at_install", "odoo_herd_portal")
-class TestLifecycleSecrecy(TransactionCase):
+class TestLifecycleSecrecy(NoClusterMixin, TransactionCase):
     """ORM-level field secrecy + drift-guard for both job models (d)."""
 
     @classmethod
@@ -304,7 +306,7 @@ class TestLifecycleSecrecy(TransactionCase):
 
 
 @tagged("post_install", "-at_install", "odoo_herd_portal")
-class TestLifecycleNotification(TransactionCase):
+class TestLifecycleNotification(NoClusterMixin, TransactionCase):
     """Client completion/failure notification on terminal-state transition (f)."""
 
     @classmethod
@@ -593,7 +595,7 @@ class TestLifecycleNotification(TransactionCase):
 
 
 @tagged("post_install", "-at_install", "odoo_herd_portal")
-class TestLifecycleSelfService(HttpCase):
+class TestLifecycleSelfService(NoClusterMixin, HttpCase):
     """End-to-end controller: upgrade + staging-refresh (a, b, c, e)."""
 
     @classmethod
@@ -786,6 +788,7 @@ class TestLifecycleSelfService(HttpCase):
             "Source must be bound to the target's production_instance_id.",
         )
 
+    @mute_logger("odoo.addons.odoo_herd_portal.controllers.portal")
     def test_refresh_production_target_refused(self):
         """Refresh targeting a production instance is refused (never exposed)."""
         self.authenticate("life_user_a", "life_user_a")

@@ -26,9 +26,11 @@ import json
 from odoo.exceptions import AccessError
 from odoo.tests import HttpCase, tagged
 
+from .common import NoClusterMixin
+
 
 @tagged("post_install", "-at_install", "odoo_herd_portal")
-class TestPortalOverview(HttpCase):
+class TestPortalOverview(NoClusterMixin, HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
