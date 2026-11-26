@@ -1,0 +1,62 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* purchase_stock_decrease_ignore_cost
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-26 13:37+0000\n"
+"PO-Revision-Date: 2026-11-26 13:37+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: purchase_stock_decrease_ignore_cost
+#: model:ir.model,name:purchase_stock_decrease_ignore_cost.model_res_company
+msgid "Companies"
+msgstr "Sociétés"
+
+#. module: purchase_stock_decrease_ignore_cost
+#: model:ir.model,name:purchase_stock_decrease_ignore_cost.model_res_config_settings
+msgid "Config Settings"
+msgstr "Paramètres de configuration"
+
+#. module: purchase_stock_decrease_ignore_cost
+#: model_terms:ir.ui.view,arch_db:purchase_stock_decrease_ignore_cost.res_config_settings_view_form
+msgid ""
+"Lowering a confirmed order line reduces its open receipt even when the "
+"converted cost changed since confirmation, instead of creating a return"
+msgstr ""
+"Baisser la quantité d'une ligne confirmée réduit sa réception ouverte même "
+"si le coût converti a changé depuis la confirmation, au lieu de créer un "
+"retour"
+
+#. module: purchase_stock_decrease_ignore_cost
+#: model:ir.model.fields,field_description:purchase_stock_decrease_ignore_cost.field_res_company__purchase_decrease_ignore_cost
+#: model:ir.model.fields,field_description:purchase_stock_decrease_ignore_cost.field_res_config_settings__purchase_decrease_ignore_cost
+msgid "Reduce Receipts Regardless of Cost"
+msgstr "Réduire les réceptions quel que soit le coût"
+
+#. module: purchase_stock_decrease_ignore_cost
+#: model:ir.model,name:purchase_stock_decrease_ignore_cost.model_stock_move
+msgid "Stock Move"
+msgstr "Mouvement de stock"
+
+#. module: purchase_stock_decrease_ignore_cost
+#: model:ir.model.fields,help:purchase_stock_decrease_ignore_cost.field_res_company__purchase_decrease_ignore_cost
+#: model:ir.model.fields,help:purchase_stock_decrease_ignore_cost.field_res_config_settings__purchase_decrease_ignore_cost
+msgid ""
+"When the quantity of a confirmed purchase order line is lowered, reduce its "
+"open receipt even if the cost converted to the company currency has changed "
+"since the order was confirmed (for instance after a new exchange rate was "
+"loaded), instead of creating a return."
+msgstr ""
+"Lorsque la quantité d'une ligne de bon de commande confirmée est baissée, "
+"réduire sa réception ouverte même si le coût converti dans la devise de la "
+"société a changé depuis la confirmation de la commande (par exemple après le"
+" chargement d'un nouveau taux de change), au lieu de créer un retour."

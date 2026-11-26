@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 Bemade Inc. (https://www.bemade.org)
+     License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0) -->
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field
+      name="name"
+    >res.config.settings.view.form.inherit.purchase.stock.decrease.ignore.cost</field>
+        <field name="model">res.config.settings</field>
+        <field
+      name="inherit_id"
+      ref="purchase.res_config_settings_view_form_purchase"
+    />
+        <field name="arch" type="xml">
+            <xpath expr="//setting[@id='auto_receipt_reminder']" position="after">
+                <setting
+          id="purchase_decrease_ignore_cost"
+          company_dependent="1"
+          help="Lowering a confirmed order line reduces its open receipt even when the converted cost changed since confirmation, instead of creating a return"
+        >
+                    <field name="purchase_decrease_ignore_cost" />
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>
