@@ -158,12 +158,6 @@ class TestAppShellTeamChanges(AppShellCommon):
         self.assertIn('Synthetic external note', text)
         self.assertNotIn('Synthetic internal note', text)
 
-    # -- UC-RC5 ----------------------------------------------------------
-    def test_legacy_fragment_unchanged(self):
-        self._login_tp()
-        text, tree = self._get('/my/player/%s/recent-changes' % self.player.id)
-        self.assertFalse(tree.xpath('//*[contains(@class, "o_sc_injury_detail")]'))
-        self.assertNotIn('Synthetic bike only', text)
 
     # -- UC-RC7 ----------------------------------------------------------
     def _counts(self, tree, section):

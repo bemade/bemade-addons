@@ -163,17 +163,13 @@ class TestPortalCsrf1540(PortalCovCommon):
         return resp.text
 
     def test_legacy_forms_carry_the_token(self):
+        """Task 1541 (rewritten for the app's pages; the legacy edit page
+        redirects to the event's in-place edit, whose fields save through
+        /my/app/save): every form posting a clinic route carries the token."""
         self._login_tp()
         detail = '/my/event/%s' % self.event.id
         self._forms(detail, r'/my/event/%s/cancel' % self.event.id)
         self._forms(detail, r'/my/event/%s/timesheet/add' % self.event.id)
-        self._forms(detail, r'/my/sc/timesheet/%s/edit' % self.timesheet.id)
         self._forms(detail, r'/my/sc/timesheet/%s/delete' % self.timesheet.id)
-        edit = self._forms('/my/event/%s/edit' % self.event.id,
-                           r'/my/event/%s/save' % self.event.id)
-        create = self._forms('/my/event/create', r'/my/event/create/submit')
-        for page in (edit, create):
-            # The venue « Add » fetch posts the token, form-encoded.
-            self.assertIn("body.set('csrf_token'", page)
-            self.assertNotIn("jsonrpc: '2.0'", page)
-        self._forms('/my/sc/timesheets', r'/my/sc/timesheet/%s/edit' % self.timesheet.id)
+        self._forms('/my/event/create', r'/my/event/create/submit')
+        self._forms('/my/sc/timesheets', r'/my/sc/timesheet/%s/delete' % self.timesheet.id)

@@ -39,20 +39,6 @@ class TestAppShellActivities1539(AppShellCommon):
         cls.act_team.date_deadline = today
         cls.act_event.date_deadline = today + timedelta(days=5)
 
-    # -- UC-A1 -----------------------------------------------------------
-    def test_switch_off_legacy(self):
-        self._login_tp()
-        for url, marker in (
-                ('/my/activities', 'id="all-tab"'),
-                ('/my/activity/create?model=sports.patient&res_id=%s' % self.player.id,
-                 'action="/my/activity/save"'),
-                ('/my/activity/%s' % self.act_player.id, 'action="/my/activity/complete"'),
-                ('/my/activity/%s/edit' % self.act_player.id, 'action="/my/activity/update"'),
-                ('/my/team/activities?team_id=%s' % self.team_a.id, 'id="reassignModal"'),
-                ('/my/event/activities?event_id=%s' % self.event.id, 'id="reassignModal"')):
-            text, tree = self._get(url)
-            self.assertIn(marker, text, url)
-            self.assertIsNone(self._shell(tree), url)
 
     # -- UC-A2 -----------------------------------------------------------
     def test_my_activities_in_shell(self):
@@ -132,7 +118,7 @@ class TestAppShellActivities1539(AppShellCommon):
         # Owner review 2026-10-11: the activity is edited in place (pencil
         # card, test_app_shell_pencil UC-PE5); the edit page leads there.
         resp = self.url_open('/my/activity/%s/edit' % self.act_player.id, allow_redirects=False)
-        self.assertIn(resp.status_code, (302, 303))
+        self.assertEqual(resp.status_code, 301)  # task 1541: a permanent redirect
         _text, tree = self._get('/my/activity/%s' % self.act_player.id)
         self.assertTrue(tree.xpath('//*[@data-pk-section="activity.detail"][@data-pk-edit-card="activity"]'))
         form = tree.xpath('//dialog[@id="sc_activity_complete_sheet"]//form')[0]

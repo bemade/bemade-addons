@@ -156,7 +156,7 @@ class TestAppShellPencil(AppShellCommon):
                          {'summary', 'date_deadline', 'user_id', 'note'})
         self.assertIn('Player task', card.xpath('.//*[@data-pk-edit-view="read"]')[0].text_content())
         resp = self.url_open('/my/activity/%s/edit' % self.act_player.id, allow_redirects=False)
-        self.assertIn(resp.status_code, (302, 303))
+        self.assertEqual(resp.status_code, 301)
         self.assertTrue(resp.headers['Location'].split('?')[0].endswith('/my/activity/%s' % self.act_player.id))
 
     # -- UC-PE6 ----------------------------------------------------------
@@ -256,7 +256,7 @@ class TestAppShellPencil(AppShellCommon):
         self.assertEqual(fields_['team_ids']['inputType'], 'tags')
         self.assertEqual(fields_['assigned_staff_ids']['inputType'], 'tags')
         resp = self.url_open('/my/event/%s/edit' % event.id, allow_redirects=False)
-        self.assertIn(resp.status_code, (302, 303))
+        self.assertEqual(resp.status_code, 301)
         self.assertTrue(resp.headers['Location'].split('?')[0].endswith('/my/event/%s' % event.id))
         self.assertEqual(self._save(event, 'name', 'Synthetic renamed event').status_code, 200)
         self.assertEqual(self._save(event, 'assigned_staff_ids', str(self.tp.id)).status_code, 200)

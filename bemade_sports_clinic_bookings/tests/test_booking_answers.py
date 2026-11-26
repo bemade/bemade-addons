@@ -144,10 +144,6 @@ class TestBookingAnswers(_BookingAnswersCommon):
         # The question itself stays on the type.
         self.assertIn(self.q_phone, self.apt_type.question_ids)
 
-    def test_feed_switch_off_unchanged(self):
-        self.authenticate('bk.tp@example.com', 'bk-tp-pass')
-        feed = {row['id']: row for row in self._feed()}
-        self.assertFalse([key for key in feed[self.booking_soon.id] if key.startswith('answer_')])
 
     def test_other_staff_cannot_see(self):
         self._switch(True)

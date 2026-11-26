@@ -87,15 +87,6 @@ class TestAppShellInternal1538(AppShellCommon):
         _text, tree = self._get('/my/app/more')
         self.assertFalse(tree.xpath('//a[@data-pk-nav-key="backend"]'))
 
-    # -- UC-N3 -----------------------------------------------------------
-    def test_switch_off_internal_keeps_legacy(self):
-        self._login_itp()
-        text, tree = self._get('/my/home')
-        self.assertIn('o_portal_my_home', text)
-        self.assertIsNone(self._shell(tree))
-        text, tree = self._get('/my/teams')
-        self.assertIn('o_sc_teams_sort', text)
-        self.assertIsNone(self._shell(tree))
 
     # -- UC-N4 -----------------------------------------------------------
     def test_internal_without_clinic_role_keeps_stock_portal(self):

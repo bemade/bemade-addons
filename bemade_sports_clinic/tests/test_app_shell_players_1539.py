@@ -83,16 +83,6 @@ class PlayersCommon1539(AppShellCommon):
 @tagged('post_install', '-at_install')
 class TestAppShellPlayersList1539(PlayersCommon1539):
 
-    # -- UC-P1 -----------------------------------------------------------
-    def test_switch_off_players_legacy(self):
-        for login in (self._login_coach, self._login_tp):
-            login()
-            with patch.object(TeamStaffPortal, '_sc_players_values',
-                              side_effect=AssertionError('shell values computed')):
-                text, tree = self._get('/my/players')
-            self.assertIn('o_portal_search_panel', text)
-            self.assertIsNone(self._shell(tree))
-            self.assertNotIn('data-pk-app-shell', text)
 
     # -- UC-P2 -----------------------------------------------------------
     def test_players_rows_in_shell(self):
@@ -160,19 +150,6 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         super().setUpClass()
         cls.url = '/my/player?player_id=%s' % cls.player.id
 
-    # -- UC-P1 -----------------------------------------------------------
-    def test_switch_off_player_legacy_and_email_link(self):
-        for login in (self._login_coach, self._login_tp):
-            login()
-            with patch.object(TeamStaffPortal, '_sc_player_values',
-                              side_effect=AssertionError('shell values computed')):
-                text, tree = self._get(self.url)
-            self.assertIn('id="playerTabs"', text)
-            self.assertIn('id="injuries-tab"', text)
-            self.assertIsNone(self._shell(tree))
-        # E-mail deep link shape (data/sports_clinic_data.xml) with a team.
-        text, _tree = self._get(self.url + '&team_id=%s' % self.team_a.id)
-        self.assertIn('id="playerTabs"', text)
 
     # -- UC-P3 -----------------------------------------------------------
     def test_coach_tabs_and_no_therapist_data(self):
@@ -316,18 +293,6 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
             keys.add('%s.%s' % (props.get('model'), props.get('field') or props.get('name')))
         return keys
 
-    # -- UC-P1 -----------------------------------------------------------
-    def test_switch_off_forms_legacy(self):
-        self._login_tp()
-        for url, marker in ((self.edit_url, 'id="edit-player-form"'),
-                            ('/my/player/create', 'id="create-player-client-error"'),
-                            ('/my/player/contact/add?patient_id=%s' % self.player.id,
-                             'action="/my/player/contact/save"'),
-                            ('/my/player/contact/edit?contact_id=%s' % self.contact.id,
-                             'action="/my/player/contact/update"')):
-            text, tree = self._get(url)
-            self.assertIn(marker, text, url)
-            self.assertIsNone(self._shell(tree), url)
 
     # -- UC-P4 -----------------------------------------------------------
     # Owner review 2026-10-10: the edit page is retired in the shell — the
@@ -401,19 +366,16 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self._switch(True)
         self._login_tp()
         resp = self.url_open('/my/player/create', allow_redirects=False)
-        self.assertIn(resp.status_code, (302, 303))
+        self.assertEqual(resp.status_code, 301)
         self.assertTrue(resp.headers['Location'].endswith('/my/players?add=1'))
+        # Task 1541: the coach's search-first page (sc_app_player_create,
+        # reachable only by URL — no app link led to it) is retired too: the
+        # old URL lands on the Players list; the coach's create route stays
+        # (test_coach_dob_1633).
         self._login_coach()
-        _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
-        form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
-        self.assertEqual(form.get('action'), '/my/player/create/save')
-        self.assertTrue(form.xpath('.//input[@name="date_of_birth"][@required]'))
-        # Task 1633: a coach's create form has the date of birth too,
-        # required as for therapists (owner review 2026-10-21).
-        self._login_coach()
-        _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
-        form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
-        self.assertTrue(form.xpath('.//input[@name="date_of_birth"][@required]'))
+        resp = self.url_open('/my/player/create?first_name=Nobody&last_name=Synthetic', allow_redirects=False)
+        self.assertEqual(resp.status_code, 301)
+        self.assertTrue(resp.headers['Location'].endswith('/my/players?add=1'))
 
     def test_contact_forms_in_shell(self):
         # Owner review 2026-10-10: added / edited inline on the Contacts tab.

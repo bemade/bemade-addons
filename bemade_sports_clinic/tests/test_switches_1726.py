@@ -166,16 +166,6 @@ class TestSwitches1726(Switch1726Common):
         _text, tree = self._get('/my/player/create')
         return tree
 
-    def test_create_page_teams_tag_picker(self):
-        self._login_tp()
-        tree = self._flash_create_page()
-        form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
-        self.assertFalse(form.xpath('.//input[@type="checkbox"][@name="team_ids"]'))
-        hidden = form.xpath('.//input[@type="hidden"][@name="team_ids"]')
-        self.assertEqual(len(hidden), 1)
-        self.assertEqual(hidden[0].get('id'), 'sc_new_team_ids')
-        props = form.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')
-        self.assertTrue([p for p in props if '"target": "sc_new_team_ids"' in p and '"inputType": "tags"' in p])
 
     def test_create_save_accepts_comma_separated_teams(self):
         team_c = self.env['sports.team'].create({'name': 'PC Team C 1726', 'parent_id': self.org.id})

@@ -45,27 +45,11 @@ class TestIdentityGuardI18n1600(TestAppShellI18n1538):
     def _text(self, url):
         return self._fr(url).replace('&#39;', "'")
 
-    def test_legacy_confirm_step_in_french(self):
-        self._switch(False)
-        self._login_tp()
-        text = self._text('/my/player/edit?patient_id=%s' % self.player.id)
-        for term in ('Veuillez confirmer', "Corriger l'identité de ce joueur ?",
-                     'La modification sera notée au dossier du joueur.',
-                     'Retirer le joueur de ces équipes ?',
-                     'Toute demande de retrait ouverte pour ce joueur est fermée.',
-                     'Retour au formulaire', 'Confirmer et enregistrer'):
-            self.assertIn(term, text, term)
 
     def test_refusals_in_french(self):
-        self._switch(False)
+        # Task 1541: the legacy edit page's refusal is gone with the page.
         self._login_tp()
         self.opener.cookies.set('frontend_lang', 'fr_CA')
-        self.url_open('/my/player/save', data={
-            'csrf_token': self._csrf(), 'patient_id': self.player.id,
-            'first_name': 'Patrice', 'last_name': 'One', 'team_ids': str(self.team_a.id),
-        }, allow_redirects=False)
-        text = self._text('/my/player/edit?patient_id=%s' % self.player.id)
-        self.assertIn("Confirmez la correction d'identité.", text)
         # Task 1716: Dana is on another team — the plain twin refusal (was
         # the generic « demandez à un responsable », review 2026-10-23).
         with self.assertRaisesRegex(ValidationError, 'Un autre joueur a déjà ce nom et cette date de naissance.'):
@@ -81,8 +65,11 @@ class TestIdentityGuardI18n1600(TestAppShellI18n1538):
         self.assertEqual(resp.json()['message'], "Corriger l'identité de ce joueur ?")
 
     def test_clinic_duplicate_message_in_french(self):
-        view = self.env.ref('bemade_sports_clinic.portal_clinic_detail').with_context(lang='fr_CA')
-        self.assertIn('Un autre joueur a déjà ce nom et cette date de naissance.', view.arch)
+        # Task 1541: the app clinic's flash (the legacy dossier view is gone).
+        self.assertEqual(
+            self.env(context=dict(self.env.context, lang='fr_CA'))._(
+                "Another player already has this name and date of birth."),
+            'Un autre joueur a déjà ce nom et cette date de naissance.')
 
     def test_notes_and_toast_in_french(self):
         self.player.with_user(self.tp).with_context(lang='fr_CA', sc_identity_confirmed=True).write(

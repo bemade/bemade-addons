@@ -129,7 +129,9 @@ class TestTreatmentNoteAccessHotfix(PortalCovCommon):
         self.authenticate('pc.other@example.com', 'pc-other')
         resp = self.url_open(
             f'/my/player?player_id={self.player.id}&team_id={self.team_a.id}')
-        self.assertEqual(resp.status_code, 200)
+        # Task 1541 (owner 2026-11-25): no clinic app role → « Pas d'accès »
+        # (403), never a 500, never a note.
+        self.assertEqual(resp.status_code, 403)
         self.assertNotIn(NOTE_A, resp.text)
 
     # 4. internal users unchanged

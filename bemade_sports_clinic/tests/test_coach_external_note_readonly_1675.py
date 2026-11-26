@@ -163,40 +163,22 @@ class TestCoachExternalNoteReadOnly1675(AppShellCommon):
                 self.assertEqual(self.injury.external_notes, EXT)
 
     # -- AC-5 ------------------------------------------------------------
-    def test_legacy_coach_report_drops_external_note(self):
-        self._switch(False)
+    def test_coach_report_post_drops_external_note(self):
+        """Task 1541 (rewritten from the legacy report form): a coach's
+        report posted with an external note is created without it (the
+        legacy « read only » warning page is gone)."""
         self._login_coach()
-        _text, tree = self._get('/my/patient/injury/new?patient_id=%s' % self.player.id)
-        self.assertFalse(tree.xpath('//textarea[@name="external_notes"]'))
-        self.assertTrue(tree.xpath('//textarea[@name="diagnosis"]'))
         resp = self.url_open('/my/patient/injury/create', data={
             'csrf_token': self._csrf(), 'patient_id': self.player.id,
-            'diagnosis': 'Synthetic legacy 1675', 'injury_date': '2026-03-03',
-            'external_notes': 'Coach legacy report'})
-        self.assertEqual(resp.status_code, 200, resp.text)
-        self.assertIn('data-sc-warning="external_notes_readonly"', resp.text)
+            'diagnosis': 'Synthetic report 1675', 'injury_date': '2026-03-03',
+            'external_notes': 'Coach report note'}, allow_redirects=False)
+        self.assertEqual(resp.status_code, 303, resp.text)
         created = self.env['sports.patient.injury'].sudo().search(
-            [('patient_id', '=', self.player.id), ('diagnosis', '=', 'Synthetic legacy 1675')])
+            [('patient_id', '=', self.player.id), ('diagnosis', '=', 'Synthetic report 1675')])
         self.assertEqual(len(created), 1)
         self.assertFalse(created.external_notes)
-        # Without an external note: no warning.
-        resp = self.url_open('/my/patient/injury/create', data={
-            'csrf_token': self._csrf(), 'patient_id': self.player.id,
-            'diagnosis': 'Synthetic legacy 1675 b', 'injury_date': '2026-03-03'})
-        self.assertEqual(resp.status_code, 200, resp.text)
-        self.assertNotIn('data-sc-warning', resp.text)
+        self.assertNotIn('warning=', resp.headers['Location'])
 
-    def test_legacy_coach_edit_form_external_note_read_only(self):
-        self._switch(False)
-        self._login_coach()
-        _text, tree = self._get('/my/injury/edit?injury_id=%s' % self.injury.id)
-        area = tree.xpath('//textarea[@name="external_notes"]')[0]
-        self.assertEqual(area.get('readonly'), 'readonly')
-        self.assertIn(EXT, area.text_content())
-        self.assertFalse(tree.xpath('//*[@data-clear-target="external_notes"]'))
-        self._login_tp()
-        _text, tree = self._get('/my/injury/edit?injury_id=%s' % self.injury.id)
-        self.assertIsNone(tree.xpath('//textarea[@name="external_notes"]')[0].get('readonly'))
 
     def test_legacy_coach_save_drops_external_note_with_a_flash(self):
         self._switch(False)
@@ -222,16 +204,6 @@ class TestCoachExternalNoteReadOnly1675(AppShellCommon):
         self.injury.invalidate_recordset()
         self.assertEqual(self.injury.external_notes, EXT)
 
-    def test_legacy_therapist_save_keeps_external_note(self):
-        self._switch(False)
-        self._login_tp()
-        resp = self.url_open('/my/injury/save', data={
-            'csrf_token': self._csrf(), 'injury_id': self.injury.id, 'partial': '1',
-            'external_notes': 'Therapist legacy note'})
-        self.assertEqual(resp.status_code, 200, resp.text)
-        self.assertNotIn('warning=', resp.url)
-        self.injury.invalidate_recordset()
-        self.assertEqual(self.injury.external_notes, 'Therapist legacy note')
 
     # -- AC-6 ------------------------------------------------------------
     def test_model_refuses_external_notes_from_a_coach(self):

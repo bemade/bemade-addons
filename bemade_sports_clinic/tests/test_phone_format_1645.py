@@ -234,8 +234,7 @@ class TestPhoneRoutes1645(PlayerInlineCommon):
             self.assertTrue(resp.headers['Location'].endswith('/my/player/create'), resp.headers['Location'])
             self.assertFalse(self.env['sports.patient'].search_count(
                 [('last_name', '=', 'Newplayer %s' % field)]))
-            text = self.url_open('/my/player/create').text
-            self.assertIn(MSG, text)
+            # Task 1541: the legacy create page (its message) is gone.
 
     def test_legacy_player_save_refuses_invalid_phone(self):
         self._login_tp()

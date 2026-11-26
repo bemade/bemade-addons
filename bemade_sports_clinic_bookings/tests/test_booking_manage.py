@@ -179,10 +179,6 @@ class TestBookingManageAccess(_ManageCommon):
         self.assertEqual(self._times(self.booking_soon), before)
         self.assertTrue(self.booking_soon.active)
 
-    def test_shell_off_no_pages(self):
-        self._switch(False)
-        self._login()
-        self.assertEqual(self.url_open('/my/bookings/%s/edit' % self.booking_soon.id).status_code, 404)
 
     def test_staff_of_type_attending(self):
         """A staff user of the type who attends the booking (not organizer)."""

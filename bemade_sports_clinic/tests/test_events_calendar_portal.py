@@ -120,7 +120,7 @@ class TestEventsCalendarPortal(HttpCase):
         self.authenticate("cal.coach.611@example.com", "cal-coach")
         resp = self.url_open("/my/events/calendar")
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(b"portal-events-calendar", resp.content)
+        self.assertIn(b"data-pk-app-shell", resp.content)  # task 1541: the app calendar
 
     def test_coach_data_endpoint_filters_to_their_teams(self):
         self.authenticate("cal.coach.611@example.com", "cal-coach")
@@ -276,20 +276,6 @@ class TestEventsCalendarPortal(HttpCase):
         self.assertIn(self.future_b.id, ids)
         self.assertNotIn(self.future_a.id, ids)
 
-    def test_calendar_page_has_single_close_control(self):
-        """The popover close control must render exactly one X. The old
-        markup combined Bootstrap's btn-close (which draws its own glyph
-        via CSS) with a literal multiplication sign, producing two."""
-        self.authenticate("cal.coach.611@example.com", "cal-coach")
-        resp = self.url_open("/my/events/calendar")
-        self.assertEqual(resp.status_code, 200)
-        content = resp.content.decode("utf-8")
-        self.assertIn("data-popover-close", content)
-        # No literal multiplication sign anywhere on the page — btn-close
-        # supplies the only X via CSS.
-        self.assertNotIn("×", content)
-        # Status line must be gone from the popover markup.
-        self.assertNotIn("data-popover-state", content)
 
     def test_calendar_page_renders_filter_bar(self):
         """The calendar page should carry the same list-style filter
@@ -301,15 +287,6 @@ class TestEventsCalendarPortal(HttpCase):
         self.assertIn('name="organization_id"', content)
         self.assertIn('name="assigned_user_id"', content)
 
-    def test_calendar_page_renders_quick_filters_and_cancelled_toggle(self):
-        """The calendar carries the list view's quick filters and the
-        show-cancelled checkbox (dev-review 2026-07-04)."""
-        self.authenticate("cal.coach.611@example.com", "cal-coach")
-        content = self.url_open("/my/events/calendar").content.decode("utf-8")
-        self.assertIn('id="cal-quick-filters"', content)
-        self.assertIn('data-view-type="my"', content)
-        self.assertIn('data-view-type="unassigned"', content)
-        self.assertIn('id="cal-filter-show-cancelled"', content)
 
     def test_calendar_page_dropdowns_sudo_widened(self):
         """Team/org dropdown CHOICES list every team, like the list view

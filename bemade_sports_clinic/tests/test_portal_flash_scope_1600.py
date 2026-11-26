@@ -101,36 +101,29 @@ class TestPortalFlashScope1600(PortalCovCommon):
         self.assertEqual(resp.status_code, 200, resp.text[:300])
         return resp.text
 
-    def _assert_b_form_is_b(self, page):
-        fields = dict(form_payload(page, 'edit-player-form'))
-        self.assertEqual(fields['first_name'], 'Bea')
-        self.assertEqual(fields['last_name'], 'Synthetic')
-        self.assertEqual(fields['date_of_birth'], '2009-05-06')
-        self.assertEqual(fields['position'], 'Winger')
-        teams = {value for name, value in form_payload(page, 'edit-player-form') if name == 'team_ids'}
-        self.assertEqual(teams, {str(self.team_a.id), str(self.team_c.id)},
-                         "B's teams must stay ticked")
-        self.assertNotIn('Strandedfirst', page)
-        self.assertNotIn('Please enter a valid Date of Birth', page)
 
     # ----- AC-a1 -----
     def test_stranded_flash_does_not_fill_another_player(self):
+        """Task 1541 (rewritten): the legacy edit form is gone (its URL
+        301s to the player's Info tab, whose fields autosave one by one). A
+        flash stranded by A's refused save never reaches B's page, and B's
+        identity and teams are untouched."""
         self._login_tp()
         self._strand_flash_on_a()
-        self._assert_b_form_is_b(self._edit_page(self.player_b2))
-        # Discarded by that visit: A's own form no longer shows it either.
-        page_a = self._edit_page(self.player)
-        self.assertNotIn('Strandedfirst', page_a)
+        resp = self.url_open('/my/player/edit?patient_id=%s' % self.player_b2.id, allow_redirects=False)
+        self.assertEqual(resp.status_code, 301)
+        page_b = self.url_open(resp.headers['Location']).text
+        self.assertNotIn('Strandedfirst', page_b)
+        self.assertNotIn('Strandedposition', page_b)
+        self.player_b2.invalidate_recordset()
+        self.assertEqual(
+            (self.player_b2.first_name, self.player_b2.last_name,
+             str(self.player_b2.date_of_birth), self.player_b2.position),
+            ('Bea', 'Synthetic', '2009-05-06', 'Winger'))
+        self.assertEqual(self.player_b2.team_ids, self.team_a | self.team_c)
+        self.player.invalidate_recordset()
+        self.assertEqual((self.player.first_name, self.player.last_name), ('Pat', 'One'))
 
-    # ----- AC-a2 -----
-    def test_flash_shows_on_its_own_form(self):
-        self._login_tp()
-        self._strand_flash_on_a()
-        page_a = self._edit_page(self.player)
-        self.assertIn('Please enter a valid Date of Birth', page_a)
-        self.assertEqual(dict(form_payload(page_a, 'edit-player-form'))['first_name'], 'Strandedfirst')
-        # Popped: a second visit is clean.
-        self.assertNotIn('Strandedfirst', self._edit_page(self.player))
 
     # ----- AC-a3 -----
     def test_expired_flash_is_ignored(self):
@@ -142,85 +135,12 @@ class TestPortalFlashScope1600(PortalCovCommon):
         self.assertNotIn('Strandedfirst', page_a)
         self.assertNotIn('Please enter a valid Date of Birth', page_a)
 
-    # ----- AC-h -----
-    def test_replay_1600(self):
-        self._login_tp()
-        self._strand_flash_on_a()
-        page_b = self._edit_page(self.player_b2)
-        data = form_payload(page_b, 'edit-player-form')
-        resp = self.url_open('/my/player/save', data=data, allow_redirects=False)
-        self.assertEqual(resp.status_code, 303, resp.text[:300])
-        self.assertNotIn('/my/player/edit', resp.headers['Location'])
-        self.player_b2.invalidate_recordset()
-        self.assertEqual(
-            (self.player_b2.first_name, self.player_b2.last_name,
-             str(self.player_b2.date_of_birth), self.player_b2.position),
-            ('Bea', 'Synthetic', '2009-05-06', 'Winger'))
-        self.assertEqual(self.player_b2.team_ids, self.team_a | self.team_c)
-        self.player.invalidate_recordset()
-        self.assertEqual((self.player.first_name, self.player.last_name), ('Pat', 'One'))
 
     # ----- AC-a4: every flash route is scoped -----
     def _assert_flash_only_on(self, own_url, other_url, marker):
         other = self.url_open(other_url)
         self.assertNotIn(marker, other.text, "the flash leaked onto %s" % other_url)
 
-    def test_player_create_flash_scoped(self):
-        self._login_tp()
-        self.url_open('/my/player/create/save', data={
-            'csrf_token': self._csrf(), 'first_name': 'Createfirst', 'last_name': '',
-        }, allow_redirects=False)
-        own = self.url_open('/my/player/create')
-        self.assertIn('First name and last name are required', own.text)
-        self.url_open('/my/player/create/save', data={
-            'csrf_token': self._csrf(), 'first_name': 'Createfirst', 'last_name': '',
-        }, allow_redirects=False)
-        self._assert_flash_only_on(None, '/my/player/edit?patient_id=%s' % self.player.id,
-                                   'Createfirst')
-
-    def test_team_add_flash_scoped(self):
-        self._login_tp()
-        url = '/my/team/%s/add_player' % self.team_a.id
-        post = {'csrf_token': self._csrf(), 'first_name': 'Teamfirst', 'last_name': 'Teamlast',
-                'date_of_birth': 'garbage'}
-        self.url_open(url + '/submit', data=post, allow_redirects=False)
-        self.assertIn('Teamfirst', self.url_open(url).text)
-        self.url_open(url + '/submit', data=post, allow_redirects=False)
-        self.assertNotIn('Teamfirst', self.url_open('/my/team/%s/add_player' % self.team_c.id).text)
-        self.url_open(url + '/submit', data=post, allow_redirects=False)
-        self._assert_flash_only_on(None, '/my/player/create', 'Teamfirst')
-
-    def test_contact_flash_scoped(self):
-        self._login_tp()
-        required = 'Name and contact type are required fields'
-
-        def add_on_a():
-            self.url_open('/my/player/contact/save', data={
-                'csrf_token': self._csrf(), 'patient_id': self.player.id,
-                'name': '', 'contact_type': 'mother', 'email': 'flash1600@example.com',
-            }, allow_redirects=False)
-
-        def edit_contact():
-            self.url_open('/my/player/contact/update', data={
-                'csrf_token': self._csrf(), 'contact_id': self.contact.id,
-                'name': '', 'contact_type': 'mother',
-            }, allow_redirects=False)
-
-        # A's add form: not on B's add form, shown on A's.
-        add_on_a()
-        self.assertNotIn('flash1600@example.com', self.url_open(
-            '/my/player/contact/add?patient_id=%s' % self.player_b2.id).text)
-        add_on_a()
-        page = self.url_open('/my/player/contact/add?patient_id=%s' % self.player.id).text
-        self.assertIn('flash1600@example.com', page)
-        self.assertIn(required, page)
-        # The contact's edit form: never shown on an add form.
-        edit_contact()
-        self.assertNotIn(required, self.url_open(
-            '/my/player/contact/add?patient_id=%s' % self.player.id).text)
-        edit_contact()
-        self.assertIn(required, self.url_open(
-            '/my/player/contact/edit?contact_id=%s' % self.contact.id).text)
 
     def test_event_create_flash_scoped(self):
         self._login_tp()

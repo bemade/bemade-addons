@@ -88,12 +88,6 @@ class TestAppShellSessionToast1583(SessionToastCommon1583):
         _text, tree = self._get(team_url)
         self.assertIsNone(self._notify(tree))
 
-    def test_switch_off_legacy_unchanged(self):
-        self._login_tp()
-        text, tree = self._add_to_team(self.player_b, self.team_a, '/my/players')
-        self.assertIsNone(self._shell(tree))
-        self.assertNotIn('data-pk-notify', text)
-
 
 @tagged('post_install', '-at_install')
 class TestAppShellToastTourPhone1583(SessionToastCommon1583):

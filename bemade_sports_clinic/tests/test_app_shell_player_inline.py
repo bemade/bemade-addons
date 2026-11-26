@@ -212,7 +212,7 @@ class TestPlayerInline(PlayerInlineCommon):
         self.assertFalse(tree.xpath('//*[@data-sc-action="player.edit"]'))
         resp = self.url_open('/my/player/edit?patient_id=%s&team_id=%s' % (self.player.id, self.team_a.id),
                              allow_redirects=False)
-        self.assertIn(resp.status_code, (302, 303))
+        self.assertEqual(resp.status_code, 301)
         target = urlparse(resp.headers['Location'])
         args = parse_qs(target.query)
         self.assertEqual(target.path, '/my/player')
@@ -220,12 +220,6 @@ class TestPlayerInline(PlayerInlineCommon):
         self.assertEqual(args['team_id'], [str(self.team_a.id)])
         self.assertEqual(args['tab'], ['info'])
 
-    def test_switch_off_keeps_legacy_edit_page(self):
-        self.env['ir.config_parameter'].sudo().set_param(SWITCH, False)
-        self._login_tp()
-        text, tree = self._get('/my/player/edit?patient_id=%s' % self.player.id)
-        self.assertIsNone(self._shell(tree))
-        self.assertIn('/my/player/save', text)
 
     # -- UC-8 ------------------------------------------------------------
     def test_contacts_inline(self):
@@ -246,7 +240,7 @@ class TestPlayerInline(PlayerInlineCommon):
         for url in ('/my/player/contact/add?patient_id=%s' % self.player.id,
                     '/my/player/contact/edit?contact_id=%s' % self.contact.id):
             resp = self.url_open(url, allow_redirects=False)
-            self.assertIn(resp.status_code, (302, 303), url)
+            self.assertEqual(resp.status_code, 301, url)
             self.assertIn('tab=info', resp.headers['Location'], url)
 
     def test_contact_inline_add_round_trip(self):

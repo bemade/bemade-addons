@@ -87,18 +87,6 @@ class TestAppShellTeam1542(AppShellCommon):
         return {int(x) for x in tree.xpath(
             '//*[@data-pk-section="%s"]//*[@data-sc-player-id]/@data-sc-player-id' % section)}
 
-    # -- UC-T1 -----------------------------------------------------------
-    def test_switch_off_renders_legacy_without_shell_values(self):
-        for login in (self._login_coach, self._login_tp):
-            login()
-            with patch.object(TeamManagementPortal, '_sc_team_values',
-                              side_effect=AssertionError('shell values computed')):
-                text, tree = self._get(self.url)
-            self.assertIn('id="dashboard-tab"', text)
-            self.assertIn('o_sc_roster_sort', text)
-            self.assertIsNone(self._shell(tree))
-            self.assertNotIn('data-pk-tab-panel', text)
-            self.assertNotIn('rel="manifest"', text)
 
     # -- UC-T2 -----------------------------------------------------------
     def test_switch_on_tabs_and_deep_links(self):

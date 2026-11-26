@@ -9,33 +9,6 @@ class TestCovTeamManagementPortalPost(PortalCovCommon):
 
     # ---- portal_add_player_submit ----
 
-    def test_add_player_submit_happy(self):
-        self._login_tp()
-        resp = self.url_open(f'/my/team/{self.team_a.id}/add_player/submit', data={
-            'csrf_token': self._csrf(),
-            'first_name': 'Postadd', 'last_name': 'Newplayer',
-            'date_of_birth': '2005-05-05',
-        })
-        self.assertEqual(resp.status_code, 200)
-        patient = self.env['sports.patient'].search([
-            ('first_name', '=', 'Postadd'), ('last_name', '=', 'Newplayer'),
-        ])
-        self.assertTrue(patient, "the player should have been created")
-        self.assertIn(self.team_a, patient.team_ids)
-
-    def test_add_player_submit_invalid_dob_shows_error_not_500(self):
-        # Regression: the error path re-renders portal_add_player, which calls
-        # user_has_group(...) — previously a 500 because the context lacked it.
-        self._login_tp()
-        resp = self.url_open(f'/my/team/{self.team_a.id}/add_player/submit', data={
-            'csrf_token': self._csrf(),
-            'first_name': 'Bad', 'last_name': 'Date', 'date_of_birth': 'not-a-date',
-        })
-        self.assertEqual(resp.status_code, 200, "invalid DOB must render the form, not 500")
-        self.assertIn('first_name', resp.text)  # the form was re-rendered
-        self.assertFalse(self.env['sports.patient'].search([
-            ('first_name', '=', 'Bad'), ('last_name', '=', 'Date')]),
-            "no player should be created on a validation error")
 
     # ---- portal_remove_player ----
 
@@ -59,42 +32,9 @@ class TestCovTeamManagementPortalPost(PortalCovCommon):
 
     # ---- portal_search_player (jsonrpc) ----
 
-    def test_portal_search_player(self):
-        self._login_tp()
-        result = self._jsonrpc(f'/my/team/{self.team_a.id}/player/search', first_name='Pat')
-        self.assertTrue(result.get('ok'))
-        self.assertTrue(result.get('active'), "the search should return matching active players")
-
-    def test_portal_search_player_requires_name(self):
-        self._login_tp()
-        result = self._jsonrpc(f'/my/team/{self.team_a.id}/player/search', first_name='', last_name='')
-        self.assertFalse(result.get('ok'))
 
     # ---- player-add variants ----
 
-    def test_create_player_full(self):
-        self._login_tp()
-        resp = self.url_open(f'/my/team/{self.team_a.id}/player/create_full', data={
-            'csrf_token': self._csrf(),
-            'first_name': 'Createfull', 'last_name': 'Player', 'date_of_birth': '2005-05-05',
-        })
-        self.assertEqual(resp.status_code, 200)
-        p = self.env['sports.patient'].search([
-            ('first_name', '=', 'Createfull'), ('last_name', '=', 'Player')])
-        self.assertTrue(p)
-        self.assertIn(self.team_a, p.team_ids)
-
-    def test_create_player_submit_variant(self):
-        self._login_tp()
-        resp = self.url_open(f'/my/team/{self.team_a.id}/player/create', data={
-            'csrf_token': self._csrf(),
-            'first_name': 'Createvariant', 'last_name': 'Player', 'date_of_birth': '2006-06-06',
-        })
-        self.assertEqual(resp.status_code, 200)
-        p = self.env['sports.patient'].search([
-            ('first_name', '=', 'Createvariant'), ('last_name', '=', 'Player')])
-        self.assertTrue(p)
-        self.assertIn(self.team_a, p.team_ids)
 
     def test_add_player_modal_links_existing(self):
         # player_b is on team_b only; link it to team_a via the modal flow.
