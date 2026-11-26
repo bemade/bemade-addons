@@ -2534,6 +2534,7 @@ msgstr "Disponibles"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_refused
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_event_cancel_wizard_form
 msgid "Back"
 msgstr "Retour"
@@ -6554,6 +6555,7 @@ msgid "No Team"
 msgstr "Aucune équipe"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_refused
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_no_access
 msgid "No access"
 msgstr "Pas d'accès"
@@ -12835,6 +12837,11 @@ msgstr "Vous n'avez pas accès à cette blessure."
 #: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
 msgid "You do not have access to this note."
 msgstr "Vous n'avez pas accès à cette note."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_refused
+msgid "You do not have access to this page."
+msgstr "Vous n'avez pas accès à cette page."
 
 #. module: bemade_sports_clinic
 #. odoo-python

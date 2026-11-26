@@ -1029,12 +1029,24 @@ def sc_app_page(endpoint):
     """Task 1541: the clinic app's page gate — under ``@http.route`` on every
     clinic GET page (and every old URL that redirects to one): a logged-in
     user without a clinic app role gets « Pas d'accès » (403) before the
-    route runs (no redirect, no record lookup)."""
+    route runs (no redirect, no record lookup).
+
+    Review 2026-11-26: a user WITH a role whom the page refuses (an
+    ``AccessError`` / ``Forbidden`` out of the shared access checks — another
+    team's player, event or injury, a therapist-only screen) gets the
+    refusal inside the app (``_sc_refused``, HTTP 403) instead of the stock
+    website error page. Who is refused does not change."""
     @functools.wraps(endpoint)
     def wrapper(self, *args, **kwargs):
         if not AppShellMixin._sc_app_user():
             return AppShellMixin._sc_no_access()
-        return endpoint(self, *args, **kwargs)
+        try:
+            return endpoint(self, *args, **kwargs)
+        except (AccessError, werkzeug.exceptions.Forbidden) as exc:
+            _logger.info("Clinic app page %s refused for user %s: %s",
+                         request.httprequest.path, request.env.uid, exc)
+            request.env.cr.rollback()
+            return self._sc_refused()
     return wrapper
 
 
@@ -1074,6 +1086,14 @@ class AppShellMixin:
             if theme in ('dark', 'light') and theme != kit._pk_default_theme():
                 return theme
         return 'auto'
+
+    def _sc_refused(self):
+        """Review 2026-11-26: « Vous n'avez pas accès à cette page. » inside
+        the app (its shell and navigation, HTTP 403) — no detail of the
+        refused record."""
+        response = self._sc_render('bemade_sports_clinic.sc_app_refused', {})
+        response.status_code = 403
+        return response
 
     def _sc_booking_enabled(self):
         """The bookings addon (appointment_portal_staff) flags its home card

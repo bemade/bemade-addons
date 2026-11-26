@@ -244,3 +244,21 @@
         @include sc-theme-light;
     }
 }
+
+// Review 2026-11-26: a page refused to a clinic app user, inside the app
+// (sc_app_refused) — one centred card under the app bar.
+.o_pk_app .o_sc_refused {
+    max-width: 440px;
+    margin: var(--pk-space-6, 32px) auto;
+    text-align: center;
+
+    .o_sc_refused_text {
+        color: var(--pk-fg-2);
+        margin: 0 0 var(--pk-space-4, 16px);
+    }
+
+    .o_sc_refused_actions {
+        display: flex;
+        justify-content: center;
+    }
+}

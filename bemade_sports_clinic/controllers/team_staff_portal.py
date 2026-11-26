@@ -775,18 +775,11 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # player search does NOT grant access to the full record. Mirror the
         # edit/sub-routes — only users who staff one of the player's teams (or
         # admins) may open the detail page.
+        # A refusal (AccessError) is the app's own 403 page (sc_app_page).
         try:
             player = self._check_access_to_patient(player_id)
         except MissingError:
             raise http.request.not_found()
-        except UserError as e:
-            response = http.request.render('http_routing.http_error', {
-                'status_code': 403,
-                'status_message': 'Forbidden',
-                'error_message': str(e),
-            })
-            response.status_code = 403
-            return response
         team = team_id and http.request.env['sports.team'].browse(team_id)
         # Clinic navigation context (task 1410): validated, silently dropped
         # when invalid. Drives the breadcrumbs + every link/return URL below.

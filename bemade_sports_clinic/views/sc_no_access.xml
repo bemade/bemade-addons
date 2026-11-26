@@ -51,4 +51,20 @@
         </t>
     </template>
 
+    <!-- Review 2026-11-26: a clinic app user refused a page (another team's
+         record, a therapist-only screen) stays in the app: the shell, its
+         navigation, a generic message (nothing of the refused record) and
+         the way back to the dashboard. HTTP 403 (AppShellMixin._sc_refused). -->
+    <template id="sc_app_refused" name="Sports Clinic App: page refused">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="pk_title">No access</t>
+            <section class="o_pk_card o_sc_refused" data-sc-refused-page="1">
+                <p class="o_sc_refused_text">You do not have access to this page.</p>
+                <div class="o_sc_refused_actions">
+                    <a href="/my/home" class="o_pk_btn o_pk_btn_primary" data-sc-action="refused.home">Back</a>
+                </div>
+            </section>
+        </t>
+    </template>
+
 </odoo>

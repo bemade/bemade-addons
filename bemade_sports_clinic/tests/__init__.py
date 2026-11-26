@@ -332,3 +332,4 @@ from . import test_kit_version_guard_5388
 from . import test_legacy_removal_1541
 from . import test_bad_ids_1541
 from . import test_no_access_theme_1541
+from . import test_in_app_refusal_1541
