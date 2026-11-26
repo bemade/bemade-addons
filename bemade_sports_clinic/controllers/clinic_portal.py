@@ -341,21 +341,6 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return ' · '.join(parts)
 
     # ------------------------------------------------------------------
-    # portal home counter
-    # ------------------------------------------------------------------
-    def _prepare_home_portal_values(self, counters):
-        values = super()._prepare_home_portal_values(counters)
-        # Therapists only (portal or internal, task 1577): the card is a
-        # therapist surface, and any other portal role would 403 on the
-        # sports.event count itself.
-        if 'clinics_count' in counters and self._is_treatment_professional():
-            domain = self._prepare_events_domain('my')
-            domain.append(('event_type', '=', 'clinic'))
-            domain += self._clinic_time_domain('today')
-            values['clinics_count'] = request.env['sports.event'].search_count(domain)
-        return values
-
-    # ------------------------------------------------------------------
     # list
     # ------------------------------------------------------------------
     @http.route(['/my/clinics', '/my/clinics/page/<int:page>'], type='http',

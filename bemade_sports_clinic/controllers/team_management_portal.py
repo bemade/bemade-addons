@@ -35,10 +35,6 @@ SC_STAGE_TONES = {'no_play': 'red', 'practice_ok': 'yellow', 'healthy': 'green'}
 
 class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     
-    def _prepare_home_portal_values(self, counters):
-        values = super()._prepare_home_portal_values(counters)
-        return values
-
     # Access control methods now inherited from AccessControlMixin
 
     @http.route(['/my/team/<int:team_id>/player/<int:player_id>/request_removal'],

@@ -26,37 +26,6 @@ SC_PLAYERS_SORT_ORDERS = {
 
 
 class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
-    def _prepare_home_portal_values(self, counters):
-        rtn = super()._prepare_home_portal_values(counters)
-        # CONTRACT (2026-08-31 prod incident): only REQUESTED keys may be
-        # returned. ``/my/counters`` forwards every returned key to the portal
-        # home JS, which looks up a ``[data-placeholder_count]`` element per
-        # key and crashes on an unknown one — hiding every card on the page.
-        # (The orphaned ``timesheets_count`` — placeholder renamed to
-        # ``event_timesheets_count`` — broke the home for every TP.)
-        user = http.request.env.user
-        if 'teams_count' in counters or 'players_count' in counters:
-            teams_domain = self._prepare_teams_domain()
-            if 'teams_count' in counters:
-                rtn['teams_count'] = http.request.env['sports.team'].search_count(teams_domain)
-            if 'players_count' in counters:
-                rtn['players_count'] = http.request.env['sports.patient'].search_count(
-                    self._prepare_players_domain(teams_domain))
-        # mail.activity and sports.event ACLs only cover internal users,
-        # portal coaches and portal TPs. Any other portal user (e.g. staff
-        # role 'other') would 403 right at login if we counted
-        # unconditionally (task 1222 dev-review fix, 2026-07-04).
-        if (user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-                or user.has_group('bemade_sports_clinic.group_portal_team_coach')
-                or user.has_group('base.group_user')):
-            if 'activities_count' in counters:
-                rtn['activities_count'] = http.request.env['mail.activity'].search_count(
-                    self._prepare_activities_domain())
-            if 'events_count' in counters:
-                rtn['events_count'] = http.request.env['sports.event'].search_count(
-                    self._prepare_events_domain())
-        return rtn
-
     @classmethod
     def _prepare_teams_domain(cls):
         """The teams the viewer lists / counts on /my/teams, the home and
@@ -80,28 +49,6 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     # _get_accessible_teams / _get_organizations / _prepare_events_domain removed:
     # they were shadowed by AccessControlMixin's (formerly events_portal's) versions
     # and never ran. The mixin now provides the single implementation. (Dead-route audit.)
-
-    @classmethod
-    def _prepare_activities_domain(cls):
-        # Use controller-level team-based filtering for consistent security
-        # Record rules provide broad CRUD access, controller enforces team-based security
-        # Task 1577 review: the same team scope as /my/activities — every
-        # team for a clinic administrator, the staffed teams otherwise.
-        scope_teams = cls._activity_scope_teams()
-
-        # Build team-based access domain for security filtering (task 1409:
-        # activities live on patients and teams — no injury branch)
-        return [
-            '|',
-            '&', '&',
-            ('res_model', '=', 'sports.patient'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', scope_teams.mapped('patient_ids.id') or [0]),
-            '&', '&',
-            ('res_model', '=', 'sports.team'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', scope_teams.ids or [0])
-        ]
 
     # ------------------------------------------------------------------
     # /my/teams sorting (task 1401)
@@ -915,23 +862,6 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # portal TPs (the owner's TP saw only herself on the player page).
             assignable_users = self._activity_assignable_users_for(user)
 
-        # Categories for patient document uploads
-        categories = [
-            ('medical', 'Medical'),
-            ('medical_imaging', 'Medical Imaging'),
-            ('prescription', 'Prescription'),
-            ('other', 'Other'),
-        ]
-
-        # Create patient_info dictionary for protected fields (when user is a treatment professional)
-        # No need for sudo() now that we have proper field-level access rights
-        patient_info = {}
-        if is_treatment_prof:
-            # Medical notes - direct access now that security is properly
-            # configured. Task 1630: the allergies are the medical-alert
-            # summary lines (player._sc_medical_summary_lines), read in the template.
-            patient_info['team_info_notes'] = player.team_info_notes
-        
         # Compute removal request visibility for coaches on the player detail view
         # Conditions:
         # - user is a coach, and
@@ -1010,17 +940,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         def _tab_url(tab):
             return f'/my/player?player_id={player.id}{ctx_qs}#{tab}'
 
-        contacts_tab_return = _tab_url('contacts')
         documents_tab_return = _tab_url('documents')
         notes_tab_return = _tab_url('notes')
-        injuries_tab_return = _tab_url('injuries')
-        activities_tab_return = _tab_url('activities')
-        contacts_tab_return_q = urllib.parse.quote(contacts_tab_return, safe='')
-
-        add_contact_url = (
-            f'/my/player/contact/add?patient_id={player.id}'
-            f'&return_url={contacts_tab_return_q}'
-        )
 
         # Task 1421: soft duplicate-number banner after a save that left this
         # player sharing a number with an active teammate. Computed from LIVE
@@ -1041,18 +962,15 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'editable_note_ids': {
                     n.id for n in treatment_notes if n._can_portal_edit(user)},
                 'note_success': kw.get('success'),
-                'note_error': kw.get('error'),
                 'note_error_id': self._int_or_none(kw.get('note_id')),
                 'player_activities': player_activities,
                 'activity_types': activity_types,
                 'default_activity_type': default_activity_type,
                 'assignable_users': assignable_users,
                 'today': date.today().strftime('%Y-%m-%d'),
-                'categories': categories,
                 'team': team,
                 'page_name': 'my_player',
                 'is_treatment_prof': is_treatment_prof,
-                'patient_info': patient_info,
                 'can_request_removal': can_request_removal,
                 'can_direct_remove': can_direct_remove,
                 'removal_team_id': removal_team_id,
@@ -1061,13 +979,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'clinic_event': clinic_event,
                 'ctx_qs': ctx_qs,
                 # Tab-anchor URLs for in-tab actions.
-                'contacts_tab_return': contacts_tab_return,
                 'documents_tab_return': documents_tab_return,
                 'notes_tab_return': notes_tab_return,
-                'injuries_tab_return': injuries_tab_return,
-                'activities_tab_return': activities_tab_return,
-                'contacts_tab_return_q': contacts_tab_return_q,
-                'add_contact_url': add_contact_url,
         }
         values.update(self._sc_player_values(player, values, kw))
         return self._sc_render('bemade_sports_clinic.sc_app_player', values)

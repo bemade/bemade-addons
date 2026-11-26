@@ -36,14 +36,6 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     # _parse_portal_datetime / _prepare_events_domain / _get_accessible_teams /
     # _get_organizations now live on AccessControlMixin (dead-route audit cleanup).
 
-    def _prepare_home_portal_values(self, counters):
-        """Add events count to portal home"""
-        rtn = super()._prepare_home_portal_values(counters)
-        if 'events_count' in counters:
-            events_domain = self._prepare_events_domain()
-            rtn['events_count'] = http.request.env['sports.event'].search_count(events_domain)
-        return rtn
-
     def _get_treatment_professionals(self):
         """Get all treatment professionals from team staff with relevant roles.
 

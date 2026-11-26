@@ -116,18 +116,6 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return vals
 
     # ------------------------------------------------------------------
-    # portal home counter
-    # ------------------------------------------------------------------
-    def _prepare_home_portal_values(self, counters):
-        values = super()._prepare_home_portal_values(counters)
-        if 'quick_notes_count' in counters and self._is_quick_note_user():
-            values['quick_notes_count'] = request.env['sports.quick.note'].search_count([
-                ('user_id', '=', request.env.user.id),
-                ('active', '=', True),
-            ])
-        return values
-
-    # ------------------------------------------------------------------
     # routes
     # ------------------------------------------------------------------
     @http.route(['/my/notepad'], type='http', auth='user', website=True)

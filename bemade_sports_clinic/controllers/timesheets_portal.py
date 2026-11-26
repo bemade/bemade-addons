@@ -15,23 +15,6 @@ _logger = logging.getLogger(__name__)
 class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     # _parse_portal_datetime now lives on AccessControlMixin (dead-route audit cleanup).
 
-    def _prepare_home_portal_values(self, counters):
-        vals = super()._prepare_home_portal_values(counters)
-        if 'event_timesheets_count' in counters:
-            user = http.request.env.user
-            if self._is_tp_or_system():
-                # Count timesheets owned by the current user OR by an internal user sharing
-                # the same partner. Timesheets on cancelled events stay included: a
-                # last-minute cancellation can still be payable/invoiceable.
-                count_domain = ['|', ('user_id', '=', user.id), ('user_id.partner_id', '=', user.partner_id.id)]
-                count = http.request.env['sports.event.timesheet'].search_count(count_domain)
-                vals['event_timesheets_count'] = count
-                _logger.debug(
-                    "[TimesheetsPortal] Home counter (event_timesheets_count) user=%s(partner=%s) domain=%s -> count=%s",
-                    user.id, user.partner_id.id, count_domain, count,
-                )
-        return vals
-
     def _prepare_timesheets_domain(self, user_only=True):
         user = http.request.env.user
         if not self._is_tp_or_system():
