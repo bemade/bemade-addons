@@ -320,6 +320,12 @@ msgid "Yesterday"
 msgstr "Hier"
 
 #. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/pk_chat_data.py:0
+msgid "You: %(preview)s"
+msgstr "Vous : %(preview)s"
+
+#. module: bemade_portal_kit_chat
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_mail_digest
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_mail_each
 msgid "You choose these e-mails in the app: Settings › Notifications."

@@ -32,14 +32,16 @@
         right: 2px;
     }
 
+    // Below the laptop breakpoint the list is a full-width sheet under the
+    // app bar: the bubble sits mid-bar, so a menu anchored to it ran off the
+    // left edge of a phone. Anchored to the bubble from the laptop width.
     .o_pk_chat_menu {
-        position: absolute;
-        right: 0;
-        top: calc(100% + 6px);
+        position: fixed;
+        left: var(--pk-space-2);
+        right: var(--pk-space-2);
+        top: calc(var(--pk-appbar-height) + env(safe-area-inset-top, 0px) + var(--pk-ribbon-h, 0px));
         z-index: 45;
-        width: 360px;
-        max-width: calc(100vw - 24px);
-        max-height: 70vh;
+        max-height: calc(100vh - var(--pk-appbar-height) - var(--pk-tabs-height) - 16px);
         overflow-y: auto;
         background: var(--pk-surface);
         color: var(--pk-fg);
@@ -348,6 +350,15 @@
 
 @media (min-width: $pk-laptop) {
     .o_pk_app {
+        .o_pk_chat_menu {
+            position: absolute;
+            left: auto;
+            right: 0;
+            top: calc(100% + 6px);
+            width: 360px;
+            max-height: 70vh;
+        }
+
         .o_pk_chat_window {
             left: auto;
             top: auto;

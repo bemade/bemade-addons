@@ -69,8 +69,9 @@ tours.add("pk_chat_reply_announcement", {
         },
         { content: "Send", trigger: "[data-pk-chat-window] [data-pk-chat-send]", run: "click" },
         {
-            content: "The reply shows its quote",
-            trigger: "[data-pk-chat-window] .o_pk_chat_msg_own:contains(We will be there) .o_pk_chat_quote:contains(Dana Staffperson)",
+            // It answers the message just above it, so it carries no quote.
+            content: "The reply shows, without repeating the message above",
+            trigger: "[data-pk-chat-window] .o_pk_chat_msg_own:contains(We will be there):not(:has(.o_pk_chat_quote))",
         },
         {
             content: "Back to a reader's composer: hidden again",

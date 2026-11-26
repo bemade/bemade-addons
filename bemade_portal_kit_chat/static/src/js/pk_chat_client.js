@@ -98,12 +98,16 @@ function el(tag, className, attrs = {}) {
     return node;
 }
 
-/** One message item. ``bodyHtml`` is the server's sanitised body. */
-export function renderMessage(msg, texts, { canReply }) {
+/**
+ * One message item. ``bodyHtml`` is the server's sanitised body.
+ * ``prevId``: the message shown just above; a reply to it carries no quote,
+ * which would only repeat what the reader just read.
+ */
+export function renderMessage(msg, texts, { canReply, prevId = 0 }) {
     const item = el("li", `o_pk_chat_msg${msg.own ? " o_pk_chat_msg_own" : ""}`, {
         "data-pk-chat-msg": String(msg.id),
     });
-    if (msg.parent) {
+    if (msg.parent && msg.parent.id !== prevId) {
         const quote = el("blockquote", "o_pk_chat_quote", {
             "data-pk-chat-quote": String(msg.parent.id),
         });
@@ -234,6 +238,7 @@ export class ChatThread {
         this.data = data;
         this.onTitle(data.title);
         this.list.innerHTML = "";
+        this.lastId = 0;
         this.append(data.messages);
         this.firstId = data.messages.length ? data.messages[0].id : 0;
         this.older.hidden = !data.more;
@@ -250,8 +255,12 @@ export class ChatThread {
         }
         const data = await this.api.messages(this.channelId, { before: this.firstId });
         const height = this.list.scrollHeight;
-        const items = data.messages.map((msg) =>
-            renderMessage(msg, this.texts, { canReply: this.isReaderOnly || this.data.managed })
+        const canReply = this.isReaderOnly || Boolean(this.data.managed);
+        const items = data.messages.map((msg, index) =>
+            renderMessage(msg, this.texts, {
+                canReply,
+                prevId: index ? data.messages[index - 1].id : 0,
+            })
         );
         this.list.prepend(...items);
         if (data.messages.length) {
@@ -282,7 +291,7 @@ export class ChatThread {
             if (msg.id <= this.lastId) {
                 continue;
             }
-            this.list.append(renderMessage(msg, this.texts, { canReply }));
+            this.list.append(renderMessage(msg, this.texts, { canReply, prevId: this.lastId }));
             this.lastId = msg.id;
         }
         this.emptyNote.hidden = Boolean(this.list.children.length);

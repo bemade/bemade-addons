@@ -120,13 +120,17 @@ class PortalKit(models.AbstractModel):
             if channel.channel_type == 'chat' and not last and member.unpin_dt:
                 continue  # a chat the other one opened and never wrote in
             avatar_partner = self._pk_chat_other(member) if channel.channel_type == 'chat' else None
+            preview = pk_chat_excerpt(last.body) if last else ''
+            author_is_me = bool(last) and last.author_id == user.partner_id
+            if author_is_me:
+                preview = self.env._("You: %(preview)s", preview=preview)
             rows.append({
                 'id': channel.id,
                 'kind': 'direct' if channel.channel_type == 'chat' else 'group',
                 'title': self._pk_chat_title(member),
                 'avatar_url': self._pk_chat_avatar_url(channel, avatar_partner),
-                'preview': pk_chat_excerpt(last.body) if last else '',
-                'author_is_me': bool(last) and last.author_id == user.partner_id,
+                'preview': preview,
+                'author_is_me': author_is_me,
                 'when': pk_chat_when(self.env, last.date, user) if last else '',
                 'unread': member.message_unread_counter or 0,
                 '_sort': (last.date or channel.create_date) if last else channel.create_date,

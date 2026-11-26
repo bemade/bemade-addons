@@ -7,7 +7,7 @@
 import { afterEach, beforeEach, describe, expect, getFixture, test } from "@odoo/hoot";
 import { animationFrame } from "@odoo/hoot-dom";
 
-import { ChatThread } from "@bemade_portal_kit_chat/js/pk_chat_client";
+import { ChatThread, renderMessage } from "@bemade_portal_kit_chat/js/pk_chat_client";
 import { ChatWindow, PK_CHAT_MIN_KEY, PK_CHAT_OPEN_KEY } from "@bemade_portal_kit_chat/js/pk_chat_window";
 import { pkPortalPartners } from "@bemade_portal_kit_chat/backend/pk_chat_portal_partners";
 
@@ -170,7 +170,19 @@ describe("pk_chat_client", () => {
         expect(form.hidden).toBe(true);
         const items = host.querySelectorAll("[data-pk-chat-msg]");
         expect(items.length).toBe(2);
-        expect(items[1].querySelector(".o_pk_chat_quote").textContent).toInclude("Coach");
+        // A reply to the message just above carries no quote (it would repeat it).
+        expect(items[1].querySelector(".o_pk_chat_quote")).toBe(null);
+    });
+
+    test("a reply quotes its parent unless the parent is just above", () => {
+        const msg = {
+            id: 9, own: false, author_name: "Avery", when: "10:00", body_html: "<p>Ok</p>",
+            parent: { id: 5, author_name: "Coach", excerpt: "Practice moved" },
+        };
+        const quoted = renderMessage(msg, TEXTS, { canReply: true, prevId: 7 });
+        expect(quoted.querySelector(".o_pk_chat_quote").textContent).toInclude("Coach Practice moved");
+        const adjacent = renderMessage(msg, TEXTS, { canReply: true, prevId: 5 });
+        expect(adjacent.querySelector(".o_pk_chat_quote")).toBe(null);
     });
 
     test("a direct chat has the composer; Enter sends, Shift+Enter does not", async () => {

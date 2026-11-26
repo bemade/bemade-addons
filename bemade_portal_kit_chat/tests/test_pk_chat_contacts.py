@@ -63,6 +63,16 @@ class TestPkChatContacts(HttpCase):
         with_staff = self._start('pkc_avery', self.dana.partner_id)
         self.assertNotEqual(with_staff.json()['id'], channel.id)
 
+    def test_own_last_message_preview_says_you(self):
+        channel = self.env['discuss.channel'].browse(self._start('pkc_avery', self.blake.partner_id).json()['id'])
+        channel.with_user(self.avery).message_post(
+            body='See you at practice', message_type='comment', subtype_xmlid='mail.mt_comment')
+        kit = self.env['portal.kit']
+        [mine] = [r for r in kit.pk_chat_conversation_rows(self.avery) if r['id'] == channel.id]
+        self.assertEqual(mine['preview'], 'You: See you at practice')
+        [theirs] = [r for r in kit.pk_chat_conversation_rows(self.blake) if r['id'] == channel.id]
+        self.assertEqual(theirs['preview'], 'See you at practice')
+
     # UC-C2
     @mute_logger('odoo.http')
     def test_non_contact_refused(self):
