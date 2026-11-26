@@ -84,6 +84,12 @@ class TestAppShellI18n1540(TestAppShellI18n1538):
         for source, french in (('Live', 'En direct'), ('Paused', 'En pause'),
                                ('Tap again to remove', 'Touchez de nouveau pour retirer'),
                                ('Resolve', 'Résoudre'), ('Arrived %s', 'Arrivé à %s'),
-                               ('The calendar could not be loaded.', "Le calendrier n'a pas pu être chargé."),
                                ('Expected', 'Attendu')):
             self.assertEqual(messages.get(source), french, source)
+        # Task 1541: the calendar's own string is the kit's (the clinic's
+        # sc_calendar_alias.js re-export is gone); still French.
+        resp = self.url_open('/web/webclient/translations?lang=fr_CA&mods=bemade_portal_kit')
+        kit = {m['id']: m['string']
+               for m in resp.json()['modules']['bemade_portal_kit']['messages']}
+        self.assertEqual(kit.get('The calendar could not be loaded.'),
+                         "Le calendrier n'a pas pu être chargé.")

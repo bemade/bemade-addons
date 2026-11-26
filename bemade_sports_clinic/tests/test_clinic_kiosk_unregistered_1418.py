@@ -256,7 +256,8 @@ class TestClinicKioskUnregistered(HttpCase):
         self.assertIn('done=ok', resp.url)
         self.assertNotIn('zed', resp.text)
         self.assertNotIn('Zero', resp.text)
-        self.assertNotIn('2001', resp.text)
+        # The csrf token's expiry stamp is digits too (…o1827200101): not a DOB.
+        self.assertNotIn('2001', re.sub(r'csrf_token: "[^"]*"', '', resp.text))
         self.assertEqual(len(self._rows()), 1)
         resp = self._kiosk_post('Zed', 'Zero', '2001-02-03')
         self.assertIn('done=duplicate', resp.url,

@@ -393,7 +393,8 @@ class TestClinicKiosk(HttpCase):
         self.assertIn('Bienvenue', resp.text)
         self.assertNotIn('Kim', resp.text, "the result carries no name (#1433 PRG)")
         self.assertNotIn('2001-02-03', resp.text, "the DOB is never displayed back")
-        self.assertNotIn('2001', resp.text)
+        # The csrf token's expiry stamp is digits too (…o1827200101): not a DOB.
+        self.assertNotIn('2001', re.sub(r'csrf_token: "[^"]*"', '', resp.text))
         self._assert_no_store(resp)
         self.assertIn('http-equiv="refresh"', resp.text, "result auto-returns")
         row = self._rows(patient=self.kim)

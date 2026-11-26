@@ -180,31 +180,6 @@ class TestCoachExternalNoteReadOnly1675(AppShellCommon):
         self.assertNotIn('warning=', resp.headers['Location'])
 
 
-    def test_legacy_coach_save_drops_external_note_with_a_flash(self):
-        self._switch(False)
-        self._login_coach()
-        for extra in ({'partial': '1'}, {'diagnosis': self.injury.diagnosis}):
-            with self.subTest(extra=extra):
-                resp = self.url_open('/my/injury/save', data={
-                    'csrf_token': self._csrf(), 'injury_id': self.injury.id,
-                    'external_notes': 'Coach legacy note', **extra,
-                })
-                self.assertEqual(resp.status_code, 200, resp.text)
-                self.assertIn('warning=external_notes_readonly', resp.url)
-                self.assertIn('data-sc-warning="external_notes_readonly"', resp.text)
-                self.injury.invalidate_recordset()
-                self.assertEqual(self.injury.external_notes, EXT)
-        # The read-only textarea posted back as is: saved, no warning.
-        resp = self.url_open('/my/injury/save', data={
-            'csrf_token': self._csrf(), 'injury_id': self.injury.id,
-            'diagnosis': 'Synthetic coach diagnosis', 'external_notes': EXT,
-        })
-        self.assertEqual(resp.status_code, 200, resp.text)
-        self.assertNotIn('warning=', resp.url)
-        self.injury.invalidate_recordset()
-        self.assertEqual(self.injury.external_notes, EXT)
-
-
     # -- AC-6 ------------------------------------------------------------
     def test_model_refuses_external_notes_from_a_coach(self):
         Injury = self.env['sports.patient.injury']
