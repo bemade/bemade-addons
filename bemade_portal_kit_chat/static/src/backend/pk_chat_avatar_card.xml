@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Task 5516: the avatar card's « Send message » also for a PORTAL user's
+     partner (the core: internal users only), for an internal viewer. -->
+<templates xml:space="preserve">
+    <t t-inherit="mail.AvatarCardPopover" t-inherit-mode="extension">
+        <xpath expr="//button[@t-on-click.stop='onSendClick']" position="attributes">
+            <attribute name="t-if">(user?.share ?? partner?.partner_share) === false or (partner?.main_user_id and store.self_partner?.main_user_id?.share === false)</attribute>
+        </xpath>
+    </t>
+</templates>

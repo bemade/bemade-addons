@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.16.0',
+    'version': '19.0.1.17.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -24,7 +24,8 @@ and clamps; version 1.10 its autosave field; version 1.11 its app layout,
 user menu and shell components; version 1.12 the app's switch, its
 preferences, settings, « More », account and security pages, help,
 search, calendar and picker; version 1.15 scopes every registry per app
-(several consumers in one database, below).
+(several consumers in one database, below); version 1.17 the
+notification preferences.
 
 Registries
 ----------
@@ -625,6 +626,36 @@ dependents, not the kit), it stops the run before anything is written and
 says to upgrade the kit in the same run (``-u bemade_portal_kit,<consumer>``).
 A fresh install, or the kit upgraded in the same run, is never blocked.
 
+Notification preferences (version 1.17)
+---------------------------------------
+Each user chooses, per kind of notification, how the app e-mails them:
+« Each message », « Daily digest » or « Never » (a kind offers a subset).
+The kit only stores the choice; the addon that registers a kind sends its
+notices (e.g. ``bemade_portal_kit_chat``).
+
+* Hook ``portal.kit._pk_notification_kinds()`` -> ``[{'key', 'label',
+  'modes', 'default', 'default_internal', 'app', 'sequence',
+  'enabled'}]``: ``modes`` a subset of ``('each', 'digest', 'off')`` in
+  display order, ``default`` for share (portal) users and
+  ``default_internal`` for internal users (they have Discuss: usually
+  ``off``), ``app`` (none: shared), ``enabled(kit, app)`` an optional gate
+  (e.g. the feature is on for that app). Cached like the other
+  registries: code only. Read with ``pk_notification_kinds(app=None)``.
+* Model ``portal.kit.notification.pref`` (``user_id``, ``kind``,
+  ``mode``; one row per user and kind, only once the user chose): each
+  user reads and writes their own rows only.
+* ``res.users._pk_notification_mode(kind)`` (the stored mode when the kind
+  still allows it, else the default for that user) and
+  ``users._pk_notification_users(kind, mode)`` (a batch: the users whose
+  mode is ``mode``).
+* « Settings › Notifications » (``#pk_notifications``, after the
+  appearance, in the slot ``pk_settings_extra``'s place): one segmented
+  control per kind (``data-pk-notify-pref="<kind>"``), shown only when the
+  app has a kind. ``POST /my/app/notify-pref`` (``kind``, ``mode``,
+  ``redirect``; CSRF): the caller's own row; an unknown kind or a mode the
+  kind does not allow answers 400. JSON ``{kind, mode}`` for a fetch, else
+  a same-site redirect.
+
 Style guide
 ------------
 ``/pk/styleguide`` (internal users) shows every generic component with the
@@ -637,6 +668,7 @@ neutral slots; ``?theme=dark`` shows the dark theme.
     'depends': ['portal'],
     'data': [
         'security/ir.model.access.csv',
+        'security/pk_security.xml',
         'views/pk_layout.xml',
         'views/pk_components.xml',
         'views/pk_styleguide.xml',

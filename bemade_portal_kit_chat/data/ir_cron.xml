@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Task 5516: the chat's crons (models/pk_chat_mail.py, models/portal_kit.py). -->
+<odoo noupdate="1">
+
+    <record id="ir_cron_pk_chat_each" model="ir.cron">
+        <field name="name">Portal Kit Chat: e-mail new messages (each)</field>
+        <field name="model_id" ref="bemade_portal_kit.model_portal_kit"/>
+        <field name="state">code</field>
+        <field name="code">model._pk_chat_cron_each()</field>
+        <field name="interval_number">5</field>
+        <field name="interval_type">minutes</field>
+    </record>
+
+    <record id="ir_cron_pk_chat_digest" model="ir.cron">
+        <field name="name">Portal Kit Chat: daily digest of unread conversations</field>
+        <field name="model_id" ref="bemade_portal_kit.model_portal_kit"/>
+        <field name="state">code</field>
+        <field name="code">model._pk_chat_cron_digest()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+    </record>
+
+    <record id="ir_cron_pk_chat_sync" model="ir.cron">
+        <field name="name">Portal Kit Chat: sync the managed channels</field>
+        <field name="model_id" ref="bemade_portal_kit.model_portal_kit"/>
+        <field name="state">code</field>
+        <field name="code">model._pk_chat_cron_sync()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+    </record>
+
+</odoo>

@@ -32,7 +32,8 @@ _logger = logging.getLogger(__name__)
 
 KIT = 'bemade_portal_kit'
 # Task 5391: the dependents declare their entries per app (``app=``).
-PK_MIN_VERSION = '19.0.1.15.0'
+# Task 5516: the notification preferences (bemade_portal_kit_chat).
+PK_MIN_VERSION = '19.0.1.17.0'
 
 # States in which the kit's recorded version is the one the database holds.
 _CHECKED_STATES = ('installed', 'to upgrade', 'to remove')

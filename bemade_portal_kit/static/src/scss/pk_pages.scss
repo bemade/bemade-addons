@@ -1622,3 +1622,16 @@
         }
     }
 }
+
+// Task 5516 (kit 1.17): « Settings › Notifications », one row per kind.
+.o_pk_app .o_pk_notify_row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pk-space-2);
+    margin-bottom: var(--pk-space-3);
+
+    .o_pk_notify_label {
+        font-weight: 600;
+        color: var(--pk-fg);
+    }
+}

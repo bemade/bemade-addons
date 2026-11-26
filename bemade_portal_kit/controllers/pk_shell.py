@@ -350,6 +350,32 @@ class PortalKitShell(PortalKitApp):
             response.set_cookie('frontend_lang', lang)
         return response
 
+    # ------------------------------------------------------------------
+    # /my/app/notify-pref — the caller's notification preferences (1.17)
+    # ------------------------------------------------------------------
+    @http.route(['/my/app/notify-pref'], type='http', auth='user', website=True,
+                methods=['POST'], multilang=False)
+    def pk_app_notify_pref(self, kind=None, mode=None, redirect=None, **post):
+        """Task 5516 (kit 1.17): store the CALLER's mode for notification
+        kind ``kind`` (one of ``portal.kit.pk_notification_kinds()`` of the
+        current app, a mode it allows). Anything else answers 400 and
+        writes nothing. A JSON caller gets ``{kind, mode}``; a plain form
+        post is redirected to ``redirect`` (same-site; default: the
+        settings' « Notifications » section). CSRF: the http POST route."""
+        user = request.env.user
+        spec = next((k for k in request.env['portal.kit'].pk_notification_kinds() if k['key'] == kind), None)
+        if not spec or mode not in spec['modes']:
+            return request.make_json_response({'error': 'bad_request'}, status=400)
+        Pref = request.env['portal.kit.notification.pref']
+        pref = Pref.search([('user_id', '=', user.id), ('kind', '=', kind)], limit=1)
+        if pref:
+            pref.write({'mode': mode})
+        else:
+            Pref.create({'user_id': user.id, 'kind': kind, 'mode': mode})
+        if 'application/json' in request.httprequest.headers.get('Accept', ''):
+            return request.make_json_response({'kind': kind, 'mode': mode})
+        return request.redirect(self._pk_safe_url(redirect, '/my/app/settings#pk_notifications'), code=303)
+
     @staticmethod
     def _pk_safe_url(value, fallback):
         return request.env['portal.kit'].pk_safe_return_url(value, fallback)
