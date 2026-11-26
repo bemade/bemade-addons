@@ -65,3 +65,20 @@ class TestPkPwaVersionGuard(TransactionCase):
         with patch.object(hooks, 'adopt_views') as adopt:
             hooks.pre_init_hook(self.env)
         adopt.assert_called_once()
+
+    # Task 5546: the upgrade to 1.2 checks the kit (1.18) first.
+    @mute_logger('odoo.addons.bemade_portal_kit.tools.version_guard')
+    def test_upgrade_checks_the_kit(self):
+        import importlib.util
+        import os
+        from odoo.modules.module import get_module_path
+        path = os.path.join(get_module_path('bemade_portal_kit_pwa'), 'migrations', '19.0.1.2.0', 'pre-migrate.py')
+        spec = importlib.util.spec_from_file_location('pk_pwa_pre_migrate_1_2', path)
+        migration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(migration)
+        self.assertEqual(first_call_name(migration.migrate), 'require_kit')
+        self._set_kit('19.0.1.17.0')
+        with self.assertRaises(PkKitVersionError):
+            migration.migrate(self.env.cr, '19.0.1.1.2')
+        self._set_kit('19.0.1.18.0')
+        self.assertIsNone(migration.migrate(self.env.cr, '19.0.1.1.2'))

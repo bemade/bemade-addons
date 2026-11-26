@@ -86,3 +86,161 @@ self.addEventListener("fetch", (event) => {
         );
     }
 });
+
+/*
+ * Task 5546 (pwa 1.2) — phone notifications (Web Push). Only the
+ * subscriptions made by the kit's page script (pk_push.js) through THIS
+ * registration land here; Odoo's own worker (/web/service-worker.js, scope
+ * /odoo) keeps the internal users' Discuss push.
+ *
+ * - push: show the notification (title, body, icon, data.pk_url). Skipped
+ *   only when a focused, visible window reports it is showing that same
+ *   conversation (a [data-pk-push-showing] element, pk_push.js), and NEVER
+ *   skipped on iOS (Safari revokes a subscription whose push shows
+ *   nothing). The app badge takes the server's count (/my/app/push/badge).
+ * - notificationclick: focus a window of the app and take it to
+ *   data.pk_url, or open one.
+ * - pushsubscriptionchange: subscribe again with the server's key and
+ *   register the new endpoint (previous_endpoint: the old one).
+ * Nothing is ever cached.
+ */
+const PUSH_KEY_URL = "/my/app/push/key";
+const PUSH_REGISTER_URL = "/my/app/push/register";
+const PUSH_BADGE_URL = "/my/app/push/badge";
+const PUSH_ICON = "/my/app/icon/icon-192.png";
+const PUSH_IS_IOS = /iPad|iPhone|iPod/.test(self.navigator.userAgent || "") ||
+    (/Macintosh/.test(self.navigator.userAgent || "") && (self.navigator.maxTouchPoints || 0) > 1);
+
+function pushSafeUrl(value) {
+    try {
+        const url = new URL(value || "/my", self.location.origin);
+        return url.origin === self.location.origin ? url.pathname + url.search + url.hash : "/my";
+    } catch {
+        return "/my";
+    }
+}
+
+function pushKey(base64) {
+    const padded = (base64 + "=".repeat((4 - (base64.length % 4)) % 4)).replace(/-/g, "+").replace(/_/g, "/");
+    return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
+}
+
+async function pushBadge() {
+    if (!self.navigator.setAppBadge) {
+        return;
+    }
+    try {
+        const resp = await fetch(PUSH_BADGE_URL, { credentials: "same-origin", cache: "no-store" });
+        const count = resp.ok ? (await resp.json()).count : null;
+        if (count > 0) {
+            await self.navigator.setAppBadge(count);
+        } else if (count === 0) {
+            await self.navigator.clearAppBadge();
+        } else {
+            await self.navigator.setAppBadge();
+        }
+    } catch {
+        // No badge: the page sets the real number on its next load.
+    }
+}
+
+/** Does a focused, visible window report it shows ``url``? */
+async function pushShownIn(url) {
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: false });
+    const focused = windows.filter((client) => client.focused && client.visibilityState === "visible");
+    const answers = await Promise.all(
+        focused.map(
+            (client) =>
+                new Promise((resolve) => {
+                    const channel = new MessageChannel();
+                    const timer = setTimeout(() => resolve(false), 500);
+                    channel.port1.onmessage = (ev) => {
+                        clearTimeout(timer);
+                        resolve(Boolean(ev.data && ev.data.showing));
+                    };
+                    client.postMessage({ type: "pk-push-showing", url }, [channel.port2]);
+                })
+        )
+    );
+    return answers.some(Boolean);
+}
+
+self.addEventListener("push", (event) => {
+    let payload = {};
+    try {
+        payload = event.data ? event.data.json() : {};
+    } catch {
+        payload = { title: event.data ? event.data.text() : "" };
+    }
+    const options = Object.assign({}, payload.options || {});
+    const data = Object.assign({}, options.data || {});
+    data.pk_url = pushSafeUrl(data.pk_url);
+    options.data = data;
+    options.icon = options.icon || PUSH_ICON;
+    if (!options.tag) {
+        options.tag = data.pk_url;
+    }
+    options.renotify = true;
+    event.waitUntil(
+        (async () => {
+            if (!PUSH_IS_IOS && (await pushShownIn(data.pk_url))) {
+                await pushBadge();
+                return;
+            }
+            await self.registration.showNotification(payload.title || "", options);
+            await pushBadge();
+        })()
+    );
+});
+
+self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+    const path = pushSafeUrl(event.notification.data && event.notification.data.pk_url);
+    const target = new URL(path, self.location.origin).href;
+    event.waitUntil(
+        (async () => {
+            const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+            const mine = windows.filter((client) => new URL(client.url).origin === self.location.origin);
+            const same = mine.find((client) => client.url === target);
+            if (same) {
+                return same.focus();
+            }
+            for (const client of mine) {
+                try {
+                    const focused = await client.focus();
+                    await (focused || client).navigate(target);
+                    return undefined;
+                } catch {
+                    // An uncontrolled window cannot be navigated: open one.
+                }
+            }
+            return self.clients.openWindow(target);
+        })()
+    );
+});
+
+self.addEventListener("pushsubscriptionchange", (event) => {
+    event.waitUntil(
+        (async () => {
+            const info = await (await fetch(PUSH_KEY_URL, { credentials: "same-origin", cache: "no-store" })).json();
+            const sub =
+                event.newSubscription ||
+                (await self.registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: pushKey(info.key),
+                }));
+            const json = sub.toJSON();
+            const body = new URLSearchParams({
+                csrf_token: info.csrf_token,
+                endpoint: sub.endpoint,
+                keys: JSON.stringify(json.keys || {}),
+                expiration_time: sub.expirationTime || "",
+                vapid_public_key: info.key,
+                previous_endpoint: event.oldSubscription ? event.oldSubscription.endpoint : "",
+            });
+            await fetch(PUSH_REGISTER_URL, { method: "POST", credentials: "same-origin", body });
+        })().catch(() => {
+            // Logged out or offline: the page re-registers on its next load.
+        })
+    );
+});
