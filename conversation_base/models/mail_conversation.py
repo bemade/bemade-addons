@@ -604,12 +604,62 @@ class MailConversation(models.Model):
         author_partner = (
             self.env["res.partner"].browse(author_id) if author_id else False
         )
+        to_emails, cc_emails = self._stub_recipients_without_aliases(stub)
         self._sync_participants(
             from_email=stub.get("email_from") or stub.get("author"),
             from_partner=author_partner,
-            to_emails=stub.get("to") or [],
-            cc_emails=stub.get("cc") or [],
+            to_emails=to_emails,
+            cc_emails=cc_emails,
         )
+
+    def _stub_recipients_without_aliases(self, stub):
+        """The ``to`` and ``cc`` addresses of a captured stub, as two lists,
+        without those of Odoo's own mail aliases (a team inbox, a helpdesk
+        alias), as the gateway path does through
+        ``to_filtered``/``cc_filtered``. The aliases are looked up once, over
+        To and Cc together, the way ``mail.thread.message_parse`` does, with
+        the same ``mail.alias.domain`` helper.
+
+        Only Odoo's own addresses are left out. For an alias with
+        ``alias_incoming_local`` set, ``_find_aliases`` also matches on the
+        local part alone, on any domain, when ``mail.catchall.domain.allowed``
+        is unset; so an outside ``sales@customer.example`` would be dropped
+        because some alias is called ``sales``. Its result is therefore kept
+        only for the bounce, catchall and default-from addresses of an alias
+        domain, and for addresses whose domain is one of the instance's alias
+        domains.
+        """
+        to_emails = list(stub.get("to") or [])
+        cc_emails = list(stub.get("cc") or [])
+        AliasDomain = self.env["mail.alias.domain"].sudo()
+        found = AliasDomain._find_aliases(
+            tools.email_normalize_all(",".join(to_emails + cc_emails))
+        )
+        alias_emails = set()
+        if found:
+            alias_domains = AliasDomain.search([])
+            own_domains = {name.lower() for name in alias_domains.mapped("name") if name}
+            own_addresses = {
+                email.lower()
+                for email in alias_domains.mapped("bounce_email")
+                + alias_domains.mapped("catchall_email")
+                + alias_domains.mapped("default_from_email")
+                if email
+            }
+            alias_emails = {
+                email
+                for email in found
+                if email in own_addresses or email.rpartition("@")[2] in own_domains
+            }
+
+        def without_aliases(emails):
+            return [
+                email
+                for email in emails
+                if tools.email_normalize(email) not in alias_emails
+            ]
+
+        return without_aliases(to_emails), without_aliases(cc_emails)
 
     def _sync_participants(
         self, from_email=None, from_partner=None, to_emails=None, cc_emails=None
