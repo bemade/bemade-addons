@@ -207,20 +207,11 @@ nothing; PDF reports never carry it.
         "views/sports_clinic_attendance_views.xml",
         "views/team_digest_views.xml",
         "views/sports_patient_views.xml",
-        # Task 1384: shared "Effacer"/Clear macro for long-text portal fields.
-        # Load before the portal templates that t-call it.
-        "views/portal_field_clear_templates.xml",
         # Task 1414: the portal patient combo snippet (typeahead over a real
         # <select>, « Last, First »). Load before every template that t-calls it.
         "views/portal_widgets_templates.xml",
         "views/sports_clinic_portal_views.xml",
         "views/team_digest_portal_templates.xml",
-        "views/sports_patient_injury_portal.xml",
-        "views/player_management_portal_templates.xml",
-        "views/injury_management_portal_templates.xml",
-        "views/injury_note_history_portal_templates.xml",
-        "views/task_management_portal_templates.xml",
-        "views/events_portal_templates.xml",
         "views/event_invoicing_wizard_views.xml",
         "views/event_batch_invoicing_wizard_views.xml",
         "views/event_vendor_po_wizard_views.xml",
@@ -229,16 +220,8 @@ nothing; PDF reports never carry it.
         "views/event_cancel_wizard_views.xml",
         "views/res_config_settings_views.xml",
         "views/sports_event_views.xml",
-        "views/portal_activity_detail_template.xml",
-        "views/portal_event_detail_template.xml",
-        "views/portal_event_edit_template.xml",
-        "views/portal_event_create_template.xml",
-        "views/portal_timesheets_templates.xml",
         "views/treatment_note_views.xml",
         "views/sports_quick_note_views.xml",
-        "views/quick_note_portal_templates.xml",
-        # Task 1398: the TP clinic worklist (/my/clinics, /my/clinic/<id>).
-        "views/clinic_portal_templates.xml",
         # Task 1397/1433: the public clinic sign-in kiosk (stable
         # /clinic/kiosk dispatcher, device bound by pairing code).
         "views/clinic_kiosk_templates.xml",
