@@ -1,15 +1,13 @@
 """Portal app shell (task 1538, epic #1535) — P1a.
 
-The new Fit Crew app shell renders ONLY when the system switch (task 5200,
-kit P5: the kit's ``bemade_portal_kit.enabled``, ``portal.kit.
-_pk_shell_active``) is on AND the user holds at least one app role (see
-``models/sc_app_roles.py``). With the switch off every page renders exactly
-today's template.
-
-Every migrated page picks its template through ONE helper,
-``AppShellMixin._sc_render(legacy_template, app_template, values)``, so
-flipping the switch — or removing the legacy path at P4 — is a one-line
-change per page.
+Task 1541 (P4): the clinic portal is the app only. Every clinic ``/my``
+page renders the app shell for a user who holds a clinic app role (coach,
+head coach, therapist, head therapist, doctor, clinic admin: ``STAFF`` in
+``models/sc_app_roles.py``) — whatever the kit's ``bemade_portal_kit.enabled``
+switch says (the switch stays the kit's: its own pages and the other apps
+keep their off mode). A logged-in user without a clinic role gets « Pas
+d'accès » (``sc_no_access``, 403): ``sc_app_page`` gates the GET pages,
+``AppShellMixin._sc_render(app_template, values)`` renders them.
 
 P1b (task 1542) adds:
 
@@ -23,6 +21,7 @@ P1b (task 1542) adds:
   branding (company fields filled by ``models/sc_app_pwa.py``) and its
   hooks (start URL, shortcuts, offline style).
 """
+import functools
 import json
 import logging
 import re
@@ -1026,17 +1025,39 @@ def sc_fill_moved_row_fragments(found, keys):
 
 
 
+def sc_app_page(endpoint):
+    """Task 1541: the clinic app's page gate — under ``@http.route`` on every
+    clinic GET page (and every old URL that redirects to one): a logged-in
+    user without a clinic app role gets « Pas d'accès » (403) before the
+    route runs (no redirect, no record lookup)."""
+    @functools.wraps(endpoint)
+    def wrapper(self, *args, **kwargs):
+        if not AppShellMixin._sc_app_user():
+            return AppShellMixin._sc_no_access()
+        return endpoint(self, *args, **kwargs)
+    return wrapper
+
+
 class AppShellMixin:
-    """Switch + role gate + the shell's render values. Mixed into every
-    CustomerPortal controller that serves a migrated page."""
+    """The clinic app's role gate + the shell's render values. Mixed into
+    every CustomerPortal controller that serves a clinic page."""
 
     @staticmethod
-    def _pk_shell_active():
-        """Task 5200 (kit P5): the kit's switch + role gate
-        (``portal.kit._pk_shell_active``; the same method as
-        ``PortalKitShell._pk_shell_active``, for the controllers that mix
-        this class in)."""
-        return request.env['portal.kit']._pk_shell_active()
+    def _sc_app_user(user=None):
+        """Task 1541: does ``user`` (default: the current user) hold a clinic
+        app role? The clinic has no off mode: the kit's switch is not read."""
+        user = user or request.env.user
+        if not user or user._is_public():
+            return False
+        return bool(set(user._sc_app_roles()) & sc_app_roles.STAFF)
+
+    @staticmethod
+    def _sc_no_access():
+        """Task 1541: « Pas d'accès » (HTTP 403) for a user without a clinic
+        app role."""
+        response = request.render('bemade_sports_clinic.sc_no_access', {})
+        response.status_code = 403
+        return response
 
     def _sc_booking_enabled(self):
         """The bookings addon (appointment_portal_staff) flags its home card
@@ -1390,11 +1411,12 @@ class AppShellMixin:
             'clock': (clocks or {}).get(injury.id),
         }
 
-    def _sc_render(self, legacy_template, app_template, values):
-        """THE per-page switch: the app template in the shell, else today's."""
-        if app_template and self._pk_shell_active():
-            return self._sc_shell_response(app_template, self._sc_app_values(values, app_template))
-        return request.render(legacy_template, values)
+    def _sc_render(self, app_template, values):
+        """A clinic app page (task 1541: the app only) — « Pas d'accès » for
+        a user without a clinic app role."""
+        if not self._sc_app_user():
+            return self._sc_no_access()
+        return self._sc_shell_response(app_template, self._sc_app_values(values, app_template))
 
     # ------------------------------------------------------------------
     # Task 1611: read fragments (see « Read fragments » above)

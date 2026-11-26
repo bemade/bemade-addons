@@ -8,7 +8,7 @@ from odoo.exceptions import UserError, AccessError, MissingError
 
 from .access_control_mixin import AccessControlMixin, sc_past_deadline_message
 from ..models.sc_name_match import NEAR, NameIndex, words as sc_words_of
-from .app_shell import AppShellMixin, sc_country_options, sc_state_options
+from .app_shell import AppShellMixin, sc_app_page, sc_country_options, sc_state_options
 
 # /my/teams sort modes (task 1401). Keys are what the page posts and what
 # res.users.teams_sort_mode stores; labels live in the template (translated).
@@ -213,6 +213,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             http.request.env.user, teams)
 
     @http.route(route=['/my/teams', '/my/teams/page/<int:page>'], type='http', auth='user', website=True)
+    @sc_app_page
     def view_teams(self, page=1, search=None, sort=None, **kw):
         """ Display the list of teams that a portal user has access to.
 
@@ -263,9 +264,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                  order=self._teams_order_for(sort_mode),
                                  offset=pgr['offset'],
                                  limit=step)
-        # Task 1538: the app shell (switch on) or today's template (switch off).
-        return self._sc_render('bemade_sports_clinic.portal_my_teams',
-                               'bemade_sports_clinic.sc_app_teams', {
+        return self._sc_render('bemade_sports_clinic.sc_app_teams', {
                                        'teams_count': teams_count,
                                        'teams': teams,
                                        'pager': pgr,
@@ -275,8 +274,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                        'can_rank': self._teams_can_rank(),
                                        # Task 1592: the rows' activity clocks
                                        # (one query, the shell only).
-                                       'sc_team_clocks': (self._sc_team_clocks(teams)
-                                                          if self._pk_shell_active() else {}),
+                                       'sc_team_clocks': self._sc_team_clocks(teams),
                                        'page': page,
                                        # 1577 review: a refused team lands
                                        # here with a CODE, never raw text.
@@ -392,6 +390,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
 
     @http.route(route=['/my/players', '/my/players/page/<int:page>'], type='http', auth='user', website=True)
+    @sc_app_page
     def view_players(self, page=1, **kw):
         """Display the list of players the portal user has access to, with filters.
 
@@ -500,11 +499,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # the most injured first by default (stored severity key, as the
         # roster's « By status »), switchable to alphabetical (owner review
         # 2026-10-10).
-        order = 'last_name asc, first_name asc'
-        sort_mode = None
-        if self._pk_shell_active():
-            sort_mode = self._sc_players_resolve_sort(kw.get('sort'))
-            order = SC_PLAYERS_SORT_ORDERS[sort_mode]
+        sort_mode = self._sc_players_resolve_sort(kw.get('sort'))
+        order = SC_PLAYERS_SORT_ORDERS[sort_mode]
         players = Patients_search.search(
             domain,
             order=order,
@@ -578,18 +574,14 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'practice_status_selection': practice_status_selection,
                 'players_sort_mode': sort_mode,
         }
-        # Task 1539: the app shell (switch on) or today's template, byte for
-        # byte (switch off). Shell rows are computed only for the shell.
-        if self._pk_shell_active():
-            values.update(self._sc_players_values(values, is_tp_admin))
-            # Task 1674: the near matches of a name search (first page).
-            if name_search and int(page or 1) == 1:
-                values['sc_near_rows'] = self._sc_players_near_rows(
-                    Patients_search, ([] if broaden else list(base_players_domain)),
-                    [f for f in filters if f[0] not in ('first_name', 'last_name')],
-                    domain, first_name, last_name, staff_team_ids)
-        return self._sc_render('bemade_sports_clinic.portal_my_players',
-                               'bemade_sports_clinic.sc_app_players', values)
+        values.update(self._sc_players_values(values, is_tp_admin))
+        # Task 1674: the near matches of a name search (first page).
+        if name_search and int(page or 1) == 1:
+            values['sc_near_rows'] = self._sc_players_near_rows(
+                Patients_search, ([] if broaden else list(base_players_domain)),
+                [f for f in filters if f[0] not in ('first_name', 'last_name')],
+                domain, first_name, last_name, staff_team_ids)
+        return self._sc_render('bemade_sports_clinic.sc_app_players', values)
 
     def _sc_players_near_rows(self, Patients, scope, filters, found_domain, first_name, last_name,
                               staff_team_ids, limit=10):
@@ -713,20 +705,19 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     @http.route(route=['/my/player/<int:player_id>/recent-changes'], type='http',
                 auth='user', website=True)
     def portal_player_recent_changes(self, player_id, **kw):
-        """Task 1385: lazy-load fragment of one player's recent-changes feed for
-        the homogenized portal card's expandable section.
-
-        Fetched by portal_card_recent_changes.js when a card's <details> is
-        opened, so the (per-player, mail-tracking-audit) change compute runs ONLY
-        for cards the user actually opens — not for every card at page render.
+        """The app's team page: one player's whole change detail (the legacy
+        card's expandable, each injury's changes inside its own card),
+        fetched with ``?detail=1`` when a row is expanded.
 
         Access is enforced in code exactly like the other /my/player* routes
         (_check_access_to_patient: staff-on-team or admin), so no new security
-        record is needed. The injury de-dup is applied server-side here: a change
-        to an active injury already shown in the card's static section is dropped
-        (it is marked there instead); only changes to injuries NOT shown up top,
-        plus player-level changes, remain.
+        record is needed.
+
+        Task 1541: the legacy card's lazy feed (no ``detail``, task 1385) is
+        gone with the legacy cards: 404.
         """
+        if not kw.get('detail'):
+            return http.request.not_found()
         try:
             player = self._check_access_to_patient(int(player_id))
         except UserError as e:
@@ -737,38 +728,24 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             })
             response.status_code = 403
             return response
-        user = http.request.env.user
         is_tp = self._is_tp_or_system()
         role = 'tp' if is_tp else 'coach'
         Patients = http.request.env['sports.patient']
         cutoff = Patients._dashboard_window_cutoff()
-        # The static section shows the active injuries the viewer can see (the
-        # coach record rule already hides hidden-from-coaches ones). De-dup uses
-        # exactly that set.
-        shown_injury_ids = player.injury_ids.filtered(
-            lambda i: i.stage == 'active').ids
-        if kw.get('detail'):
-            # The app shell's team page: the legacy card's whole expandable in
-            # one fragment, each injury's changes inside its own card.
-            values = player._sc_change_detail(role, is_tp, cutoff)
-            values['player'] = player
-            # Task 1626: the detail ends with « Open the player page », with
-            # the team context when given (as the row detail does).
-            try:
-                team_id = int(kw.get('team_id') or 0)
-            except ValueError:
-                team_id = 0
-            player_url = '/my/player?player_id=%s' % player.id
-            if team_id and team_id in player.sudo().team_ids.ids:
-                player_url += '&team_id=%s' % team_id
-            values['player_url'] = player_url
-            return http.request.render(
-                'bemade_sports_clinic.sc_player_change_detail', values)
-        items = player._dashboard_change_items_deduped(role, cutoff, shown_injury_ids)
+        values = player._sc_change_detail(role, is_tp, cutoff)
+        values['player'] = player
+        # Task 1626: the detail ends with « Open the player page », with
+        # the team context when given (as the row detail does).
+        try:
+            team_id = int(kw.get('team_id') or 0)
+        except ValueError:
+            team_id = 0
+        player_url = '/my/player?player_id=%s' % player.id
+        if team_id and team_id in player.sudo().team_ids.ids:
+            player_url += '&team_id=%s' % team_id
+        values['player_url'] = player_url
         return http.request.render(
-            'bemade_sports_clinic.portal_card_recent_changes_fragment',
-            {'items': items, 'player': player},
-        )
+            'bemade_sports_clinic.sc_player_change_detail', values)
 
     @http.route(route=['/my/player/<int:player_id>/row-detail'], type='http',
                 auth='user', website=True)
@@ -838,6 +815,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
     @http.route(route=['/my/player'], type='http',
                 auth='user', website=True)
+    @sc_app_page
     def view_player(self, player_id, team_id=None,**kw):
         """ Display the active injuries for a given player. """
         player_id = int(player_id)
@@ -1091,13 +1069,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'contacts_tab_return_q': contacts_tab_return_q,
                 'add_contact_url': add_contact_url,
         }
-        # Task 1539: the app shell (switch on) or today's template, byte for
-        # byte (switch off — including the e-mail deep links). The shell-only
-        # values are computed only when the shell renders.
-        if self._pk_shell_active():
-            values.update(self._sc_player_values(player, values, kw))
-        return self._sc_render('bemade_sports_clinic.portal_my_player_injuries',
-                               'bemade_sports_clinic.sc_app_player', values)
+        values.update(self._sc_player_values(player, values, kw))
+        return self._sc_render('bemade_sports_clinic.sc_app_player', values)
 
     # ------------------------------------------------------------------
     # Task 1539 — the player page in the app shell

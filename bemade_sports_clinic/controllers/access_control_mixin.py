@@ -416,7 +416,7 @@ class AccessControlMixin:
         if not allowed:
             return link
         link['url'] = pattern % record.id
-        if model == 'sports.patient.injury' and self._pk_shell_active():
+        if model == 'sports.patient.injury':
             # Task 1616: the injury's open card (no injury page any more).
             link['url'] = self._sc_injury_card_url(record)
         if model == 'sports.patient':

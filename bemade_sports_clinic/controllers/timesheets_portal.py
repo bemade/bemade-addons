@@ -7,7 +7,7 @@ from urllib.parse import quote as url_quote
 import logging
 
 from .access_control_mixin import AccessControlMixin
-from .app_shell import AppShellMixin
+from .app_shell import AppShellMixin, sc_app_page
 
 _logger = logging.getLogger(__name__)
 
@@ -50,6 +50,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return domain
 
     @http.route(['/my/sc/timesheets', '/my/sc/timesheets/page/<int:page>'], type='http', auth='user', website=True)
+    @sc_app_page
     def view_timesheets(self, page=1, date_from=None, date_to=None, team_id=None, organization_id=None, group_by=None, sortby=None, search=None, **kw):
         _logger.warning("[TimesheetsPortal] ENTER /my/sc/timesheets page=%s", page)
         user = http.request.env.user
@@ -178,11 +179,8 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # Mapping of timesheet.id -> localized datetime strings for edit modal fields
             'timesheet_local_dt': local_dt_map,
         }
-        # Task 1540: the app shell (switch on) or today's template (off).
-        if self._pk_shell_active():
-            values.update(self._sc_timesheets_values(values, kw))
-        return self._sc_render('bemade_sports_clinic.portal_timesheets_list',
-                               'bemade_sports_clinic.sc_app_timesheets', values)
+        values.update(self._sc_timesheets_values(values, kw))
+        return self._sc_render('bemade_sports_clinic.sc_app_timesheets', values)
 
     def _sc_timesheets_values(self, values, kw):
         """/my/sc/timesheets in the shell: the same search, one card per
