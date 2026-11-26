@@ -387,19 +387,22 @@ class TestInjuryNoteHistory(PortalCovCommon):
     def test_portal_tp_sees_both_scopes(self):
         injury = self._seed_http_fixture()
         self._login_tp()
-        resp = self.url_open(f'/my/injury/{injury.id}/notes/history')
+        resp = self.url_open(f'/my/injury/{injury.id}/notes/history/fragment')
         self.assertEqual(resp.status_code, 200)
         self.assertIn('SecretInternal1241', resp.text)
         self.assertIn('VisibleExternal1241', resp.text)
 
+    # Task 1541: the history page is gone (an old link lands on the injury
+    # card); the history is the card's sheet, /notes/history/fragment — the
+    # same role / scope rules, checked here.
     def test_portal_tp_scope_filter(self):
         injury = self._seed_http_fixture()
         self._login_tp()
-        resp = self.url_open(f'/my/injury/{injury.id}/notes/history?scope=internal')
+        resp = self.url_open(f'/my/injury/{injury.id}/notes/history/fragment?scope=internal')
         self.assertEqual(resp.status_code, 200)
         self.assertIn('SecretInternal1241', resp.text)
         self.assertNotIn('VisibleExternal1241', resp.text)
-        resp = self.url_open(f'/my/injury/{injury.id}/notes/history?scope=external')
+        resp = self.url_open(f'/my/injury/{injury.id}/notes/history/fragment?scope=external')
         self.assertEqual(resp.status_code, 200)
         self.assertNotIn('SecretInternal1241', resp.text)
         self.assertIn('VisibleExternal1241', resp.text)
@@ -407,7 +410,7 @@ class TestInjuryNoteHistory(PortalCovCommon):
     def test_portal_coach_sees_external_only(self):
         injury = self._seed_http_fixture()
         self._login_coach()
-        resp = self.url_open(f'/my/injury/{injury.id}/notes/history')
+        resp = self.url_open(f'/my/injury/{injury.id}/notes/history/fragment')
         self.assertEqual(resp.status_code, 200)
         self.assertNotIn('SecretInternal1241', resp.text)
         self.assertIn('VisibleExternal1241', resp.text)
@@ -417,7 +420,7 @@ class TestInjuryNoteHistory(PortalCovCommon):
         self._login_coach()
         for tampered in ('internal', 'all', 'bogus'):
             resp = self.url_open(
-                f'/my/injury/{injury.id}/notes/history?scope={tampered}')
+                f'/my/injury/{injury.id}/notes/history/fragment?scope={tampered}')
             self.assertEqual(resp.status_code, 200)
             self.assertNotIn('SecretInternal1241', resp.text,
                              f"scope={tampered} must not leak internal notes")
@@ -425,7 +428,7 @@ class TestInjuryNoteHistory(PortalCovCommon):
     def test_portal_unrelated_user_denied(self):
         injury = self._seed_http_fixture()
         self._login_plain()
-        resp = self.url_open(f'/my/injury/{injury.id}/notes/history')
+        resp = self.url_open(f'/my/injury/{injury.id}/notes/history/fragment')
         self.assertEqual(resp.status_code, 403)
         self.assertNotIn('SecretInternal1241', resp.text)
         self.assertNotIn('VisibleExternal1241', resp.text)
@@ -448,23 +451,3 @@ class TestInjuryNoteHistory(PortalCovCommon):
         self.assertEqual(rows.content, 'Portal-authored internal 1241')
         self.assertEqual(rows.author_id, self.tp)
 
-    def test_history_page_breadcrumbs(self):
-        """Candidate human-test finding (2026-07-10): the history page must
-        carry a breadcrumb trail back to where it was reached from — team-aware
-        when a team context is passed, player-centric otherwise."""
-        injury = self._seed_http_fixture()
-        self._login_tp()
-        url = f'/my/injury/{injury.id}/notes/history'
-
-        resp = self.url_open(url)
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn('breadcrumb', resp.text)
-        self.assertIn('Edit Injury', resp.text)
-        self.assertIn('/my/players', resp.text)
-
-        team = injury.patient_id.team_ids[:1]
-        if team:
-            resp = self.url_open(f'{url}?team_id={team.id}')
-            self.assertEqual(resp.status_code, 200)
-            self.assertIn('/my/teams', resp.text)
-            self.assertIn(f'team_id={team.id}', resp.text)

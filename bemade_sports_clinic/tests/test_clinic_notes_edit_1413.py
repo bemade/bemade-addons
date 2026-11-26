@@ -158,52 +158,6 @@ class TestClinicNotesEdit1413(HttpCase):
         self.assertTrue(match, 'select %s not rendered' % select_id)
         return match.group(0)
 
-    # ==================================================================
-    # clinic add-note form: « Linked injury » select
-    # ==================================================================
-    def test_clinic_select_default_single_active_injury(self):
-        self.authenticate('ne.tp@example.com', 'ne-tp-pass')
-        html = self.url_open(self.dossier_url).text
-        block = self._select_block(html, 'clinic_note_injury')
-        self.assertIn('<option value="">', block)
-        self.assertRegex(block, r'<option value="%s"\s+selected="selected">' % self.injury.id)
-        self.assertIn('Synthetic sprain A', block)
-
-    def test_clinic_select_default_general_with_two_active(self):
-        second = self.env['sports.patient.injury'].create({
-            'patient_id': self.patient.id,
-            'diagnosis': 'Synthetic sprain B',
-        })
-        second.with_context(mail_notrack=True).write({'stage': 'active'})
-        self.authenticate('ne.tp@example.com', 'ne-tp-pass')
-        html = self.url_open(self.dossier_url).text
-        block = self._select_block(html, 'clinic_note_injury')
-        self.assertIn('Synthetic sprain A', block)
-        self.assertIn('Synthetic sprain B', block)
-        self.assertNotIn('selected="selected"', block)
-
-    def test_clinic_add_note_with_injury_links_it(self):
-        self.authenticate('ne.tp@example.com', 'ne-tp-pass')
-        before = self._note_count()
-        resp = self.url_open('/my/injury/note/add', data={
-            'csrf_token': self._csrf(), 'patient_id': self.patient.id,
-            'event_id': self.clinic.id, 'injury_id': self.injury.id,
-            'note': 'Synthetic linked note', 'return_url': self.clinic_notes_return,
-        }, allow_redirects=False)
-        self.assertEqual(resp.status_code, 303)
-        self.assertEqual(resp.headers['Location'], self.dossier_url + '&success=note_added#clinic-notes')
-        self.assertEqual(self._note_count(), before + 1)
-        note = self.env['sports.treatment.note'].sudo().search(
-            [('patient_id', '=', self.patient.id)], order='id desc', limit=1)
-        self.assertEqual(note.injury_id, self.injury)
-        self.assertEqual(note.event_id, self.clinic)
-        self.assertEqual(note.user_id, self.tp)
-        self.assertEqual(note.note_type, 'injury')
-        # A fresh note is never « modified ».
-        self.assertFalse(note.modified_label)
-        # The dossier shows the injury badge on the new row.
-        html = self.url_open(self.dossier_url).text
-        self.assertIn('o_sc_note_injury', html)
 
     def test_clinic_add_note_foreign_injury_refused(self):
         self.authenticate('ne.tp@example.com', 'ne-tp-pass')
@@ -221,67 +175,6 @@ class TestClinicNotesEdit1413(HttpCase):
         html = self.url_open(resp.headers['Location']).text
         self.assertIn('The selected injury does not belong to this patient.', html)
 
-    # ==================================================================
-    # « Edit » control visibility
-    # ==================================================================
-    def test_dossier_edit_control_only_on_own_notes(self):
-        self.authenticate('ne.tp@example.com', 'ne-tp-pass')
-        html = self.url_open(self.dossier_url).text
-        self.assertIn('action="%s"' % self._edit_url(self.note_tp), html)
-        self.assertNotIn('action="%s"' % self._edit_url(self.note_tp2), html)
-        self.assertNotIn('o_sc_note_modified', html)
-        # The edit form is prefilled with the stored values and returns here.
-        self.assertRegex(html, r'<textarea name="note"[^>]*>\s*Synthetic note by TP one\s*</textarea>')
-        self.assertIn('value="%s"' % self.clinic_notes_return, html)
-
-    def test_player_page_edit_control_only_on_own_notes(self):
-        self.authenticate('ne.tp2@example.com', 'ne-tp2-pass')
-        html = self.url_open('/my/player?player_id=%s&clinic_id=%s' % (
-            self.patient.id, self.clinic.id)).text
-        self.assertIn('action="%s"' % self._edit_url(self.note_tp2), html)
-        self.assertNotIn('action="%s"' % self._edit_url(self.note_tp), html)
-        self.assertIn('value="%s"' % self.player_notes_return.replace('&', '&amp;'), html)
-
-    def test_admin_sees_edit_on_every_note(self):
-        self.authenticate('ne.admin@example.com', 'ne-admin-pass')
-        html = self.url_open(self.dossier_url).text
-        self.assertIn('action="%s"' % self._edit_url(self.note_tp), html)
-        self.assertIn('action="%s"' % self._edit_url(self.note_tp2), html)
-
-    # ==================================================================
-    # POST /my/injury/note/<id>/edit
-    # ==================================================================
-    def test_author_edit_ok_from_clinic(self):
-        self.authenticate('ne.tp@example.com', 'ne-tp-pass')
-        new_date = fields.Date.today() - timedelta(days=1)
-        resp = self._post_edit(self.note_tp, {
-            'note': '  Synthetic note by TP one — revised  ',
-            'date': new_date.isoformat(), 'injury_id': self.injury.id,
-        })
-        self.assertEqual(resp.status_code, 303)
-        self.assertEqual(resp.headers['Location'], self.dossier_url + '&success=note_updated#clinic-notes')
-        self.note_tp.invalidate_recordset()
-        self.assertEqual(self.note_tp.note, 'Synthetic note by TP one — revised')
-        self.assertEqual(self.note_tp.date, new_date)
-        self.assertEqual(self.note_tp.injury_id, self.injury)
-        self.assertEqual(self.note_tp.user_id, self.tp)
-        # The change is logged on the note's chatter (tracked fields).
-        tracked = self.note_tp.message_ids.tracking_value_ids.mapped('field_id.name')
-        self.assertIn('note', tracked)
-        self.assertIn('injury_id', tracked)
-        # « modified on … by <full name> » (owner review 2026-10-11: full
-        # name, date + time) — by the editor, visible on both pages.
-        self.assertTrue(self.note_tp.modified_label)
-        self.assertIn('Nina Therapist', self.note_tp.modified_label)
-        html = self.url_open(resp.headers['Location']).text
-        self.assertIn('Treatment note updated.', html)
-        self.assertIn('o_sc_note_modified', html)
-        self.assertIn('o_sc_note_injury', html)
-        html = self.url_open('/my/player?player_id=%s' % self.patient.id).text
-        self.assertIn('o_sc_note_modified', html)
-        # The other note is untouched and still not « modified ».
-        self.note_tp2.invalidate_recordset()
-        self.assertFalse(self.note_tp2.modified_label)
 
     def test_author_edit_ok_from_player_page(self):
         self.authenticate('ne.tp2@example.com', 'ne-tp2-pass')
@@ -347,23 +240,6 @@ class TestClinicNotesEdit1413(HttpCase):
             'csrf_token': self._csrf(), 'note': 'x'}, allow_redirects=False)
         self.assertEqual(resp.status_code, 404)
 
-    def test_empty_note_refused_inline(self):
-        self.authenticate('ne.tp@example.com', 'ne-tp-pass')
-        resp = self._post_edit(self.note_tp, {
-            'note': '   \n  ', 'date': self.note_tp.date.isoformat(), 'injury_id': self.injury.id,
-        })
-        self.assertEqual(resp.status_code, 303)
-        self.assertEqual(
-            resp.headers['Location'],
-            self.dossier_url + '&error=empty_note&note_id=%s#clinic-notes' % self.note_tp.id)
-        self.note_tp.invalidate_recordset()
-        self.assertEqual(self.note_tp.note, 'Synthetic note by TP one')
-        self.assertFalse(self.note_tp.injury_id)
-        html = self.url_open(resp.headers['Location']).text
-        # That note's form is re-opened with the error inline, no top alert.
-        self.assertRegex(html, r'<details class="o_sc_note_edit[^"]*"\s+open="open">')
-        self.assertIn('Please enter a treatment note.', html)
-        self.assertNotIn('alert alert-danger', html)
 
     def test_foreign_injury_refused_on_edit(self):
         self.authenticate('ne.tp@example.com', 'ne-tp-pass')

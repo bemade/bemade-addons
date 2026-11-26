@@ -81,12 +81,6 @@ class TestPortalInjuryCreate1240(HttpCase):
         self.assertIn('name="team_context_id" value="%s"' % self.team.id, html)
         self.assertNotIn('<select name="team_id"', html)
 
-    def test_edit_page_has_no_tp_picker(self):
-        self.authenticate('tp1@example.com', 'tp1')
-        html = self.url_open('/my/injury/edit?injury_id=%s' % self.injury.id).text
-        self.assertIn('action="/my/injury/save"', html)
-        self.assertNotIn('treatment_professional_ids', html)
-        self.assertNotIn('Select multiple professionals', html)
 
     # --------------------------------------------------------------- create
     def test_tp_creates_for_multi_team_player_without_team(self):
@@ -97,7 +91,9 @@ class TestPortalInjuryCreate1240(HttpCase):
             'patient_id': str(self.multi_patient.id),
             'diagnosis': 'Hamstring strain',
         }, timeout=30, allow_redirects=False)
-        self.assertEqual(resp.status_code, 200, "no « team required » bounce")
+        # Task 1541: lands on the player's Injuries tab (no « created » page).
+        self.assertEqual(resp.status_code, 303, "no « team required » bounce")
+        self.assertIn('/my/player?player_id=%s' % self.multi_patient.id, resp.headers['Location'])
         injury = self._latest_injury(self.multi_patient)
         self.assertTrue(injury and injury.id not in before, 'Injury should be created')
         self.assertEqual(injury.stage, 'active')

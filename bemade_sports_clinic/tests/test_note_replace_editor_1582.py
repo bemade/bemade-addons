@@ -165,16 +165,6 @@ class TestNoteReplaceEditor1582(PlayerInlineCommon):
         # (task 1601) the replace editor shows under the current text.
         self.assertTrue(resp.json().get('hint'))
 
-    # -- UC-R6 -----------------------------------------------------------
-    def test_legacy_edit_form_placeholder(self):
-        self._switch(False)
-        self._login_tp()
-        _text, tree = self._get(self.edit_url)
-        for fname in NOTE_FIELDS:
-            area = tree.xpath('//textarea[@name="%s"]' % fname)
-            self.assertTrue(area, fname)
-            self.assertEqual(area[0].get('placeholder'), HELP)
-
 
 @tagged('post_install', '-at_install')
 class TestNoteChangeRender1582(TransactionCase):
@@ -310,14 +300,3 @@ class TestNoteReplaceFr1582(TestAppShellI18n1538):
         self.assertNotIn('Historique des notes externes', titles)
         self.assertNotIn('Historique des notes internes', titles)
 
-    def test_legacy_placeholder_and_digest_in_french(self):
-        self._switch(False)
-        self._login_tp()
-        text = self._text('/my/injury/edit?injury_id=%s' % self.injury.id)
-        self.assertIn("État actuel (remplace le texte précédent; l'historique conserve les versions)", text)
-        out = str(self.env['ir.qweb'].with_context(lang='fr_CA')._render(
-            'bemade_sports_clinic.dashboard_change_items', {'items': [{
-                'category': 'note', 'field': 'external_notes', 'label': 'Notes externes',
-                'value': 'T1582 fr', 'old_value': '', 'preview': 'T1582 fr', 'is_long': False,
-                'icon': 'fa-sticky-note', 'injury_diagnosis': 'T1582 dx'}]}))
-        self.assertIn('Nouvelle note', out)

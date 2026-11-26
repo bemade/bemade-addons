@@ -44,17 +44,6 @@ def _load_fr(env):
 
 
 @tagged('post_install', '-at_install')
-class TestInjuryReportFrench1739(TransactionCase):
-
-    def test_submitted_masculine(self):
-        _load_fr(self.env)
-        arch = self.env.ref('bemade_sports_clinic.portal_injury_created').with_context(
-            lang='fr_CA').arch_db
-        self.assertIn('Votre rapport de blessure a été soumis avec succès.', arch)
-        self.assertNotIn('soumise avec succès', arch)
-
-
-@tagged('post_install', '-at_install')
 class TestInvoicedCard1739(TimesheetSent1731Common):
 
     def test_invoiced_card_chip_only(self):

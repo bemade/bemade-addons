@@ -25,6 +25,7 @@ from lxml import html as lxml_html
 
 from odoo import Command
 from odoo.tests import tagged
+from odoo.tools.misc import mute_logger
 
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
@@ -101,6 +102,20 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
         self.assertEqual(target.path, '/my/team')
         self.assertEqual(args.get('tab'), ['players'])
         self.assertEqual(args.get('success'), ['player_added_to_team'])
+
+    @mute_logger('odoo.addons.bemade_sports_clinic.controllers.team_management_portal')
+    def test_invalid_dob_is_refused_not_500(self):
+        """Task 1541: moved from the deleted /add_player/submit test — a
+        malformed date of birth is a refusal on the app's route, never a 500,
+        and creates nothing."""
+        self._login_tp()
+        resp = self.url_open('/my/team/%s/player/add' % self.team_a.id, data={
+            'csrf_token': self._csrf(), 'first_name': 'Baddob', 'last_name': 'Synthetic1541',
+            'date_of_birth': 'garbage', 'force_new': '1', 'sc_inline': '1',
+        }, allow_redirects=False)
+        self.assertLess(resp.status_code, 500, resp.text[:200])
+        self.assertFalse(self.env['sports.patient'].sudo().search_count(
+            [('last_name', '=', 'Synthetic1541')]))
 
     # -- UC-AP4 ----------------------------------------------------------
     def test_create_new_opens_player(self):

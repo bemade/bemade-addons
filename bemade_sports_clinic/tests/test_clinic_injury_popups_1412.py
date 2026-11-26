@@ -141,76 +141,6 @@ class TestClinicInjuryPopups1412(HttpCase):
         self.assertNotIn('DOMContentLoaded', html)
         return html
 
-    # ==================================================================
-    # fragments — rendering
-    # ==================================================================
-    def test_create_fragment_tp(self):
-        self.authenticate('ip.tp@example.com', 'ip-tp')
-        html = self._assert_fragment_alone(self.url_open(self.create_fragment_url))
-        self.assertIn('action="/my/patient/injury/create"', html)
-        self.assertIn('name="patient_id" value="%s"' % self.patient.id, html)
-        self.assertIn('name="clinic_id" value="%s"' % self.clinic.id, html)
-        self.assertIn(
-            'name="return_url" value="/my/clinic/%s?patient=%s#clinic-injuries"' % (
-                self.clinic.id, self.patient.id), html)
-        # Task 1240: no team block and no treatment-professional input at all
-        # (the nav team_context_id stays); pre-fill: stage Active.
-        self.assertNotIn('name="team_id"', html)
-        self.assertNotIn('treatment_professional_ids', html)
-        self.assertIn('type="hidden" name="team_context_id" value="%s"' % self.team.id, html)
-        # Quick-add has no Status control (owner review 2026-08-22): Active, hidden.
-        self.assertNotIn('<select name="stage"', html)
-        self.assertRegex(html, r'<input[^>]*name="stage"[^>]*value="active"')
-        # Reduced field set: no parental consent; the rest present.
-        self.assertNotIn('name="parental_consent"', html)
-        for fname in ('diagnosis', 'injury_date', 'injury_date_na', 'predicted_resolution_date',
-                      'hidden_from_coaches', 'external_notes', 'internal_notes'):
-            self.assertIn('name="%s"' % fname, html, fname)
-
-    def test_create_fragment_multi_team_patient_no_team_select(self):
-        """Task 1240: a multi-team patient (clinic team not among them) gets
-        NO « which team? » select — the injury carries no team."""
-        self.authenticate('ip.tp@example.com', 'ip-tp')
-        third = self.env['sports.team'].create({'name': 'IP Third Team', 'parent_id': self.org.id})
-        for team in (third, self.other_team):
-            self.env['sports.team.staff'].create({
-                'team_id': team.id, 'partner_id': self.tp.partner_id.id, 'role': 'therapist'})
-        self.patient.team_ids = [Command.set([self.other_team.id, third.id])]
-        html = self._assert_fragment_alone(self.url_open(self.create_fragment_url))
-        self.assertNotIn('name="team_id"', html)
-        self.assertNotIn('-- Select team --', html)
-        self.assertIn('action="/my/patient/injury/create"', html)
-
-    def test_edit_fragment_tp(self):
-        self.authenticate('ip.tp@example.com', 'ip-tp')
-        html = self._assert_fragment_alone(self.url_open(self.edit_fragment_url))
-        self.assertIn('action="/my/injury/save"', html)
-        self.assertIn('name="injury_id" value="%s"' % self.injury.id, html)
-        self.assertIn('name="clinic_id" value="%s"' % self.clinic.id, html)
-        self.assertIn(
-            'name="return_url" value="/my/clinic/%s?patient=%s#clinic-injury-%s"' % (
-                self.clinic.id, self.patient.id, self.injury.id), html)
-        self.assertIn('Synthetic popup strain', html)
-        # Full field set: stage, consent, notes — no TP checklist (task 1240).
-        self.assertNotIn('treatment_professional_ids', html)
-        self.assertIn('<select name="stage"', html)
-        self.assertIn('name="parental_consent"', html)
-        self.assertRegex(html, r'<textarea name="internal_notes"[^>]*>\s*int p1\s*</textarea>')
-        # Sub-page links go to the full pages, clinic context kept.
-        self.assertIn('/my/injury/documents?injury_id=%s&amp;clinic_id=%s' % (self.injury.id, self.clinic.id), html)
-        self.assertIn('/my/injury/%s/notes/history?clinic_id=%s' % (self.injury.id, self.clinic.id), html)
-        self.assertIn('/my/injury/edit?injury_id=%s&amp;clinic_id=%s' % (self.injury.id, self.clinic.id), html)
-        # No delete modal / script in the fragment.
-        self.assertNotIn('deleteInjuryModal', html)
-
-    def test_edit_fragment_ignores_foreign_patient_param(self):
-        """?patient= is never trusted: the return_url selects the INJURY's patient."""
-        self.authenticate('ip.tp@example.com', 'ip-tp')
-        url = '/my/injury/%s/form/fragment?clinic_id=%s&patient=%s' % (
-            self.injury.id, self.clinic.id, self.other_patient.id)
-        html = self._assert_fragment_alone(self.url_open(url))
-        self.assertIn('value="/my/clinic/%s?patient=%s#clinic-injury-%s"' % (
-            self.clinic.id, self.patient.id, self.injury.id), html)
 
     # ==================================================================
     # fragments — access
@@ -224,35 +154,6 @@ class TestClinicInjuryPopups1412(HttpCase):
         self.assertNotIn('/my/patient/injury/create', resp.text)
         self.assertNotIn('/my/injury/save', resp.text)
 
-    def test_fragments_coach_forbidden(self):
-        self.authenticate('ip.coach@example.com', 'ip-coach')
-        self._assert_403(self.create_fragment_url)
-        self._assert_403(self.edit_fragment_url)
-
-    def test_fragments_staffer_without_tp_group_forbidden(self):
-        self.authenticate('ip.staffer@example.com', 'ip-staffer')
-        self._assert_403(self.create_fragment_url)
-        self._assert_403(self.edit_fragment_url)
-
-    def test_fragments_tp_other_team_patient_forbidden(self):
-        self.authenticate('ip.tp@example.com', 'ip-tp')
-        self._assert_403('/my/patient/injury/new/fragment?patient_id=%s&clinic_id=%s' % (
-            self.other_patient.id, self.clinic.id))
-        self._assert_403('/my/injury/%s/form/fragment?clinic_id=%s' % (
-            self.other_injury.id, self.clinic.id))
-
-    def test_fragments_require_a_real_clinic(self):
-        self.authenticate('ip.tp@example.com', 'ip-tp')
-        # missing clinic_id
-        self._assert_403('/my/patient/injury/new/fragment?patient_id=%s' % self.patient.id)
-        self._assert_403('/my/injury/%s/form/fragment' % self.injury.id)
-        # a game is not a clinic
-        self._assert_403('/my/patient/injury/new/fragment?patient_id=%s&clinic_id=%s' % (
-            self.patient.id, self.game.id))
-        self._assert_403('/my/injury/%s/form/fragment?clinic_id=%s' % (self.injury.id, self.game.id))
-        # garbage
-        self._assert_403('/my/patient/injury/new/fragment?patient_id=%s&clinic_id=abc' % self.patient.id)
-        self._assert_403('/my/patient/injury/new/fragment?patient_id=%s&clinic_id=999999' % self.patient.id)
 
     # ==================================================================
     # create from the clinic
@@ -313,23 +214,28 @@ class TestClinicInjuryPopups1412(HttpCase):
         self.assertEqual(self._new_injuries(before).stage, 'active')
 
     def test_create_without_clinic_return_url_unchanged(self):
-        """Today's behaviour for everyone else: the « created » page."""
+        """Task 1541 (rewritten): everyone else lands on the player's
+        Injuries tab with the new injury open (task 1579), never on a POST
+        result page."""
         self.authenticate('ip.tp@example.com', 'ip-tp')
         before = self.patient.injury_ids.ids
         resp = self.url_open('/my/patient/injury/create', data=self._create_payload(
             return_url='/my/player?player_id=%s' % self.patient.id, clinic_id=''),
             allow_redirects=False)
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn('successfully submitted', resp.text)
-        self.assertIn('href="/my/player?player_id=%s"' % self.patient.id, resp.text)
-        self.assertEqual(len(self._new_injuries(before)), 1)
+        self.assertEqual(resp.status_code, 303)
+        created = self._new_injuries(before)
+        self.assertEqual(len(created), 1)
+        location = resp.headers['Location']
+        self.assertIn('/my/player?player_id=%s' % self.patient.id, location)
+        self.assertIn('created=%s' % created.id, location)
 
     def test_create_offhost_return_url_is_not_followed(self):
         self.authenticate('ip.tp@example.com', 'ip-tp')
         resp = self.url_open('/my/patient/injury/create', data=self._create_payload(
             return_url='https://evil.example.com/my/clinic/1'), allow_redirects=False)
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn('successfully submitted', resp.text)
+        # Task 1541 (rewritten): a same-site redirect, never the posted host.
+        self.assertEqual(resp.status_code, 303)
+        self.assertNotIn('evil.example.com', resp.headers['Location'])
 
     def test_create_stage_ignored_for_coach(self):
         self.authenticate('ip.coach@example.com', 'ip-coach')
@@ -339,7 +245,7 @@ class TestClinicInjuryPopups1412(HttpCase):
             'diagnosis': 'Coach report',
             'injury_date': fields.Date.today().isoformat(), 'stage': 'active',
         }, allow_redirects=False)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 303)
         self.assertEqual(self._new_injuries(before).stage, 'unverified')
 
     # ==================================================================
@@ -388,48 +294,4 @@ class TestClinicInjuryPopups1412(HttpCase):
         self.assertTrue(resp.headers['Location'].startswith(
             '/my/injury/edit?injury_id=%s&success=injury_updated' % self.injury.id))
 
-    # ==================================================================
-    # the dossier + the full pages
-    # ==================================================================
-    def test_dossier_carries_modal_and_fragment_urls(self):
-        self.authenticate('ip.tp@example.com', 'ip-tp')
-        html = self.url_open(self.dossier_url).text
-        self.assertIn('id="clinicInjuryModal"', html)
-        self.assertIn('o_sc_injury_modal_body', html)
-        self.assertIn(
-            'data-fragment-url="/my/patient/injury/new/fragment?patient_id=%s&amp;clinic_id=%s"' % (
-                self.patient.id, self.clinic.id), html)
-        self.assertIn(
-            'data-fragment-url="/my/injury/%s/form/fragment?clinic_id=%s&amp;patient=%s"' % (
-                self.injury.id, self.clinic.id, self.patient.id), html)
-        # The no-JS hrefs: the full pages in clinic context (#1410).
-        self.assertIn(
-            'href="/my/patient/injury/new?patient_id=%s&amp;clinic_id=%s&amp;team_id=%s"' % (
-                self.patient.id, self.clinic.id, self.team.id), html)
-        self.assertIn(
-            'href="/my/injury/edit?injury_id=%s&amp;clinic_id=%s&amp;team_id=%s"' % (
-                self.injury.id, self.clinic.id, self.team.id), html)
-        self.assertIn('data-bs-target="#clinicInjuryModal"', html)
-        # The #1411 inline note forms stay.
-        self.assertIn('name="partial" value="1"', html)
 
-    def test_full_pages_still_render_their_forms(self):
-        self.authenticate('ip.tp@example.com', 'ip-tp')
-        html = self.url_open('/my/patient/injury/new?patient_id=%s&clinic_id=%s' % (
-            self.patient.id, self.clinic.id)).text
-        self.assertIn('action="/my/patient/injury/create"', html)
-        self.assertIn('Create Injury', html)
-        self.assertIn('name="parental_consent"', html)
-        self.assertNotIn('treatment_professional_ids', html)   # task 1240
-        self.assertNotIn('<select name="stage"', html)   # no stage on the full create form
-        self.assertNotIn('data-bs-dismiss="modal"', html)
-        self.assertIn('DOMContentLoaded', html)
-        self.assertIn('breadcrumb', html)
-        html = self.url_open('/my/injury/edit?injury_id=%s&clinic_id=%s' % (
-            self.injury.id, self.clinic.id)).text
-        self.assertIn('action="/my/injury/save"', html)
-        self.assertIn('Save Changes', html)
-        self.assertIn('deleteInjuryModal', html)
-        self.assertIn('Synthetic popup strain', html)
-        self.assertIn('DOMContentLoaded', html)
-        self.assertIn('breadcrumb', html)

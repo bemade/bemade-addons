@@ -294,6 +294,9 @@ def sc_pages(kit):
                        parent=lambda v: ('pk_app_more', {})),
         pk_static_page('sc_app_timesheets', '/my/sc/timesheets', label('timesheets'),
                        parent=lambda v: ('pk_app_more', {})),
+        # Review 2026-11-26 (#1541): a page refused to an app user, drawn at
+        # the refused URL (no URL / path of its own); back = the dashboard.
+        Page('sc_app_refused', parent=lambda v: ('sc_app_home', {})),
         # Task 5201 (kit P6): « Installer l'application » is
         # bemade_portal_kit_pwa's page (pk_app_install).
         # Task 1606: « Paramètres », opened from the user menu (not a page of

@@ -8,6 +8,8 @@ Acceptance criteria:
 """
 from datetime import datetime, timedelta
 
+from lxml import html as lxml_html
+
 from odoo import Command
 from odoo.tests import tagged
 
@@ -41,11 +43,14 @@ class TestEventDetailTimesheetConfidentiality(PortalCovCommon):
         resp = self.url_open(f'/my/event/{self.event.id}')
         self.assertEqual(resp.status_code, 200)
         self.assertIn('My Timesheets', resp.text)
-        # Own row renders in the timesheet table (name cell markup)...
-        self.assertIn('<span>PC TP</span>', resp.text)
-        # ...but the other TP's row must not (their name may still appear in the
-        # Assigned Staff panel, which uses different markup).
-        self.assertNotIn('<span>PC TP Two</span>', resp.text)
+        # Task 1541 (rewritten for the app's event page): the timesheet rows
+        # are the viewer's own only — the other TP's row never renders (their
+        # name may still appear in the Assigned Staff section).
+        tree = lxml_html.fromstring(resp.text)
+        rows = {int(i) for i in tree.xpath('//*[@data-sc-timesheet-id]/@data-sc-timesheet-id')}
+        self.assertIn(self.timesheet.id, rows)
+        self.assertNotIn(self.ts_tp2.id, rows)
+        self.assertFalse(tree.xpath('//*[@data-sc-timesheet-employee]'))
 
     def test_unassigned_tp_has_no_tab_or_add_button(self):
         self.event.sudo().write({'assigned_staff_ids': [Command.unlink(self.tp.id)]})

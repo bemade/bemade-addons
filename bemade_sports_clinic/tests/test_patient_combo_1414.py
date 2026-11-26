@@ -146,32 +146,6 @@ class TestPatientCombo1414(HttpCase):
         self.assertEqual(options[0], (self.anna.id, 'abel, anna', 'abel anna'))
         self.assertEqual(self.env['sports.patient']._portal_combo_options(), [])
 
-    # ==================================================================
-    # clinic add-patient picker
-    # ==================================================================
-    def test_clinic_picker_groups_and_order(self):
-        self._login()
-        doc = self._doc('/my/clinic/%s' % self.clinic.id)
-        select = self._select(doc, 'patient_id')
-        wrapper = select.getparent()
-        self.assertEqual(wrapper.get('class'), 'o_sc_patient_combo')
-        for attr in ('data-placeholder', 'data-empty-label', 'data-clear-title'):
-            self.assertTrue(wrapper.get(attr), attr)
-        self.assertEqual(select.get('id'), 'clinic_add_patient')
-        self.assertEqual(select.get('data-combo-clearable'), '1')
-        self.assertIn('form-select-sm', select.get('class'))
-        # Leading empty option, then the two groups in order.
-        first = select[0]
-        self.assertEqual((first.tag, first.get('value')), ('option', ''))
-        groups = select.findall('optgroup')
-        self.assertEqual([g.get('label') for g in groups], ['Clinic teams', 'Other teams'])
-        # « Last, First », sorted by last name; Zoé (already on the list) absent.
-        self.assertEqual(self._labels(groups[0]), ['abel, anna', 'Abel, Émile', 'Zamora, Marc'])
-        self.assertEqual(self._labels(groups[1]), ['Nuñez, Ana', 'Ortiz, Bea'])
-        anna_opt = groups[0].findall('option')[0]
-        self.assertEqual(anna_opt.get('value'), str(self.anna.id))
-        self.assertEqual(anna_opt.get('data-key'), 'abel anna')
-        self.assertEqual(groups[1].findall('option')[0].get('data-key'), 'nunez ana')
 
     def test_clinic_picker_no_other_group_when_empty(self):
         # A therapist staffed on the clinic's team only: no « Other teams » group.
@@ -197,27 +171,6 @@ class TestPatientCombo1414(HttpCase):
         groups = self._select(doc, 'patient_id').findall('optgroup')
         self.assertEqual(self._labels(groups[0]), ['Abel, Émile', 'Zamora, Marc'])
 
-    # ==================================================================
-    # quick-note pickers
-    # ==================================================================
-    def test_quick_note_pickers_order_and_preselect(self):
-        note = self.env['sports.quick.note'].create({
-            'note': 'Synthetic quick note', 'user_id': self.tp.id,
-            'patient_id': self.bea.id,
-        })
-        self._login()
-        doc = self._doc('/my/notepad')
-        create = self._select(doc, 'patient_id', 0)
-        self.assertEqual(create.get('id'), 'quick_note_patient')
-        self.assertEqual(create[0].get('value'), '')
-        self.assertEqual(create.findall('optgroup'), [])
-        self.assertEqual(self._labels(create), [
-            'abel, anna', 'Abel, Émile', 'Äbel, Zoé', 'Nuñez, Ana', 'Ortiz, Bea', 'Zamora, Marc'])
-        edit = self._select(doc, 'patient_id', 1)
-        self.assertEqual(edit.get('id'), 'quick_note_patient_%s' % note.id)
-        self.assertEqual(self._labels(edit), self._labels(create))
-        selected = [o for o in edit.findall('option') if o.get('selected')]
-        self.assertEqual([o.get('value') for o in selected], [str(self.bea.id)])
 
     def test_quick_note_add_posts_plain_select_value(self):
         self._login()
@@ -232,32 +185,4 @@ class TestPatientCombo1414(HttpCase):
         self.assertTrue(note)
         self.assertEqual(note.patient_id, self.ana)
 
-    # ==================================================================
-    # lists AND headings « Last, First » (owner review 2026-10-11; headings
-    # were « First Last » until then)
-    # ==================================================================
-    def test_worklist_rows_last_first_headings_unchanged(self):
-        self._login()
-        url = '/my/clinic/%s?patient=%s' % (self.clinic.id, self.zoe.id)
-        doc = self._doc(url)
-        rows = doc.cssselect('ul.o_sc_worklist .o_sc_worklist_row a')
-        self.assertEqual([a.text_content().strip() for a in rows], ['Äbel, Zoé'])
-        # Dossier header: the single-patient heading reads « Last, First » too.
-        headers = [h.text_content().strip() for h in doc.cssselect('#clinic-dossier h5')]
-        self.assertIn('Äbel, Zoé', headers)
-        self.assertNotIn('Zoé Äbel', headers)
-        # The auto-refresh fragment renders the same rows.
-        resp = self.url_open('/my/clinic/%s/worklist/fragment?patient=%s' % (self.clinic.id, self.zoe.id))
-        self.assertEqual(resp.status_code, 200)
-        frag = lxml_html.fromstring(resp.text)
-        self.assertEqual(
-            [a.text_content().strip() for a in frag.cssselect('.o_sc_worklist_row a')], ['Äbel, Zoé'])
 
-    def test_player_page_heading_and_player_cards(self):
-        self._login()
-        doc = self._doc('/my/player?player_id=%s' % self.zoe.id)
-        self.assertEqual([h.text_content().strip() for h in doc.cssselect('h1')][:1], ['Äbel, Zoé'])
-        doc = self._doc('/my/players')
-        names = [a.text_content().strip() for a in doc.cssselect('.card-header a.fw-bold')]
-        self.assertIn('Äbel, Zoé', names)
-        self.assertNotIn('Zoé Äbel', names)

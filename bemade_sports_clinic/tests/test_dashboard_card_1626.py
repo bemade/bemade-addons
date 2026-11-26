@@ -148,11 +148,6 @@ class TestDashboardCard1626(Dashboard1626Common):
             # Last thing in the detail.
             self.assertIs(body.xpath('./*')[-1], last)
 
-    def test_legacy_fragment_has_no_player_link(self):
-        self._switch(True)
-        self._login_tp()
-        text, _tree = self._get('/my/player/%s/recent-changes' % self.player.id)
-        self.assertNotIn('Open the player page', text)
 
     # -- UC-4 ------------------------------------------------------------
     def test_training_icon_is_heartbeat(self):

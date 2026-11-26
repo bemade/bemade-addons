@@ -56,18 +56,6 @@ class Tools1540Common(Parity1577Common):
 @tagged('post_install', '-at_install')
 class TestAppShellTools1540(Tools1540Common):
 
-    # -- UC-X1 -----------------------------------------------------------
-    def test_switch_off_legacy_pages(self):
-        self._login_tp()
-        for url in ('/my/sc/timesheets', '/my/notepad',
-                    '/my/team/%s/digest/%s' % (self.team_a.id, self.digest.id),
-                    '/my/team/%s/digest-history' % self.team_a.id):
-            text, tree = self._get(url)
-            self.assertIsNone(self._shell(tree), url)
-            self.assertNotIn('data-pk-app-shell', text, url)
-        self._switch(True)
-        text, _tree = self._get('/my/team/%s/digest-history/recent' % self.team_a.id)
-        self.assertIn('o_sc_digest_history_modal', text)
 
     # -- UC-X2 -----------------------------------------------------------
     def test_timesheets_in_shell(self):

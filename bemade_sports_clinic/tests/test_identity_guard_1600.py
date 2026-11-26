@@ -174,8 +174,8 @@ class TestIdentityGuardLegacy1600(IdentityCommon):
         resp = self._save(first_name='Patrice', last_name='One', team_ids=str(self.team_a.id))
         self.assertEqual(resp.status_code, 303)
         self.assertIn('/my/player/edit', resp.headers['Location'])
-        page = self.url_open(resp.headers['Location']).text
-        self.assertIn('Confirm the identity correction', page)
+        # Task 1541: the legacy edit page (its message) is gone; the refusal
+        # itself stands — nothing written.
         self.player.invalidate_recordset()
         self.assertEqual(self.player.first_name, 'Pat')
 
@@ -207,10 +207,8 @@ class TestIdentityGuardLegacy1600(IdentityCommon):
         }, allow_redirects=False)
         self.assertEqual(resp.status_code, 303)
         self.assertIn('/my/player/create', resp.headers['Location'])
-        # Task 1716: Dana is on another team — the twin message with her
-        # team (was the generic « ask a manager », review 2026-10-23).
-        self.assertIn('A player with this name and date of birth already exists (PC Team B).',
-                      self.url_open('/my/player/create').text)
+        # Task 1541: the legacy create page (its message) is gone; the app's
+        # panel refusal is test_player_add_1655's. The refusal stands:
         self.assertEqual(self.env['res.partner'].search_count([]), partners,
                          "no orphan contact left behind")
 

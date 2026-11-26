@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.149.1",
+    'version': "19.0.2.0.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -207,20 +207,11 @@ nothing; PDF reports never carry it.
         "views/sports_clinic_attendance_views.xml",
         "views/team_digest_views.xml",
         "views/sports_patient_views.xml",
-        # Task 1384: shared "Effacer"/Clear macro for long-text portal fields.
-        # Load before the portal templates that t-call it.
-        "views/portal_field_clear_templates.xml",
         # Task 1414: the portal patient combo snippet (typeahead over a real
         # <select>, « Last, First »). Load before every template that t-calls it.
         "views/portal_widgets_templates.xml",
         "views/sports_clinic_portal_views.xml",
         "views/team_digest_portal_templates.xml",
-        "views/sports_patient_injury_portal.xml",
-        "views/player_management_portal_templates.xml",
-        "views/injury_management_portal_templates.xml",
-        "views/injury_note_history_portal_templates.xml",
-        "views/task_management_portal_templates.xml",
-        "views/events_portal_templates.xml",
         "views/event_invoicing_wizard_views.xml",
         "views/event_batch_invoicing_wizard_views.xml",
         "views/event_vendor_po_wizard_views.xml",
@@ -229,16 +220,8 @@ nothing; PDF reports never carry it.
         "views/event_cancel_wizard_views.xml",
         "views/res_config_settings_views.xml",
         "views/sports_event_views.xml",
-        "views/portal_activity_detail_template.xml",
-        "views/portal_event_detail_template.xml",
-        "views/portal_event_edit_template.xml",
-        "views/portal_event_create_template.xml",
-        "views/portal_timesheets_templates.xml",
         "views/treatment_note_views.xml",
         "views/sports_quick_note_views.xml",
-        "views/quick_note_portal_templates.xml",
-        # Task 1398: the TP clinic worklist (/my/clinics, /my/clinic/<id>).
-        "views/clinic_portal_templates.xml",
         # Task 1397/1433: the public clinic sign-in kiosk (stable
         # /clinic/kiosk dispatcher, device bound by pairing code).
         "views/clinic_kiosk_templates.xml",
@@ -261,6 +244,8 @@ nothing; PDF reports never carry it.
         # switch) — components, layout, then the pages that t-call them.
         "views/sc_components.xml",
         "views/sc_app_layout.xml",
+        # Task 1541 (P4): « Pas d'accès » for a user without a clinic app role.
+        "views/sc_no_access.xml",
         "views/instance_banner.xml",
         "views/sc_app_player_add.xml",
         "views/sc_app_pages.xml",
@@ -305,35 +290,9 @@ nothing; PDF reports never carry it.
             "bemade_sports_clinic/static/src/scss/portal_badges.scss",
             # Task 1272 (round 3): same digest « voir plus » de-dup on the portal.
             "bemade_sports_clinic/static/src/scss/dashboard_digest.scss",
-            # Task 1385: homogenized portal card expandable styling + the
-            # lazy-load toggle listener for the recent-changes feed.
+            # Task 1385: the player card's <details> expandable (the digest
+            # snapshot card) and the static injury detail block.
             "bemade_sports_clinic/static/src/scss/portal_card.scss",
-            "bemade_sports_clinic/static/src/js/portal_card_recent_changes.js",
-            # Task 1389: lazy-loader for the team-dashboard digest-history modal.
-            "bemade_sports_clinic/static/src/js/portal_digest_history.js",
-            # Task 1384: one-tap "Effacer"/Clear for long-text portal fields.
-            "bemade_sports_clinic/static/src/js/portal_field_clear.js",
-            # Task 1398: desktop drag-reorder for the clinic worklist (plus its
-            # small drag affordance styling). Progressive enhancement only — the
-            # up/down buttons work without it. Task 1401: the same script/styles
-            # drive the /my/teams personal order (data-reorder-* opt-in).
-            "bemade_sports_clinic/static/src/scss/portal_clinic.scss",
-            "bemade_sports_clinic/static/src/js/portal_clinic_reorder.js",
-            # Task 1397: worklist auto-refresh (20 s poll of the fragment route
-            # while the tab is visible) + the kiosk-link Copy button. Both are
-            # progressive enhancement — reload / select-the-text work without.
-            "bemade_sports_clinic/static/src/js/portal_clinic_worklist_refresh.js",
-            # Task 1411: snap the dossier's match / practice selects to a valid
-            # pair. Progressive enhancement — the server validates regardless.
-            "bemade_sports_clinic/static/src/js/portal_clinic_quick_status.js",
-            # Task 1412: the dossier's injury modal (quick-add / edit form
-            # fragments fetched into #clinicInjuryModal). Progressive
-            # enhancement — the same links open the full pages without it.
-            "bemade_sports_clinic/static/src/js/portal_clinic_injury_modal.js",
-            # Task 1413: « Cancel » of the inline treatment-note edit form
-            # (clinic notes table + player notes tab). Progressive enhancement
-            # — the <details> summary opens / closes the form without it.
-            "bemade_sports_clinic/static/src/js/portal_treatment_note_edit.js",
             # Task 1414: portal patient combo — typeahead over the rendered
             # <select> options (clinic add-patient, quick-note pickers).
             # Progressive enhancement — the plain select posts without it.
@@ -391,11 +350,9 @@ nothing; PDF reports never carry it.
             "bemade_sports_clinic/static/src/scss/sc_dashboard.scss",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml",
-            # Task 1540: the shared calendar (FullCalendar lazy-loaded from
-            # web.fullcalendar_lib) and the event form behaviours.
-            # Task 5200 (kit P5): the calendar is the kit's (pk_calendar);
-            # the old OWL key stays registered for one release.
-            "bemade_sports_clinic/static/src/js/sc_calendar_alias.js",
+            # Task 1540: the event form behaviours (task 5200: the calendar
+            # is the kit's pk_calendar; task 1541: its one-release alias of
+            # the old OWL key is gone).
             "bemade_sports_clinic/static/src/js/sc_events.js",
         ],
         # Task 1540: the sign-in kiosk's OWN stylesheet bundle, included
@@ -423,33 +380,6 @@ nothing; PDF reports never carry it.
         # Task 1542: the addon's first browser tours.
         "web.assets_tests": [
             "bemade_sports_clinic/static/tests/tours/**/*",
-        ],
-        # Also load in lazy bundle since many website widgets initialize lazily
-        "web.assets_frontend_lazy": [
-            "bemade_sports_clinic/static/src/js/jquery_scrolling_polyfill.js",
-            # Ensure patch is also present in lazy assets where snippet may initialize
-            "bemade_sports_clinic/static/src/js/website_toc_safety_patch.js",
-            # Task 1385: the card lazy-loader must also be present where portal
-            # pages initialize via the lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_card_recent_changes.js",
-            # Task 1389: digest-history modal loader also present in lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_digest_history.js",
-            # Task 1384: clear control also present in lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_field_clear.js",
-            # Task 1398: clinic worklist drag also present in lazy bundle.
-            "bemade_sports_clinic/static/src/scss/portal_clinic.scss",
-            "bemade_sports_clinic/static/src/js/portal_clinic_reorder.js",
-            # Task 1397: worklist auto-refresh also present in lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_clinic_worklist_refresh.js",
-            # Task 1411: quick status snap also present in lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_clinic_quick_status.js",
-            # Task 1412: injury modal loader also present in lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_clinic_injury_modal.js",
-            # Task 1413: note edit cancel also present in lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_treatment_note_edit.js",
-            # Task 1414: patient combo also present in lazy bundle.
-            "bemade_sports_clinic/static/src/scss/portal_widgets.scss",
-            "bemade_sports_clinic/static/src/js/portal_patient_combo.js",
         ],
     },
 }

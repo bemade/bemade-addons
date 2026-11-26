@@ -1,6 +1,6 @@
-// Task 1385: homogenized portal player card — the native <details> expandable.
-// The card carries a Bootstrap .stretched-link that makes the whole card open
-// the player; the expandable must sit ABOVE it so the summary stays clickable.
+// Task 1385: the native <details> expandable of a player card (task 1541:
+// the digest snapshot card, team_digest_render, keeps it). It must sit ABOVE
+// a card's .stretched-link so the summary stays clickable.
 .o_sc_card_detail {
     position: relative;
     z-index: 2;
@@ -27,14 +27,6 @@
         }
         .o_sc_summary_less {
             display: inline;
-        }
-        // Task 1385 (CR-D, pill tweak): while COLLAPSED the "recent changes"
-        // pill flags the card next to the expand link; once EXPANDED it would
-        // wrongly draw the eye to the static detail section (injury detail,
-        // etc.), so hide it on open. The same pill instead heads the
-        // recent-changes subsection inside the expandable (o_sc_recent_heading).
-        .o_sc_recent_hint {
-            display: none;
         }
     }
 }

@@ -248,7 +248,7 @@ class TestTeamsSortOrder(HttpCase):
                          ['TSO Alpha', 'TSO Bravo', 'TSO Charlie', 'TSO Delta'])
         self.assertEqual(self._names_in_order(html),
                          ['TSO Alpha', 'TSO Bravo', 'TSO Charlie', 'TSO Delta'])
-        self.assertIn('teams_reorder_form', html)
+        self.assertIn('action="/my/teams/reorder"', html)  # task 1541: the app's up / down forms
 
         # Drag: ONE full-order POST.
         order = ','.join(str(t.id) for t in (self.t_delta, self.t_alpha, self.t_bravo, self.t_charlie))
@@ -327,10 +327,12 @@ class TestTeamsSortOrder(HttpCase):
     # ==================================================================
     def test_plain_portal_user_cannot_rank(self):
         self.authenticate('tso.plain@example.com', 'tso-plain')
-        html = self._get('/my/teams?sort=mine')
-        self.assertNotIn('sort=mine', html, "no « My order » option without a rank ACL")
-        self.assertEqual(self.plain.teams_sort_mode, 'activity',
-                         "mine is silently downgraded, never stored")
+        # Task 1541: no clinic app role → « Pas d'accès », nothing stored.
+        resp = self.url_open('/my/teams?sort=mine')
+        self.assertEqual(resp.status_code, 403)
+        self.env.invalidate_all()
+        self.assertNotEqual(self.plain.teams_sort_mode, 'mine',
+                            "mine is never stored without a rank ACL")
         resp = self._post_reorder({'team_id': self.t_alpha.id, 'direction': 'up'})
         self.assertEqual(resp.status_code, 403)
         self.assertFalse(self.Rank.sudo().search([('user_id', '=', self.plain.id)]))

@@ -85,23 +85,6 @@ class Clinic1540Common(Parity1577Common):
 @tagged('post_install', '-at_install')
 class TestAppShellClinic1540(Clinic1540Common):
 
-    # -- UC-C1 -----------------------------------------------------------
-    def test_switch_off_legacy_pages(self):
-        self._login_tp()
-        with patch.object(ClinicPortal, '_sc_clinics_values',
-                          side_effect=AssertionError('shell values computed')), \
-                patch.object(ClinicPortal, '_sc_clinic_values',
-                             side_effect=AssertionError('shell values computed')):
-            text, tree = self._get('/my/clinics')
-            self.assertIn('o_sc_clinics', text)
-            self.assertIsNone(self._shell(tree))
-            text, tree = self._get('/my/clinic/%s' % self.clinic.id)
-            self.assertIn('o_sc_clinic_detail', text)
-            self.assertIn('o_sc_worklist', text)
-            self.assertNotIn('data-pk-app-shell', text)
-            self.assertNotIn('sc_clinic_worklist', text)
-        text, _tree = self._get('/my/clinic/%s/worklist/fragment' % self.clinic.id)
-        self.assertIn('o_sc_worklist', text)
 
     # -- UC-C2 -----------------------------------------------------------
     def test_clinics_list_in_shell(self):
@@ -170,10 +153,10 @@ class TestAppShellClinic1540(Clinic1540Common):
         self.assertTrue(tree.xpath('//details[@id="clinic-injury-%s"][@data-pk-edit-card="injury"]'
                                    % self.injury.id))
         self.assertFalse(tree.xpath('//dialog[@id="sc_clinic_injury_%s"]' % self.injury.id))
-        # The legacy fragment route still answers (the legacy page uses it).
+        # Task 1541: the legacy fragment route is gone with the legacy page.
         resp = self.url_open('/my/injury/%s/form/fragment?clinic_id=%s&patient=%s' % (
             self.injury.id, self.clinic.id, self.player.id))
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 404)
 
     @staticmethod
     def _owl_fields(tree):

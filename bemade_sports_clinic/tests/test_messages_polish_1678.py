@@ -137,7 +137,8 @@ class TestMessagesFrench1678(TestAppShellI18n1538):
 
     def test_view_terms_in_french(self):
         View = self.env['ir.ui.view'].with_context(lang='fr_CA')
-        detail = View.env.ref('bemade_sports_clinic.portal_event_detail')
+        # Task 1541: the app's event page (the legacy detail view is gone).
+        detail = View.env.ref('bemade_sports_clinic.sc_app_event')
         self.assertIn('Personnel assigné', detail.arch)
         self.assertNotIn('Personnnel', detail.arch)
 

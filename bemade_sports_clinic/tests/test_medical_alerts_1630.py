@@ -234,7 +234,7 @@ class TestMedicalHeader1630(MedicalCommon):
         # only — the medical fields are set on the player page afterwards).
         self._login_tp()
         resp = self.url_open('/my/player/create?first_name=Nobody&last_name=Synthetic', allow_redirects=False)
-        self.assertIn(resp.status_code, (302, 303))
+        self.assertEqual(resp.status_code, 301)
         _text, tree = self._get('/my/players?add=1')
         form = tree.xpath('//form[@data-sc-player-add]')[0]
         for name in ('allergy_level', 'allergy_details', 'allergy_epipen', 'allergies'):
@@ -298,15 +298,6 @@ class TestMedicalHeader1630(MedicalCommon):
         set_medical(self.player, allergies=[('Synthetic kiwi', True)], none_allergy=False)
         resp = self.url_open('/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
         self.assertIn('Synthetic kiwi', resp.text)
-
-    def test_legacy_edit_form_saves(self):
-        self._switch(False)
-        self._login_tp()
-        resp = self.url_open('/my/player/edit?patient_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
-        self.assertEqual(resp.status_code, 200)
-        self.assertNotIn('name="allergy_level"', resp.text)
-        self.assertIn('name="medical_history_other"', resp.text)
-        self.assertNotIn('name="allergies"', resp.text)
 
 
 @tagged('post_install', '-at_install')

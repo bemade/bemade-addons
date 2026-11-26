@@ -45,7 +45,4 @@ class TestCovTimesheetsPortal(PortalCovCommon):
         self.assertIn('PC Event', resp.text)
         self.assertIn('PC Cancelled Event', resp.text)
 
-        # Home counter: the async /my/counters route counts it too. Baseline is
-        # the single confirmed-event timesheet created in PortalCovCommon.
-        counters = self._jsonrpc('/my/counters', counters=['event_timesheets_count'])
-        self.assertEqual(counters['event_timesheets_count'], 2)
+        # Task 1541: the legacy home card (its counter) is gone.

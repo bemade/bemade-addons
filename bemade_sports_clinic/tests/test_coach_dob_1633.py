@@ -139,9 +139,8 @@ class TestCoachDob1633(PlayerInlineCommon):
 
     def test_coach_create_form_has_dob(self):
         self._login_coach()
-        _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic1633')
-        form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
-        self.assertTrue(form.xpath('.//input[@name="date_of_birth"]'))
+        # Task 1541: the retired create page redirects to the Players panel;
+        # the create route keeps the coach's date of birth.
         resp = self.url_open('/my/player/create/save', data={
             'csrf_token': self._csrf(), 'first_name': 'Nobody', 'last_name': 'Synthetic1633',
             'date_of_birth': '2011-05-06'}, allow_redirects=False)

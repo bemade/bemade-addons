@@ -130,14 +130,6 @@ class TestAppShellEventTimesheets1584(EventTimesheets1584Common):
         self.assertIsNone(self._section(tree))
         self.assertFalse(tree.xpath('//*[@data-sc-timesheet-id]'))
 
-    # -- UC-5 ------------------------------------------------------------
-    def test_legacy_clinic_admin_sees_all(self):
-        self._switch(False)
-        self._login_cadmin()
-        text, tree = self._get('/my/event/%s' % self.event.id)
-        self.assertIsNone(self._shell(tree))
-        self.assertIn('<span>PC TP</span>', text)
-        self.assertIn('<span>SC84 Second Therapist</span>', text)
 
     # -- UC-6 ------------------------------------------------------------
     def test_own_timesheets_list_has_no_name(self):

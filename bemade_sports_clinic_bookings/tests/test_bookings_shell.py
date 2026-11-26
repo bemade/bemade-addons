@@ -29,12 +29,6 @@ from .common import BookingsShellCommon
 @tagged('post_install', '-at_install')
 class TestBookingsShell(BookingsShellCommon):
 
-    def test_switch_off_legacy(self):
-        self.authenticate('bk.tp@example.com', 'bk-tp-pass')
-        for url in ('/my/bookings', '/my/bookings/calendar'):
-            text, tree = self._get(url)
-            self.assertIsNone(self._shell(tree), url)
-            self.assertNotIn('data-pk-app-shell', text)
 
     def test_list_in_shell(self):
         self._switch(True)

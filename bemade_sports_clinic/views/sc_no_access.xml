@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1541 (epic #1535, P4) — « Pas d'accès ». The clinic portal is the app
+    only: a logged-in user without a clinic app role (a portal user with no
+    team role, an internal user without a clinic group) who opens a clinic
+    URL gets this page, HTTP 403 (AppShellMixin._sc_no_access). No app
+    navigation (the user has no app): the Fit Crew mark, the message, « My
+    account » (the stock portal home) and « Sign out ».
+-->
+<odoo>
+
+    <template id="sc_no_access" name="Sports Clinic App: no access">
+        <t t-call="bemade_portal_kit.pk_frontend_layout">
+            <t t-set="no_header" t-value="True"/>
+            <t t-set="no_footer" t-value="True"/>
+            <t t-set="no_livechat" t-value="True"/>
+            <t t-set="html_data" t-value="{'lang': (request.env.lang or 'en_US').replace('_', '-')}"/>
+            <!-- Review 2026-11-26: the theme follows the device (no_access_theme
+                 'auto': dark, light under prefers-color-scheme: light, in
+                 sc_pages.scss — no script), or the user's own pick
+                 (_sc_no_access_theme). -->
+            <t t-set="sc_theme_auto" t-value="no_access_theme not in ('dark', 'light')"/>
+            <t t-set="sc_page_theme" t-value="'dark' if sc_theme_auto else no_access_theme"/>
+            <t t-set="body_classname" t-value="'o_pk_app_body o_pk_app_body_%s%s' % (sc_page_theme, ' o_sc_no_access_auto' if sc_theme_auto else '')"/>
+            <t t-set="title">No access</t>
+            <t t-set="head">
+                <t t-if="sc_theme_auto">
+                    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#243925"/>
+                    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#120e12"/>
+                </t>
+                <meta t-else="" name="theme-color" t-att-content="'#243925' if sc_page_theme == 'light' else '#120e12'"/>
+                <meta name="robots" content="noindex"/>
+            </t>
+            <div class="o_pk_app o_sc_no_access" t-att-data-pk-theme="sc_page_theme" data-sc-no-access-page="1"
+                 t-att-data-sc-theme-auto="sc_theme_auto and '1'">
+                <main class="o_sc_no_access_main">
+                    <div class="o_sc_no_access_brand">
+                        <t t-call="bemade_sports_clinic.sc_logo_mark"/>
+                        <span class="o_sc_no_access_name">Le Fit Crew</span>
+                    </div>
+                    <div class="o_pk_card o_sc_no_access_card">
+                        <h1 class="o_sc_no_access_title">No access</h1>
+                        <p class="o_sc_no_access_text">Your account does not have access to the Le Fit Crew app. If this is a mistake, contact Le Fit Crew.</p>
+                        <div class="o_sc_no_access_actions">
+                            <a href="/my" class="o_pk_btn o_pk_btn_primary" data-sc-action="no_access.account">My account</a>
+                            <a href="/web/session/logout?redirect=/" class="o_pk_btn o_pk_btn_ghost" data-sc-action="no_access.logout">Sign out</a>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </t>
+    </template>
+
+    <!-- Review 2026-11-26: a clinic app user refused a page (another team's
+         record, a therapist-only screen) stays in the app: the shell, its
+         navigation, a generic message (nothing of the refused record) and
+         the way back to the dashboard. HTTP 403 (AppShellMixin._sc_refused). -->
+    <template id="sc_app_refused" name="Sports Clinic App: page refused">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="pk_title">No access</t>
+            <section class="o_pk_card o_sc_refused" data-sc-refused-page="1">
+                <p class="o_sc_refused_text">You do not have access to this page.</p>
+                <div class="o_sc_refused_actions">
+                    <a href="/my/home" class="o_pk_btn o_pk_btn_primary" data-sc-action="refused.home">Back</a>
+                </div>
+            </section>
+        </t>
+    </template>
+
+</odoo>

@@ -278,14 +278,14 @@ class TestAppShellHistory1581(History1581Common):
         self._login_tp()
         resp = self.url_open('/my/injury/%s/notes/history?team_id=%s' % (self.injury.id, self.team_a.id),
                              allow_redirects=False)
-        self.assertIn(resp.status_code, (302, 303))
+        self.assertEqual(resp.status_code, 301)
         # Task 1616: … the open injury card (team context kept).
         self.assertIn('/my/player?player_id=%s&team_id=%s&tab=injuries&injury=%s#injury-%s' % (
             self.player.id, self.team_a.id, self.injury.id, self.injury.id), resp.headers['Location'])
+        # Task 1541: no legacy page with the kit switch off either.
         self._switch(False)
-        resp = self.url_open('/my/injury/%s/notes/history' % self.injury.id)
-        self.assertEqual(resp.status_code, 200)
-        self.assertNotIn('data-pk-app-shell', resp.text)
+        resp = self.url_open('/my/injury/%s/notes/history' % self.injury.id, allow_redirects=False)
+        self.assertEqual(resp.status_code, 301)
 
     # -- UC-H7 -----------------------------------------------------------
     def test_digest_history_link_goes_to_the_list(self):

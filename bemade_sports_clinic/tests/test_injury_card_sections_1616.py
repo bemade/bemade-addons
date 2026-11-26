@@ -430,13 +430,6 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
             resp = self.url_open('/my/injury/edit?injury_id=%s' % hidden.id, allow_redirects=False)
         self.assertNotIn('injury=%s' % hidden.id, resp.headers.get('Location', ''))
 
-    def test_switch_off_keeps_the_legacy_pages(self):
-        self._switch(False)
-        self._login_tp()
-        for url in ('/my/injury/edit?injury_id=%s', '/my/injury/documents?injury_id=%s'):
-            resp = self.url_open(url % self.injury.id, allow_redirects=False)
-            self.assertEqual(resp.status_code, 200, url)
-            self.assertIsNone(self._shell(lxml_html.fromstring(resp.text)))
 
     # -- AC-10 -----------------------------------------------------------
     def test_activity_related_link_opens_the_card(self):

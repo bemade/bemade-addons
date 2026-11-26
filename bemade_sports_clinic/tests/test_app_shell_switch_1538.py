@@ -63,19 +63,6 @@ class AppShellCommon(PortalCovCommon):
 @tagged('post_install', '-at_install')
 class TestAppShellSwitch1538(AppShellCommon):
 
-    # -- UC-S1 -----------------------------------------------------------
-    def test_switch_off_is_the_default_and_keeps_legacy(self):
-        self.assertFalse(self.env['ir.config_parameter'].sudo().get_param(SWITCH))
-        for login in (self._login_coach, self._login_tp):
-            login()
-            text, tree = self._get('/my/home')
-            self.assertIn('o_portal_my_home', text)
-            self.assertIn('portal_sports_category', text)
-            self.assertIsNone(self._shell(tree))
-            self.assertNotIn('data-pk-app-shell', text)
-            text, tree = self._get('/my/teams')
-            self.assertIn('o_sc_teams_sort', text)
-            self.assertNotIn('data-pk-app-shell', text)
 
     def test_switch_on_plain_user_keeps_stock_portal(self):
         self._switch(True)

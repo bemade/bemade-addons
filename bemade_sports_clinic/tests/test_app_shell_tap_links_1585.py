@@ -146,14 +146,6 @@ class TestTapLinks(TapLinksCommon):
         self.assertFalse(hero.xpath('.//a[starts-with(@href, "mailto:")]'))
         self.assertIn('PC Org', hero.xpath('.//*[@data-sc-event-organization]')[0].text_content())
 
-    # -- UC-T6 -----------------------------------------------------------
-    def test_switch_off_untouched(self):
-        self._switch(False)
-        self._login_tp()
-        text, _tree = self._get('/my/event/%s' % self.event.id)
-        self.assertNotIn('data-pk-display-href', text)
-        self.assertNotIn('data-sc-event-staff', text)
-
 
 @tagged('post_install', '-at_install')
 class TestTapLinksTour(TapLinksCommon):

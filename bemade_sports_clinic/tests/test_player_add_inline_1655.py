@@ -163,7 +163,7 @@ class TestPlayerAddInline1655(PlayerAdd1655Common):
     def test_panels_and_retired_page(self):
         self._login_tp()
         resp = self.url_open('/my/player/create', allow_redirects=False)
-        self.assertIn(resp.status_code, (302, 303))
+        self.assertEqual(resp.status_code, 301)
         self.assertTrue(resp.headers['Location'].endswith('/my/players?add=1'))
         _text, tree = self._get('/my/players?add=1')
         panel = tree.xpath('//details[@id="sc_player_add"]')

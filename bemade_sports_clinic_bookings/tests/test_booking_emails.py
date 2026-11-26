@@ -234,11 +234,6 @@ class TestBookingEmailScope(_EmailsCommon):
             # Invitation (book) and cancellation both reach the staff member.
             self.assertEqual(self._run_flow(), self.EVERY_MAIL, pref)
 
-    def test_switch_off_everyone_gets_every_mail(self):
-        self.env['ir.config_parameter'].sudo().set_param(SWITCH, False)
-        self._set_pref('none')
-        self.assertFalse(self.tp._sc_booking_prefs_apply())
-        self.assertEqual(self._run_flow(), self.EVERY_MAIL)
 
     def test_plain_portal_staff_gets_no_summary(self):
         self._make_plain_portal_staff()

@@ -39,28 +39,6 @@ class Events1540Common(Parity1577Common):
 @tagged('post_install', '-at_install')
 class TestAppShellEvents1540(Events1540Common):
 
-    # -- UC-E1 -----------------------------------------------------------
-    def test_switch_off_legacy_pages(self):
-        self._login_tp()
-        hooks = ('_sc_events_values', '_sc_events_calendar_values', '_sc_event_values',
-                 '_sc_event_form_values')
-        patches = [patch.object(EventsPortal, name, side_effect=AssertionError(name)) for name in hooks]
-        for p in patches:
-            p.start()
-        try:
-            for url in ('/my/events', '/my/events/calendar', '/my/event/%s' % self.event.id,
-                        '/my/event/%s/edit' % self.event.id, '/my/event/create'):
-                text, tree = self._get(url)
-                self.assertIsNone(self._shell(tree), url)
-                self.assertNotIn('data-pk-app-shell', text, url)
-        finally:
-            for p in patches:
-                p.stop()
-        text, _tree = self._get('/my/events/calendar')
-        self.assertIn('/web/static/lib/fullcalendar/core/index.global.js', text)
-        feed = self.url_open('/my/events/calendar/data?start=2026-02-01T00:00:00Z&end=2026-03-01T00:00:00Z').json()
-        item = [row for row in feed if row['id'] == self.event.id][0]
-        self.assertEqual(set(item), {'id', 'title', 'start', 'end', 'url', 'extendedProps'})
 
     # -- UC-E2 -----------------------------------------------------------
     def test_list_in_shell(self):
@@ -155,7 +133,7 @@ class TestAppShellEvents1540(Events1540Common):
         # Owner review 2026-10-11: edited in place on the event page (pencil
         # card, test_app_shell_pencil UC-PE9); the edit page leads there.
         resp = self.url_open('/my/event/%s/edit' % event.id, allow_redirects=False)
-        self.assertIn(resp.status_code, (302, 303))
+        self.assertEqual(resp.status_code, 301)  # task 1541: a permanent redirect
         _text, tree = self._get('/my/event/%s' % event.id)
         props = {json.loads(p)['field']: json.loads(p) for p in tree.xpath(
             '//*[@data-pk-edit-card="event"]//owl-component/@props')}
