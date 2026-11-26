@@ -15,6 +15,9 @@ preferences (kit 1.17).
   unread conversation of a kind in « digest » mode; nothing when nothing
   is unread.
 * « off »: nothing.
+* Task 5546: a message sent to the member's phone (Web Push, up to
+  ``pk_pushed_message_id``) is not « each » e-mailed; the digest ignores the
+  phone (owner decision).
 
 Kinds: a direct chat's messages are ``chat.direct``; in a group a message
 without parent is ``chat.announcement``, a reply ``chat.reply`` (a poster
@@ -127,8 +130,10 @@ class PortalKit(models.AbstractModel):
                 ('id', '>', self._pk_chat_floor(member)), ('date', '<=', cutoff)], order='id asc')
             if not messages:
                 continue
+            pushed = member.pk_pushed_message_id.id or 0
             mail = messages.filtered(
                 lambda m: m.author_id != member.partner_id
+                and m.id > pushed  # task 5546: on the phone already
                 and (kind := self._pk_chat_kind(member, m))
                 and user._pk_notification_mode(kind) == 'each')
             if mail:

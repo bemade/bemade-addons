@@ -38,6 +38,20 @@
               t-att-data-pk-chat-members="pk_chat_t_members" t-att-data-pk-chat-poster="pk_chat_t_poster"
               t-att-data-pk-chat-reader="pk_chat_t_reader" t-att-data-pk-chat-empty="pk_chat_t_empty"
               t-att-data-pk-chat-error="pk_chat_t_error" t-att-data-pk-chat-older="pk_chat_t_older"/>
+        <!-- Task 5546: the one-time phone prompt (pk_chat_push_prompt.js),
+             while phone notifications can be sent and the user never
+             answered it. -->
+        <t t-if="request.env['portal.kit']._pk_push_available() and not request.env.user.pk_push_prompted">
+            <t t-set="pk_chat_t_push_ask">Get notified on this phone?</t>
+            <t t-set="pk_chat_t_push_on">Turn on</t>
+            <t t-set="pk_chat_t_push_later">Later</t>
+            <t t-set="pk_chat_t_push_ios">To get notified on this iPhone, add the app to your home screen (Share, then « Add to Home Screen »).</t>
+            <t t-set="pk_chat_t_push_ok">OK</t>
+            <span hidden="hidden" data-pk-chat-push-prompt="1"
+                  t-att-data-pk-chat-push-ask="pk_chat_t_push_ask" t-att-data-pk-chat-push-on="pk_chat_t_push_on"
+                  t-att-data-pk-chat-push-later="pk_chat_t_push_later" t-att-data-pk-chat-push-ios="pk_chat_t_push_ios"
+                  t-att-data-pk-chat-push-ok="pk_chat_t_push_ok"/>
+        </t>
     </template>
 
     <template id="pk_chat_bubble" name="Portal kit chat: bubble">

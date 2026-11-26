@@ -64,6 +64,8 @@ msgid "Contact"
 msgstr "Contact"
 
 #. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/discuss_channel.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_window
 msgid "Conversation"
 msgstr "Conversation"
@@ -354,3 +356,38 @@ msgstr "Vos conversations non lues"
 #: code:addons/bemade_portal_kit_chat/models/pk_chat_mail.py:0
 msgid "conversation"
 msgstr "conversation"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Get notified on this phone?"
+msgstr "Être avisé sur ce téléphone ?"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Later"
+msgstr "Plus tard"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "OK"
+msgstr "OK"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_discuss_channel_member__pk_pushed_message_id
+msgid "Portal Kit Last Pushed"
+msgstr "Kit portail : dernier envoyé au téléphone"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,help:bemade_portal_kit_chat.field_discuss_channel_member__pk_pushed_message_id
+msgid "The last message of the channel sent to this member's phone (Web Push): the « each » e-mail skips the messages up to it."
+msgstr "Le dernier message de la conversation envoyé au téléphone de ce membre (Web Push) : le courriel « chaque message » saute les messages jusqu'à celui-ci."
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "To get notified on this iPhone, add the app to your home screen (Share, then « Add to Home Screen »)."
+msgstr "Pour être avisé sur cet iPhone, ajoutez l'app à l'écran d'accueil (Partager, puis « Sur l'écran d'accueil »)."
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Turn on"
+msgstr "Activer"

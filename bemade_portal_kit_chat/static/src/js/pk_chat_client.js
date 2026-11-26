@@ -14,6 +14,7 @@
  * managed channel until « Reply » opens it with the quoted parent).
  */
 import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
+import { pkChatPushPrompt } from "@bemade_portal_kit_chat/js/pk_chat_push_prompt";
 
 export const PK_CHAT_EVENT = "pk:chat-changed";
 
@@ -159,7 +160,12 @@ export class ChatThread {
 
     build() {
         this.host.innerHTML = "";
-        this.root = el("div", "o_pk_chat_thread", { "data-pk-chat-thread": String(this.channelId) });
+        // Task 5546: what this thread shows, for the phone notifications
+        // (a push of this conversation is not shown while it is on screen).
+        this.root = el("div", "o_pk_chat_thread", {
+            "data-pk-chat-thread": String(this.channelId),
+            "data-pk-push-showing": `/my/app/conversations/${this.channelId}`,
+        });
         this.members = el("details", "o_pk_chat_members", { "data-pk-chat-members": "1", hidden: "hidden" });
         this.older = el("button", "o_pk_chat_older", {
             type: "button",
@@ -353,6 +359,7 @@ export class ChatThread {
             this.append([result.message]);
             this.scrollToBottom();
             document.dispatchEvent(new CustomEvent(PK_CHAT_EVENT, { detail: { channelId: this.channelId } }));
+            pkChatPushPrompt(this); // task 5546: once, after a message sent
         } catch {
             document.dispatchEvent(
                 new CustomEvent("pk:toast", { detail: { message: this.texts.error, tone: "error" } })

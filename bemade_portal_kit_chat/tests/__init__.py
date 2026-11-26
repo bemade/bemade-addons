@@ -9,6 +9,7 @@ from . import test_pk_chat_reply_only
 from . import test_pk_chat_privacy
 from . import test_pk_chat_calls
 from . import test_pk_chat_email
+from . import test_pk_chat_push
 from . import test_pk_chat_backend
 from . import test_pk_chat_hoot
 from . import test_pk_chat_tours

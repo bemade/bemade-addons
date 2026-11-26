@@ -2,7 +2,8 @@
 # Author: Denis Durepos <denis@bemade.org>
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 """Task 5516: a member's role in a managed channel, the e-mail
-dispatcher's marks, and no calls for share users."""
+dispatcher's marks (task 5546: the phone's too), and no calls for share
+users."""
 from odoo import _, fields, models
 from odoo.exceptions import UserError
 
@@ -17,6 +18,10 @@ class DiscussChannelMember(models.Model):
     pk_emailed_message_id = fields.Many2one(
         'mail.message', string="Portal Kit Last E-mailed", ondelete='set null',
         help="The last message of the channel the kit's e-mail dispatcher handled for this member.")
+    pk_pushed_message_id = fields.Many2one(
+        'mail.message', string="Portal Kit Last Pushed", ondelete='set null',
+        help="The last message of the channel sent to this member's phone (Web Push): the « each » "
+             "e-mail skips the messages up to it.")
     pk_digest_date = fields.Date(
         string="Portal Kit Digest Date", help="The (local) day this member's conversation was last digested.")
 

@@ -14,7 +14,9 @@
 * ``_pk_chat_sync(key=None)``: makes the database match the hook, silently.
 
 The chat registers three notification kinds (kit 1.17) for the apps where
-it is on: ``chat.direct``, ``chat.announcement``, ``chat.reply``.
+it is on: ``chat.direct``, ``chat.announcement``, ``chat.reply``; each has
+a phone switch (task 5546, kit 1.18: ``'push': True``). The app icon's
+number (``_pk_app_badge_count``) is the viewer's unread messages.
 """
 import logging
 
@@ -81,12 +83,22 @@ class PortalKit(models.AbstractModel):
         kinds = super()._pk_notification_kinds()
         return kinds + [
             {'key': KIND_DIRECT, 'label': _lt("Direct messages"), 'modes': MODES,
-             'default': 'each', 'default_internal': 'off', 'sequence': 50, 'enabled': _chat_enabled},
+             'default': 'each', 'default_internal': 'off', 'sequence': 50, 'enabled': _chat_enabled, 'push': True},
             {'key': KIND_ANNOUNCEMENT, 'label': _lt("Group announcements"), 'modes': MODES,
-             'default': 'digest', 'default_internal': 'off', 'sequence': 51, 'enabled': _chat_enabled},
+             'default': 'digest', 'default_internal': 'off', 'sequence': 51, 'enabled': _chat_enabled, 'push': True},
             {'key': KIND_REPLY, 'label': _lt("Replies in groups"), 'modes': MODES,
-             'default': 'digest', 'default_internal': 'off', 'sequence': 52, 'enabled': _chat_enabled},
+             'default': 'digest', 'default_internal': 'off', 'sequence': 52, 'enabled': _chat_enabled, 'push': True},
         ]
+
+    @api.model
+    def _pk_app_badge_count(self, user=None):
+        """Task 5546: the unread chat messages, while the chat is on for
+        the user's app."""
+        count = super()._pk_app_badge_count(user=user)
+        user = user or self.env.user
+        if self._pk_shell_enabled() and self._pk_chat_enabled(self._pk_app(user) or None):
+            count += self.pk_chat_unread_count(user)
+        return count
 
     # ------------------------------------------------------------------
     # Accessors

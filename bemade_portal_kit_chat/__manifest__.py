@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit: Chat',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.1.0',
     'category': 'Website/Portal',
     'summary': 'Portal conversations on Discuss: direct chats and managed announcement groups, '
                'a floating window and e-mail notices each user chooses.',
@@ -118,6 +118,22 @@ every 5 minutes, for messages unread for 10 minutes; « Digest »: one
 e-mail at 07:00 in the user's time zone, once per day, listing the unread
 conversations; « Never »: nothing.
 
+Phone (version 1.1, kit 1.18)
+-----------------------------
+With ``bemade_portal_kit_pwa`` (Web Push from the installed app), each of
+the three kinds has a phone switch (« On the phone », off by default)
+beside its e-mail choice; turning the phone on (« Settings ›
+Notifications », or the one-time banner after the user's first message)
+switches it on for the three kinds. A share member is pushed only when the
+chat is on for their app and the switch of THAT message's kind is on for
+them (a reader: announcements and the replies in their own threads, as
+for the e-mails). The notification opens ``/my/app/conversations/<id>``;
+a group's title is its name and the author, never the members. A message
+sent to the phone skips its 10-minute « each » e-mail
+(``pk_pushed_message_id``); the daily digest still lists it. No registered
+phone: nothing changes. Internal members keep Discuss's own push, payload
+and all. The app icon's number is the unread count.
+
 Security note
 -------------
 The portal controllers hide what a reader may not see. A reader calling
@@ -138,6 +154,7 @@ names of a managed channel. Nothing in the portal UI shows them.
     'assets': {
         'web.assets_frontend': [
             'bemade_portal_kit_chat/static/src/scss/pk_chat.scss',
+            'bemade_portal_kit_chat/static/src/js/pk_chat_push_prompt.js',
             'bemade_portal_kit_chat/static/src/js/pk_chat_client.js',
             'bemade_portal_kit_chat/static/src/js/pk_chat_window.js',
             'bemade_portal_kit_chat/static/src/js/pk_chat_bubble.js',
@@ -148,6 +165,7 @@ names of a managed channel. Nothing in the portal UI shows them.
             'bemade_portal_kit_chat/static/src/backend/pk_chat_avatar_card.xml',
         ],
         'web.assets_unit_tests_setup': [
+            'bemade_portal_kit_chat/static/src/js/pk_chat_push_prompt.js',
             'bemade_portal_kit_chat/static/src/js/pk_chat_client.js',
             'bemade_portal_kit_chat/static/src/js/pk_chat_window.js',
             'bemade_portal_kit_chat/static/src/backend/pk_chat_portal_partners.js',
