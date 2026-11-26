@@ -25,6 +25,7 @@ from lxml import html as lxml_html
 
 from odoo import Command
 from odoo.tests import tagged
+from odoo.tools.misc import mute_logger
 
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
@@ -102,6 +103,7 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
         self.assertEqual(args.get('tab'), ['players'])
         self.assertEqual(args.get('success'), ['player_added_to_team'])
 
+    @mute_logger('odoo.addons.bemade_sports_clinic.controllers.team_management_portal')
     def test_invalid_dob_is_refused_not_500(self):
         """Task 1541: moved from the deleted /add_player/submit test — a
         malformed date of birth is a refusal on the app's route, never a 500,
