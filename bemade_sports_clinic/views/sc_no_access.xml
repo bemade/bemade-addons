@@ -15,12 +15,12 @@
             <t t-set="no_footer" t-value="True"/>
             <t t-set="no_livechat" t-value="True"/>
             <t t-set="html_data" t-value="{'lang': (request.env.lang or 'en_US').replace('_', '-')}"/>
-            <!-- Review 2026-11-26: the theme follows the device (sc_theme
+            <!-- Review 2026-11-26: the theme follows the device (no_access_theme
                  'auto': dark, light under prefers-color-scheme: light, in
                  sc_pages.scss — no script), or the user's own pick
                  (_sc_no_access_theme). -->
-            <t t-set="sc_theme_auto" t-value="sc_theme not in ('dark', 'light')"/>
-            <t t-set="sc_page_theme" t-value="'dark' if sc_theme_auto else sc_theme"/>
+            <t t-set="sc_theme_auto" t-value="no_access_theme not in ('dark', 'light')"/>
+            <t t-set="sc_page_theme" t-value="'dark' if sc_theme_auto else no_access_theme"/>
             <t t-set="body_classname" t-value="'o_pk_app_body o_pk_app_body_%s%s' % (sc_page_theme, ' o_sc_no_access_auto' if sc_theme_auto else '')"/>
             <t t-set="title">No access</t>
             <t t-set="head">

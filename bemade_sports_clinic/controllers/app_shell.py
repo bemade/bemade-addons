@@ -1068,7 +1068,7 @@ class AppShellMixin:
         """Task 1541: « Pas d'accès » (HTTP 403) for a user without a clinic
         app role."""
         response = request.render('bemade_sports_clinic.sc_no_access', {
-            'sc_theme': AppShellMixin._sc_no_access_theme(),
+            'no_access_theme': AppShellMixin._sc_no_access_theme(),
         })
         response.status_code = 403
         return response
