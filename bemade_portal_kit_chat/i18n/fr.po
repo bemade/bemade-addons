@@ -454,3 +454,13 @@ msgstr "Un membre"
 #: code:addons/bemade_portal_kit_chat/models/discuss_channel.py:0
 msgid "This is not available in this group."
 msgstr "Ce n'est pas disponible dans ce groupe."
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model,name:bemade_portal_kit_chat.model_bus_bus
+msgid "Communication Bus"
+msgstr "Bus de communication"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model,name:bemade_portal_kit_chat.model_ir_websocket
+msgid "websocket message handling"
+msgstr "traitement des messages du websocket"
