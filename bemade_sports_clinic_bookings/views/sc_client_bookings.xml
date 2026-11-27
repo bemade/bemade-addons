@@ -3,13 +3,16 @@
     Task 1795 — the client app's appointments (controllers/client_bookings.py):
     « Rendez-vous » (/my/bookings in the client app), « Réserver » and the
     client home's part. Drawn on bemade_sports_clinic.sc_client_layout. The
-    view and cancel links are Odoo's own pages (/calendar/view|cancel/<token>):
-    they leave the app (stock look). No inline script / style.
+    view link is Odoo's own page (/calendar/view/<token>: it leaves the app,
+    stock look); the cancel stays in the app (review round 2: a POST to
+    /my/bookings/<id>/client-cancel, back here with a toast). No inline
+    script / style.
 -->
 <odoo>
 
     <!-- One booking. Variables: row (ClientBookingsPortal._sc_client_booking_row),
-         actions (bool: the view / cancel buttons). -->
+         actions (bool: the view / cancel buttons), cancel_back (the page the
+         cancel goes back to: /my/home or /my/bookings). -->
     <template id="sc_client_booking_card" name="Sports Clinic App: client booking card">
         <div class="o_pk_card o_sc_client_booking" t-att-data-sc-client-booking="row['id']">
             <div class="o_sc_client_next">
@@ -25,8 +28,8 @@
             <div t-if="actions and (row['view_url'] or row['cancel_url'])" class="o_sc_client_actions">
                 <a t-if="row['view_url']" t-att-href="row['view_url']" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm"
                    data-sc-action="client_booking.view">See details</a>
-                <!-- The confirm sheet below; without script, Odoo's page (its
-                     own cancel button). -->
+                <!-- The confirm sheet below; without script, Odoo's view page
+                     (its own cancel button). -->
                 <a t-if="row['cancel_url']" t-att-href="row['view_url'] or row['cancel_url']"
                    class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm" data-sc-action="client_booking.cancel"
                    t-att-data-pk-sheet-open="'sc_client_cancel_%s' % row['id']">Cancel</a>
@@ -36,11 +39,14 @@
             <t t-set="sheet_id" t-value="'sc_client_cancel_%s' % row['id']"/>
             <t t-set="title">Cancel this appointment?</t>
             <p class="o_pk_confirm_message"><t t-out="row['when']"/><t t-if="row['type']"> · <t t-out="row['type']"/></t></p>
-            <div class="o_pk_form_actions">
+            <form method="post" t-att-action="row['cancel_url']" class="o_pk_form_actions"
+                  data-sc-form="client_booking.cancel">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="back" t-att-value="cancel_back or '/my/bookings'"/>
                 <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-sheet-close="1">Keep it</button>
-                <a t-att-href="row['cancel_url']" class="o_pk_btn o_pk_btn_danger"
-                   data-sc-action="client_booking.cancel_confirm">Cancel the appointment</a>
-            </div>
+                <button type="submit" class="o_pk_btn o_pk_btn_danger"
+                        data-sc-action="client_booking.cancel_confirm">Cancel the appointment</button>
+            </form>
         </t>
     </template>
 
@@ -94,6 +100,7 @@
                     <t t-foreach="sc_client_upcoming" t-as="row">
                         <t t-call="bemade_sports_clinic_bookings.sc_client_booking_card">
                             <t t-set="actions" t-value="True"/>
+                            <t t-set="cancel_back" t-value="'/my/bookings'"/>
                         </t>
                     </t>
                 </t>
@@ -131,6 +138,7 @@
                 <t t-if="sc_client_next" t-call="bemade_sports_clinic_bookings.sc_client_booking_card">
                     <t t-set="row" t-value="sc_client_next"/>
                     <t t-set="actions" t-value="True"/>
+                    <t t-set="cancel_back" t-value="'/my/home'"/>
                 </t>
                 <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                     <t t-set="message">No upcoming appointments.</t>

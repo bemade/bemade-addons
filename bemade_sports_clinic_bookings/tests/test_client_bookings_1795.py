@@ -8,10 +8,10 @@ Acceptance criteria covered here:
   customer domain (attendee, not organizer, with an appointment type) —
   upcoming first, the past ones folded; a foreign booking (another client's)
   is never shown, not even by id.
-* UC-B2 Each upcoming card links Odoo's pages with the event token: view
-  (``/calendar/view/<token>?partner_id=<client>``) and cancel
-  (``/calendar/cancel/<token>``), the latter only while the type's minimum
-  notice allows it; a past booking has no cancel.
+* UC-B2 Each upcoming card links Odoo's view page with the event token
+  (``/calendar/view/<token>?partner_id=<client>``) and, only while the
+  type's minimum notice allows it, the in-app cancel (review round 2:
+  ``/my/bookings/<id>/client-cancel``); a past booking has no cancel.
 * UC-B3 The client home shows « Prochain rendez-vous » (the next booking, or
   an empty state) and « Mes rendez-vous »; the tab « Rendez-vous ».
 * UC-B4 « Réserver »: no published type -> no button; one -> a link to
@@ -133,8 +133,10 @@ class TestClientBookings1795(BookingsShellCommon):
             return tree.xpath('//*[@data-sc-client-booking="%s"]' % event.id)[0]
         view = card(self.mine_next).xpath('.//a[@data-sc-action="client_booking.view"]/@href')
         self.assertEqual(view, ['/calendar/view/%s?partner_id=%s' % (self.mine_next.access_token, pid)])
-        cancel = tree.xpath('//a[@data-sc-action="client_booking.cancel_confirm"]/@href')
-        self.assertEqual(cancel, ['/calendar/cancel/%s?partner_id=%s' % (self.mine_next.access_token, pid)])
+        # Review round 2 (deliberate update): the cancel stays in the app
+        # (test_client_cancel_1795), no longer Odoo's /calendar/cancel/<token>.
+        cancel = tree.xpath('//form[@data-sc-form="client_booking.cancel"]/@action')
+        self.assertEqual(cancel, ['/my/bookings/%s/client-cancel' % self.mine_next.id])
         # Inside the minimum notice (24 h): no cancel, the view stays.
         self.assertFalse(card(self.mine_soon).xpath('.//a[@data-sc-action="client_booking.cancel"]'))
         self.assertTrue(card(self.mine_soon).xpath('.//a[@data-sc-action="client_booking.view"]'))

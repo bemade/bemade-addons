@@ -86,6 +86,12 @@ msgstr "Appliquer les filtres"
 
 #. module: bemade_sports_clinic_bookings
 #. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/client_bookings.py:0
+msgid "Appointment cancelled"
+msgstr "Rendez-vous annulé"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
 #: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
 msgid "Appointment type"
@@ -383,6 +389,26 @@ msgstr "La personne qui a réservé a été avisée par courriel."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_edit
 msgid "The person who booked will be notified by email."
 msgstr "La personne qui a réservé sera avisée par courriel."
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/client_bookings.py:0
+msgid ""
+"This appointment can no longer be cancelled online. Please contact Le Fit "
+"Crew."
+msgstr "Ce rendez-vous ne peut plus être annulé en ligne. Veuillez communiquer avec Le Fit Crew."
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/client_bookings.py:0
+msgid "This appointment cannot be found."
+msgstr "Ce rendez-vous est introuvable."
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/client_bookings.py:0
+msgid "This appointment is already cancelled."
+msgstr "Ce rendez-vous est déjà annulé."
 
 #. module: bemade_sports_clinic_bookings
 #. odoo-python

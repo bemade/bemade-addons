@@ -8,10 +8,16 @@ app, ``models/sc_client_app.py``).
   user's OWN bookings — Odoo's customer domain (``appointment/controllers/
   portal.py``, ``_get_portal_default_domain``: an attendee, not the
   organizer, of an event with an appointment type), upcoming first, then the
-  past ones (folded). Each card links to Odoo's own pages: view
-  (``/calendar/view/<token>?partner_id=``) and cancel
-  (``/calendar/cancel/<token>``, offered while the type's minimum notice
-  allows it; Odoo checks it again). The same URL keeps the staff page
+  past ones (folded). Each card links to Odoo's view page
+  (``/calendar/view/<token>?partner_id=``) and, while the type's minimum
+  notice allows it, cancels IN the app (review round 2, 2026-11-27): a
+  confirm sheet posts to ``/my/bookings/<id>/client-cancel``, which checks
+  the booking again (the user's own, not past, outside the notice, not
+  already cancelled), cancels it the way Odoo's ``/calendar/cancel/<token>``
+  does (``action_cancel_meeting``: the chatter line, the archive that
+  notifies the attendees and sets the status) and goes back to the page it
+  came from with a toast; a refusal is an error toast, never a 500. The
+  same URL keeps the staff page
   (``controllers/bookings.py``) and ``appointment_portal_staff``'s stock page
   for everyone else (kit switch off, a portal appointment provider).
 * « Réserver »: the published appointment types — one: its page; several: a
@@ -22,7 +28,7 @@ app, ``models/sc_client_app.py``).
 The events are read with sudo, restricted to the user's own partner by the
 domain: only the display values leave these methods.
 """
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from lxml import html as lxml_html
 
@@ -39,6 +45,8 @@ CLIENT_BOOKINGS_TEMPLATE = 'bemade_sports_clinic_bookings.sc_client_bookings'
 CLIENT_PAST_LIMIT = 20
 # A published type's short description (characters).
 CLIENT_TYPE_INTRO_MAX = 140
+# Where the in-app cancel goes back to (the pages that show the card).
+CLIENT_CANCEL_BACK = ('/my/home', '/my/bookings')
 
 
 class ClientBookingsPortal(BookingPortal, AppClientPortal):
@@ -88,9 +96,7 @@ class ClientBookingsPortal(BookingPortal, AppClientPortal):
         token = event.access_token
         partner = user.partner_id.id
         cancelled = event.appointment_status == 'cancelled'
-        upcoming = bool(event.stop and event.stop >= now)
-        deadline = now + timedelta(hours=apt_type.min_cancellation_hours or 0.0)
-        cancellable = bool(upcoming and not cancelled and token and event.start and event.start >= deadline)
+        cancellable = not self._sc_client_cancel_refusal(event)
         location = (event.location or apt_type.location_id.display_name or '').strip()
         return {
             'id': event.id,
@@ -102,7 +108,7 @@ class ClientBookingsPortal(BookingPortal, AppClientPortal):
             'location': location,
             'cancelled': cancelled,
             'view_url': '/calendar/view/%s?partner_id=%s' % (token, partner) if token else False,
-            'cancel_url': '/calendar/cancel/%s?partner_id=%s' % (token, partner) if cancellable else False,
+            'cancel_url': '/my/bookings/%s/client-cancel' % event.id if cancellable else False,
         }
 
     def _sc_client_bookings_rows(self):
@@ -123,6 +129,61 @@ class ClientBookingsPortal(BookingPortal, AppClientPortal):
                 ('stop', '>=', now), ('appointment_status', '!=', 'cancelled')],
             order='start asc', limit=1)
         return self._sc_client_booking_row(event, now) if event else None
+
+    # ------------------------------------------------------------------
+    # Cancel in the app (review round 2, 2026-11-27)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _sc_client_cancel_refusal(event):
+        """Why ``event`` (one of the user's own bookings, sudo) cannot be
+        cancelled now — ``'cancelled'`` (already: archived or marked) or
+        ``'no_time_left'`` (past, or inside the type's minimum notice: the
+        rule of Odoo's ``AppointmentCalendarController.
+        _get_prevent_cancel_status``) — or False."""
+        if not event.active or event.appointment_status == 'cancelled':
+            return 'cancelled'
+        start = event.allday and event.start_date or event.start
+        if not start:
+            return 'no_time_left'
+        hours = event.appointment_type_id.min_cancellation_hours or 0.0
+        if fields.Datetime.from_string(start) < datetime.now() + timedelta(hours=hours):
+            return 'no_time_left'
+        return False
+
+    def _sc_client_cancel_messages(self):
+        env = request.env
+        return {
+            'cancelled': env._("This appointment is already cancelled."),
+            'no_time_left': env._(
+                "This appointment can no longer be cancelled online. Please contact Le Fit Crew."),
+            'not_found': env._("This appointment cannot be found."),
+        }
+
+    @http.route(['/my/bookings/<int:event_id>/client-cancel'], type='http', auth='user',
+                methods=['POST'], website=True)
+    def sc_client_booking_cancel(self, event_id, back=None, **kw):
+        """Cancel one of the user's own bookings, then back to ``back``
+        (« Accueil » or « Rendez-vous ») with a toast."""
+        if not self._sc_client_bookings_active():
+            raise request.not_found()
+        back = back if back in CLIENT_CANCEL_BACK else '/my/bookings'
+        # The user's own booking only (Odoo's customer domain), archived
+        # ones included so a second cancel says « already cancelled ».
+        event = request.env['calendar.event'].sudo().with_context(active_test=False).search(
+            self._sc_client_bookings_domain() + [('id', '=', event_id)], limit=1)
+        refusal = 'not_found' if not event else self._sc_client_cancel_refusal(event)
+        if refusal:
+            request.session['notification'] = {
+                'type': 'danger', 'title': '', 'message': self._sc_client_cancel_messages()[refusal],
+            }
+            return request.redirect(back)
+        # As Odoo's /calendar/cancel/<token>: the cancelling attendee is the
+        # user's partner.
+        event.action_cancel_meeting(request.env.user.partner_id.ids)
+        request.session['notification'] = {
+            'type': 'success', 'title': '', 'message': request.env._("Appointment cancelled"),
+        }
+        return request.redirect(back)
 
     # ------------------------------------------------------------------
     # « Réserver »
