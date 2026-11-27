@@ -29,3 +29,4 @@ from . import test_pk_apps
 from . import test_pk_lang_guard
 from . import test_pk_home
 from . import test_pk_notification_prefs
+from . import test_pk_notification_push

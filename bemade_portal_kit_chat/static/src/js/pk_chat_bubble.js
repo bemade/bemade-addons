@@ -225,6 +225,8 @@ export class PkChatBubble extends Interaction {
     setCount(count) {
         if (Number.isInteger(count)) {
             applyBadge(this.badge, count);
+            // Task 5546: the installed app's icon follows (pk_push.js).
+            document.dispatchEvent(new CustomEvent("pk:app-badge", { detail: { count } }));
         }
     }
 

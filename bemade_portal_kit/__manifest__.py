@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.17.0',
+    'version': '19.0.1.18.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -25,7 +25,7 @@ user menu and shell components; version 1.12 the app's switch, its
 preferences, settings, « More », account and security pages, help,
 search, calendar and picker; version 1.15 scopes every registry per app
 (several consumers in one database, below); version 1.17 the
-notification preferences.
+notification preferences; version 1.18 their phone switch.
 
 Registries
 ----------
@@ -655,6 +655,39 @@ notices (e.g. ``bemade_portal_kit_chat``).
   ``redirect``; CSRF): the caller's own row; an unknown kind or a mode the
   kind does not allow answers 400. JSON ``{kind, mode}`` for a fetch, else
   a same-site redirect.
+
+Phone notifications (version 1.18)
+----------------------------------
+A kind that declares ``'push': True`` has a phone switch (« On the
+phone », off by default) BESIDE its e-mail mode, not a fourth mode: the
+addon that sends the kind's notices decides what a push replaces (the
+chat: a pushed message skips its « each » e-mail, the digest still goes).
+The kit sends nothing; ``bemade_portal_kit_pwa`` sends the pushes (Web
+Push from the installed app, Odoo's own ``mail.push.device`` and keys).
+
+* ``portal.kit._pk_push_available()``: False in the kit, True with
+  ``bemade_portal_kit_pwa`` while the switch is on. The phone column shows
+  only then, and only for the kinds that declare ``push``
+  (``pk_notification_push_kinds(app)``).
+* The switch is stored on the kind's ``portal.kit.notification.pref`` row
+  (``push``; a row may hold the switch only, ``mode`` empty: the default
+  mode applies). ``res.users._pk_notification_push(kind)``,
+  ``users._pk_notification_push_users(kind)`` and
+  ``res.users._pk_notification_push_partners(kind, partners)`` read it;
+  ``users._pk_notification_set_push(kinds, value)`` writes it.
+* ``POST /my/app/notify-pref`` takes ``push`` (``'1'`` / ``'0'``) with or
+  instead of ``mode``: only for a kind that declares ``push`` while
+  ``_pk_push_available()`` (else 400). JSON ``{kind, mode, push}``.
+* « Settings › Notifications »: each phone-capable kind gets a switch
+  (``form[data-pk-notify-push="<kind>"]``), and the section a device-state
+  card (``[data-pk-push-state]``, one ``[data-pk-push-show]`` line per
+  state: ``on``, ``off`` with the ``[data-pk-push-enable]`` button,
+  ``denied``, ``ios-install``, ``unsupported``), filled in by the
+  installed app's script.
+* ``res.users.pk_push_prompted``: the one-time « get notified on this
+  phone? » prompt was answered (it never comes back, on any device).
+* ``portal.kit._pk_app_badge_count(user)``: the number on the installed
+  app's icon (0 in the kit; the chat counts the unread messages).
 
 Style guide
 ------------

@@ -5,7 +5,7 @@
 
 Acceptance criteria:
 
-* UC-G1 On a database whose kit is older than 1.17.0, the install hook
+* UC-G1 On a database whose kit is older than 1.18.0, the install hook
   raises ``PkKitVersionError`` before anything is written.
 * UC-G2 The kit's version check is the hook's first statement.
 * UC-G3 On a database whose kit is new enough, the hook runs.
@@ -39,18 +39,35 @@ class TestPkChatVersionGuard(TransactionCase):
     # UC-G1
     @mute_logger('odoo.addons.bemade_portal_kit.tools.version_guard')
     def test_old_kit_stops(self):
-        self._set_kit('19.0.1.16.0')
+        self._set_kit('19.0.1.17.0')
         with self.assertRaises(PkKitVersionError) as ctx:
             hooks.pre_init_hook(self.env)
-        self.assertIn('bemade_portal_kit_chat needs bemade_portal_kit >= 19.0.1.17.0', str(ctx.exception))
+        self.assertIn('bemade_portal_kit_chat needs bemade_portal_kit >= 19.0.1.18.0', str(ctx.exception))
 
     # UC-G2
     def test_guard_is_the_first_statement(self):
         self.assertEqual(first_call_name(hooks.pre_init_hook), 'require_kit')
-        self.assertEqual(hooks.CHAT_MIN_KIT, '19.0.1.17.0')
-        self.assertEqual(PK_MIN_VERSION, '19.0.1.17.0')
+        self.assertEqual(hooks.CHAT_MIN_KIT, '19.0.1.18.0')
+        self.assertEqual(PK_MIN_VERSION, '19.0.1.18.0')
 
     # UC-G3
     def test_new_enough_kit_runs(self):
-        self._set_kit('19.0.1.17.0')
+        self._set_kit('19.0.1.18.0')
         self.assertIsNone(hooks.pre_init_hook(self.env))
+
+    # Task 5546: the upgrade to 1.1 checks the kit first too.
+    @mute_logger('odoo.addons.bemade_portal_kit.tools.version_guard')
+    def test_upgrade_checks_the_kit(self):
+        import importlib.util
+        import os
+        from odoo.modules.module import get_module_path
+        path = os.path.join(get_module_path('bemade_portal_kit_chat'), 'migrations', '19.0.1.1.0', 'pre-migrate.py')
+        spec = importlib.util.spec_from_file_location('pk_chat_pre_migrate_1_1', path)
+        migration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(migration)
+        self.assertEqual(first_call_name(migration.migrate), 'require_kit')
+        self._set_kit('19.0.1.17.0')
+        with self.assertRaises(PkKitVersionError):
+            migration.migrate(self.env.cr, '19.0.1.0.0')
+        self._set_kit('19.0.1.18.0')
+        self.assertIsNone(migration.migrate(self.env.cr, '19.0.1.0.0'))

@@ -27,9 +27,13 @@ Hooks (extend them with ``super()`` in an ``_inherit = 'portal.kit'``)
   (the app bar's search). The switch: ``_pk_shell_enabled()`` /
   ``_pk_shell_active(user)``.
 * ``_pk_notification_kinds()`` ``[{key, label, modes, default,
-  default_internal, app?, sequence?, enabled?}]`` (task 5516, kit 1.17:
-  the kinds of notification each user chooses a mode for, read through
-  ``pk_notification_kinds(app)``; the kit registers none)
+  default_internal, app?, sequence?, enabled?, push?}]`` (task 5516, kit
+  1.17: the kinds of notification each user chooses a mode for, read
+  through ``pk_notification_kinds(app)``; the kit registers none; task
+  5546, kit 1.18: ``push`` gives a kind a phone switch)
+* Task 5546 (kit 1.18), never cached: ``_pk_push_available()`` (phone
+  notifications can be sent: ``bemade_portal_kit_pwa``) and
+  ``_pk_app_badge_count(user)`` (the number on the installed app's icon)
 
 Each hook is built ONCE per registry (``tools.ormcache``) and frozen: the
 result is shared by every user and request of the database, so a hook holds
@@ -212,8 +216,29 @@ class PortalKit(models.AbstractModel):
 
         The kit registers none and sends nothing: the addon that registers
         a kind sends its notices, asking ``res.users._pk_notification_mode``
-        / ``_pk_notification_users``. Extend with ``super()``."""
+        / ``_pk_notification_users``. Extend with ``super()``.
+
+        Task 5546 (kit 1.18): ``'push': True`` gives the kind a phone switch
+        (« On the phone », off by default) beside its e-mail mode, read
+        through ``res.users._pk_notification_push(kind)`` /
+        ``_pk_notification_push_users`` / ``_pk_notification_push_partners``;
+        shown while ``_pk_push_available()``."""
         return []
+
+    @api.model
+    def _pk_push_available(self):
+        """Task 5546 (kit 1.18): can this database send phone notifications
+        (Web Push from the installed app)? False in the kit;
+        ``bemade_portal_kit_pwa`` answers True while the switch is on.
+        Never cached."""
+        return False
+
+    @api.model
+    def _pk_app_badge_count(self, user=None):
+        """Task 5546 (kit 1.18): the number on the installed app's icon for
+        ``user`` (default: the current user); 0 in the kit (the chat counts
+        its unread messages). Extend with ``super()``; never cached."""
+        return 0
 
     # ------------------------------------------------------------------
     # Task 5200 (P5): the switch, the preferences, the account, help, search
@@ -494,9 +519,12 @@ class PortalKit(models.AbstractModel):
     def pk_notification_rows(self, user=None, app=None):
         """« Settings › Notifications »: one row per kind of ``app``
         (default: the current app) for ``user`` (default: the current
-        user): ``{key, label, modes: [(mode, label)], current}``."""
+        user): ``{key, label, modes: [(mode, label)], current, push}``;
+        ``push`` (task 5546) is the phone switch of a kind that declares
+        one while ``_pk_push_available()``, else None (no switch)."""
         user = user or self.env.user
         labels = self.pk_notification_mode_labels()
+        push_on = self._pk_push_available()
         rows = []
         for kind in self.pk_notification_kinds(app):
             rows.append({
@@ -504,8 +532,15 @@ class PortalKit(models.AbstractModel):
                 'label': str(kind['label']),
                 'modes': [(mode, labels.get(mode, mode)) for mode in kind['modes']],
                 'current': user._pk_notification_mode(kind['key']),
+                'push': user._pk_notification_push(kind['key']) if push_on and kind.get('push') else None,
             })
         return rows
+
+    @api.model
+    def pk_notification_push_kinds(self, app=None):
+        """Task 5546: the keys of the kinds of ``app`` (default: the current
+        app) that have a phone switch (``'push': True``)."""
+        return [kind['key'] for kind in self.pk_notification_kinds(app) if kind.get('push')]
 
     # ------------------------------------------------------------------
     # Cached, frozen registries (one per database registry)

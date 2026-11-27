@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit: Installable App',
-    'version': '19.0.1.1.2',
+    'version': '19.0.1.2.0',
     'category': 'Website/Portal',
     'summary': 'The portal app as an installable app: web manifest, service worker, offline page, install page.',
     'description': """
@@ -95,6 +95,44 @@ whose script answers 404 (the kill switch). Markers: ``html[data-pk-sw]``
 ``data-pk-install``, ``data-pk-install-state`` (``installed``,
 ``prompt``), ``data-pk-install-steps`` and ``data-pk-install-prompt``.
 
+Phone notifications (version 1.2)
+---------------------------------
+Web Push from the installed app, Community only, on Odoo's own pipeline:
+its VAPID keys, ``mail.push.device``, its encryption and its cron queue
+(below 5 devices Odoo sends inside the posting request). The keys are only
+ever created by Odoo's own getter when missing; nothing here regenerates
+them. ``portal.kit._pk_push_available()`` answers True while the switch is
+on, so the kit's « Settings › Notifications » shows the phone switch of
+every kind that declares ``push`` (kit 1.18) and this device's state.
+
+* Routes (``auth='user'``, 404 while the switch is off, CSRF on POST):
+  ``GET /my/app/push/key`` (the public key, a CSRF token for the worker,
+  the viewer's owner tag, whether an ``endpoint`` is registered),
+  ``POST /my/app/push/register`` (upsert for the caller; a previous
+  endpoint is removed only if it is the caller's; an endpoint of another
+  partner moves to the caller; a wrong VAPID key answers 400; the first
+  registration from a « turn on » click switches the phone on for every
+  phone-capable kind of the user's app), ``POST /my/app/push/unregister``
+  (the caller's own endpoint only), ``POST /my/app/push/prompted`` (the
+  one-time prompt was answered) and ``GET /my/app/push/badge``.
+* Logout (``/web/session/logout``) removes the device the session
+  registered, and the page script unregisters and unsubscribes the phone
+  before following the logout link: a phone shared in a family never
+  receives the previous user's messages.
+* The worker: ``push`` (the notification; skipped only when a focused,
+  visible window shows that conversation, never on iOS), the app badge,
+  ``notificationclick`` (focus / open ``data.pk_url``) and
+  ``pushsubscriptionchange`` (subscribe again and register).
+* ``static/src/js/pk_push.js``: ``pkPush`` (``window.pkPush``) ``status()``
+  / ``enable()`` (from a click only) / ``disable()`` / ``resync()`` /
+  ``markPrompted()``; the badge from ``<meta name="pk-app-badge">`` and the
+  ``pk:app-badge`` event; ``[data-pk-push-showing="<url>"]`` marks what a
+  page shows.
+* Share partners get Web Push only from a kind with a phone switch: Odoo's
+  record-chatter push (``mail.thread``, every model but
+  ``discuss.channel``) skips them. Internal users are untouched (their
+  Discuss push stays on Odoo's worker, scope ``/odoo``).
+
 Templates and nav
 -----------------
 ``pk_app_install`` and ``pk_app_offline`` were the first consumer's
@@ -109,7 +147,7 @@ and ``//t[@name='pk_offline_message']``. The « More » entry ``install``
     'maintainers': ['dureposd'],
     'website': 'https://www.bemade.org',
     'license': 'LGPL-3',
-    'depends': ['bemade_portal_kit'],
+    'depends': ['bemade_portal_kit', 'mail'],
     'data': [
         'views/pk_pwa_templates.xml',
         'views/res_config_settings_views.xml',
@@ -117,9 +155,11 @@ and ``//t[@name='pk_offline_message']``. The « More » entry ``install``
     'assets': {
         'web.assets_frontend': [
             'bemade_portal_kit_pwa/static/src/js/pk_sw_register.js',
+            'bemade_portal_kit_pwa/static/src/js/pk_push.js',
         ],
         'web.assets_unit_tests_setup': [
             'bemade_portal_kit_pwa/static/src/js/pk_sw_register.js',
+            'bemade_portal_kit_pwa/static/src/js/pk_push.js',
         ],
         'web.assets_unit_tests': [
             'bemade_portal_kit_pwa/static/tests/*.test.js',

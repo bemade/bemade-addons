@@ -374,3 +374,27 @@
         }
     }
 }
+
+// Task 5546: the one-time « get notified on this phone? » banner.
+.o_pk_chat_push_banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--pk-space-2);
+    margin: var(--pk-space-2);
+    padding: var(--pk-space-2) var(--pk-space-3);
+    border-radius: var(--pk-radius-md);
+    background: var(--pk-surface-2);
+    color: var(--pk-fg);
+
+    p {
+        margin: 0;
+        flex: 1 1 12rem;
+    }
+
+    .o_pk_chat_push_actions {
+        display: flex;
+        gap: var(--pk-space-2);
+    }
+}

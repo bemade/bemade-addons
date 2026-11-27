@@ -1696,3 +1696,44 @@ msgstr "Préférence d'avis du portail"
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
 msgid "What we send you by e-mail."
 msgstr "Ce que nous vous envoyons par courriel."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Add the app to your home screen to get notifications"
+msgstr "Ajoutez l'app à l'écran d'accueil pour recevoir les avis"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Blocked: turn them back on in the phone's settings"
+msgstr "Bloqué : réactivez-les dans les réglages du téléphone"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Enabled on this phone"
+msgstr "Activé sur ce téléphone"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Not enabled yet"
+msgstr "Pas encore activé"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_notification_pref__push
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "On the phone"
+msgstr "Sur le téléphone"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_res_users__pk_push_prompted
+msgid "Phone notification prompt answered"
+msgstr "Invitation aux avis sur le téléphone répondue"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "This browser cannot show notifications"
+msgstr "Ce navigateur ne peut pas afficher les avis"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Turn on for this phone"
+msgstr "Activer sur ce téléphone"

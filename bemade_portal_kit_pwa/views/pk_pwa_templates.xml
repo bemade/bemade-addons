@@ -16,6 +16,12 @@
         <meta name="mobile-web-app-capable" content="yes"/>
         <meta name="apple-mobile-web-app-title" t-att-content="pk_pwa_head['short_name']"/>
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+        <!-- Task 5546: phone notifications (pk_push.js): the viewer's
+             owner tag and the app icon's number. -->
+        <t t-if="not request.env.user._is_public() and request.env['portal.kit']._pk_push_available()">
+            <meta name="pk-push-owner" t-att-content="request.env['portal.kit']._pk_push_owner()"/>
+            <meta name="pk-app-badge" t-att-content="str(request.env['portal.kit']._pk_app_badge_count() or 0)"/>
+        </t>
     </template>
 
     <template id="pk_app_layout_pwa" name="Portal kit: installable app in the app layout"

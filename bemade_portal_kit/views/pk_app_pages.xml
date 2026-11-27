@@ -107,6 +107,22 @@
                     <t t-set="title">Notifications</t>
                 </t>
                 <p class="o_pk_meta">What we send you by e-mail.</p>
+                <!-- Task 5546 (kit 1.18): the phone column, while phone
+                     notifications can be sent (portal.kit._pk_push_available)
+                     and a kind has a phone switch. The device state is
+                     filled in by the installed app's script (pk_push.js):
+                     one [data-pk-push-show] shown, the others hidden. -->
+                <t t-set="pk_notify_push" t-value="any(row['push'] is not None for row in pk_notify_rows)"/>
+                <div t-if="pk_notify_push" class="o_pk_card o_pk_push_state" data-pk-push-state="1">
+                    <p class="o_pk_push_state_line" data-pk-push-show="on" hidden="hidden">Enabled on this phone</p>
+                    <div class="o_pk_push_state_line" data-pk-push-show="off" hidden="hidden">
+                        <p>Not enabled yet</p>
+                        <button type="button" class="o_pk_btn o_pk_btn_primary" data-pk-push-enable="1">Turn on for this phone</button>
+                    </div>
+                    <p class="o_pk_push_state_line" data-pk-push-show="denied" hidden="hidden">Blocked: turn them back on in the phone's settings</p>
+                    <p class="o_pk_push_state_line" data-pk-push-show="ios-install" hidden="hidden">Add the app to your home screen to get notifications</p>
+                    <p class="o_pk_push_state_line" data-pk-push-show="unsupported" hidden="hidden">This browser cannot show notifications</p>
+                </div>
                 <div t-foreach="pk_notify_rows" t-as="pk_notify_row" class="o_pk_card o_pk_notify_row">
                     <strong class="o_pk_notify_label" t-out="pk_notify_row['label']"/>
                     <form method="post" action="/my/app/notify-pref" class="o_pk_segmented o_pk_segmented_full"
@@ -118,6 +134,20 @@
                             <button type="submit" name="mode" t-att-value="pk_notify_mode[0]"
                                     t-att-aria-pressed="'true' if pk_notify_mode[0] == pk_notify_row['current'] else 'false'"
                                     t-out="pk_notify_mode[1]"/>
+                        </t>
+                    </form>
+                    <form t-if="pk_notify_row['push'] is not None" method="post" action="/my/app/notify-pref"
+                          class="o_pk_notify_push" t-att-data-pk-notify-push="pk_notify_row['key']" data-pk-no-dirty="1">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="kind" t-att-value="pk_notify_row['key']"/>
+                        <input type="hidden" name="redirect" value="/my/app/settings#pk_notifications"/>
+                        <t t-call="bemade_portal_kit.pk_switch">
+                            <t t-set="sw_name" t-value="'push'"/>
+                            <t t-set="sw_value" t-value="'1'"/>
+                            <t t-set="sw_off" t-value="'0'"/>
+                            <t t-set="sw_checked" t-value="pk_notify_row['push']"/>
+                            <t t-set="sw_attrs" t-value="{'data-pk-switch-submit': '1'}"/>
+                            <t t-set="sw_label">On the phone</t>
                         </t>
                     </form>
                 </div>

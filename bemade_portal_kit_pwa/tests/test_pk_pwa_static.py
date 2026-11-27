@@ -59,7 +59,8 @@ class TestPkPwaStatic(TransactionCase):
     # ------------------------------------------------------------- UC-S2
     def test_assets(self):
         assets = get_manifest('bemade_portal_kit_pwa')['assets']
-        self.assertEqual(assets['web.assets_frontend'], [REGISTER_JS])
+        # Task 5546: the phone notifications' page script.
+        self.assertEqual(assets['web.assets_frontend'], [REGISTER_JS, 'bemade_portal_kit_pwa/static/src/js/pk_push.js'])
         self.assertNotIn('web.assets_frontend_lazy', assets)
         bundled = [path for paths in assets.values() for path in paths if isinstance(path, str)]
         self.assertFalse([path for path in bundled if '/sw/' in path])
