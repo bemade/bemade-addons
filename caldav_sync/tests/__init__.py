@@ -7,3 +7,4 @@ from . import test_sync_edge_cases
 from . import test_scheduling_scenarios
 from . import test_videocall
 from . import test_external_date_lock
+from . import test_privacy

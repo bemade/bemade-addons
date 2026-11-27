@@ -1,3 +1,10 @@
+## 0.8.8 (2026-11-23)
+
+- Synchronize the event privacy with the iCalendar CLASS property
+  (Infomaniak "Public" / "Privé"): Public <-> PUBLIC, Private <-> PRIVATE.
+  "Only internal users" is sent as PRIVATE and kept when PRIVATE comes
+  back; CONFIDENTIAL from other clients is read as "Only internal users".
+
 ## 0.8.2 (2024-11-28)
 
 - Restructured module:

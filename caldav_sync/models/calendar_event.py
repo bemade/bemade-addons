@@ -127,6 +127,21 @@ ANY_URL_RE = re.compile(r"https?://[^\s<>\"'\[\]]+", re.IGNORECASE)
 # link, for clients that only show the description. The line is stripped again
 # on import so the description does not grow by one line per round trip.
 VIDEOCALL_DESCRIPTION_LABEL = "Video call"
+# Privacy: Odoo privacy <-> iCalendar CLASS (RFC 5545 3.8.1.3). Infomaniak and
+# most clients only know PUBLIC and PRIVATE, so "Only internal users" is sent
+# as PRIVATE (the closest: hidden from people outside the calendar) and a
+# PRIVATE coming back does not downgrade it. CONFIDENTIAL from other clients
+# is still read as "Only internal users".
+PRIVACY_TO_ICAL_CLASS = {
+    "public": "PUBLIC",
+    "private": "PRIVATE",
+    "confidential": "PRIVATE",
+}
+ICAL_CLASS_TO_PRIVACY = {
+    "PUBLIC": "public",
+    "PRIVATE": "private",
+    "CONFIDENTIAL": "confidential",
+}
 
 
 def _clean_url(url: str) -> str:
@@ -215,7 +230,9 @@ class CalendarEvent(models.Model):
         slot = tz.localize(datetime.combine(local_date, local_time))
         return slot.astimezone(utc).replace(tzinfo=None)
 
-    @api.depends("name", "description", "partner_ids", "location", "videocall_location")
+    @api.depends(
+        "name", "description", "partner_ids", "location", "videocall_location", "privacy"
+    )
     def _compute_differs_from_base_event(self):
         base_events = self.filtered("is_base_event")
         non_base_events = self - base_events
@@ -227,6 +244,7 @@ class CalendarEvent(models.Model):
             "partner_ids",
             "location",
             "videocall_location",
+            "privacy",
         ]
         for event in non_base_events:
             base_event = event.recurrence_id.base_event_id
@@ -759,6 +777,9 @@ class CalendarEvent(models.Model):
         event_data["transp"] = vText(
             "TRANSPARENT" if self.show_as == "free" else "OPAQUE"
         )
+        # Privacy: the event's own, or its organizer's default when unset.
+        ical_class = PRIVACY_TO_ICAL_CLASS.get(self.effective_privacy)
+        event_data["class"] = vText(ical_class) if ical_class else None
         event_data["sequence"] = 0
 
     def _add_event_dates(self, event_data: dict) -> None:
@@ -1090,6 +1111,7 @@ class CalendarEvent(models.Model):
         "location",
         "videocall_location",
         "partner_ids",
+        "privacy",
     )
 
     def _get_series_writes(self, changed_vals: dict) -> list:
@@ -1344,6 +1366,10 @@ class CalendarEvent(models.Model):
         :return: A dictionary containing only the values that are different
         from those in self."""
         changed_vals = {}
+        if "privacy" in values:
+            privacy = values.pop("privacy")
+            if self._is_ical_privacy_change(privacy):
+                changed_vals["privacy"] = privacy
         # Don't update partner_ids if no change
         if "partner_ids" in values:
             partner_ids = values["partner_ids"][0][2]  # this is a SET command
@@ -1371,6 +1397,17 @@ class CalendarEvent(models.Model):
             if curr_val != val:
                 changed_vals.update({key: val})
         return changed_vals
+
+    def _is_ical_privacy_change(self, privacy: str) -> bool:
+        """Whether the privacy read from the server's CLASS differs from what
+        self would export. "Only internal users" is exported as PRIVATE and an
+        unset privacy as the organizer's default, so neither is overwritten
+        when the server just sends that back."""
+        self.ensure_one()
+        current = self.effective_privacy
+        if current == privacy:
+            return False
+        return not (current == "confidential" and privacy == "private")
 
     @api.model
     def _get_outdated(
@@ -1467,6 +1504,12 @@ class CalendarEvent(models.Model):
             if str(component.get("transp") or "OPAQUE").upper() == "TRANSPARENT"
             else "busy",
         }
+        # No CLASS (or an unknown one): leave the privacy as it is in Odoo.
+        privacy = ICAL_CLASS_TO_PRIVACY.get(
+            str(component.get("class") or "").strip().upper()
+        )
+        if privacy:
+            values["privacy"] = privacy
 
         # Only set user_id and partner_id during creation
         if for_creation:
