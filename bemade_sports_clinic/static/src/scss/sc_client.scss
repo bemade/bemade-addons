@@ -1,0 +1,34 @@
+// Task 1795 — the client app's home (sc_client_home), scoped under the app.
+// Brand tokens: sc_tokens.scss; generic pieces: the kit's o_pk_* classes.
+.o_pk_app {
+    .o_sc_client_greeting {
+        margin-bottom: var(--pk-space-3, 12px);
+    }
+
+    .o_sc_client_hello {
+        font-family: var(--pk-font-title);
+        text-transform: var(--pk-title-transform);
+        letter-spacing: var(--pk-title-spacing);
+        font-size: 2rem;
+        line-height: 1.1;
+        margin: 0 0 var(--pk-space-1, 4px);
+    }
+
+    .o_sc_client_next {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-2, 8px);
+    }
+
+    .o_sc_client_next_when {
+        font-size: 1.15rem;
+        font-weight: 600;
+    }
+
+    .o_sc_client_actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--pk-space-2, 8px);
+        margin-top: var(--pk-space-2, 8px);
+    }
+}
