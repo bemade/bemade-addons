@@ -8,30 +8,42 @@
             <xpath expr="//sheet" position="before">
                 <field name="caldav_date_locked" invisible="1" />
                 <div
-                    class="alert alert-info mb-0"
-                    role="status"
-                    invisible="not caldav_date_locked"
-                >
+          class="alert alert-info mb-0"
+          role="status"
+          invisible="not caldav_date_locked"
+        >
                     This meeting was created in the external calendar: its date and time cannot be changed in Odoo.
                 </div>
             </xpath>
             <xpath expr="//field[@name='start_date']" position="attributes">
-                <attribute name="readonly">not user_can_edit or caldav_date_locked</attribute>
+                <attribute
+          name="readonly"
+        >not user_can_edit or caldav_date_locked</attribute>
             </xpath>
             <xpath expr="//field[@name='start']" position="attributes">
-                <attribute name="readonly">not user_can_edit or caldav_date_locked</attribute>
+                <attribute
+          name="readonly"
+        >not user_can_edit or caldav_date_locked</attribute>
             </xpath>
             <xpath expr="//field[@name='duration']" position="attributes">
-                <attribute name="readonly">(id and recurrency) or not user_can_edit or caldav_date_locked</attribute>
+                <attribute
+          name="readonly"
+        >(id and recurrency) or not user_can_edit or caldav_date_locked</attribute>
             </xpath>
             <xpath expr="//field[@name='allday']" position="attributes">
-                <attribute name="readonly">not user_can_edit or caldav_date_locked</attribute>
+                <attribute
+          name="readonly"
+        >not user_can_edit or caldav_date_locked</attribute>
             </xpath>
             <xpath expr="//field[@name='recurrency']" position="attributes">
-                <attribute name="readonly">not user_can_edit or caldav_date_locked</attribute>
+                <attribute
+          name="readonly"
+        >not user_can_edit or caldav_date_locked</attribute>
             </xpath>
             <xpath expr="//field[@name='rrule_type_ui']" position="attributes">
-                <attribute name="readonly">not user_can_edit or caldav_date_locked</attribute>
+                <attribute
+          name="readonly"
+        >not user_can_edit or caldav_date_locked</attribute>
             </xpath>
         </field>
     </record>

@@ -121,4 +121,3 @@ class TestPrivacySync(TransactionCase, CaldavTestCommon):
         event = self._event(privacy=False)
         changes = event._get_value_changes(self._values("CLASS:PUBLIC"))
         self.assertNotIn("privacy", changes)
-

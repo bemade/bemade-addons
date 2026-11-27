@@ -43,7 +43,7 @@ msgstr "Nom affiché"
 #. module: caldav_sync_date_lock
 #: model:ir.model.fields,field_description:caldav_sync_date_lock.field_calendar_event__id
 msgid "ID"
-msgstr "ID"
+msgstr ""
 
 #. module: caldav_sync_date_lock
 #: model:ir.model.fields,field_description:caldav_sync_date_lock.field_calendar_event__caldav_imported
@@ -57,8 +57,8 @@ msgid ""
 "The date and time of “%(name)s” cannot be changed in Odoo: this meeting was "
 "created in the external calendar."
 msgstr ""
-"La date et l'heure de « %(name)s » ne peuvent pas être modifiées dans Odoo : "
-"cette réunion a été créée dans le calendrier externe."
+"La date et l'heure de « %(name)s » ne peuvent pas être modifiées dans Odoo :"
+" cette réunion a été créée dans le calendrier externe."
 
 #. module: caldav_sync_date_lock
 #: model_terms:ir.ui.view,arch_db:caldav_sync_date_lock.calendar_event_view_form

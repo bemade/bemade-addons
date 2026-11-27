@@ -20,7 +20,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:caldav_sync.res_users_view_form_inherit
 #: model_terms:ir.ui.view,arch_db:caldav_sync.res_users_view_form_simple_modif
 msgid "CalDAV"
-msgstr "CalDAV"
+msgstr ""
 
 #. module: caldav_sync
 #: model:ir.model.fields,field_description:caldav_sync.field_res_users__caldav_calendar_url
@@ -96,7 +96,7 @@ msgstr "Règle de récurrence de l'événement"
 #: model:ir.model.fields,field_description:caldav_sync.field_calendar_recurrence__id
 #: model:ir.model.fields,field_description:caldav_sync.field_res_users__id
 msgid "ID"
-msgstr "ID"
+msgstr ""
 
 #. module: caldav_sync
 #: model:ir.model.fields,field_description:caldav_sync.field_calendar_event__is_base_event
