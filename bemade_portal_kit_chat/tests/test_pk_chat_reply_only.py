@@ -8,8 +8,9 @@ Acceptance criteria:
 * UC-R1 A reader's top-level post is refused through the kit route (403),
   through Discuss's ``/mail/message/post`` and through a raw
   ``mail.message.create``; nothing is posted.
-* UC-R2 A reader's reply to a message of the channel is accepted (kit
-  route and ``/mail/message/post``).
+* UC-R2 A reader's reply to a message of the channel is accepted through
+  the kit route (task 5520: Discuss's ``/mail/message/post`` on a managed
+  channel is refused to a reader, 404: the kit is their only way in).
 * UC-R3 A reply to another channel's message is refused.
 * UC-R4 Posters and internal users post freely (top-level and replies).
 Synthetic users only.
@@ -84,6 +85,7 @@ class TestPkChatReplyOnly(HttpCase):
         self.assertEqual(self._comments(self.one), before)
 
     # UC-R2
+    @mute_logger('odoo.http')
     def test_reader_reply_accepted(self):
         self.authenticate('pkc_avery', 'pkc_avery')
         response = self._kit_post(self.one, 'Thanks!', parent=self.news)
@@ -91,9 +93,10 @@ class TestPkChatReplyOnly(HttpCase):
         row = response.json()['message']
         self.assertEqual(row['parent']['id'], self.news.id)
         self.assertTrue(row['own'])
-        self._discuss_post(self.one, 'See you there', parent=self.news)
+        with self.assertRaises(JsonRpcException):
+            self._discuss_post(self.one, 'See you there', parent=self.news)
         replies = self._comments(self.one).filtered('parent_id')
-        self.assertEqual(len(replies), 2)
+        self.assertEqual(len(replies), 1)
         self.assertEqual(replies.author_id, self.avery.partner_id)
         # A raw create of a reply passes the rule (the core's own ACL decides
         # the rest: portal users have no raw create there).

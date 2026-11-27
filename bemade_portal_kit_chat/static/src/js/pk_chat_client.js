@@ -17,11 +17,39 @@
  * no composer and no « Reply »: a note [data-pk-chat-closed-note] instead,
  * and its chip [data-pk-chat-closed-chip] (the window shows it in its
  * header through ``onClosed``; a block, at the top of the thread).
+ *
+ * Task 5520: a reader of a managed group gets no Discuss broadcast of it,
+ * only ``pk_chat.ping`` {channel_id, message_id} (content-free); both it
+ * and ``discuss.channel/new_message`` mean « refetch channel X »
+ * (subscribeChatBus).
  */
 import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 import { pkChatPushPrompt } from "@bemade_portal_kit_chat/js/pk_chat_push_prompt";
 
 export const PK_CHAT_EVENT = "pk:chat-changed";
+export const PK_CHAT_PING = "pk_chat.ping";
+export const PK_CHAT_NEW_MESSAGE = "discuss.channel/new_message";
+export const PK_CHAT_JOINED = "discuss.channel/joined";
+
+/**
+ * Task 5520: listen to the bus for the chat. ``onChanged(channelId)`` on a
+ * new message (Discuss's own notification for a poster or a direct chat,
+ * the kit's ``pk_chat.ping`` for a reader: only its channel id is used),
+ * ``onJoined()`` when the user is added to a conversation. Returns the
+ * unsubscribe function.
+ */
+export function subscribeChatBus(bus, { onChanged, onJoined }) {
+    const changed = (payload) => onChanged(payload && (payload.channel_id || payload.id));
+    const joined = () => onJoined();
+    bus.subscribe(PK_CHAT_NEW_MESSAGE, changed);
+    bus.subscribe(PK_CHAT_PING, changed);
+    bus.subscribe(PK_CHAT_JOINED, joined);
+    return () => {
+        bus.unsubscribe(PK_CHAT_NEW_MESSAGE, changed);
+        bus.unsubscribe(PK_CHAT_PING, changed);
+        bus.unsubscribe(PK_CHAT_JOINED, joined);
+    };
+}
 
 /** The kit routes. Every call goes through pkFetch (no toast: the chat
  * shows its own state). Tests replace it with a stub of the same shape. */

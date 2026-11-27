@@ -156,3 +156,29 @@ tours.add("pk_chat_reopened_discuss", {
         },
     ],
 });
+
+// Task 5520: a reader's open group updates live (pk_chat.ping, then the
+// kit routes); another reader's reply shows as the alias.
+tours.add("pk_chat_reader_live", {
+    steps: () => [
+        { content: "Open the bubble", trigger: "[data-pk-chat-toggle]", run: "click" },
+        { content: "Open the group", trigger: "[data-pk-chat-list] [data-pk-chat-kind=group]", run: "click" },
+        {
+            content: "The thread shows",
+            trigger: "[data-pk-chat-window] .o_pk_chat_msg:contains(Practice moved)",
+        },
+        {
+            content: "The coach's new announcement arrives live",
+            trigger: "[data-pk-chat-window] .o_pk_chat_msg:contains(Live announcement from the coach)",
+        },
+        {
+            content: "Another reader's reply arrives live, under the alias",
+            trigger:
+                "[data-pk-chat-window] .o_pk_chat_msg:contains(Live reply from a reader):contains(A member)",
+        },
+        {
+            content: "never the other reader's name",
+            trigger: "[data-pk-chat-window] [data-pk-chat-messages]:not(:contains(Blake))",
+        },
+    ],
+});

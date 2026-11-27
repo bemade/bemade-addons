@@ -442,3 +442,15 @@ msgstr "Le libellé de l'état terminé fourni par le module client (vide : « T
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
 msgid "This conversation is closed."
 msgstr "Cette conversation est terminée."
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/portal_kit.py:0
+msgid "A member"
+msgstr "Un membre"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/discuss_channel.py:0
+msgid "This is not available in this group."
+msgstr "Ce n'est pas disponible dans ce groupe."

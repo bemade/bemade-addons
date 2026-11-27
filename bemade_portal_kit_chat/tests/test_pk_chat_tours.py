@@ -17,8 +17,13 @@ Acceptance criteria:
   composer, no « Reply ».
 * UC-T5 (task 5566) The same group in the internal user's Discuss: its
   chip, no composer; reopened: the composer is back, no chip.
+* UC-T6 (task 5520) A reader's open group updates live (the bus's
+  ``pk_chat.ping``, then the kit routes): the coach's new announcement and
+  another reader's reply show without a reload, the reply as « A member ».
 Synthetic users only.
 """
+from unittest.mock import patch
+
 from odoo.tests import HttpCase, tagged
 
 from odoo.addons.bemade_portal_kit.tests.common import pk_frontend_langs
@@ -101,3 +106,31 @@ class TestPkChatTours(HttpCase):
         self.specs[-1]['closed'] = False
         self.env['portal.kit']._pk_chat_sync()
         self.start_tour(url, 'pk_chat_reopened_discuss', login='pkc_dana')
+
+    # UC-T6
+    def test_reader_live_update(self):
+        self.env['portal.kit']._pk_chat_sync()
+        group = self.env['discuss.channel'].search([('pk_managed_key', '=', 'tour-1')])
+        news = group.with_user(self.dana).message_post(body='Practice moved to 6 pm', message_type='comment',
+                                                       subtype_xmlid='mail.mt_comment')
+        member_cls = type(self.env['discuss.channel.member'])
+        original = member_cls._mark_as_read
+        done = []
+
+        def mark_as_read(member, last_message_id):
+            res = original(member, last_message_id)
+            # The reader's open thread is on screen (it marks it read): the
+            # coach posts and another reader replies, in another « session ».
+            if member.partner_id == self.avery.partner_id and not done:
+                done.append(True)
+                group.with_user(self.dana).message_post(
+                    body='Live announcement from the coach', message_type='comment',
+                    subtype_xmlid='mail.mt_comment')
+                group.with_user(self.blake).sudo().message_post(
+                    body='Live reply from a reader', message_type='comment', subtype_xmlid='mail.mt_comment',
+                    parent_id=news.id)
+            return res
+
+        with patch.object(member_cls, '_mark_as_read', mark_as_read):
+            self.start_tour('/my/app/more', 'pk_chat_reader_live', login='pkc_avery')
+        self.assertTrue(done)

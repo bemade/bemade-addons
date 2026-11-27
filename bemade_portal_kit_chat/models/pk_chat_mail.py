@@ -21,6 +21,8 @@ preferences (kit 1.17).
 * Task 5566: in a closed managed channel, a message newer than the closing
   (``pk_closed_message_id``) is neither e-mailed nor counted in a digest;
   the ones before it keep their normal e-mail and digest.
+* Task 5520: a reader sees another reader's name as the alias
+  (``_pk_chat_author_for``), in each e-mail and in the digest.
 
 Kinds: a direct chat's messages are ``chat.direct``; in a group a message
 without parent is ``chat.announcement``, a reply ``chat.reply`` (a poster
@@ -150,12 +152,15 @@ class PortalKit(models.AbstractModel):
     @api.model
     def _pk_chat_mail_each(self, user, member, messages):
         env = self.with_context(lang=user.lang).env
-        title = env['portal.kit']._pk_chat_title(member)
+        kit = env['portal.kit']
+        title = kit._pk_chat_title(member)
         subject = env._("New messages: %s", title) if len(messages) > 1 else env._("New message: %s", title)
         return self._pk_chat_send(user, subject, 'bemade_portal_kit_chat.pk_chat_mail_each', {
             'title': title,
-            'messages': [{'author': m.author_id.name or '', 'text': pk_chat_excerpt(m.body, 600),
-                          'reply_to': m.parent_id.author_id.name if m.parent_id else ''} for m in messages],
+            'messages': [{'author': kit._pk_chat_author_for(member, m.author_id)[0],
+                          'text': pk_chat_excerpt(m.body, 600),
+                          'reply_to': kit._pk_chat_author_for(member, m.parent_id.author_id)[0]
+                          if m.parent_id else ''} for m in messages],
             'url': self._pk_chat_url(member.channel_id),
         }, title)
 
@@ -212,7 +217,7 @@ class PortalKit(models.AbstractModel):
                 rows.append({
                     'title': self.with_context(lang=user.lang)._pk_chat_title(member),
                     'count': count,
-                    'author': last.author_id.name or '',
+                    'author': self.with_context(lang=user.lang)._pk_chat_author_for(member, last.author_id)[0],
                     'excerpt': pk_chat_excerpt(last.body),
                     'url': self._pk_chat_url(member.channel_id),
                 })

@@ -15,6 +15,7 @@ the chat is off for the viewer's app (``portal.kit._pk_chat_active()``).
 * ``POST /my/app/chat/start``                   ``partner_id`` -> ``{id}`` (403: not a contact)
 * ``GET  /my/app/chat/unread``                  ``{count}``
 * ``GET  /my/app/chat/<id>/avatar[/<partner>]`` a member's / the channel's avatar
+  (task 5520: never another reader's, for a reader)
 * pages ``/my/app/conversations`` and ``/my/app/conversations/<id>`` (the
   e-mails' links).
 """
@@ -149,12 +150,14 @@ class PortalKitChat(PortalKitShell):
     def pk_chat_avatar(self, channel_id, partner_id=None, **kw):
         """A partner's avatar when the viewer may see that partner here: the
         other person of a direct chat, or an author in the channel (a
-        reader learns no one else); the channel's own avatar."""
+        reader learns no one else); the channel's own avatar. Task 5520: a
+        reader gets 404 for another reader (``_pk_chat_hides_author``: their
+        rows carry the neutral avatar instead)."""
         member = self._pk_chat_member_or_404(channel_id)
         channel = member.channel_id.sudo()
         if partner_id:
             partner = request.env['res.partner'].sudo().browse(partner_id).exists()
-            allowed = partner and (
+            allowed = partner and not request.env['portal.kit']._pk_chat_hides_author(member, partner) and (
                 (channel.channel_type == 'chat' and partner in channel.channel_member_ids.partner_id)
                 or (not member.pk_role == 'reader' and partner in channel.channel_member_ids.partner_id)
                 or request.env['mail.message'].sudo().search_count([
