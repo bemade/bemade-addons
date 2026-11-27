@@ -126,7 +126,7 @@
                 <t t-call="bemade_portal_kit.pk_section_header">
                     <t t-set="title">Next appointment</t>
                     <t t-set="more_url" t-value="sc_client_bookings_url"/>
-                    <t t-set="more_label">All</t>
+                    <t t-set="more_label">See all</t>
                 </t>
                 <t t-if="sc_client_next" t-call="bemade_sports_clinic_bookings.sc_client_booking_card">
                     <t t-set="row" t-value="sc_client_next"/>
