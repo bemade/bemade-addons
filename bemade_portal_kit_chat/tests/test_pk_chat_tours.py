@@ -12,6 +12,11 @@ Acceptance criteria:
   member list; « Reply » on the announcement sends a reply that shows its
   quote; the poster sees the reply in Discuss.
 * UC-T3 The open window follows the user to the next page.
+* UC-T4 (task 5566) A closed group, for a portal reader and a poster:
+  under « Ended conversations » with its chip, the history reads, no
+  composer, no « Reply ».
+* UC-T5 (task 5566) The same group in the internal user's Discuss: its
+  chip, no composer; reopened: the composer is back, no chip.
 Synthetic users only.
 """
 from odoo.tests import HttpCase, tagged
@@ -66,3 +71,33 @@ class TestPkChatTours(HttpCase):
         channel.with_user(self.dana).message_post(body='Hello again', message_type='comment',
                                                   subtype_xmlid='mail.mt_comment')
         self.start_tour('/my/app/more', 'pk_chat_window_follows', login='pkc_avery')
+
+    def _closed_group(self):
+        self.specs.append({'key': 'tour-closed', 'name': 'Team Ended parents', 'closed': False, 'members': {
+            self.dana.partner_id.id: 'poster', self.avery.partner_id.id: 'reader',
+            self.blake.partner_id.id: 'poster'}})
+        kit = self.env['portal.kit']
+        kit._pk_chat_sync()
+        group = self.env['discuss.channel'].search([('pk_managed_key', '=', 'tour-closed')])
+        group.with_user(self.dana).message_post(body='Last practice of the season', message_type='comment',
+                                                subtype_xmlid='mail.mt_comment')
+        self.specs[-1]['closed'] = True
+        kit._pk_chat_sync()
+        return group
+
+    # UC-T4
+    def test_closed_group_portal(self):
+        group = self._closed_group()
+        before = group.message_ids
+        for login in ('pkc_avery', 'pkc_blake'):
+            self.start_tour('/my/app/more', 'pk_chat_closed_portal', login=login)
+        self.assertEqual(group.message_ids, before)
+
+    # UC-T5
+    def test_closed_group_discuss(self):
+        group = self._closed_group()
+        url = '/odoo/discuss?active_id=discuss.channel_%s' % group.id
+        self.start_tour(url, 'pk_chat_closed_discuss', login='pkc_dana')
+        self.specs[-1]['closed'] = False
+        self.env['portal.kit']._pk_chat_sync()
+        self.start_tour(url, 'pk_chat_reopened_discuss', login='pkc_dana')

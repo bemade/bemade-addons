@@ -8,9 +8,12 @@
 * ``_pk_chat_contacts(user)``: the partners ``user`` may START a direct
   chat with (consumer policy; never cached: per user);
 * ``_pk_chat_managed_channels()``: ``[{key, name, app?, members:
-  {partner_id: 'poster' | 'reader'}}]``, the group channels the consumer
-  manages (read through ``pk_chat_managed_channels(app)``; never cached:
-  members are data);
+  {partner_id: 'poster' | 'reader'}, closed?, closed_label?}]``, the group
+  channels the consumer manages (read through
+  ``pk_chat_managed_channels(app)``; never cached: members are data);
+  task 5566: ``closed: True`` keeps the channel listed and readable for its
+  members, but nobody may write in it any more (``closed_label``: the
+  chip's text, plain text stored as given; default « Ended »);
 * ``_pk_chat_sync(key=None)``: makes the database match the hook, silently.
 
 The chat registers three notification kinds (kit 1.17) for the apps where
@@ -60,9 +63,13 @@ class PortalKit(models.AbstractModel):
 
     @api.model
     def _pk_chat_managed_channels(self):
-        """``[{'key', 'name', 'app', 'members': {partner_id: role}}]``: the
-        group channels the consumer manages (``role``: ``'poster'`` or
-        ``'reader'``). Default: none."""
+        """``[{'key', 'name', 'app', 'members': {partner_id: role},
+        'closed', 'closed_label'}]``: the group channels the consumer
+        manages (``role``: ``'poster'`` or ``'reader'``). Task 5566:
+        ``'closed': True`` (optional) = an ended conversation, still listed
+        and readable, read-only for everyone; ``'closed_label'`` (optional,
+        plain text) replaces the chip's « Ended »; ``False`` or absent:
+        open. Default: none."""
         return []
 
     @api.model
@@ -130,10 +137,14 @@ class PortalKit(models.AbstractModel):
         (every app's): create or rename the ``group`` channel of each key,
         add and remove its members, set their roles. ``key`` given: that
         channel only. Without ``key``, a managed channel whose key the hook
-        no longer returns is archived (never deleted). Idempotent and
-        SILENT: no « joined » / « invited » posts (members are created
-        without ``_add_members``' messages), and a new member starts with
-        the channel's history read and never e-mailed."""
+        no longer returns is archived (never deleted). Task 5566: a spec's
+        ``closed`` closes (or, false / absent, reopens) the channel: it stays
+        active and synced, ``pk_closed`` / ``pk_closed_label`` follow the
+        spec and ``pk_closed_message_id`` keeps its last message at the
+        closing. Idempotent and SILENT: no « joined » / « invited » posts
+        (members are created without ``_add_members``' messages), no notice
+        when closing or reopening, and a new member starts with the
+        channel's history read and never e-mailed."""
         Channel = self.env['discuss.channel'].sudo().with_context(active_test=False)
         Member = self.env['discuss.channel.member'].sudo()
         specs = self._pk_chat_managed_channels()
@@ -155,6 +166,15 @@ class PortalKit(models.AbstractModel):
                 vals['name'] = spec['name']
             if not channel.active:
                 vals['active'] = True
+            closed = bool(spec.get('closed'))
+            label = (str(spec.get('closed_label') or '') or False) if closed else False
+            if closed != channel.pk_closed:
+                vals['pk_closed'] = closed
+                vals['pk_closed_message_id'] = self.env['mail.message'].sudo().search(
+                    [('model', '=', 'discuss.channel'), ('res_id', '=', channel.id)],
+                    order='id desc', limit=1).id if closed else False
+            if label != (channel.pk_closed_label or False):
+                vals['pk_closed_label'] = label
             if vals:
                 channel.write(vals)
             members = Member.search([('channel_id', '=', channel.id), ('partner_id', '!=', False)])

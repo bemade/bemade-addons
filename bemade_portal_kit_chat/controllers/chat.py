@@ -9,6 +9,7 @@ the chat is off for the viewer's app (``portal.kit._pk_chat_active()``).
 * ``GET  /my/app/chat/conversations``          the viewer's conversations
 * ``GET  /my/app/chat/<id>/messages``           ``?before=&after=&limit=``
 * ``POST /my/app/chat/<id>/post``               ``body`` (plain text), ``parent_id``
+  (403 ``{error: 'closed', message}`` in a closed conversation, task 5566)
 * ``POST /my/app/chat/<id>/read``               marks the conversation read
 * ``GET  /my/app/chat/contacts?q=``             who the viewer may start a chat with
 * ``POST /my/app/chat/start``                   ``partner_id`` -> ``{id}`` (403: not a contact)
@@ -89,6 +90,10 @@ class PortalKitChat(PortalKitShell):
         except ValueError:
             return _json({'error': 'bad_request'}, 400)
         channel = member.channel_id.with_env(request.env)
+        try:
+            channel._pk_chat_check_open()  # task 5566: a closed conversation
+        except AccessError as error:
+            return _json({'error': 'closed', 'message': str(error)}, 403)
         if parent_id:
             parent = request.env['mail.message'].sudo().browse(parent_id).exists()
             if not parent or parent.model != 'discuss.channel' or parent.res_id != channel.id:

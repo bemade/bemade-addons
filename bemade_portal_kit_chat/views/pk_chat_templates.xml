@@ -31,13 +31,15 @@
         <t t-set="pk_chat_t_empty">No messages yet.</t>
         <t t-set="pk_chat_t_error">The message could not be sent.</t>
         <t t-set="pk_chat_t_older">Older messages</t>
+        <t t-set="pk_chat_t_closed">This conversation is closed.</t>
         <span hidden="hidden" data-pk-chat-texts="1"
               t-att-data-pk-chat-reply="pk_chat_t_reply" t-att-data-pk-chat-send="pk_chat_t_send"
               t-att-data-pk-chat-placeholder="pk_chat_t_placeholder" t-att-data-pk-chat-replying-to="pk_chat_t_replying"
               t-att-data-pk-chat-cancel="pk_chat_t_cancel" t-att-data-pk-chat-reader-hint="pk_chat_t_hint"
               t-att-data-pk-chat-members="pk_chat_t_members" t-att-data-pk-chat-poster="pk_chat_t_poster"
               t-att-data-pk-chat-reader="pk_chat_t_reader" t-att-data-pk-chat-empty="pk_chat_t_empty"
-              t-att-data-pk-chat-error="pk_chat_t_error" t-att-data-pk-chat-older="pk_chat_t_older"/>
+              t-att-data-pk-chat-error="pk_chat_t_error" t-att-data-pk-chat-older="pk_chat_t_older"
+              t-att-data-pk-chat-closed="pk_chat_t_closed"/>
         <!-- Task 5546: the one-time phone prompt (pk_chat_push_prompt.js),
              while phone notifications can be sent and the user never
              answered it. -->
@@ -58,8 +60,9 @@
         <t t-set="pk_chat_label">Conversations</t>
         <t t-set="pk_chat_none">No conversation yet.</t>
         <t t-set="pk_chat_pick">Choose a person</t>
+        <t t-set="pk_chat_closed_section">Ended conversations</t>
         <div class="o_pk_chat_bubble" data-pk-chat-bubble="1" t-att-data-pk-chat-empty="pk_chat_none"
-             t-att-data-pk-chat-pick-label="pk_chat_pick">
+             t-att-data-pk-chat-pick-label="pk_chat_pick" t-att-data-pk-chat-closed-section="pk_chat_closed_section">
             <button type="button" class="o_pk_icon_btn o_pk_chat_toggle" data-pk-chat-toggle="1"
                     aria-haspopup="menu" aria-expanded="false" t-att-aria-label="pk_chat_label" t-att-title="pk_chat_label">
                 <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'pk_chat'"/></t>
@@ -87,6 +90,7 @@
                     <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'back'"/></t>
                 </button>
                 <strong class="o_pk_chat_window_title" data-pk-chat-title="1"/>
+                <span class="o_pk_chip o_pk_chip_ghost o_pk_chat_closed_chip" data-pk-chat-closed-chip="1" hidden="hidden"/>
                 <button type="button" class="o_pk_icon_btn o_pk_chat_min" data-pk-chat-min="1" t-att-aria-label="pk_chat_min" t-att-title="pk_chat_min">
                     <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
                 </button>
@@ -132,8 +136,14 @@
                     <t t-set="message">No conversation yet.</t>
                     <t t-call="bemade_portal_kit.pk_empty_state"/>
                 </t>
+                <t t-set="pk_chat_closed_seen" t-value="False"/>
                 <t t-foreach="pk_chat_rows" t-as="pk_chat_row">
-                    <a class="o_pk_chat_row" t-att-href="'/my/app/conversations/%s' % pk_chat_row['id']"
+                    <!-- Task 5566: the closed conversations last, under a heading. -->
+                    <t t-if="pk_chat_row['closed'] and not pk_chat_closed_seen">
+                        <t t-set="pk_chat_closed_seen" t-value="True"/>
+                        <h3 class="o_pk_chat_section" data-pk-chat-closed-section="1">Ended conversations</h3>
+                    </t>
+                    <a class="o_pk_chat_row" t-att-data-pk-chat-closed="'1' if pk_chat_row['closed'] else None" t-att-href="'/my/app/conversations/%s' % pk_chat_row['id']"
                        t-att-data-pk-chat-row="pk_chat_row['id']">
                         <img class="o_pk_chat_avatar" alt="" loading="lazy" t-att-src="pk_chat_row['avatar_url']"/>
                         <span class="o_pk_chat_row_text">
@@ -142,6 +152,8 @@
                         </span>
                         <span class="o_pk_chat_row_meta">
                             <time t-out="pk_chat_row['when']"/>
+                            <span t-if="pk_chat_row['closed']" class="o_pk_chip o_pk_chip_ghost o_pk_chat_closed_chip"
+                                  data-pk-chat-closed-chip="1" t-out="pk_chat_row['closed_label']"/>
                             <span t-if="pk_chat_row['unread']" class="o_pk_chat_badge" t-out="pk_chat_row['unread']"/>
                         </span>
                     </a>

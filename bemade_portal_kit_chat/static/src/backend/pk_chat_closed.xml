@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Task 5566: a closed managed channel in Discuss: no composer, its chip
+     (the consumer's label, else « Ended ») next to the thread's name. -->
+<templates xml:space="preserve">
+    <t t-name="bemade_portal_kit_chat.ClosedChip">
+        <span class="o_pk_chat_closed_chip badge rounded-pill text-bg-secondary align-self-center flex-shrink-0 mx-1"
+              data-pk-chat-closed-chip="1">
+            <t t-if="thread.pk_closed_label" t-out="thread.pk_closed_label"/>
+            <t t-else="">Ended</t>
+        </span>
+    </t>
+
+    <t t-inherit="mail.DiscussContent" t-inherit-mode="extension">
+        <xpath expr="//Composer" position="attributes">
+            <attribute name="t-if">(thread.model !== 'mail.box' or thread.composer.replyToMessage) and !thread.pk_closed</attribute>
+        </xpath>
+        <xpath expr="//AutoresizeInput[@onValidate.bind='renameThread']" position="after">
+            <t t-if="thread.pk_closed" t-call="bemade_portal_kit_chat.ClosedChip"/>
+        </xpath>
+    </t>
+
+    <t t-inherit="mail.ChatWindow" t-inherit-mode="extension">
+        <xpath expr="//Composer" position="attributes">
+            <attribute name="t-if">!thread.pk_closed</attribute>
+        </xpath>
+    </t>
+
+    <t t-inherit="mail.ChatWindow.headerContent" t-inherit-mode="extension">
+        <xpath expr="//div[@t-att-title='props.chatWindow.displayName']" position="after">
+            <t t-if="thread?.pk_closed" t-call="bemade_portal_kit_chat.ClosedChip"/>
+        </xpath>
+    </t>
+</templates>

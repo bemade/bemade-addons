@@ -13,12 +13,21 @@
  * Markers: [data-pk-chat-bubble], -toggle, -badge, -menu, -list, -new,
  * -picker; [data-pk-chat-window] (pk_chat_window.js); [data-pk-chat-block]
  * (pk_chat_block.js, the same thread inline).
+ *
+ * Task 5566: the closed conversations come last (the server's order) under
+ * a heading [data-pk-chat-closed-section], each with its chip.
  */
 import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
 import { enhance } from "@bemade_portal_kit/js/pk_picker";
 
-import { PK_CHAT_EVENT, ChatThread, chatApi, chatTexts } from "@bemade_portal_kit_chat/js/pk_chat_client";
+import {
+    PK_CHAT_EVENT,
+    ChatThread,
+    chatApi,
+    chatTexts,
+    renderConversations,
+} from "@bemade_portal_kit_chat/js/pk_chat_client";
 import { ChatWindow } from "@bemade_portal_kit_chat/js/pk_chat_window";
 
 const POLL_MS = 20000;
@@ -31,52 +40,6 @@ export function applyBadge(badge, count) {
     badge.hidden = value <= 0;
 }
 
-/** The dropdown's rows. */
-export function renderConversations(list, rows, texts) {
-    list.innerHTML = "";
-    if (!rows.length) {
-        const empty = document.createElement("p");
-        empty.className = "o_pk_chat_empty";
-        empty.textContent = texts.noConversations || "";
-        list.append(empty);
-        return;
-    }
-    for (const row of rows) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = `o_pk_chat_row${row.unread ? " o_pk_chat_row_unread" : ""}`;
-        button.dataset.pkChatOpen = String(row.id);
-        button.dataset.pkChatKind = row.kind;
-        const avatar = document.createElement("img");
-        avatar.className = "o_pk_chat_avatar";
-        avatar.alt = "";
-        avatar.src = row.avatar_url;
-        avatar.loading = "lazy";
-        const text = document.createElement("span");
-        text.className = "o_pk_chat_row_text";
-        const title = document.createElement("strong");
-        title.className = "o_pk_chat_row_title";
-        title.textContent = row.title;
-        const preview = document.createElement("span");
-        preview.className = "o_pk_chat_row_preview";
-        preview.textContent = row.preview;
-        text.append(title, preview);
-        const meta = document.createElement("span");
-        meta.className = "o_pk_chat_row_meta";
-        const when = document.createElement("time");
-        when.textContent = row.when;
-        meta.append(when);
-        if (row.unread) {
-            const count = document.createElement("span");
-            count.className = "o_pk_chat_badge";
-            count.textContent = String(row.unread);
-            meta.append(count);
-        }
-        button.append(avatar, text, meta);
-        list.append(button);
-    }
-}
-
 export class PkChatBubble extends Interaction {
     static selector = ".o_pk_app [data-pk-chat-bubble]";
 
@@ -84,6 +47,7 @@ export class PkChatBubble extends Interaction {
         this.api = chatApi;
         this.texts = chatTexts();
         this.texts.noConversations = this.el.dataset.pkChatEmpty || "";
+        this.texts.closedSection = this.el.dataset.pkChatClosedSection || "";
         this.toggleEl = this.el.querySelector("[data-pk-chat-toggle]");
         this.badge = this.el.querySelector("[data-pk-chat-badge]");
         this.menu = this.el.querySelector("[data-pk-chat-menu]");
@@ -299,3 +263,5 @@ export class PkChatBubble extends Interaction {
 }
 
 registry.category("public.interactions").add("bemade_portal_kit_chat.pk_chat_bubble", PkChatBubble);
+
+export { renderConversations };

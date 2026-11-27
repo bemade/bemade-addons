@@ -6,6 +6,7 @@ from . import test_pk_chat_prefs
 from . import test_pk_chat_contacts
 from . import test_pk_chat_sync
 from . import test_pk_chat_reply_only
+from . import test_pk_chat_closed
 from . import test_pk_chat_privacy
 from . import test_pk_chat_calls
 from . import test_pk_chat_email

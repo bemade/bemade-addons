@@ -27,8 +27,9 @@ class DiscussChannelMember(models.Model):
 
     def _rtc_join_call(self, store=None, check_rtc_session_ids=None, camera=False):
         """No call for a share (portal) user: joining (and so starting) a
-        call is refused."""
+        call is refused. Task 5566: nor anyone's in a closed channel."""
         for member in self:
+            member.channel_id.with_env(self.env)._pk_chat_check_open()
             partner = member.partner_id
             if partner and not partner.user_ids.filtered(lambda user: not user.share):
                 raise UserError(_("Calls are not available in the portal."))

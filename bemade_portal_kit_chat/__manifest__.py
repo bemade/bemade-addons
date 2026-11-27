@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit: Chat',
-    'version': '19.0.1.1.0',
+    'version': '19.0.1.2.0',
     'category': 'Website/Portal',
     'summary': 'Portal conversations on Discuss: direct chats and managed announcement groups, '
                'a floating window and e-mail notices each user chooses.',
@@ -38,7 +38,8 @@ Hooks (``portal.kit``, extend with ``super()``)
   Per user, never cached. Default: nobody.
 * ``_pk_chat_managed_channels()``: ``[{'key': 'team-12', 'name': 'Team
   parents', 'app': 'myapp', 'members': {partner_id: 'poster' |
-  'reader'}}]``. Data, never cached; read with
+  'reader'}}]``, optionally ``'closed': True`` and ``'closed_label'``
+  (version 1.2, below). Data, never cached; read with
   ``pk_chat_managed_channels(app)``.
 
 Managed channels
@@ -118,6 +119,27 @@ every 5 minutes, for messages unread for 10 minutes; « Digest »: one
 e-mail at 07:00 in the user's time zone, once per day, listing the unread
 conversations; « Never »: nothing.
 
+Closed managed channels (version 1.2)
+-------------------------------------
+A spec with ``'closed': True`` is an ended conversation: the sync keeps
+the channel active with its members (``discuss.channel.pk_closed``), so it
+stays listed and its history reads, but NOBODY may write in it any more:
+no post, reply, edit, delete, sub-thread or call, for portal posters,
+readers and internal users alike, on every route (the kit's, Discuss's
+``/mail/message/post`` and ``/mail/message/update_content``, a raw
+``mail.message.create``, ``sudo()`` included); only the superuser
+(``__system__``) still can. Refusal: « This conversation is closed. ».
+Reactions stay allowed. ``'closed_label'`` (plain text) replaces the chip's
+« Ended »; ``'closed': False`` (or no key) reopens it, silently both ways.
+
+The portal lists closed conversations after the open ones, under « Ended
+conversations », each with its chip; their thread has the chip and a note
+instead of the composer. Discuss hides the composer (and « Reply »,
+« Edit », « Pin », sub-threads, calls) and shows the chip next to the name.
+Unread messages still count until opened. A message after the closing
+notifies nobody (no e-mail, digest, inbox or push); the ones before keep
+their notices.
+
 Phone (version 1.1, kit 1.18)
 -----------------------------
 With ``bemade_portal_kit_pwa`` (Web Push from the installed app), each of
@@ -163,6 +185,8 @@ names of a managed channel. Nothing in the portal UI shows them.
             'bemade_portal_kit_chat/static/src/backend/pk_chat_portal_partners.js',
             'bemade_portal_kit_chat/static/src/backend/pk_chat_palette.js',
             'bemade_portal_kit_chat/static/src/backend/pk_chat_avatar_card.xml',
+            'bemade_portal_kit_chat/static/src/backend/pk_chat_closed.js',
+            'bemade_portal_kit_chat/static/src/backend/pk_chat_closed.xml',
         ],
         'web.assets_unit_tests_setup': [
             'bemade_portal_kit_chat/static/src/js/pk_chat_push_prompt.js',

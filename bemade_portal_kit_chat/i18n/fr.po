@@ -391,3 +391,54 @@ msgstr "Pour être avisé sur cet iPhone, ajoutez l'app à l'écran d'accueil (P
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
 msgid "Turn on"
 msgstr "Activer"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,help:bemade_portal_kit_chat.field_discuss_channel__pk_closed
+msgid "A managed channel the consumer closed: listed and readable, nobody may write in it."
+msgstr "Une conversation gérée que le module client a terminée : toujours listée et lisible, personne ne peut plus y écrire."
+
+#. module: bemade_portal_kit_chat
+#. odoo-javascript
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/discuss_channel.py:0
+#: code:addons/bemade_portal_kit_chat/static/src/backend/pk_chat_closed.xml:0
+msgid "Ended"
+msgstr "Terminée"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_bubble
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_page_list
+msgid "Ended conversations"
+msgstr "Terminées"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,help:bemade_portal_kit_chat.field_discuss_channel__pk_closed_message_id
+msgid "Messages after this one notify nobody."
+msgstr "Les messages après celui-ci n'avisent personne."
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_discuss_channel__pk_closed
+msgid "Portal Kit Closed"
+msgstr "Terminée (portail)"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_discuss_channel__pk_closed_label
+msgid "Portal Kit Closed Label"
+msgstr "Libellé « terminée » (portail)"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_discuss_channel__pk_closed_message_id
+msgid "Portal Kit Last Message Before Closing"
+msgstr "Dernier message avant la fin (portail)"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,help:bemade_portal_kit_chat.field_discuss_channel__pk_closed_label
+msgid "The consumer's label of the closed state (empty: « Ended »)."
+msgstr "Le libellé de l'état terminé fourni par le module client (vide : « Terminée »)."
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/discuss_channel.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "This conversation is closed."
+msgstr "Cette conversation est terminée."
