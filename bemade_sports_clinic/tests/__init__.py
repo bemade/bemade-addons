@@ -335,3 +335,4 @@ from . import test_no_access_theme_1541
 from . import test_in_app_refusal_1541
 from . import test_app_audit_tokens_1793
 from . import test_app_audit_lint_1793
+from . import test_app_audit_i18n_1793

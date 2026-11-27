@@ -149,7 +149,7 @@ msgstr "%(count)s joueurs"
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "%(count)s players removed from team %(team)s by %(user)s on %(date)s:"
-msgstr ""
+msgstr "%(count)s joueurs retirés de l'équipe %(team)s par %(user)s le %(date)s :"
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -234,7 +234,7 @@ msgstr "%(player)s retiré de %(team)s"
 msgid ""
 "%(players)s player(s) with changes · %(new)s new injury/injuries · %(notes)s"
 " note update(s)"
-msgstr ""
+msgstr "%(players)s joueur(s) avec changements · %(new)s nouvelle(s) blessure(s) · %(notes)s mise(s) à jour de note"
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -987,7 +987,7 @@ msgid ""
 "injuries, treatment notes, documents, team links and history were moved "
 "here. Notes and allergies from the merged records were combined into this "
 "one &mdash; please review them.</p>"
-msgstr ""
+msgstr "<p>Fusionné dans ce joueur par %(user)s :</p><ul>%(rows)s</ul><p>Ses blessures, notes de traitement, documents, liens d'équipe et son historique ont été déplacés ici. Les notes et les allergies des dossiers fusionnés ont été combinées dans celui-ci &mdash; veuillez les revoir.</p>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
@@ -1053,7 +1053,7 @@ msgstr "<span class=\"fw-bold\">Notes internes :</span>"
 msgid ""
 "<span class=\"fw-bold\">Organization staff</span>\n"
 "                        <span class=\"text-muted small\">Defined once here, propagated to every team of the organization (a manual row on a team wins).</span>"
-msgstr ""
+msgstr "<span class=\"fw-bold\">Personnel de l'organisation</span>\n                        <span class=\"text-muted small\">Défini une seule fois ici, propagé à chaque équipe de l'organisation (une ligne manuelle sur une équipe a priorité).</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
@@ -1213,7 +1213,7 @@ msgstr ""
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_players_row_followed
 msgid "<span class=\"visually-hidden\">You follow this player</span>"
-msgstr ""
+msgstr "<span class=\"visually-hidden\">Vous suivez ce joueur</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
@@ -2270,7 +2270,7 @@ msgstr "Anonymiser"
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Anonymized"
-msgstr ""
+msgstr "Anonymisé"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__is_anonymized
@@ -2281,7 +2281,7 @@ msgstr "Anonymisé (Loi 25)"
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/res_partner.py:0
 msgid "Anonymized Contact %s"
-msgstr ""
+msgstr "Contact anonymisé %s"
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -2423,7 +2423,7 @@ msgstr "Assigné"
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__sc_assigned_event_ids
 msgid "Assigned Events"
-msgstr ""
+msgstr "Événements assignés"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__assigned_staff_ids
@@ -6172,7 +6172,7 @@ msgstr "Fusionner aussi"
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient_merge_wizard.py:0
 msgid "Merged from %(name)s (ID %(id)s)"
-msgstr ""
+msgstr "Fusionné depuis %(name)s (ID %(id)s)"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_list
@@ -7847,7 +7847,7 @@ msgstr "Ordre personnel des équipes (portail)"
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Personal data anonymized under the Law 25 retention policy on %s."
-msgstr ""
+msgstr "Données personnelles anonymisées selon la politique de conservation de la Loi 25 le %s."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -7987,7 +7987,7 @@ msgstr "Joueur %(player)s retiré de l'équipe %(team)s par %(user)s"
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Player %s"
-msgstr ""
+msgstr "Joueur %s"
 
 #. module: bemade_sports_clinic
 #. odoo-python
