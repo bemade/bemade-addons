@@ -21,7 +21,7 @@ from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal
 
 from .access_control_mixin import AccessControlMixin
-from .app_shell import AppShellMixin
+from .app_shell import AppShellMixin, sc_app_page
 
 _logger = logging.getLogger(__name__)
 
@@ -116,21 +116,10 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return vals
 
     # ------------------------------------------------------------------
-    # portal home counter
-    # ------------------------------------------------------------------
-    def _prepare_home_portal_values(self, counters):
-        values = super()._prepare_home_portal_values(counters)
-        if 'quick_notes_count' in counters and self._is_quick_note_user():
-            values['quick_notes_count'] = request.env['sports.quick.note'].search_count([
-                ('user_id', '=', request.env.user.id),
-                ('active', '=', True),
-            ])
-        return values
-
-    # ------------------------------------------------------------------
     # routes
     # ------------------------------------------------------------------
     @http.route(['/my/notepad'], type='http', auth='user', website=True)
+    @sc_app_page
     def portal_my_quick_notes(self, show_archived=None, **kw):
         """Quick-add on top, the therapist's own active notes newest-first below."""
         self._check_quick_note_access()
@@ -153,11 +142,8 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'error': kw.get('error'),
             'success': kw.get('success'),
         })
-        # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            values.update(self._sc_notepad_values(values))
-        return self._sc_render('bemade_sports_clinic.portal_my_quick_notes',
-                               'bemade_sports_clinic.sc_app_notepad', values)
+        values.update(self._sc_notepad_values(values))
+        return self._sc_render('bemade_sports_clinic.sc_app_notepad', values)
 
     SC_NOTE_DRAFT_PREFIX = 'sports.quick.note.new.'
 
@@ -223,7 +209,7 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_note_rows': [_row(note) for note in values['notes']],
             'sc_archived_rows': [_row(note) for note in values['archived_notes']],
             'sc_quick_note_prefix': self.SC_NOTE_DRAFT_PREFIX,
-            'sc_flash': {'success': success, 'error': error},
+            'pk_flash': {'success': success, 'error': error},
         }
 
     @http.route(['/my/notepad/add'], type='http', auth='user', website=True,
@@ -269,7 +255,7 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Task 1736 (owner 2026-11-01): the card's archive icon — « Note
         # archived · Undo » (the toast) instead of the banner.
         if post.get('sc_undo'):
-            self._sc_offer_undo(request.env._("Note archived."),
+            self._pk_offer_undo(request.env._("Note archived."),
                                 '/my/notepad/%s/restore?undo=1' % note.id)
             return request.redirect('/my/notepad#quick-add')
         return request.redirect('/my/notepad?success=note_archived#quick-add')

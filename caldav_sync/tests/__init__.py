@@ -8,3 +8,7 @@ from . import test_scheduling_scenarios
 from . import test_videocall
 from . import test_external_date_lock
 from . import test_privacy
+from . import test_transp_show_as
+from . import test_rrule_until
+from . import test_poll_robustness
+from . import test_poll_read_only

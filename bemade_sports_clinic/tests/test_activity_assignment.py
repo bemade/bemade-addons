@@ -42,6 +42,7 @@ NOT verified here; see the dev-review UAT walkthrough.)
 
 All fixtures are synthetic (public repo — no real names).
 """
+import json
 import re
 
 from odoo import Command
@@ -180,6 +181,20 @@ class TestActivityAssignment(PortalCovCommon):
         empty placeholder options dropped)."""
         names = re.findall(r'<option\b[^>]*>(.*?)</option>', select_html, re.S)
         return {re.sub(r'\s+', ' ', n).strip() for n in names} - {''}
+
+    def _card_user_options(self, html, activity):
+        """Task 1541: the assignee choices of ``activity``'s in-place edit
+        (the app's pencil card, list rows and detail page alike: the
+        ``user_id`` autosave field's options) — the legacy edit page and
+        reassign modal are gone."""
+        from lxml import html as lxml_html
+        tree = lxml_html.fromstring(html)
+        for raw in tree.xpath('//owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props'):
+            props = json.loads(raw)
+            if (props.get('model') == 'mail.activity' and props.get('recordId') == activity.id
+                    and props.get('field') == 'user_id'):
+                return {re.sub(r'\s+', ' ', option[1]).strip() for option in props.get('options') or []}
+        self.fail('no user_id field for activity %s in page' % activity.id)
 
     def _fixture_names(self, names):
         """Restrict a rendered name set to the synthetic fixture personas."""
@@ -354,8 +369,8 @@ class TestActivityAssignment(PortalCovCommon):
         resp = self.url_open(
             f'/my/activities?model=sports.team&res_id={self.team_a.id}')
         self.assertEqual(resp.status_code, 200)
-        names = self._fixture_names(self._option_names(
-            self._assignee_select(resp.text, name='new_user_id')))
+        # Task 1541: the list row's in-place edit (the reassign modal is gone).
+        names = self._fixture_names(self._card_user_options(resp.text, self.act_team))
         self.assertEqual(names, self.coach_a_list_names)
 
         # In rule: accepted.
@@ -381,10 +396,6 @@ class TestActivityAssignment(PortalCovCommon):
         self.act_team = self._coach_team_activity()
         # TP: may move the activity to a TP off the team.
         self._login_tp()
-        resp = self.url_open(f'/my/activity/{self.act_player.id}/edit')
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn('assignee_access_warning', resp.text,
-                      "the edit page must render the team-access advisory")
         resp = self._post_update(self.act_player, self.tp_offteam)
         self.assertEqual(resp.status_code, 200)
         self.assertNotIn('error=', resp.url)
@@ -393,10 +404,10 @@ class TestActivityAssignment(PortalCovCommon):
 
         # Coach: the edit page offers the team-A staff; in rule persists.
         self._login_coach()
-        resp = self.url_open(f'/my/activity/{self.act_team.id}/edit')
+        # Task 1541: the detail page's in-place edit (the edit page is gone).
+        resp = self.url_open(f'/my/activity/{self.act_team.id}')
         self.assertEqual(resp.status_code, 200)
-        names = self._fixture_names(
-            self._option_names(self._assignee_select(resp.text)))
+        names = self._fixture_names(self._card_user_options(resp.text, self.act_team))
         self.assertEqual(names, self.coach_a_list_names)
         resp = self._post_update(self.act_team, self.coach_two_a)
         self.assertEqual(resp.status_code, 200)
@@ -407,7 +418,8 @@ class TestActivityAssignment(PortalCovCommon):
         resp = self._post_update(self.act_team, self.tp_b)
         self.assertEqual(resp.status_code, 200)
         self.assertIn('error=invalid_user', resp.url)
-        self.assertIn(f'/my/activity/{self.act_team.id}/edit', resp.url)
+        # The refused update lands on the activity (its edit URL redirects).
+        self.assertIn(f'/my/activity/{self.act_team.id}', resp.url)
         self.assertEqual(self._assignee_of(self.act_team), self.coach_two_a,
                          "an out-of-rule edit-page assignee change must be rejected")
 
@@ -418,14 +430,20 @@ class TestActivityAssignment(PortalCovCommon):
         self._login_tp()
         for url, name in (
                 (f'/my/activity/create?model=sports.patient&res_id={self.player.id}', 'user_id'),
-                (f'/my/activity/{self.act_player.id}/edit', 'user_id'),
-                (f'/my/activities?model=sports.patient&res_id={self.player.id}', 'new_user_id'),
                 (f'/my/player?player_id={self.player.id}', 'user_id'),
                 (f'/my/team?team_id={self.team_a.id}', 'user_id')):
             resp = self.url_open(url)
             self.assertEqual(resp.status_code, 200, url)
             names = self._fixture_names(
                 self._option_names(self._assignee_select(resp.text, name=name)))
+            self.assertEqual(names, self.tp_list_fixture_names, url)
+        # Task 1541: the in-place edit (detail page, list row) replaced the
+        # edit page and the reassign modal — the same exact list.
+        for url in (f'/my/activity/{self.act_player.id}',
+                    f'/my/activities?model=sports.patient&res_id={self.player.id}'):
+            resp = self.url_open(url)
+            self.assertEqual(resp.status_code, 200, url)
+            names = self._fixture_names(self._card_user_options(resp.text, self.act_player))
             self.assertEqual(names, self.tp_list_fixture_names, url)
 
     def test_plain_portal_staffer_still_self_only(self):
@@ -490,23 +508,17 @@ class TestActivityAssignment(PortalCovCommon):
         resp = self.url_open(
             f'/my/activity/create?model=sports.patient&res_id={self.player.id}')
         html = resp.text
-        select = self._assignee_select(html)
-
-        def _access_flag(user):
-            # Attribute order is renderer-dependent: find the option tag by its
-            # value, then pull data-team-access from anywhere in that tag.
-            m = re.search(r'<option\b[^>]*\bvalue="%d"[^>]*>' % user.id, select)
-            self.assertTrue(m, "option for %s not found" % user.name)
-            a = re.search(r'data-team-access="([01])"', m.group(0))
-            self.assertTrue(a, "option for %s lacks data-team-access" % user.name)
-            return a.group(1)
-
-        self.assertEqual(_access_flag(self.tp), '1',
+        # Task 1541 (rewritten for the app's form): the advisory « no access
+        # to this team » users ride on the assignee select
+        # (data-sc-no-access, sc_activities.js shows the warning).
+        m = re.search(r'<select\b[^>]*data-sc-assignee-select="1"[^>]*>', html)
+        self.assertTrue(m, "the app's assignee select is rendered")
+        flag = re.search(r'data-sc-no-access="([^"]*)"', m.group(0))
+        no_access = set((flag.group(1) if flag else '').split())
+        self.assertNotIn(str(self.tp.id), no_access,
                          "on-team TP must be flagged as having access")
-        self.assertEqual(_access_flag(self.tp_offteam), '0',
-                         "off-team TP must be flagged as lacking access")
-        self.assertIn('assignee_access_warning', html,
-                      "the advisory warning element must be rendered")
+        self.assertIn(str(self.tp_offteam.id), no_access,
+                      "off-team TP must be flagged as lacking access")
 
         # The warning is advisory: assigning to the off-team TP still saves.
         resp = self._post_activity(
@@ -523,7 +535,8 @@ class TestActivityAssignment(PortalCovCommon):
         resp = self.url_open(
             f'/my/activities?model=sports.patient&res_id={self.player.id}')
         self.assertEqual(resp.status_code, 200)
-        select = self._assignee_select(resp.text, name='new_user_id')
+        # Task 1541: the list row's in-place edit (the reassign modal is gone).
+        select = ' | '.join(sorted(self._card_user_options(resp.text, self.act_player)))
         self.assertIn('PC TP', select)
         self.assertIn('ZZ Internal TP', select)
         self.assertIn('ZZ Offteam TP', select)
@@ -531,9 +544,10 @@ class TestActivityAssignment(PortalCovCommon):
 
     def test_edit_page_offers_both_tp_groups(self):
         self._login_tp()
-        resp = self.url_open(f'/my/activity/{self.act_player.id}/edit')
+        # Task 1541: the detail page's in-place edit (the edit page is gone).
+        resp = self.url_open(f'/my/activity/{self.act_player.id}')
         self.assertEqual(resp.status_code, 200)
-        select = self._assignee_select(resp.text)
+        select = ' | '.join(sorted(self._card_user_options(resp.text, self.act_player)))
         self.assertIn('PC TP', select)
         self.assertIn('ZZ Internal TP', select)
         self.assertIn('ZZ Offteam TP', select)
@@ -587,24 +601,6 @@ class TestActivityAssignment(PortalCovCommon):
         c = re.search(r'\bclass="([^"]*)"', m.group(0))
         return set((c.group(1) if c else '').split())
 
-    def test_team_page_tab_activities_param_and_return_urls(self):
-        """Staging check (task 1500): after adding or reassigning an activity
-        from the team page, the user lands back on the Activities tab.
-        The page honours ?tab=activities and both return URLs carry it."""
-        self._login_coach()
-        url = f'/my/team?team_id={self.team_a.id}'
-        html = self.url_open(url + '&tab=activities').text
-        self.assertIn('active', self._tag_classes(html, 'button', 'activities-tab'))
-        self.assertTrue({'show', 'active'} <= self._tag_classes(html, 'div', 'activities'))
-        self.assertNotIn('active', self._tag_classes(html, 'button', 'dashboard-tab'))
-        ret = f'/my/team?team_id={self.team_a.id}&amp;tab=activities'
-        self.assertGreaterEqual(html.count(f'name="return_url" value="{ret}"'), 2,
-                                "add form and reassign modal both return to the tab")
-        # Default and unknown values still open the dashboard.
-        for suffix in ('', '&tab=bogus'):
-            html = self.url_open(url + suffix).text
-            self.assertIn('active', self._tag_classes(html, 'button', 'dashboard-tab'))
-            self.assertNotIn('active', self._tag_classes(html, 'button', 'activities-tab'))
 
     def test_player_and_team_pages_coach_own_team_staff(self):
         """AC1/AC2 (task 1500): the player-page and team-page Activities
@@ -620,8 +616,9 @@ class TestActivityAssignment(PortalCovCommon):
             self.assertEqual(names, self.coach_a_list_names, url)
             self.assertNotIn('ZZ Therapist B', names, url)
             self.assertNotIn('ZZ Offteam TP', names, url)
-        # Team page reassign modal (task 1223 activity_list_table) — same list.
-        resp = self.url_open(f'/my/team?team_id={self.team_a.id}')
-        modal = self._assignee_select(resp.text, name='new_user_id')
-        self.assertEqual(self._fixture_names(self._option_names(modal)),
+        # Task 1541: the team page's activity rows edit in place (the
+        # reassign modal is gone) — same list.
+        act_team = self._coach_team_activity()
+        resp = self.url_open(f'/my/team?team_id={self.team_a.id}&tab=activities')
+        self.assertEqual(self._fixture_names(self._card_user_options(resp.text, act_team)),
                          self.coach_a_list_names)

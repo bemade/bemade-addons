@@ -1,0 +1,393 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_portal_kit_chat
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-24 20:38+0000\n"
+"PO-Revision-Date: 2026-11-24 20:38+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_mail_each
+msgid "(in reply to %s)"
+msgstr "(en réponse à %s)"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.constraint,message:bemade_portal_kit_chat.constraint_discuss_channel_pk_managed_key_unique
+msgid "A managed key names one channel only."
+msgstr "Une clé gérée ne désigne qu'un seul canal."
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_bubble
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_window
+msgid "All conversations"
+msgstr "Toutes les conversations"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/discuss_channel_member.py:0
+msgid "Calls are not available in the portal."
+msgstr "Les appels ne sont pas offerts dans le portail."
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model,name:bemade_portal_kit_chat.model_discuss_channel_member
+msgid "Channel Member"
+msgstr "Membre du canal"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_bubble
+msgid "Choose a person"
+msgstr "Choisir une personne"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_window
+msgid "Close"
+msgstr "Fermer"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model,name:bemade_portal_kit_chat.model_res_partner
+msgid "Contact"
+msgstr "Contact"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/discuss_channel.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_window
+msgid "Conversation"
+msgstr "Conversation"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/portal_kit.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_bubble
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_page_list
+msgid "Conversations"
+msgstr "Conversations"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/portal_kit.py:0
+msgid "Direct messages"
+msgstr "Messages directs"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model,name:bemade_portal_kit_chat.model_discuss_channel
+msgid "Discussion Channel"
+msgstr "Canal de discussion"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_discuss_channel__display_name
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_discuss_channel_member__display_name
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_mail_message__display_name
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_portal_kit__display_name
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_res_partner__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/portal_kit.py:0
+msgid "Group announcements"
+msgstr "Annonces des groupes"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_mail_digest
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_mail_each
+msgid "Hello %s,"
+msgstr "Bonjour %s,"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_discuss_channel__id
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_discuss_channel_member__id
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_mail_message__id
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_portal_kit__id
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_res_partner__id
+msgid "ID"
+msgstr "Identifiant"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,help:bemade_portal_kit_chat.field_discuss_channel_member__pk_role
+msgid ""
+"In a managed channel: a poster posts; a reader may only reply to a message. "
+"Empty: a normal member."
+msgstr ""
+"Dans un canal géré : qui publie peut écrire ; un lecteur peut seulement "
+"répondre à un message. Vide : un membre ordinaire."
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/discuss_channel.py:0
+msgid "In this group you can only reply to a message."
+msgstr "Dans ce groupe, vous pouvez seulement répondre à un message."
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Members"
+msgstr "Membres"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model,name:bemade_portal_kit_chat.model_mail_message
+msgid "Message"
+msgstr "Message"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_window
+msgid "Minimise"
+msgstr "Réduire"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_bubble
+msgid "New conversation"
+msgstr "Nouvelle conversation"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/pk_chat_mail.py:0
+msgid "New message: %s"
+msgstr "Nouveau message : %s"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_mail_each
+msgid "New messages in « %s »:"
+msgstr "Nouveaux messages dans « %s » :"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/pk_chat_mail.py:0
+msgid "New messages: %s"
+msgstr "Nouveaux messages : %s"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_bubble
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_page_list
+msgid "No conversation yet."
+msgstr "Aucune conversation pour l'instant."
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "No messages yet."
+msgstr "Aucun message pour l'instant."
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Older messages"
+msgstr "Messages plus anciens"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_mail_digest
+msgid "Open my conversations"
+msgstr "Ouvrir mes conversations"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_mail_each
+msgid "Open the conversation"
+msgstr "Ouvrir la conversation"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.actions.server,name:bemade_portal_kit_chat.ir_cron_pk_chat_digest_ir_actions_server
+msgid "Portal Kit Chat: daily digest of unread conversations"
+msgstr "Messagerie du portail : résumé quotidien des conversations non lues"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.actions.server,name:bemade_portal_kit_chat.ir_cron_pk_chat_each_ir_actions_server
+msgid "Portal Kit Chat: e-mail new messages (each)"
+msgstr ""
+"Messagerie du portail : courriel des nouveaux messages (chaque message)"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.actions.server,name:bemade_portal_kit_chat.ir_cron_pk_chat_sync_ir_actions_server
+msgid "Portal Kit Chat: sync the managed channels"
+msgstr "Messagerie du portail : synchroniser les canaux gérés"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_discuss_channel_member__pk_digest_date
+msgid "Portal Kit Digest Date"
+msgstr "Date du résumé (portail)"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_discuss_channel_member__pk_emailed_message_id
+msgid "Portal Kit Last E-mailed"
+msgstr "Dernier message envoyé par courriel (portail)"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_discuss_channel__pk_managed_key
+msgid "Portal Kit Managed Key"
+msgstr "Clé gérée (portail)"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model,name:bemade_portal_kit_chat.model_portal_kit
+msgid "Portal Kit Registries"
+msgstr "Registres de la trousse portail"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_discuss_channel_member__pk_role
+msgid "Portal Kit Role"
+msgstr "Rôle (portail)"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields.selection,name:bemade_portal_kit_chat.selection__discuss_channel_member__pk_role__poster
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Poster"
+msgstr "Rédacteur"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields.selection,name:bemade_portal_kit_chat.selection__discuss_channel_member__pk_role__reader
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Reader"
+msgstr "Lecteur"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/portal_kit.py:0
+msgid "Replies in groups"
+msgstr "Réponses dans les groupes"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Reply"
+msgstr "Répondre"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Reply to a message to answer."
+msgstr "Répondez à un message pour intervenir."
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Replying to %s"
+msgstr "Réponse à %s"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Send"
+msgstr "Envoyer"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,help:bemade_portal_kit_chat.field_discuss_channel__pk_managed_key
+msgid ""
+"Set: a group channel managed by a portal kit consumer (members and roles are"
+" synced)."
+msgstr ""
+"Rempli : un canal de groupe géré par une application du portail (membres et "
+"rôles synchronisés)."
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/discuss_channel.py:0
+msgid "Start a conversation from the portal."
+msgstr "Commencez une conversation à partir du portail."
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,help:bemade_portal_kit_chat.field_discuss_channel_member__pk_digest_date
+msgid "The (local) day this member's conversation was last digested."
+msgstr ""
+"Le jour (local) du dernier résumé de cette conversation pour ce membre."
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,help:bemade_portal_kit_chat.field_discuss_channel_member__pk_emailed_message_id
+msgid ""
+"The last message of the channel the kit's e-mail dispatcher handled for this"
+" member."
+msgstr ""
+"Le dernier message du canal traité pour ce membre par l'envoi des courriels."
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "The message could not be sent."
+msgstr "Le message n'a pas pu être envoyé."
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Write a message…"
+msgstr "Écrire un message…"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/pk_chat_data.py:0
+msgid "Yesterday"
+msgstr "Hier"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/pk_chat_data.py:0
+msgid "You: %(preview)s"
+msgstr "Vous : %(preview)s"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_mail_digest
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_mail_each
+msgid "You choose these e-mails in the app: Settings › Notifications."
+msgstr ""
+"Vous choisissez ces courriels dans l'application : Réglages › Notifications."
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_mail_digest
+msgid "You have unread conversations:"
+msgstr "Vous avez des conversations non lues :"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/pk_chat_mail.py:0
+msgid "Your conversations"
+msgstr "Vos conversations"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/pk_chat_mail.py:0
+msgid "Your unread conversations"
+msgstr "Vos conversations non lues"
+
+#. module: bemade_portal_kit_chat
+#. odoo-python
+#: code:addons/bemade_portal_kit_chat/models/pk_chat_mail.py:0
+msgid "conversation"
+msgstr "conversation"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Get notified on this phone?"
+msgstr "Être avisé sur ce téléphone ?"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Later"
+msgstr "Plus tard"
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "OK"
+msgstr "OK"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,field_description:bemade_portal_kit_chat.field_discuss_channel_member__pk_pushed_message_id
+msgid "Portal Kit Last Pushed"
+msgstr "Kit portail : dernier envoyé au téléphone"
+
+#. module: bemade_portal_kit_chat
+#: model:ir.model.fields,help:bemade_portal_kit_chat.field_discuss_channel_member__pk_pushed_message_id
+msgid "The last message of the channel sent to this member's phone (Web Push): the « each » e-mail skips the messages up to it."
+msgstr "Le dernier message de la conversation envoyé au téléphone de ce membre (Web Push) : le courriel « chaque message » saute les messages jusqu'à celui-ci."
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "To get notified on this iPhone, add the app to your home screen (Share, then « Add to Home Screen »)."
+msgstr "Pour être avisé sur cet iPhone, ajoutez l'app à l'écran d'accueil (Partager, puis « Sur l'écran d'accueil »)."
+
+#. module: bemade_portal_kit_chat
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_chat.pk_chat_texts
+msgid "Turn on"
+msgstr "Activer"

@@ -130,14 +130,6 @@ class TestAppShellEventTimesheets1584(EventTimesheets1584Common):
         self.assertIsNone(self._section(tree))
         self.assertFalse(tree.xpath('//*[@data-sc-timesheet-id]'))
 
-    # -- UC-5 ------------------------------------------------------------
-    def test_legacy_clinic_admin_sees_all(self):
-        self._switch(False)
-        self._login_cadmin()
-        text, tree = self._get('/my/event/%s' % self.event.id)
-        self.assertIsNone(self._shell(tree))
-        self.assertIn('<span>PC TP</span>', text)
-        self.assertIn('<span>SC84 Second Therapist</span>', text)
 
     # -- UC-6 ------------------------------------------------------------
     def test_own_timesheets_list_has_no_name(self):
@@ -170,7 +162,7 @@ class TestAppShellEventTimesheetsFr1584(EventTimesheets1584Common):
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

@@ -34,7 +34,3 @@ class TestHomeTimesheetCard(PortalCovCommon):
                       "the overdue-invoices banner lost its counter to the "
                       "timesheet override (bare //t[@t-set] xpath collision)")
 
-    def test_timesheet_card_repointed(self):
-        html = self._home_html()
-        self.assertIn('/my/sc/timesheets', html)
-        self.assertIn('data-placeholder_count="event_timesheets_count"', html)

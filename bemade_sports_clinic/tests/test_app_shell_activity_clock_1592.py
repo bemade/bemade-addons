@@ -81,13 +81,13 @@ class Clock1592Mixin:
     def _assert_card_clock(self, node, count, overdue, href):
         """Task 1736: an injury card's clock is its top bar's clock icon
         with a count badge (red when one is overdue), not a chip."""
-        clocks = node.xpath('.//a[contains(@class, "o_sc_card_clock")]')
+        clocks = node.xpath('.//a[contains(@class, "o_pk_card_clock")]')
         self.assertTrue(clocks, 'no clock')
         clock = clocks[0]
-        self.assertEqual(clock.get('data-sc-activity-clock'), str(count))
-        self.assertEqual(clock.get('data-sc-activity-overdue'), str(overdue))
+        self.assertEqual(clock.get('data-pk-activity-clock'), str(count))
+        self.assertEqual(clock.get('data-pk-activity-overdue'), str(overdue))
         self.assertEqual(_text(clock), str(count))
-        self.assertEqual('o_sc_card_clock_overdue' in clock.get('class'), bool(overdue))
+        self.assertEqual('o_pk_card_clock_overdue' in clock.get('class'), bool(overdue))
         self.assertEqual(clock.get('href'), href)
         self.assertTrue(clock.get('aria-label'))
         return clock
@@ -134,7 +134,7 @@ class TestActivityClockAppBar1592(Clock1592Common):
             self.assertEqual(badge.get('hidden'), 'hidden')
             self.assertEqual(_text(badge), '0')
             # No count badge on the Activities menu item.
-            for item in tree.xpath('//a[@data-sc-nav-key="activities"]'):
+            for item in tree.xpath('//a[@data-pk-nav-key="activities"]'):
                 self.assertFalse(item.xpath('.//*[contains(@class, "o_pk_chip")]'
                                             ' | .//*[@data-pk-live-count-url]'))
                 self.assertFalse(any(ch.isdigit() for ch in _text(item)))
@@ -177,7 +177,7 @@ class TestActivityClockAppBar1592(Clock1592Common):
 
     # -- UC-3 ------------------------------------------------------------
     def _active_tab(self, tree):
-        return tree.xpath('//section[@data-sc-tab-panel][not(@hidden)]/@data-sc-tab-panel')
+        return tree.xpath('//section[@data-pk-tab-panel][not(@hidden)]/@data-pk-tab-panel')
 
     def test_activities_page_from_clock(self):
         self._switch(True)
@@ -187,10 +187,10 @@ class TestActivityClockAppBar1592(Clock1592Common):
         late = self._activity(self.player, self.tp, days=-2, summary='Synthetic late task')
         _text_, tree = self._get('/my/activities?sc_clock=1')
         self.assertEqual(self._active_tab(tree), ['overdue'])
-        panel = tree.xpath('//section[@data-sc-tab-panel="overdue"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="overdue"]')[0]
         self.assertEqual([int(x) for x in panel.xpath('.//@data-sc-activity-row')], [late.id])
         # The tab links do not carry the clock marker; an explicit tab wins.
-        hrefs = tree.xpath('//a[@data-sc-tab]/@href')
+        hrefs = tree.xpath('//a[@data-pk-tab]/@href')
         self.assertTrue(hrefs)
         self.assertFalse([h for h in hrefs if 'sc_clock' in h])
         _text_, tree = self._get('/my/activities?sc_clock=1&tab=planned')
@@ -315,10 +315,10 @@ class TestActivityClockRows1592(Clock1592Common):
         # In the summary row, beside the status chip.
         self.assertTrue(clock.xpath('ancestor::summary'))
         quiet = tree.xpath('//details[@id="injury-%s"]' % other.id)[0]
-        self.assertFalse(quiet.xpath('.//a[contains(@class, "o_sc_card_clock")]'))
+        self.assertFalse(quiet.xpath('.//a[contains(@class, "o_pk_card_clock")]'))
         # The target tab lists the injury's activity.
         _text_, tree = self._get(url + '&tab=activities')
-        panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="activities"]')[0]
         self.assertIsNone(panel.get('hidden'))
         self.assertIn('Injury task', _text(panel))
 

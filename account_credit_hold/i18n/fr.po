@@ -1,0 +1,390 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* account_credit_hold
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 18:33+0000\n"
+"PO-Revision-Date: 2026-11-19 18:33+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: account_credit_hold
+#. odoo-python
+#: code:addons/account_credit_hold/models/account_followup_report.py:0
+msgid ""
+"<div style='background-color: #fff3cd; border: 1px solid #ffeaa7; padding: "
+"10px; margin: 10px 0; border-radius: 4px;'><strong style='color: "
+"#856404;'>⚠️ Credit Hold Notice:</strong> Your account is currently on "
+"credit hold due to overdue invoices. Please settle the outstanding amounts "
+"to avoid service interruptions. Total amount due: <strong>%s</strong></div>"
+msgstr ""
+"<div style='background-color: #fff3cd; border: 1px solid #ffeaa7; padding: "
+"10px; margin: 10px 0; border-radius: 4px;'><strong style='color: "
+"#856404;'>⚠️ Avis de blocage de crédit :</strong> Votre compte est "
+"actuellement bloqué en raison de factures en souffrance. Veuillez régler les"
+" montants dus pour éviter toute interruption de service. Montant total dû : "
+"<strong>%s</strong></div>"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_kanban_credit_hold
+msgid "<i class=\"fa fa-clock-o\"/> Postponed"
+msgstr "<i class=\"fa fa-clock-o\"/> Reporté"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_kanban_credit_hold
+msgid "<i class=\"fa fa-lock\"/> On Hold"
+msgstr "<i class=\"fa fa-lock\"/> Bloqué"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_kanban_credit_hold
+msgid "<i class=\"fa fa-lock\"/> Place on Hold"
+msgstr "<i class=\"fa fa-lock\"/> Bloquer"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_kanban_credit_hold
+msgid "<i class=\"fa fa-unlock\"/> Lift Hold"
+msgstr "<i class=\"fa fa-unlock\"/> Lever le blocage"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.manual_reminder_view_form_inherit
+msgid ""
+"<strong>Credit Hold:</strong>\n"
+"                    This customer is currently on credit hold."
+msgstr ""
+"<strong>Blocage de crédit :</strong>\n"
+"                    Ce client est actuellement bloqué pour crédit."
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "<strong>Customer:</strong>"
+msgstr "<strong>Client :</strong>"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "<strong>Email:</strong>"
+msgstr "<strong>E-mail :</strong>"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "<strong>Followup Status:</strong>"
+msgstr "<strong>Statut de relance :</strong>"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "<strong>On Hold:</strong>"
+msgstr "<strong>Bloqué :</strong>"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "<strong>Postpone Until:</strong>"
+msgstr "<strong>Reporté jusqu'au :</strong>"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "<strong>Total Due:</strong>"
+msgstr "<strong>Total dû :</strong>"
+
+#. module: account_credit_hold
+#: model:ir.model.fields,field_description:account_credit_hold.field_res_partner__on_hold
+#: model:ir.model.fields,field_description:account_credit_hold.field_res_users__on_hold
+msgid "Account on Hold"
+msgstr "Compte bloqué"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "Amount"
+msgstr "Montant"
+
+#. module: account_credit_hold
+#: model:ir.model.fields,field_description:account_credit_hold.field_account_followup_followup_line__attach_credit_hold_report
+msgid "Attach Credit Hold Report"
+msgstr "Joindre le rapport de blocage de crédit"
+
+#. module: account_credit_hold
+#: model:ir.model.fields,help:account_credit_hold.field_res_partner__on_hold
+#: model:ir.model.fields,help:account_credit_hold.field_res_users__on_hold
+msgid "Client account is on hold for unpaid overdue invoices."
+msgstr ""
+"Le compte du client est bloqué pour des factures en souffrance impayées."
+
+#. module: account_credit_hold
+#: model:ir.model.fields,field_description:account_credit_hold.field_sale_order__client_on_hold
+#: model:ir.model.fields,field_description:account_credit_hold.field_stock_picking__client_on_hold
+msgid "Client on Hold"
+msgstr "Client bloqué"
+
+#. module: account_credit_hold
+#: model:ir.ui.menu,name:account_credit_hold.menu_credit_hold_management
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_form_inherit
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.sale_order_form_inherit
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.stock_picking_form_inherit
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.view_partner_property_form_inherit
+msgid "Credit Hold"
+msgstr "Blocage de crédit"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_kanban_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_search_credit_hold
+msgid "Credit Hold Customers"
+msgstr "Clients bloqués pour crédit"
+
+#. module: account_credit_hold
+#: model:ir.actions.act_window,name:account_credit_hold.action_res_partner_credit_hold
+msgid "Credit Hold Management"
+msgstr "Gestion des blocages de crédit"
+
+#. module: account_credit_hold
+#: model:ir.actions.report,name:account_credit_hold.account_credit_hold_report_action
+msgid "Credit Hold Report"
+msgstr "Rapport de blocage de crédit"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "Credit Hold Report -"
+msgstr "Rapport de blocage de crédit -"
+
+#. module: account_credit_hold
+#. odoo-python
+#: code:addons/account_credit_hold/models/res_partner.py:0
+msgid "Credit hold lifted."
+msgstr "Blocage de crédit levé."
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_tree_credit_hold
+msgid "Customers on Credit Hold"
+msgstr "Clients bloqués pour crédit"
+
+#. module: account_credit_hold
+#: model_terms:ir.actions.act_window,help:account_credit_hold.action_res_partner_credit_hold
+msgid ""
+"Customers will appear here when they have overdue invoices and have been placed on credit hold.\n"
+"                    You can manually place customers on hold or configure automatic followup levels."
+msgstr ""
+"Les clients apparaissent ici lorsqu'ils ont des factures en souffrance et ont été bloqués pour crédit.\n"
+"                    Vous pouvez bloquer des clients manuellement ou configurer des niveaux de relance automatiques."
+
+#. module: account_credit_hold
+#: model:ir.model.fields,help:account_credit_hold.field_account_followup_followup_line__attach_credit_hold_report
+msgid ""
+"DEPRECATED: PDF is now automatically sent with ALL followup emails for "
+"customers on credit hold."
+msgstr ""
+"OBSOLÈTE : le PDF est maintenant envoyé automatiquement avec TOUS les "
+"courriels de relance des clients bloqués pour crédit."
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "Date"
+msgstr "Date"
+
+#. module: account_credit_hold
+#: model:ir.model.fields,field_description:account_credit_hold.field_account_followup_followup_line__display_name
+#: model:ir.model.fields,field_description:account_credit_hold.field_account_followup_report__display_name
+#: model:ir.model.fields,field_description:account_credit_hold.field_account_move__display_name
+#: model:ir.model.fields,field_description:account_credit_hold.field_account_move_line__display_name
+#: model:ir.model.fields,field_description:account_credit_hold.field_account_partial_reconcile__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "Due"
+msgstr "Dû"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "Due Date"
+msgstr "Date d'échéance"
+
+#. module: account_credit_hold
+#: model:ir.model,name:account_credit_hold.model_account_followup_followup_line
+msgid "Follow-up Criteria"
+msgstr "Critère de suivi"
+
+#. module: account_credit_hold
+#: model:ir.model,name:account_credit_hold.model_account_followup_report
+msgid "Follow-up Report"
+msgstr "Rapport de relance"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_search_credit_hold
+msgid "Followup Level"
+msgstr "Niveau de relance"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_search_credit_hold
+msgid "Followup Status"
+msgstr "Statut de relance"
+
+#. module: account_credit_hold
+#: model:ir.model.fields,help:account_credit_hold.field_res_partner__postpone_hold_until
+#: model:ir.model.fields,help:account_credit_hold.field_res_users__postpone_hold_until
+msgid "Grace period specific to this partner despite unpaid invoices."
+msgstr "Délai de grâce propre à ce partenaire malgré des factures impayées."
+
+#. module: account_credit_hold
+#: model:ir.model.fields,field_description:account_credit_hold.field_res_partner__hold_bg
+#: model:ir.model.fields,field_description:account_credit_hold.field_res_users__hold_bg
+msgid "Hold (technical)"
+msgstr "Blocage (technique)"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_search_credit_hold
+msgid "Hold Postponed"
+msgstr "Blocage reporté"
+
+#. module: account_credit_hold
+#: model:ir.model.fields,field_description:account_credit_hold.field_account_followup_followup_line__id
+#: model:ir.model.fields,field_description:account_credit_hold.field_account_followup_report__id
+#: model:ir.model.fields,field_description:account_credit_hold.field_account_move__id
+#: model:ir.model.fields,field_description:account_credit_hold.field_account_move_line__id
+#: model:ir.model.fields,field_description:account_credit_hold.field_account_partial_reconcile__id
+msgid "ID"
+msgstr "ID"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_search_credit_hold
+msgid "In Need of Action"
+msgstr "Action requise"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "Invoice Number"
+msgstr "Numéro de la facture"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_tree_credit_hold
+msgid "Lift Hold"
+msgstr "Lever le blocage"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "NO"
+msgstr "NON"
+
+#. module: account_credit_hold
+#: model_terms:ir.actions.act_window,help:account_credit_hold.action_res_partner_credit_hold
+msgid "No customers on credit hold found"
+msgstr "Aucun client bloqué pour crédit"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_search_credit_hold
+msgid "On Credit Hold"
+msgstr "Bloqué pour crédit"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "Outstanding Invoices"
+msgstr "Factures impayées"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_search_credit_hold
+msgid "Overdue Invoices"
+msgstr "Factures en retard"
+
+#. module: account_credit_hold
+#: model:ir.model.fields,help:account_credit_hold.field_account_followup_followup_line__account_hold
+msgid "Place clients on account hold, restricting confirmation of new orders."
+msgstr ""
+"Bloquer le compte des clients, ce qui empêche la confirmation de nouvelles "
+"commandes."
+
+#. module: account_credit_hold
+#: model:ir.model.fields,field_description:account_credit_hold.field_account_followup_followup_line__account_hold
+msgid "Place on Credit Hold"
+msgstr "Bloquer pour crédit"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.res_partner_view_tree_credit_hold
+msgid "Place on Hold"
+msgstr "Bloquer"
+
+#. module: account_credit_hold
+#. odoo-python
+#: code:addons/account_credit_hold/models/res_partner.py:0
+msgid "Placed on credit hold."
+msgstr "Bloqué pour crédit."
+
+#. module: account_credit_hold
+#: model:ir.model.fields,field_description:account_credit_hold.field_res_partner__postpone_hold_until
+#: model:ir.model.fields,field_description:account_credit_hold.field_res_users__postpone_hold_until
+msgid "Postpone Hold"
+msgstr "Reporter le blocage"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "Report generated on"
+msgstr "Rapport généré le"
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "Status"
+msgstr "Statut"
+
+#. module: account_credit_hold
+#. odoo-python
+#: code:addons/account_credit_hold/models/sale_order.py:0
+msgid ""
+"This client is on credit hold. No new orders can be confirmed until past-due"
+" invoices are paid or the accounting team postpones the hold."
+msgstr ""
+"Ce client est bloqué pour crédit. Aucune nouvelle commande ne peut être "
+"confirmée tant que les factures échues ne sont pas payées ou que l'équipe de"
+" comptabilité n'a pas reporté le blocage."
+
+#. module: account_credit_hold
+#: model:ir.model.fields,field_description:account_credit_hold.field_res_partner__total_due
+#: model:ir.model.fields,field_description:account_credit_hold.field_res_users__total_due
+msgid "Total Due"
+msgstr "Montant dû"
+
+#. module: account_credit_hold
+#. odoo-python
+#: code:addons/account_credit_hold/models/res_partner.py:0
+msgid "Unsupported operator %r for on_hold search."
+msgstr "Opérateur %r non pris en charge pour la recherche sur on_hold."
+
+#. module: account_credit_hold
+#. odoo-python
+#: code:addons/account_credit_hold/models/res_partner.py:0
+msgid "Unsupported operator %r for total_due search."
+msgstr "Opérateur %r non pris en charge pour la recherche sur total_due."
+
+#. module: account_credit_hold
+#: model:ir.model.fields,help:account_credit_hold.field_sale_order__client_on_hold
+#: model:ir.model.fields,help:account_credit_hold.field_stock_picking__client_on_hold
+msgid "Whether or not a client has been put on hold due to unpaid invoices."
+msgstr "Indique si le client a été bloqué en raison de factures impayées."
+
+#. module: account_credit_hold
+#: model_terms:ir.ui.view,arch_db:account_credit_hold.credit_hold_report
+msgid "YES"
+msgstr "OUI"
+
+#. module: account_credit_hold
+#: model:ir.actions.server,name:account_credit_hold.action_credit_hold
+msgid "action_credit_hold"
+msgstr "Blocage de crédit"
+
+#. module: account_credit_hold
+#: model:ir.model,name:account_credit_hold.model_account_move
+msgid "Journal Entry"
+msgstr "Pièce comptable"
+
+#. module: account_credit_hold
+#: model:ir.model,name:account_credit_hold.model_account_move_line
+msgid "Journal Item"
+msgstr "Écriture comptable"
+
+#. module: account_credit_hold
+#: model:ir.model,name:account_credit_hold.model_account_partial_reconcile
+msgid "Partial Reconcile"
+msgstr "Lettrage partiel"

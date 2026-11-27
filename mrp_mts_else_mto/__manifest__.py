@@ -19,7 +19,7 @@
 #
 {
     "name": "MRP MTS Else MTO Parent Link Fix",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "summary": "Fix parent-child MO relationships with mts_else_mto rules",
     "description": """
 MRP MTS Else MTO Parent Link Fix

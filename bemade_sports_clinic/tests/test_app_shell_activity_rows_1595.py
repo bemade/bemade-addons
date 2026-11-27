@@ -40,13 +40,13 @@ class _ActivityRowsMixin:
 
     @staticmethod
     def _row(tree, activity):
-        rows = tree.xpath('//section[@data-sc-tab-panel="all"]//*[@data-sc-activity-row="%s"]'
+        rows = tree.xpath('//section[@data-pk-tab-panel="all"]//*[@data-sc-activity-row="%s"]'
                           % activity.id) or tree.xpath('//*[@data-sc-activity-row="%s"]' % activity.id)
         return rows[0] if rows else None
 
     @staticmethod
     def _related(row):
-        return [(a.get('data-sc-row-link'), a.get('href'), _text(a))
+        return [(a.get('data-pk-row-link'), a.get('href'), _text(a))
                 for a in row.xpath('.//a[contains(@class, "o_pk_row_link")]')]
 
 
@@ -124,7 +124,7 @@ class TestAppShellActivityRows1595(_ActivityRowsMixin, AppShellCommon):
         self.assertIsNotNone(row)
         self.assertEqual(self._related(row), [
             ('sports.patient', '/my/player?player_id=%s' % self.player.id, 'One, Pat')])
-        self.assertFalse(row.xpath('.//*[@data-sc-row-link-plain="sports.patient.injury"]'))
+        self.assertFalse(row.xpath('.//*[@data-pk-row-link-plain="sports.patient.injury"]'))
         self.assertNotIn('/my/injury/edit', lxml_html.tostring(row).decode())
 
     def test_refused_record_is_plain_text(self):
@@ -135,7 +135,7 @@ class TestAppShellActivityRows1595(_ActivityRowsMixin, AppShellCommon):
             _text_, tree = self._get('/my/activities')
         row = self._row(tree, self.act_player)
         self.assertEqual(self._related(row), [])
-        plain = row.xpath('.//*[@data-sc-row-link-plain="sports.patient"]')
+        plain = row.xpath('.//*[@data-pk-row-link-plain="sports.patient"]')
         self.assertEqual(len(plain), 1)
         self.assertEqual(_text(plain[0]), self.act_player.res_name)
         self.assertNotIn('/my/player?player_id=', lxml_html.tostring(row).decode())

@@ -11,7 +11,25 @@
   bundles: there the modules are only defined, and run per test file;
 * task 5198 (P3a): the consumers' one-release aliases of the moved modules
   (« kit shims ») are gone: no bundled file is one any more, and the clinic's
-  10 old paths no longer exist.
+  10 old paths no longer exist;
+* task 5199 (P4a): ``pk_fragments`` joins the kit; the clinic keeps ONE
+  alias for one release, ``sc_fragments.js`` (re-exports the kit module,
+  removed in the next phase). No other shim.
+* task 5370 (P4b): ``pk_form_guard``, ``pk_status_pills`` and
+  ``pk_lazy_edit`` join the kit; their clinic files stay one release as
+  aliases (re-exports only), and P4a's ``sc_fragments.js`` alias is gone.
+* task 5371 (P4c1): ``pk_toast`` joins the kit (no clinic module path
+  moved: ``sc_app_ui.js`` stays, without its toast code).
+* task 5381 (P4c2): ``pk_edit_cards``, ``pk_sheets``, ``pk_tabs``,
+  ``pk_clamp`` and ``pk_shell`` join the kit (no clinic module path moved:
+  ``sc_app_ui.js`` stays, with the clinic's own hooks only).
+* task 5382 (P4c3): ``pk_autosave_field`` (an OWL component, with its
+  template) joins the kit. The consumer's old component key stays one
+  release as an alias the consumer registers (the kit's class).
+* task 5345 (P3c2): ``pk_theme_pref`` joins the kit (the consumer's
+  ``sc_app_shell.js`` is gone: no module imported it); P4c3's component
+  alias is past its release: the consumer's ``sc_autosave_field.js`` is
+  gone.
 """
 import fnmatch
 import glob
@@ -26,13 +44,36 @@ KIT_JS = (
     'app_nav', 'confirm', 'contact_href', 'date_bounds', 'draft_store',
     'edit_anchor', 'fetch', 'focus', 'forms', 'list_header', 'live_count',
     'switch', 'user_menu',
+    # Task 5199 (P4a).
+    'fragments',
+    # Task 5370 (P4b).
+    'form_guard', 'status_pills', 'lazy_edit',
+    # Task 5371 (P4c1).
+    'toast',
+    # Task 5381 (P4c2).
+    'edit_cards', 'sheets', 'tabs', 'clamp', 'shell',
+    # Task 5382 (P4c3).
+    'autosave_field',
+    # Task 5345 (P3c2): the theme preference (was the consumer's
+    # sc_app_shell.js; nothing imported it, no alias).
+    'theme_pref',
+    # Task 5200 (P5): matching, picker, search, help, guide videos,
+    # calendar, « My account ».
+    'match', 'picker', 'search', 'help', 'guide_video', 'calendar', 'account',
 )
 SHIM_MARKER = 'bemade_portal_kit shim'
 # The clinic's aliases removed by task 5198 (P3a).
 CLINIC_SHIMS = (
     'fetch', 'draft_store', 'confirm', 'focus', 'date_bounds', 'contact_href',
     'user_menu', 'edit_anchor', 'list_header', 'app_nav',
+    # Task 5370 (P4b): P4a's alias is past its release.
+    'fragments',
+    # Task 5371 (P4c1): P4b's aliases are past their release.
+    'form_guard', 'status_pills', 'lazy_edit',
 )
+# One-release aliases of moved modules still allowed (task 5371, P4c1: P4b's
+# three are past their release; none left).
+ALLOWED_SHIMS = ()
 
 
 def _asset_paths(entries):
@@ -57,7 +98,7 @@ def _runtime_bundles(manifest):
 @tagged('post_install', '-at_install')
 class TestPkAssets(TransactionCase):
 
-    def test_kit_js_files_are_the_thirteen(self):
+    def test_kit_js_files_are_the_twenty_five(self):
         root = os.path.join(get_module_path(KIT), 'static', 'src', 'js')
         found = sorted(os.path.basename(p)[3:-3] for p in glob.glob(os.path.join(root, 'pk_*.js')))
         self.assertEqual(found, sorted(KIT_JS))
@@ -96,7 +137,7 @@ class TestPkAssets(TransactionCase):
                             source = f.read()
                     except (FileNotFoundError, ValueError):
                         continue
-                    if SHIM_MARKER in source:
+                    if SHIM_MARKER in source and path not in ALLOWED_SHIMS:
                         shims.append(path)
         self.assertEqual(shims, [])
         clinic = get_module_path('bemade_sports_clinic', display_warning=False)
@@ -106,3 +147,26 @@ class TestPkAssets(TransactionCase):
                 if os.path.exists(os.path.join(clinic, 'static', 'src', 'js', f'sc_{name}.js'))
             ]
             self.assertEqual(left, [])
+
+    def test_retired_consumer_scripts_gone(self):
+        clinic = get_module_path('bemade_sports_clinic', display_warning=False)
+        if not clinic:
+            return
+        for name in ('sc_app_shell.js', 'sc_autosave_field.js'):
+            self.assertFalse(os.path.exists(os.path.join(clinic, 'static', 'src', 'js', name)), name)
+
+    def test_aliases_only_reexport(self):
+        """Task 5370 (P4b): an alias re-exports the kit module and does
+        nothing else: a second listener on ``document`` or a second
+        interaction registration would guard a form twice."""
+        for path in ALLOWED_SHIMS:
+            try:
+                with file_open(path) as f:
+                    source = f.read()
+            except (FileNotFoundError, ValueError):
+                continue  # the consumer is not on the path
+            with self.subTest(alias=path):
+                self.assertIn(SHIM_MARKER, source)
+                self.assertIn('@bemade_portal_kit/js/pk_', source)
+                for forbidden in ('addEventListener', 'registry', 'document.', 'class '):
+                    self.assertNotIn(forbidden, source)

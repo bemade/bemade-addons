@@ -34,7 +34,7 @@ from odoo.tests import tagged
 from odoo.tools import html_sanitize
 from odoo.tools.misc import mute_logger
 
-from odoo.addons.bemade_sports_clinic.models.sc_help_article import SC_HELP_HOME_PARAM
+HELP_HOME_PARAM = "bemade_portal_kit.help_home_url"  # task 5200: the kit's parameter
 from odoo.addons.bemade_sports_clinic.tests.test_internal_tp_parity_1577 import Parity1577Common
 
 HOME = 'https://guide.example.com/home'
@@ -49,8 +49,8 @@ class Help1660Common(Parity1577Common):
         self._switch(True)
 
     def _configure(self):
-        self.env['ir.config_parameter'].sudo().set_param(SC_HELP_HOME_PARAM, HOME)
-        Help = self.env['sc.help.article'].sudo()
+        self.env['ir.config_parameter'].sudo().set_param(HELP_HOME_PARAM, HOME)
+        Help = self.env['portal.kit.help'].sudo()
         Help.create({'key': 'team', 'url': TEAM})
         Help.create({'key': 'player.injuries', 'url': INJURIES})
 
@@ -62,7 +62,7 @@ class Help1660Common(Parity1577Common):
 
     @staticmethod
     def _help(tree):
-        links = tree.xpath('//a[@data-sc-help]')
+        links = tree.xpath('//a[@data-pk-help]')
         return links[0] if links else None
 
 
@@ -79,13 +79,13 @@ class TestInAppHelp1660(Help1660Common):
             self.assertIsNotNone(link, login.__name__)
             self.assertEqual(link.get('href'), TEAM, login.__name__)
             self.assertEqual((link.get('target'), link.get('rel')), ('_blank', 'noopener'))
-            menu = tree.xpath('//*[@data-pk-user-menu-popup]//a[@data-sc-help-home-link]')
+            menu = tree.xpath('//*[@data-pk-user-menu-popup]//a[@data-pk-help-home-link]')
             self.assertEqual([a.get('href') for a in menu], [HOME], login.__name__)
             self.assertEqual(menu[0].get('target'), '_blank')
             # Unmapped page → the guide home.
             self.assertEqual(self._help(self._tree('/my/players')).get('href'), HOME, login.__name__)
             more = self._tree('/my/app/more')
-            row = more.xpath('//*[@data-pk-section="more.guide"]//a[@data-sc-help-home-link]')
+            row = more.xpath('//*[@data-pk-section="more.guide"]//a[@data-pk-help-home-link]')
             self.assertEqual([a.get('href') for a in row], [HOME], login.__name__)
             self.assertEqual(row[0].get('target'), '_blank')
 
@@ -95,7 +95,7 @@ class TestInAppHelp1660(Help1660Common):
         tree = self._tree('/my/player?player_id=%s&tab=injuries' % self.player.id)
         link = self._help(tree)
         self.assertEqual(link.get('href'), INJURIES)
-        self.assertEqual(link.get('data-sc-help-key'), 'player.injuries')
+        self.assertEqual(link.get('data-pk-help-key'), 'player.injuries')
         tree = self._tree('/my/player?player_id=%s&tab=info' % self.player.id)
         self.assertEqual(self._help(tree).get('href'), HOME)
 
@@ -104,38 +104,44 @@ class TestInAppHelp1660(Help1660Common):
         self._login_tp()
         tree = self._tree('/my/team?team_id=%s' % self.team_a.id)
         self.assertIsNone(self._help(tree))
-        self.assertFalse(tree.xpath('//a[@data-sc-help-home-link]'))
+        self.assertFalse(tree.xpath('//a[@data-pk-help-home-link]'))
         self.assertFalse(self._tree('/my/app/more').xpath('//*[@data-pk-section="more.guide"]'))
 
     def test_knowledge_url_needs_website_knowledge(self):
-        self.env['ir.config_parameter'].sudo().set_param(SC_HELP_HOME_PARAM, '/knowledge/article/1')
+        self.env['ir.config_parameter'].sudo().set_param(HELP_HOME_PARAM, '/knowledge/article/1')
         installed = self.env['ir.module.module']._get('website_knowledge').state == 'installed'
         self._login_tp()
         link = self._help(self._tree('/my/players'))
         if installed:
-            self.assertEqual(link.get('href'), '/knowledge/article/1')
+            self.assertEqual(link.get('href'), '/my/guide/1')  # task 1720: opened through the app
         else:
             self.assertIsNone(link)
 
     # -- AC-3 -------------------------------------------------------------
     def test_mapping_admin_only(self):
-        rec = self.env['sc.help.article'].with_user(self.cadmin).create(
+        rec = self.env['portal.kit.help'].with_user(self.cadmin).create(
             {'key': 'events', 'url': '/knowledge/article/179'})
         rec.with_user(self.cadmin).write({'url': 'https://guide.example.com/events'})
         with mute_logger('odoo.models', 'odoo.addons.base.models.ir_model'):
             for user in (self.itp, self.tp, self.coach):
                 with self.assertRaises(AccessError):
-                    self.env['sc.help.article'].with_user(user).create({'key': 'x', 'url': HOME})
+                    self.env['portal.kit.help'].with_user(user).create({'key': 'x', 'url': HOME})
                 with self.assertRaises(AccessError):
                     rec.with_user(user).write({'url': HOME})
         rec.with_user(self.cadmin).unlink()
 
     def test_url_must_be_a_guide_article(self):
-        Help = self.env['sc.help.article']
-        for bad in ('/my?subpath=knowledge', '/my/home', 'javascript:alert(1)',
-                    'http://guide.example.com/x', 'https://x.example.com/my?subpath=knowledge'):
+        Help = self.env['portal.kit.help']
+        for bad in ('javascript:alert(1)', 'http://guide.example.com/x'):
             with self.assertRaises(ValidationError, msg=bad), self.env.cr.savepoint():
                 Help.create({'key': 'bad', 'url': bad})
+        # Task 5200 (kit P5): the kit's model accepts any site path; the
+        # clinic never OFFERS an app URL nor a knowledge sub-path (its
+        # resolver, portal.kit._pk_help_url, answers False).
+        kit = self.env['portal.kit']
+        for bad in ('/my?subpath=knowledge', '/my/home', 'https://x.example.com/my?subpath=knowledge'):
+            self.assertTrue(Help.create({'key': 'bad_%s' % len(bad), 'url': bad}))
+            self.assertFalse(kit._pk_help_url(bad), bad)
         self.assertTrue(Help.create({'key': 'ok', 'url': '/knowledge/article/163'}))
 
 

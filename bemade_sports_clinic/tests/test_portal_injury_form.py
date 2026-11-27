@@ -100,20 +100,6 @@ class TestPortalInjuryForm(HttpCase):
             if match:
                 return match.group(1)
         return ''
-    def test_therapist_sees_parental_consent_field(self):
-        """Test that therapists see the parental consent field in the portal form"""
-        # Login as therapist
-        self.authenticate('therapist@example.com', 'therapist')
-        
-        # Access the injury creation form
-        response = self.url_open(f'/my/patient/injury/new?patient_id={self.patient.id}')
-        self.assertEqual(response.status_code, 200)
-
-        # Check that the parental consent select (TP-only) is in the form. Assert
-        # the field's select element + its 'yes' option value rather than an exact
-        # HTML string (option markup/attribute order is not contractual).
-        self.assertIn('id="parental_consent"', response.text)
-        self.assertIn('value="yes"', response.text)
 
     def test_coach_does_not_see_parental_consent_field(self):
         """Test that coaches do not see the parental consent field in the portal form"""

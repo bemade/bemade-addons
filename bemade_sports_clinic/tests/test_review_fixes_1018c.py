@@ -16,10 +16,10 @@ Acceptance criteria:
   list is emptied — same markup on the player Documents tab and the injury
   card sheet (behaviour: tour ``sc_1018b_player_documents``).
 * C3 « Mon compte » like the rest of the app: no « Cancel » / « Save » in
-  the cards (``data-sc-account-save`` / ``data-sc-account-cancel`` gone),
+  the cards (``data-pk-account-save`` / ``data-pk-account-cancel`` gone),
   each card has the usual « Done » (``data-pk-edit-done``) and its error box
-  (``data-sc-account-errors``); every field has a save-state holder next to
-  its label (``data-sc-account-state``) — each field autosaves on its own
+  (``data-pk-account-errors``); every field has a save-state holder next to
+  its label (``data-pk-account-state``) — each field autosaves on its own
   (behaviour: tour ``sc_1620_account``).
 * C4 Relaxed mandatory fields for app-shell users only: through the core
   ``/my/address/submit`` only the name and the email are required (street,
@@ -104,7 +104,7 @@ class TestReturnPlaceholder1018c(AppShellCommon):
         self.assertFalse(ret.xpath('.//*[@data-sc-return-empty]'))
         self.assertIn('2030', _text(ret))
         # Coaches: no pencil on the header.
-        self.assertFalse(tree.xpath('//*[@data-pk-section="player.hero"]//button[@data-sc-edit-toggle]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="player.hero"]//button[@data-pk-edit-toggle]'))
 
     def test_placeholder_in_french(self):
         self._login_tp()
@@ -172,19 +172,19 @@ class TestAccountAutosave1018c(Account1018cCommon):
     def test_cards_have_done_and_no_save_or_cancel(self):
         self._login_coach()
         _t, tree = self._get('/my/account')
-        self.assertFalse(tree.xpath('//*[@data-sc-account-save] | //*[@data-sc-account-cancel]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-account-save] | //*[@data-pk-account-cancel]'))
         for key, names in (('account-contact', {'name', 'email', 'phone'}),
                            ('account-address', {'street', 'street2', 'zip', 'city', 'country_id', 'state_id'})):
             card = self._card(tree, key)
-            edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
+            edit = card.xpath('.//*[@data-pk-edit-view="edit"]')[0]
             self.assertEqual(len(edit.xpath('.//button[@data-pk-edit-done]')), 1, key)
             self.assertFalse(edit.xpath('.//button[@type="submit"]'), key)
-            self.assertTrue(edit.xpath('.//*[@data-sc-account-errors]'), key)
+            self.assertTrue(edit.xpath('.//*[@data-pk-account-errors]'), key)
             # One save-state holder per field, next to its label.
             for name in names:
                 field = edit.xpath('.//*[@name="%s"]' % name)[0]
-                box = field.xpath('ancestor::*[contains(@class, "o_sc_account_field")][1]')[0]
-                state = box.xpath('./label//*[@data-sc-account-state]')
+                box = field.xpath('ancestor::*[contains(@class, "o_pk_account_field")][1]')[0]
+                state = box.xpath('./label//*[@data-pk-account-state]')
                 self.assertEqual(len(state), 1, (key, name))
                 self.assertEqual(state[0].get('role'), 'status')
 

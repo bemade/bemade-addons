@@ -56,18 +56,6 @@ class Tools1540Common(Parity1577Common):
 @tagged('post_install', '-at_install')
 class TestAppShellTools1540(Tools1540Common):
 
-    # -- UC-X1 -----------------------------------------------------------
-    def test_switch_off_legacy_pages(self):
-        self._login_tp()
-        for url in ('/my/sc/timesheets', '/my/notepad',
-                    '/my/team/%s/digest/%s' % (self.team_a.id, self.digest.id),
-                    '/my/team/%s/digest-history' % self.team_a.id):
-            text, tree = self._get(url)
-            self.assertIsNone(self._shell(tree), url)
-            self.assertNotIn('data-pk-app-shell', text, url)
-        self._switch(True)
-        text, _tree = self._get('/my/team/%s/digest-history/recent' % self.team_a.id)
-        self.assertIn('o_sc_digest_history_modal', text)
 
     # -- UC-X2 -----------------------------------------------------------
     def test_timesheets_in_shell(self):
@@ -111,7 +99,7 @@ class TestAppShellTools1540(Tools1540Common):
         self.assertNotIn('SC 1540 foreign synthetic note', text)
         add = tree.xpath('//form[@data-sc-form="note.add"]')[0]
         self.assertEqual(add.get('action'), '/my/notepad/add')
-        self.assertTrue(add.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'))
+        self.assertTrue(add.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'))
         for sheet, action in (('sc_qn_delete_%s' % self.my_note.id, '/my/notepad/%s/delete' % self.my_note.id),):
             form = tree.xpath('//dialog[@id="%s"]//form' % sheet)[0]
             self.assertEqual(form.get('action'), action)
@@ -125,7 +113,7 @@ class TestAppShellTools1540(Tools1540Common):
         resp = self._post('/my/notepad/add', {'note': 'SC 1540 added through the shell'})
         self.assertEqual(resp.status_code, 303)
         _text, tree = self._get(resp.headers['Location'])
-        self.assertEqual(tree.xpath('//*[@data-sc-draft-clear]/@data-sc-draft-clear'),
+        self.assertEqual(tree.xpath('//*[@data-pk-draft-clear]/@data-pk-draft-clear'),
                          ['sports.quick.note.new.'])
         _text, tree = self._get('/my/notepad?show_archived=1')
         restore = tree.xpath('//form[@action="/my/notepad/%s/restore"]' % self.archived_note.id)

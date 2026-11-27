@@ -24,7 +24,7 @@ class _TimesheetFiltersTourMixin:
     def setUpClass(cls):
         super().setUpClass()
         cls.env['ir.config_parameter'].sudo().set_param(
-            'bemade_sports_clinic.app_shell_enabled', 'True')
+            'bemade_portal_kit.enabled', 'True')
 
     def test_filters_open(self):
         self.start_tour('/my/sc/timesheets', 'sc_1617_timesheet_filters', login='pc.tp@example.com')

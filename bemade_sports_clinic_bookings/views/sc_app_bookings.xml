@@ -3,16 +3,16 @@
     Task 1540 (epic #1535, P3) — the portal bookings pages on the Sports
     Clinic app shell (rendered by controllers/bookings.py from the
     appointment_portal_staff context, only when the shell is active). The
-    calendar is the shell's shared sc_calendar component on the unchanged
+    calendar is the shell's shared pk_calendar component on the unchanged
     /my/bookings/calendar/data feed. No inline script / style.
 -->
 <odoo>
 
     <template id="sc_app_bookings" name="Sports Clinic App: bookings">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="sc_nav_labels['bookings']"/>
-            <t t-set="sc_active_nav" t-value="'bookings'"/>
-            <t t-call="bemade_sports_clinic.sc_page_tabs">
+            <t t-set="pk_title" t-value="sc_nav_labels['bookings']"/>
+            <t t-set="pk_active_nav" t-value="'bookings'"/>
+            <t t-call="bemade_portal_kit.pk_page_tabs">
                 <t t-set="tabs" t-value="sc_booking_segments"/>
                 <t t-set="active" t-value="filterby"/>
             </t>
@@ -53,7 +53,7 @@
             <!-- Task 1596: date sort (appointment_portal_staff's searchbar_sortings);
                  each link keeps the segment and the filters. Task 1607: in the
                  shell's list header, condensed to the right (no add here). -->
-            <t t-call="bemade_sports_clinic.sc_list_header">
+            <t t-call="bemade_portal_kit.pk_list_header">
                 <t t-set="header_section" t-value="'bookings.header'"/>
                 <t t-set="sorts" t-value="sc_booking_sorts"/>
                 <t t-set="sort_id" t-value="'sc_bookings_sort'"/>
@@ -69,8 +69,8 @@
                             <span class="o_pk_row_subtitle" t-out="row['subtitle']"/>
                             <!-- Task 1585: the client's phone / email, tap to call / write. -->
                             <span t-if="row['phone'] or row['email']" class="o_sc_row_contacts">
-                                <a t-if="row['phone']" class="o_sc_contact_link" t-att-href="row['phone_href']" data-sc-booking-link="phone" t-out="row['phone']"/>
-                                <a t-if="row['email']" class="o_sc_contact_link" t-att-href="row['email_href']" data-sc-booking-link="email" t-out="row['email']"/>
+                                <a t-if="row['phone']" class="o_pk_contact_link" t-att-href="row['phone_href']" data-sc-booking-link="phone" t-out="row['phone']"/>
+                                <a t-if="row['email']" class="o_pk_contact_link" t-att-href="row['email_href']" data-sc-booking-link="email" t-out="row['email']"/>
                             </span>
                             <!-- Task 1732: the booking form's answers (question → answer). -->
                             <dl t-if="row['answers']" class="o_pk_kv o_sc_booking_answers" data-sc-booking-answers="1"
@@ -112,13 +112,13 @@
 
     <template id="sc_app_bookings_calendar" name="Sports Clinic App: bookings calendar">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="sc_nav_labels['bookings']"/>
-            <t t-set="sc_active_nav" t-value="'bookings'"/>
-            <t t-call="bemade_sports_clinic.sc_page_tabs">
+            <t t-set="pk_title" t-value="sc_nav_labels['bookings']"/>
+            <t t-set="pk_active_nav" t-value="'bookings'"/>
+            <t t-call="bemade_portal_kit.pk_page_tabs">
                 <t t-set="tabs" t-value="sc_booking_segments"/>
                 <t t-set="active" t-value="'calendar'"/>
             </t>
-            <t t-call="bemade_sports_clinic.sc_calendar">
+            <t t-call="bemade_portal_kit.pk_calendar">
                 <t t-set="props" t-value="sc_calendar_props"/>
             </t>
         </t>
@@ -136,9 +136,9 @@
     <!-- Task 1737: /my/bookings/<id>/edit — date, start time, length. -->
     <template id="sc_app_booking_edit" name="Sports Clinic App: edit booking">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Edit booking</t>
-            <t t-set="sc_active_nav" t-value="'bookings'"/>
-            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-set="pk_title">Edit booking</t>
+            <t t-set="pk_active_nav" t-value="'bookings'"/>
+            <t t-call="bemade_portal_kit.pk_flash_banners"/>
             <t t-call="bemade_sports_clinic_bookings.sc_booking_summary"/>
             <div t-if="sc_booking_overlaps" class="o_pk_banner o_pk_banner_warn" role="alert" data-sc-booking-overlap="1">
                 <strong class="o_pk_banner_title">This time slot overlaps another booking. Save anyway?</strong>
@@ -183,9 +183,9 @@
     <!-- Task 1737: /my/bookings/<id>/cancel — confirmation + optional message. -->
     <template id="sc_app_booking_cancel" name="Sports Clinic App: cancel booking">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Cancel booking</t>
-            <t t-set="sc_active_nav" t-value="'bookings'"/>
-            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-set="pk_title">Cancel booking</t>
+            <t t-set="pk_active_nav" t-value="'bookings'"/>
+            <t t-call="bemade_portal_kit.pk_flash_banners"/>
             <t t-call="bemade_sports_clinic_bookings.sc_booking_summary"/>
             <form method="post" t-att-action="'/my/bookings/%s/cancel' % booking.id" class="o_pk_form" data-sc-form="booking.cancel">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>

@@ -68,41 +68,11 @@ class TestAppShellInjury1539(AppShellCommon):
     @staticmethod
     def _owl(tree):
         out = {}
-        for node in tree.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+        for node in tree.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'):
             props = json.loads(node.get('props'))
             out[props.get('field') or props.get('name')] = props
         return out
 
-    # -- UC-I1 -----------------------------------------------------------
-    def test_switch_off_legacy(self):
-        self._login_tp()
-        text, tree = self._get(self.new_url)
-        self.assertIn('id="injury_date_na"', text)
-        self.assertIsNone(self._shell(tree))
-        text, tree = self._get(self.edit_url)
-        self.assertIn('id="deleteInjuryModal"', text)
-        self.assertIsNone(self._shell(tree))
-
-    def test_switch_off_created_landing_legacy(self):
-        self._login_coach()
-        resp = self.url_open('/my/patient/injury/create', data={
-            'csrf_token': self._csrf(), 'patient_id': self.player.id,
-            'diagnosis': 'Synthetic legacy report', 'injury_date': '2026-03-03'})
-        self.assertEqual(resp.status_code, 200)
-        self.assertNotIn('data-pk-app-shell', resp.text)
-        self.assertNotIn('data-sc-draft-clear', resp.text)
-
-    def test_clinic_fragments_stay_legacy_with_switch_on(self):
-        self._switch(True)
-        self._login_tp()
-        for url in ('/my/injury/%s/form/fragment?clinic_id=%s' % (self.injury.id, self.clinic.id),
-                    '/my/patient/injury/new/fragment?patient_id=%s&clinic_id=%s'
-                    % (self.player.id, self.clinic.id)):
-            resp = self.url_open(url)
-            self.assertEqual(resp.status_code, 200, url)
-            self.assertNotIn('data-pk-app-shell', resp.text)
-            self.assertNotIn('owl-component', resp.text)
-            self.assertIn('name="csrf_token"', resp.text)
 
     # -- UC-I2 -----------------------------------------------------------
     def test_new_injury_is_a_device_draft(self):
@@ -144,7 +114,7 @@ class TestAppShellInjury1539(AppShellCommon):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(self.env['sports.patient.injury'].search_count(
             [('patient_id', '=', self.player.id)]), count + 1)
-        self.assertIn('data-sc-draft-clear="sports.patient.%s.new_injury."' % self.player.id,
+        self.assertIn('data-pk-draft-clear="sports.patient.%s.new_injury."' % self.player.id,
                       resp.text)
 
     # -- UC-I3 -----------------------------------------------------------
@@ -164,9 +134,9 @@ class TestAppShellInjury1539(AppShellCommon):
         # Task 1631: status, consent and visibility are pill dropdowns.
         for name in ('stage', 'parental_consent', 'hidden_from_coaches'):
             self.assertNotIn(name, owl)
-        pills = {p.get('data-sc-field'): p for p in tree.xpath('.//*[@data-sc-pill-select]')}
+        pills = {p.get('data-pk-field'): p for p in tree.xpath('.//*[@data-pk-pill-select]')}
         self.assertEqual(set(pills), {'stage', 'parental_consent', 'hidden_from_coaches'})
-        self.assertEqual(pills['hidden_from_coaches'].get('data-sc-old-value'), '0')
+        self.assertEqual(pills['hidden_from_coaches'].get('data-pk-old-value'), '0')
         self.assertEqual(owl['sc_injury_date']['inputType'], 'date_na')
         for name in ('diagnosis', 'external_notes', 'internal_notes', 'predicted_resolution_date',
                      'resolution_date'):
@@ -187,7 +157,7 @@ class TestAppShellInjury1539(AppShellCommon):
         self.assertEqual(set(owl), {'sc_injury_date'})
         self.assertIn('Visible synthetic remark', text)
         self.assertNotIn('TP-only synthetic remark', text)
-        self.assertFalse(tree.xpath('.//*[@data-sc-action="injury.delete"]'))
+        self.assertFalse(tree.xpath('.//*[@data-pk-action="injury.delete"]'))
         # The diagnosis and status read in the card's summary (task 1616).
         summary = tree.xpath('./summary')[0]
         self.assertIn(self.injury.diagnosis or '', summary.text_content())
@@ -228,13 +198,6 @@ class TestAppShellNotes1539(AppShellCommon):
         cls.notes_url = '/my/patient/notes?patient_id=%s' % cls.player.id
         cls.history_url = '/my/injury/%s/notes/history' % cls.injury.id
 
-    # -- UC-N1 -----------------------------------------------------------
-    def test_switch_off_legacy(self):
-        self._login_tp()
-        for url in (self.notes_url, self.history_url):
-            text, tree = self._get(url)
-            self.assertIn('<table', text, url)
-            self.assertIsNone(self._shell(tree), url)
 
     # -- UC-N2 -----------------------------------------------------------
     def test_notes_page_editable_by_author_only(self):
@@ -249,7 +212,7 @@ class TestAppShellNotes1539(AppShellCommon):
         self.assertEqual(form.get('action'), '/my/injury/note/add')
         self.assertEqual(form.xpath('.//input[@name="return_url"]/@value'), [self.notes_url])
         text, tree = self._get(self.notes_url + '&success=note_added')
-        self.assertEqual(tree.xpath('//*[@data-sc-draft-clear]/@data-sc-draft-clear'),
+        self.assertEqual(tree.xpath('//*[@data-pk-draft-clear]/@data-pk-draft-clear'),
                          ['sports.patient.%s.new_note.' % self.player.id])
         # A coach reads the notes (as today) but adds / edits none.
         self._login_coach()
@@ -266,14 +229,14 @@ class TestAppShellNotes1539(AppShellCommon):
         self._login_tp()
         fragment = self.history_url + '/fragment'
         text, tree = self._get(fragment)
-        scopes = tree.xpath('//*[@data-pk-section="injury.notes.history"]//li/@data-sc-scope')
+        scopes = tree.xpath('//*[@data-pk-section="injury.notes.history"]//li/@data-pk-scope')
         self.assertIn('internal', scopes)
         self.assertIn('external', scopes)
         self.assertTrue(tree.xpath('//*[@data-pk-section="history.scope"]'))
         self._login_coach()
         for url in (fragment, fragment + '?scope=internal'):
             text, tree = self._get(url)
-            scopes = tree.xpath('//*[@data-pk-section="injury.notes.history"]//li/@data-sc-scope')
+            scopes = tree.xpath('//*[@data-pk-section="injury.notes.history"]//li/@data-pk-scope')
             self.assertEqual(set(scopes), {'external'}, url)
             self.assertNotIn('Internal synthetic history', text)
             self.assertFalse(tree.xpath('//*[@data-pk-section="history.scope"]'))
@@ -293,11 +256,6 @@ class TestAppShellDocuments1539(AppShellCommon):
         })
         cls.url = '/my/injury/documents?injury_id=%s' % cls.injury.id
 
-    def test_switch_off_legacy(self):
-        self._login_tp()
-        text, tree = self._get(self.url)
-        self.assertIn('id="attachment"', text)
-        self.assertIsNone(self._shell(tree))
 
     def test_therapist_upload_and_delete_sheet(self):
         self._switch(True)
@@ -313,7 +271,7 @@ class TestAppShellDocuments1539(AppShellCommon):
         self.assertTrue(tree.xpath('//a[@href="/my/injury/document/download/%s"]' % self.doc.id))
         # Task 1736 (deliberate update): the document's archive icon posts its
         # own inline form (no confirmation sheet: an undo toast).
-        form = tree.xpath('//form[.//button[@data-sc-action="documents.delete"]]'
+        form = tree.xpath('//form[.//button[@data-pk-action="documents.delete"]]'
                           '[contains(@action, "/delete/%s")]' % self.doc.id)[0]
         self.assertEqual(form.get('action'), '/my/injury/document/delete/%s' % self.doc.id)
         self.assertEqual(form.get('method'), 'post')
@@ -328,6 +286,6 @@ class TestAppShellDocuments1539(AppShellCommon):
         self._switch(True)
         self._login_coach()
         _text, tree = self._get(self.url)
-        self.assertFalse(tree.xpath('//*[@data-sc-action="injury.documents.add"]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-action="documents.delete"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-action="injury.documents.add"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-action="documents.delete"]'))
         self.assertTrue(tree.xpath('//a[@href="/my/injury/document/download/%s"]' % self.doc.id))

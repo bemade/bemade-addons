@@ -59,7 +59,7 @@ from odoo.tools import format_date, format_datetime
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 
 from .access_control_mixin import AccessControlMixin
-from .app_shell import AppShellMixin
+from .app_shell import AppShellMixin, sc_app_page
 from .team_management_portal import SC_STAGE_TONES
 
 _logger = logging.getLogger(__name__)
@@ -341,25 +341,11 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return ' · '.join(parts)
 
     # ------------------------------------------------------------------
-    # portal home counter
-    # ------------------------------------------------------------------
-    def _prepare_home_portal_values(self, counters):
-        values = super()._prepare_home_portal_values(counters)
-        # Therapists only (portal or internal, task 1577): the card is a
-        # therapist surface, and any other portal role would 403 on the
-        # sports.event count itself.
-        if 'clinics_count' in counters and self._is_treatment_professional():
-            domain = self._prepare_events_domain('my')
-            domain.append(('event_type', '=', 'clinic'))
-            domain += self._clinic_time_domain('today')
-            values['clinics_count'] = request.env['sports.event'].search_count(domain)
-        return values
-
-    # ------------------------------------------------------------------
     # list
     # ------------------------------------------------------------------
     @http.route(['/my/clinics', '/my/clinics/page/<int:page>'], type='http',
                 auth='user', website=True)
+    @sc_app_page
     def portal_my_clinics(self, page=1, mine=None, time_filter=None, team_id=None,
                           organization_id=None, filters_applied=None, **kw):
         """The therapist's clinics, defaulting to mine + today.
@@ -457,16 +443,14 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'error': kw.get('error'),
             'success': kw.get('success'),
         }
-        # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            values.update(self._sc_clinics_values(values))
-        return self._sc_render('bemade_sports_clinic.portal_my_clinics',
-                               'bemade_sports_clinic.sc_app_clinics', values)
+        values.update(self._sc_clinics_values(values))
+        return self._sc_render('bemade_sports_clinic.sc_app_clinics', values)
 
     # ------------------------------------------------------------------
     # detail (two-pane)
     # ------------------------------------------------------------------
     @http.route(['/my/clinic/<int:event_id>'], type='http', auth='user', website=True)
+    @sc_app_page
     def portal_clinic_detail(self, event_id, patient=None, **kw):
         """Worklist left, dossier right, note capture docked under the dossier."""
         self._check_clinic_access()
@@ -542,11 +526,8 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'error': kw.get('error'),
             'success': kw.get('success'),
         })
-        # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            values.update(self._sc_clinic_values(event, values, dict(kw, patient=patient)))
-        return self._sc_render('bemade_sports_clinic.portal_clinic_detail',
-                               'bemade_sports_clinic.sc_app_clinic', values)
+        values.update(self._sc_clinic_values(event, values, dict(kw, patient=patient)))
+        return self._sc_render('bemade_sports_clinic.sc_app_clinic', values)
 
     def _dossier_edit_values(self, event, selected, injuries, kw):
         """Task 1411 — what the dossier's inline forms need: the TP guard for
@@ -580,37 +561,6 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'practice_status_selection': practice_sel,
             'status_form_values': form_values,
         }
-
-    @http.route(['/my/clinic/<int:event_id>/worklist/fragment'], type='http',
-                auth='user', website=True, methods=['GET'])
-    def portal_clinic_worklist_fragment(self, event_id, patient=None, **kw):
-        """The worklist `<ul>` alone, for the auto-refresh poll (#1397).
-
-        Same checks as the page (group, event access, clinic type) — a coach
-        403s here exactly like on /my/clinic/<id>. `?patient=` keeps the
-        selected highlight. Never cached.
-        """
-        self._check_clinic_access()
-        try:
-            event = self._get_clinic(event_id)
-        except UserError as error:
-            return self._forbidden(error)
-        attendances = self._clinic_attendances(event)
-        selected = request.env['sports.patient']
-        try:
-            selected_id = int(patient) if patient else None
-        except (TypeError, ValueError):
-            selected_id = None
-        if selected_id:
-            selected = attendances.patient_id.filtered(lambda p: p.id == selected_id)
-        values = self._worklist_values(event, attendances, selected)
-        values['request'] = request
-        html = request.env['ir.ui.view']._render_template(
-            'bemade_sports_clinic.portal_clinic_worklist', values)
-        return request.make_response(html, headers=[
-            ('Content-Type', 'text/html; charset=utf-8'),
-            ('Cache-Control', 'no-store'),
-        ])
 
     # _forbidden (the standard portal 403 page) moved to AccessControlMixin
     # in task 1412 so the injury fragment routes render the same page.
@@ -703,21 +653,6 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                          anchor='attendance-%s' % attendance.id)
         attendance.write({'state': state})
         return self._clinic_redirect(event, 'success=state_updated',
-                                     patient_id=attendance.patient_id.id,
-                                     anchor='attendance-%s' % attendance.id)
-
-    @http.route(['/my/clinic/<int:event_id>/attendance/<int:attendance_id>/confirm'],
-                type='http', auth='user', website=True, methods=['POST'])
-    def portal_clinic_attendance_confirm(self, event_id, attendance_id, **post):
-        """Therapist vouches for a name-only kiosk match (#1397)."""
-        self._check_clinic_access()
-        try:
-            event = self._get_clinic(event_id)
-            attendance = self._own_attendance(event, attendance_id)
-        except UserError:
-            return request.redirect('/my/clinics?error=clinic_denied')
-        attendance.action_confirm()
-        return self._clinic_redirect(event, 'success=identity_confirmed',
                                      patient_id=attendance.patient_id.id,
                                      anchor='attendance-%s' % attendance.id)
 
@@ -867,58 +802,8 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return self._clinic_redirect(event, 'success=kiosk_unbound',
                                      anchor='clinic-kiosk')
 
-    @http.route(['/my/clinic/<int:event_id>/attendance/reorder'], type='http',
-                auth='user', website=True, methods=['POST'])
-    def portal_clinic_attendance_reorder(self, event_id, **post):
-        """Persist a new worklist order.
-
-        ONE endpoint, two callers:
-        * drag posts `order` — the full id order, once, after the drop (never a
-          POST per intermediate move);
-        * the up/down buttons post `attendance_id` + `direction`, which is the
-          keyboard-accessible path, the no-JS path, and the only reorder path
-          on a phone (desktop HTML5 drag does nothing on touch, by decision).
-        """
-        self._check_clinic_access()
-        try:
-            event = self._get_clinic(event_id)
-        except UserError:
-            return request.redirect('/my/clinics?error=clinic_denied')
-        worklist = self._clinic_attendances(event)
-
-        keep = post.get('patient')
-        try:
-            keep = int(keep) if keep else None
-        except (TypeError, ValueError):
-            keep = None
-
-        raw_order = (post.get('order') or '').strip()
-        if raw_order:
-            ordered_ids = []
-            for chunk in raw_order.split(','):
-                chunk = chunk.strip()
-                if chunk.isdigit():
-                    ordered_ids.append(int(chunk))
-            if not ordered_ids:
-                return self._clinic_redirect(event, 'error=bad_order', patient_id=keep)
-            # _set_worklist_order ignores ids outside this clinic's worklist.
-            worklist._set_worklist_order(ordered_ids)
-            return self._clinic_redirect(event, 'success=order_saved', patient_id=keep)
-
-        attendance_id = post.get('attendance_id')
-        direction = post.get('direction')
-        if not attendance_id or direction not in ('up', 'down'):
-            return self._clinic_redirect(event, 'error=bad_order', patient_id=keep)
-        try:
-            attendance = self._own_attendance(event, attendance_id)
-        except UserError:
-            return self._clinic_redirect(event, 'error=bad_order', patient_id=keep)
-        attendance._move_in_worklist(direction)
-        return self._clinic_redirect(event, 'success=order_saved', patient_id=keep,
-                                     anchor='attendance-%s' % attendance.id)
-
     # ------------------------------------------------------------------
-    # Task 1540 — the app shell (switch on): list + page values
+    # Task 1540 — the app: list + page values
     # ------------------------------------------------------------------
     @staticmethod
     def _sc_when(record_dt, fmt='EEE d MMM · HH:mm'):
@@ -981,7 +866,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                    for key in CLINIC_TIME_FILTERS],
             'sc_clinic_mine_url': _url(mine='0' if mine else '1'),
             'sc_clinic_rows': rows,
-            'sc_flash': {
+            'pk_flash': {
                 'success': {
                     'patient_removed': env._("Patient removed from the clinic."),
                 }.get(values.get('success')),
@@ -1047,7 +932,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         file), laptop = two panes; the worklist is the live component
         (initial data rendered into its props — no fetch before first
         paint); the dossier reuses the P2 building blocks (status pair
-        through SAVE_REGISTRY, note cards with server autosave, the device
+        through the save specs, note cards with server autosave, the device
         draft note form posting to /my/injury/note/add with event_id)."""
         env = request.env
         selected = values['selected_patient']
@@ -1161,7 +1046,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # kiosk sign-in may appear on the NEXT poll.
             'sc_resolve_teams': self._creatable_teams(event),
             'sc_resolve_groups': self._addable_patients(event),
-            'sc_flash': self._sc_clinic_flash(kw),
+            'pk_flash': self._sc_clinic_flash(kw),
             **self._sc_injury_card_options(),
         }
 

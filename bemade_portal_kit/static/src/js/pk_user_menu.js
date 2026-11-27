@@ -13,14 +13,15 @@
  * - a tap outside closes it; opening one menu closes any other.
  *
  * The items are plain links: « Se déconnecter » keeps the logout route (and
- * sc_app_ui.js still clears the device drafts on it). Inert outside .o_pk_app.
+ * the consumer's script may still clear the device drafts on it). Inert
+ * outside .o_pk_app.
  *
  * Task 1607: the list header's sort menu is the same kind of popup —
  * button[data-pk-menu-toggle] + [data-pk-menu-popup] whose items are
  * a[role="menuitemradio"] links (the checked one gets the focus on open).
  *
  * Task 1627: open / close / closeAll are exported for menus whose clicks
- * another module owns (sc_status_pills.js: button items, and a toggle that
+ * another module owns (pk_status_pills.js: button items, and a toggle that
  * may sit in a <summary>, handled in the capture phase).
  */
 

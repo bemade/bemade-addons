@@ -156,14 +156,6 @@ class TestActivityAttachmentDownload(AttachmentDownloadCommon):
         self.assertIn('synthetic-plan.pdf', row.text_content())
         self.assertIn('2.1 KB', row.text_content())
 
-    # -- UC-D6 -----------------------------------------------------------
-    def test_legacy_link_uses_route(self):
-        self._login_coach()
-        text, tree = self._get('/my/activity/%s' % self.act_player.id)
-        self.assertIsNone(self._shell(tree))
-        hrefs = tree.xpath('//a[contains(@href, "/attachment/")]/@href')
-        self.assertIn(self._url(self.att), hrefs)
-        self.assertNotIn('/web/content/%s' % self.att.id, text)
 
     # -- UC-D7 -----------------------------------------------------------
     def test_single_view_helper(self):
@@ -187,7 +179,7 @@ class TestActivityAttachmentDownloadFr(AttachmentDownloadCommon):
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

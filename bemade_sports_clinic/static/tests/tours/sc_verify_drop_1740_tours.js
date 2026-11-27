@@ -23,7 +23,7 @@ async function waitFor(check, message, timeout = 10000) {
     }
 }
 
-const LINE = 'section[data-sc-instance="todo"] details[data-sc-todo="verify"]';
+const LINE = 'section[data-pk-dash-instance="todo"] details[data-sc-todo="verify"]';
 const cards = () => [...document.querySelectorAll(`${LINE} details[data-pk-edit-card="injury"]`)];
 const count = () => (document.querySelector(`${LINE} [data-sc-todo-count]`) || {}).textContent;
 const line = () => document.querySelector(LINE);

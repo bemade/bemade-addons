@@ -4,35 +4,23 @@
     users). Every generic component of the shell, kit classes only, with the
     neutral slots of pk_tokens.scss; ?theme=dark renders the dark theme.
     Synthetic labels only. P3c swaps the wrapper for the kit's own layout.
-    Task 5369 (P3c1): the icons are the kit's pk_icon; the logo is a
-    neutral mark drawn inline.
+    Task 5369 (P3c1): the icons are the kit's pk_icon.
+    Task 5345 (P3c2): the page is drawn on the kit's app layout
+    (pk_app_layout) with the neutral brand, and shows the components the
+    kit adopted in P3c2.
 -->
 <odoo>
 
     <template id="pk_styleguide" name="Portal kit: style guide">
-        <t t-call="web.frontend_layout">
-            <t t-set="no_header" t-value="True"/>
-            <t t-set="no_footer" t-value="True"/>
-            <t t-set="no_livechat" t-value="True"/>
-            <t t-set="body_classname" t-value="'o_pk_app_body o_pk_app_body_%s' % pk_theme"/>
-            <t t-set="title">Portal kit style guide</t>
-            <div class="o_pk_app" t-att-data-pk-theme="pk_theme">
-                <div class="o_pk_main">
-                    <header class="o_pk_appbar">
-                        <span class="o_pk_logo">
-                            <svg viewBox="0 0 24 24" class="o_pk_icon" aria-hidden="true" focusable="false"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 12h6M12 9v6"/></svg>
-                        </span>
-                        <h1 class="o_pk_appbar_title">
-                            <span class="o_pk_appbar_title_text">Style guide</span>
-                            <small class="o_pk_appbar_context">Bemade Portal Kit</small>
-                        </h1>
-                        <a t-att-href="'/pk/styleguide?theme=dark' if pk_theme == 'light' else '/pk/styleguide'"
-                           class="o_pk_icon_btn" aria-label="Toggle theme" title="Toggle theme">
-                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'moon' if pk_theme == 'light' else 'sun'"/></t>
-                        </a>
-                    </header>
-
-                    <main class="o_pk_content">
+        <t t-call="bemade_portal_kit.pk_app_layout">
+            <t t-set="pk_title">Style guide</t>
+            <t t-set="pk_appbar_actions">
+                <t t-set="pk_sg_theme_label">Toggle theme</t>
+                <a t-att-href="'/pk/styleguide?theme=dark' if pk_theme == 'light' else '/pk/styleguide'"
+                   class="o_pk_icon_btn" t-att-aria-label="pk_sg_theme_label" t-att-title="pk_sg_theme_label">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'moon' if pk_theme == 'light' else 'sun'"/></t>
+                </a>
+            </t>
                         <section class="o_pk_section">
                             <h2 class="o_pk_section_header"><span>About this page</span></h2>
                             <p class="o_pk_meta">The generic components of the portal app shell, drawn with the kit's neutral style slots (--pk-*). An addon brands them by setting the slots on .o_pk_app.</p>
@@ -65,7 +53,7 @@
 
                         <section class="o_pk_section">
                             <h2 class="o_pk_section_header"><span>Stats</span></h2>
-                            <div class="o_pk_stats">
+                            <div class="o_pk_stats" data-pk-fragment="page:styleguide:stats">
                                 <div class="o_pk_stat o_pk_tone_green"><span class="o_pk_stat_value">12</span><span class="o_pk_stat_label">Ready</span></div>
                                 <div class="o_pk_stat o_pk_tone_yellow"><span class="o_pk_stat_value">3</span><span class="o_pk_stat_label">To check</span></div>
                                 <div class="o_pk_stat o_pk_tone_red"><span class="o_pk_stat_value">1</span><span class="o_pk_stat_label">Blocked</span></div>
@@ -251,9 +239,87 @@
                                 </div>
                             </dialog>
                         </section>
-                    </main>
-                </div>
-            </div>
+
+                        <section class="o_pk_section">
+                            <h2 class="o_pk_section_header"><span>List header and link rows</span></h2>
+                            <t t-call="bemade_portal_kit.pk_list_header">
+                                <t t-set="add_label">Add an item</t>
+                                <t t-set="add_url" t-value="'#pk_sg_rows'"/>
+                                <t t-set="count">3 items</t>
+                                <t t-set="sorts" t-value="pk_sg_sorts"/>
+                                <t t-set="sort_id" t-value="'pk_sg_sort'"/>
+                                <t t-set="sort_label">Sort the items</t>
+                            </t>
+                            <div class="o_pk_list">
+                                <t t-call="bemade_portal_kit.pk_link_row">
+                                    <t t-set="href" t-value="'#pk_sg_rows'"/>
+                                    <t t-set="title">A link row</t>
+                                    <t t-set="dot" t-value="'green'"/>
+                                    <t t-set="subtitle">The whole row opens its page</t>
+                                    <t t-set="links" t-value="pk_sg_links"/>
+                                    <span class="o_pk_chip o_pk_chip_ghost">Chip</span>
+                                </t>
+                                <t t-call="bemade_portal_kit.pk_entity_row">
+                                    <t t-set="href" t-value="'#pk_sg_rows'"/>
+                                    <t t-set="lead_icon" t-value="'settings'"/>
+                                    <t t-set="title">An entity row</t>
+                                    <t t-set="subtitle">A link with a lead icon</t>
+                                </t>
+                            </div>
+                        </section>
+
+                        <section class="o_pk_section">
+                            <h2 class="o_pk_section_header"><span>Card icons</span></h2>
+                            <div class="o_pk_card">
+                                <div class="o_pk_card_head">
+                                    <span class="o_pk_row_title">A card with its top bar</span>
+                                    <t t-call="bemade_portal_kit.pk_card_icons">
+                                        <t t-set="ci_clock" t-value="{'count': 2, 'overdue': 1, 'url': '#pk_sg_rows'}"/>
+                                        <t t-set="ci_archive" t-value="{'sheet': 'pk_sg_confirm'}"/>
+                                        <t t-set="ci_trash" t-value="{'sheet': 'pk_sg_confirm', 'always': True}"/>
+                                        <t t-set="ci_editable" t-value="True"/>
+                                        <span class="o_pk_chip o_pk_chip_green">Open</span>
+                                    </t>
+                                </div>
+                                <t t-call="bemade_portal_kit.pk_field_static">
+                                    <t t-set="label">Due date</t>
+                                    <t t-set="value">1 Jan 2026</t>
+                                    <t t-set="overdue" t-value="True"/>
+                                </t>
+                            </div>
+                        </section>
+
+                        <section class="o_pk_section">
+                            <h2 class="o_pk_section_header"><span>History</span></h2>
+                            <t t-call="bemade_portal_kit.pk_history_list">
+                                <t t-set="entries" t-value="pk_sg_history"/>
+                                <t t-set="empty_message">No history yet.</t>
+                            </t>
+                        </section>
+
+                        <section class="o_pk_section">
+                            <h2 class="o_pk_section_header"><span>Locked switch and flash banner</span></h2>
+                            <div class="o_pk_card">
+                                <t t-call="bemade_portal_kit.pk_switch">
+                                    <t t-set="sw_label">A locked option</t>
+                                    <t t-set="sw_checked" t-value="True"/>
+                                    <t t-set="sw_disabled" t-value="True"/>
+                                    <t t-set="sw_reason">Only an administrator can change it.</t>
+                                </t>
+                            </div>
+                            <t t-call="bemade_portal_kit.pk_flash_banners">
+                                <t t-set="pk_flash" t-value="pk_sg_flash"/>
+                            </t>
+                        </section>
+            <t t-set="pk_layout_sheets">
+                <t t-call="bemade_portal_kit.pk_confirm_sheet">
+                    <t t-set="sheet_id" t-value="'pk_sg_confirm'"/>
+                    <t t-set="title">Archive this card?</t>
+                    <t t-set="message">A confirm sheet asks first, then posts its form.</t>
+                    <t t-set="action" t-value="'/pk/styleguide'"/>
+                    <t t-set="confirm_label">Archive</t>
+                </t>
+            </t>
         </t>
     </template>
 

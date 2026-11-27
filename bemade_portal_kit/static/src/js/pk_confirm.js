@@ -9,7 +9,7 @@
  *
  * pkLeavePage(message): the viewer just lost access to this page (e.g. they
  * removed the only team linking them to a player) — keep ``message`` for a
- * toast on the next page (sessionStorage, shown by sc_app_ui.js) and go back
+ * toast on the next page (sessionStorage, shown by the page's toast) and go back
  * to where they came from: the previous in-app page (document.referrer, same
  * origin, not this page), else the app's home — never this page again, and
  * as a fresh load (location.replace: no back/forward cache copy of the page).

@@ -18,7 +18,7 @@ Acceptance criteria:
   view holds the autosave fields summary, due date, assignee (only where
   the user may reassign — ``activities.reassign`` — with the same choices
   as the detail page: the per-actor assignable users + the current
-  assignee) and note, inside an inert ``<template data-sc-lazy-edit>``
+  assignee) and note, inside an inert ``<template data-pk-lazy-edit>``
   (mounted on the first pencil tap). No activity type field (read-only, as
   on the detail page).
 * AC-2 No « Reschedule » / « Reassign » buttons or sheets anywhere in the
@@ -33,8 +33,8 @@ Acceptance criteria:
   the field ids stay unique on the page.
 * AC-6 A tap on the card opens the details popout: the card's main link
   keeps ``/my/activity/<id>`` (new tab, no JS) and carries
-  ``data-sc-sheet-open="sc_activity_detail_sheet"`` +
-  ``data-sc-sheet-url="/my/activity/<id>/popout"``; the sheet is on every
+  ``data-pk-sheet-open="sc_activity_detail_sheet"`` +
+  ``data-pk-sheet-url="/my/activity/<id>/popout"``; the sheet is on every
   page listing cards (dashboard included).
 * AC-7 /my/activity/<id>/popout answers the read-only details (summary,
   type, due date, assignee, related record link, created on / by, note,
@@ -82,7 +82,7 @@ class ActivityCards1736r1Common(ActivityPermissionsCommon):
 
     @staticmethod
     def _icons(card):
-        group = card.xpath('.//*[@data-sc-card-icons]')[0]
+        group = card.xpath('.//*[@data-pk-card-icons]')[0]
         kinds = []
         for el in group.iter('button', 'a'):
             classes = (el.get('class') or '').split()
@@ -104,18 +104,18 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self.assertEqual(self._icons(card), ['o_pk_card_trash', 'o_pk_card_edit'])
         trash = card.xpath('.//button[contains(@class, "o_pk_card_trash")]')[0]
         self.assertEqual(trash.get('hidden'), 'hidden')
-        self.assertEqual(trash.get('data-sc-edit-only'), '1')
-        self.assertEqual(trash.get('data-sc-sheet-open'), 'sc_activity_cancel_sheet')
+        self.assertEqual(trash.get('data-pk-edit-only'), '1')
+        self.assertEqual(trash.get('data-pk-sheet-open'), 'sc_activity_cancel_sheet')
         self.assertEqual(trash.get('data-sc-activity-id'), str(self.act_player.id))
         self.assertTrue(tree.xpath('//dialog[@id="sc_activity_cancel_sheet"]'))
         pencil = card.xpath('.//button[contains(@class, "o_pk_card_edit")]')[0]
-        self.assertEqual(pencil.get('data-sc-edit-toggle'), '1')
-        self.assertEqual(pencil.get('data-sc-action'), 'activity.edit')
+        self.assertEqual(pencil.get('data-pk-edit-toggle'), '1')
+        self.assertEqual(pencil.get('data-pk-action'), 'activity.edit')
         # The edit view: hidden, its fields inside the inert lazy template.
-        edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
+        edit = card.xpath('.//*[@data-pk-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden')
-        self.assertEqual(edit.get('data-sc-lazy-edit-host'), '1')
-        template = edit.xpath('./template[@data-sc-lazy-edit]')
+        self.assertEqual(edit.get('data-pk-lazy-edit-host'), '1')
+        template = edit.xpath('./template[@data-pk-lazy-edit]')
         self.assertEqual(len(template), 1)
         props = self._props(template[0])
         self.assertEqual([p['field'] for p in props], list(FIELDS))
@@ -154,7 +154,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
             _text, tree = self._get(url)
             card = self._card(tree, activity)
             self.assertEqual(self._icons(card), ['o_pk_card_trash', 'o_pk_card_edit'], url)
-            self.assertTrue(card.xpath('.//template[@data-sc-lazy-edit]'), url)
+            self.assertTrue(card.xpath('.//template[@data-pk-lazy-edit]'), url)
             self.assertTrue(tree.xpath('//dialog[@id="sc_activity_detail_sheet"]'), url)
         # The dashboard's « Overdue activities » cards.
         self.act_player.date_deadline = fields.Date.today().replace(year=2020)
@@ -164,7 +164,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self.assertTrue(card)
         self.assertEqual(self._icons(card[0]), ['o_pk_card_trash', 'o_pk_card_edit'])
         self.assertTrue(tree.xpath('//dialog[@id="sc_activity_detail_sheet"]'))
-        self.assertEqual(card[0].xpath('.//a[contains(@class, "o_pk_link_row_main")]/@data-sc-sheet-url'),
+        self.assertEqual(card[0].xpath('.//a[contains(@class, "o_pk_link_row_main")]/@data-pk-sheet-url'),
                          ['/my/activity/%s/popout' % self.act_player.id])
 
     def test_coach_assignee_field_follows_reassign_right(self):
@@ -193,10 +193,10 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self.assertNotIn('o_pk_edit_card', card.get('class'))
         self.assertIsNone(card.get('data-pk-edit-card'))
         self.assertEqual(self._icons(card), [])
-        self.assertFalse(card.xpath('.//*[@data-sc-edit-view] | .//owl-component | .//template'))
+        self.assertFalse(card.xpath('.//*[@data-pk-edit-view] | .//owl-component | .//template'))
         self.assertFalse(card.xpath('.//*[@data-sc-action="activity.complete"]'))
         # The popout stays (who may open it is checked by its route).
-        self.assertTrue(card.xpath('.//a[@data-sc-sheet-url]'))
+        self.assertTrue(card.xpath('.//a[@data-pk-sheet-url]'))
 
     # -- AC-4 --------------------------------------------------------------
     def test_inline_saves(self):
@@ -241,8 +241,8 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         card = self._card(tree, self.act_coach_created)
         link = card.xpath('.//a[contains(@class, "o_pk_link_row_main")]')[0]
         self.assertEqual(link.get('href'), '/my/activity/%s' % self.act_coach_created.id)
-        self.assertEqual(link.get('data-sc-sheet-open'), 'sc_activity_detail_sheet')
-        self.assertEqual(link.get('data-sc-sheet-url'), '/my/activity/%s/popout' % self.act_coach_created.id)
+        self.assertEqual(link.get('data-pk-sheet-open'), 'sc_activity_detail_sheet')
+        self.assertEqual(link.get('data-pk-sheet-url'), '/my/activity/%s/popout' % self.act_coach_created.id)
         self.assertEqual(link.get('aria-haspopup'), 'dialog')
         sheet = tree.xpath('//dialog[@id="sc_activity_detail_sheet"]')
         self.assertEqual(len(sheet), 1)
@@ -267,7 +267,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self.assertTrue(root[0].xpath('.//*[contains(@class, "o_pk_chip")]'), 'the state chip')
         # Read-only: no control, no in-place refresh keys.
         self.assertFalse(root[0].xpath('.//owl-component | .//button | .//form | .//input'))
-        self.assertFalse(root[0].xpath('.//*[@data-sc-fragment or @data-sc-display]'))
+        self.assertFalse(root[0].xpath('.//*[@data-pk-fragment or @data-pk-display]'))
 
     def test_popout_refused(self):
         self._switch(True)
@@ -287,7 +287,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         text = ' '.join(card.text_content().split())
         self.assertIn('Created by', text)
         self.assertIn('PC Coach', text)
-        self.assertTrue(card.xpath('.//*[@data-sc-fragment="mail.activity:%s:read"]' % self.act_coach_created.id))
+        self.assertTrue(card.xpath('.//*[@data-pk-fragment="mail.activity:%s:read"]' % self.act_coach_created.id))
         self.assertEqual(tree.xpath('//*[contains(@class, "o_pk_actionbar")]//@data-sc-action'),
                          ['activity.complete'])
 
@@ -297,13 +297,13 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self._login('tp')
         _text, tree = self._get('/my/event/%s' % self.event.id)
         hero = tree.xpath('//section[@data-pk-section="event.hero"]')[0]
-        self.assertFalse(hero.xpath('.//*[@data-sc-card-icons]//*[@data-sc-action="event.cancel"]'))
+        self.assertFalse(hero.xpath('.//*[@data-pk-card-icons]//*[@data-sc-action="event.cancel"]'))
         self.assertFalse(hero.xpath('.//*[contains(@class, "o_pk_card_archive")]'))
         cancel = hero.xpath('.//*[contains(@class, "o_pk_actions_row")]/button[@data-sc-action="event.cancel"]')
         self.assertEqual(len(cancel), 1)
         self.assertIn('o_pk_btn_danger', cancel[0].get('class'))
-        self.assertEqual(cancel[0].get('data-sc-sheet-open'), 'sc_event_cancel_sheet')
-        self.assertTrue(hero.xpath('.//*[@data-sc-card-icons]//a[contains(@class, "o_sc_card_clock")]'))
+        self.assertEqual(cancel[0].get('data-pk-sheet-open'), 'sc_event_cancel_sheet')
+        self.assertTrue(hero.xpath('.//*[@data-pk-card-icons]//a[contains(@class, "o_pk_card_clock")]'))
 
 
 @tagged('post_install', '-at_install')
@@ -315,7 +315,7 @@ class TestActivityCards1736r1I18n(ActivityCards1736r1Common):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

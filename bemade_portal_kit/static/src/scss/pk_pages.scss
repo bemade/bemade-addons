@@ -629,7 +629,7 @@
     }
 
     // ------------------------------------------- inline-edit cards (2026-10-10)
-    // One pencil per card; read view by default (sc_app_ui.js toggles).
+    // One pencil per card; read view by default (the consumer's script toggles).
     .o_pk_edit_card {
         display: flex;
         flex-direction: column;
@@ -866,6 +866,15 @@
         font-weight: 600;
     }
 
+    // Task 5371 (P4c1, from the first consumer): the toast's tone.
+    .o_pk_toast[data-pk-toast-tone="error"] {
+        border-left: 4px solid var(--pk-bad);
+    }
+
+    .o_pk_toast[data-pk-toast-tone="success"] {
+        border-left: 4px solid var(--pk-ok);
+    }
+
     .o_pk_toast_action {
         flex: none;
         margin-left: auto;
@@ -990,7 +999,7 @@
     }
 
     // Task 1684: in a filter panel a field keeps its own height — an open
-    // picker list (in flow, sc_picker.js) grows its row, and a stretched
+    // picker list (in flow, the consumer's picker) grows its row, and a stretched
     // neighbour's input (.o_pk_input is flex: 1) grew with it.
     .o_pk_filters .o_pk_filter_grid {
         align-items: start;
@@ -1491,7 +1500,7 @@
     }
 }
 
-// Task 1648: the type-to-filter picker of the link fields (sc_picker.js) —
+// Task 1648: the type-to-filter picker of the link fields —
 // the select stays (hidden) as the form value; the list sits in the flow
 // under the box (a phone keyboard does not hide it).
 .o_pk_app {
@@ -1601,5 +1610,58 @@
 
     .o_pk_form_actions_start {
         justify-content: flex-start;
+    }
+}
+
+// Task 5200 (P5): « More » entries already on the laptop rail (marked by
+// pk_app_more) are hidden there.
+.o_pk_app {
+    @media (min-width: $pk-laptop) {
+        .o_pk_content [data-pk-in-rail] {
+            display: none;
+        }
+    }
+}
+
+// Task 5516 (kit 1.17): « Settings › Notifications », one row per kind.
+.o_pk_app .o_pk_notify_row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pk-space-2);
+    margin-bottom: var(--pk-space-3);
+
+    .o_pk_notify_label {
+        font-weight: 600;
+        color: var(--pk-fg);
+    }
+}
+
+// Task 5546 (kit 1.18): the phone switch of a kind and this device's state.
+.o_pk_app .o_pk_notify_push {
+    .o_pk_switch {
+        margin: 0;
+    }
+}
+
+.o_pk_app .o_pk_push_state {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pk-space-2);
+
+    .o_pk_push_state_line {
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--pk-space-2);
+
+        p {
+            margin: 0;
+        }
+
+        &[hidden] {
+            display: none;
+        }
     }
 }

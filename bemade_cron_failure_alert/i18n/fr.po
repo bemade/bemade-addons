@@ -80,7 +80,7 @@ msgstr "Alerte d'échec"
 #: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_ir_cron__id
 #: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_res_config_settings__id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. module: bemade_cron_failure_alert
 #. odoo-python

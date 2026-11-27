@@ -29,6 +29,21 @@ from odoo.tests import tagged
 
 from odoo.addons.bemade_sports_clinic.tests.test_internal_tp_parity_1577 import Parity1577Common
 
+def owl_prop_fields(text):
+    """Task 1541: the field names of the app's in-place fields on a page
+    (autosave ``field`` / draft ``name`` of each owl-component's props)."""
+    import json
+    from lxml import html as _lxml_html
+    names = set()
+    for raw in _lxml_html.fromstring(text).xpath('//owl-component/@props'):
+        try:
+            props = json.loads(raw)
+        except ValueError:
+            continue
+        names.update(v for v in (props.get('field'), props.get('name')) if v)
+    return names
+
+
 
 @tagged('post_install', '-at_install')
 class TestClinicAdminScope1577(Parity1577Common):
@@ -63,8 +78,10 @@ class TestClinicAdminScope1577(Parity1577Common):
         self.assertIn('Two', text, "the roster of a non-staffed team renders")
         text, _tree = self._get('/my/player?player_id=%s' % self.player_b.id)
         self.assertIn('Two', text)
-        text, _tree = self._get('/my/injury/edit?injury_id=%s' % self.injury.id)
-        self.assertIn('name="internal_notes"', text)
+        # Task 1541: the injury is its card on the player page (the edit page
+        # redirects there); the admin gets the therapist fields.
+        text, tree = self._get('/my/injury/edit?injury_id=%s' % self.injury.id)
+        self.assertIn('internal_notes', owl_prop_fields(text))
 
     def test_clinic_admin_team_access_is_not_staff_only(self):
         # check_staff=True routes (request-add) stay staff-only: the admin
@@ -116,7 +133,7 @@ class TestClinicAdminScope1577(Parity1577Common):
         ids = [int(x) for x in re.findall(r'data-sc-team-id="(\d+)"', text)]
         self.assertEqual(ids[0], self.team_a.id, "the staffed team comes first")
         self.assertIn(self.team_b.id, ids)
-        self.assertEqual(self.env['sc.dashboard'].with_user(self.cadmin)._sc_scope_teams({}),
+        self.assertEqual(self.env['portal.kit.dashboard'].with_user(self.cadmin)._sc_scope_teams({}),
                          self.team_a)
 
     def test_internal_tp_home_staffed_only(self):
@@ -252,21 +269,6 @@ class TestClinicAdminScope1577(Parity1577Common):
         self.assertIn(resp.status_code, (403, 404))
         self.assertNotIn('P77 admin team B task', resp.text)
 
-    def test_home_activity_count_scope(self):
-        self._team_b_activities()
-        Activity = self.env['mail.activity']
-        # Clinic admin: every team's patient / team activities.
-        self._login_cadmin()
-        values = self._jsonrpc('/my/counters', counters=['activities_count'])
-        all_teams = self.env['sports.team'].search([])
-        expected = Activity.search_count([
-            '|',
-            '&', ('res_model', '=', 'sports.patient'),
-            ('res_id', 'in', all_teams.patient_ids.ids),
-            '&', ('res_model', '=', 'sports.team'), ('res_id', 'in', all_teams.ids),
-        ])
-        self.assertEqual(values['activities_count'], expected)
-
 
 @tagged('post_install', '-at_install')
 class TestTeamRefusalFrench1577(Parity1577Common):
@@ -278,7 +280,7 @@ class TestTeamRefusalFrench1577(Parity1577Common):
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

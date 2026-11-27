@@ -1,4 +1,7 @@
+from markupsafe import Markup, escape
+
 from odoo import fields, models, api, Command
+from odoo.exceptions import AccessError, UserError
 from odoo.addons.project.models.project_task import CLOSED_STATES
 import re
 
@@ -41,6 +44,12 @@ class Task(models.Model):
 
     work_order_number = fields.Char(readonly=True)
 
+    fsm_site_note = fields.Text(
+        related="partner_id.fsm_site_note",
+        string="Site note",
+        readonly=True,
+    )
+
     propagate_assignment = fields.Boolean(
         help="Propagate assignment of this task to all subtasks.",
         default=False,
@@ -63,16 +72,12 @@ class Task(models.Model):
         copy=False,
     )
 
-    # Work order (SVR) report: dot colour = the state's native screen colour,
-    # label = 3-way grouping (done / waiting / not done).
-    _REPORT_STATE_COLOURS = {
-        "01_in_progress": "#6c757d",
-        "02_changes_requested": "#f0ad4e",
-        "03_approved": "#28a745",
-        "04_waiting_normal": "#17a2b8",
-        "1_done": "#28a745",
-        "1_canceled": "#dc3545",
-    }
+    # Work order (SVR) report: the Status column groups the states in three
+    # labels (done / waiting / not done), and each label has ONE dot colour so
+    # the colour always matches the label: done green, waiting blue, not done grey.
+    _REPORT_STATE_DONE_COLOUR = "#28a745"
+    _REPORT_STATE_WAITING_COLOUR = "#17a2b8"
+    _REPORT_STATE_NOT_DONE_COLOUR = "#6c757d"
 
     def _get_report_state_indicator(self, lang=None):
         """Return ``(label, hex colour)`` for the work order report Status column.
@@ -83,12 +88,10 @@ class Task(models.Model):
         self.ensure_one()
         env = self.with_context(lang=lang).env if lang else self.env
         if self.state == "1_done":
-            label = env._("Done")
-        elif self.state in ("03_approved", "04_waiting_normal"):
-            label = env._("Waiting")
-        else:
-            label = env._("Not done")
-        return label, self._REPORT_STATE_COLOURS.get(self.state, "#6c757d")
+            return env._("Done"), self._REPORT_STATE_DONE_COLOUR
+        if self.state in ("03_approved", "04_waiting_normal"):
+            return env._("Waiting"), self._REPORT_STATE_WAITING_COLOUR
+        return env._("Not done"), self._REPORT_STATE_NOT_DONE_COLOUR
 
     def _apply_template_to_self(self, template=None):
         """Apply a task template to this task record.
@@ -133,6 +136,23 @@ class Task(models.Model):
         if template.subtasks:
             template.subtasks.create_task_from_self(project, parent_id=self.id)
 
+    @api.onchange("template_id")
+    def _onchange_template_id_warning(self):
+        """Warn before a template is applied on a task that is already saved:
+        applying it on save replaces the task's own values and adds subtasks."""
+        if self.template_id and self._origin.id:
+            return {
+                "warning": {
+                    "title": self.env._("Apply template %s?", self.template_id.name),
+                    "message": self.env._(
+                        "Applying this template on save replaces this task's name, "
+                        "description, assignees, tags, allocated hours, customer and "
+                        "equipment, and adds the template's subtasks. Clear the field "
+                        "(or Discard) to cancel."
+                    ),
+                }
+            }
+
     def _compute_is_closed(self):
         for rec in self:
             rec.is_closed = rec.state in CLOSED_STATES
@@ -148,6 +168,9 @@ class Task(models.Model):
         # that visits created together get consecutive numbers.
         next_numbers = {}
         for rec, template_id in zip(res, template_ids):
+            # Before the template expands: its subtasks then find the dates here.
+            if not rec.planned_date_begin and not rec.date_deadline:
+                rec._fill_dates_from_scheduled_ancestor()
             if template_id:
                 rec._apply_template_to_self(
                     self.env["project.task.template"].browse(template_id)
@@ -207,10 +230,45 @@ class Task(models.Model):
             next_numbers[order.id] += 1
         return order.name.replace("SO", "SVR", 1) + f"-{seq}"
 
+    def _get_scheduled_ancestor(self):
+        """Return the nearest ancestor with both a start date and a deadline."""
+        self.ensure_one()
+        ancestor = self.parent_id
+        while ancestor:
+            if ancestor.planned_date_begin and ancestor.date_deadline:
+                return ancestor
+            ancestor = ancestor.parent_id
+        return self.browse()
+
+    def _fill_dates_from_scheduled_ancestor(self):
+        """Give the dateless FSM tasks of ``self`` the dates of their nearest
+        scheduled ancestor, so they show in Planning with their visit.
+
+        Only tasks with neither a start date nor a deadline are filled. The
+        write is done task by task (a multi-record write on dateless tasks
+        makes project_enterprise re-plan the dates on the working calendar)
+        and does not cascade to subtasks, so their own dates are kept.
+        """
+        for task in self:
+            if not task.is_fsm or task.planned_date_begin or task.date_deadline:
+                continue
+            ancestor = task._get_scheduled_ancestor()
+            if ancestor:
+                task.with_context(bemade_fsm_no_date_propagation=True).write(
+                    {
+                        "planned_date_begin": ancestor.planned_date_begin,
+                        "date_deadline": ancestor.date_deadline,
+                    }
+                )
+
     def write(self, vals):
         res = super().write(vals)
         if not self:  # End recursion on empty RecordSet
             return res
+        if vals.get("parent_id"):
+            # Attached under (or moved to) another task: fill the dateless
+            # tasks of the moved subtrees, parents first.
+            (self | self._get_all_subtasks())._fill_dates_from_scheduled_ancestor()
         if vals.get("template_id"):
             # template_id was set on one or more existing rows — apply it to
             # each. Read the id from vals (non-stored field, dropped from cache).
@@ -245,7 +303,9 @@ class Task(models.Model):
                     rec.child_ids.write(child_vals)
         date_keys = ["planned_date_begin", "date_deadline"]
         keys_to_propagate = [k for k in date_keys if k in vals]
-        if keys_to_propagate:
+        if keys_to_propagate and not self.env.context.get(
+            "bemade_fsm_no_date_propagation"
+        ):
             for rec in self.filtered("is_fsm"):
                 date_vals = {k: getattr(rec, k) for k in keys_to_propagate}
                 all_children = rec._get_all_subtasks()
@@ -285,9 +345,106 @@ class Task(models.Model):
             super()._fsm_create_sale_order_line()
 
     def action_fsm_validate(self, stop_running_timers=False):
+        # The task-form "Mark as done" buttons set ``fsm_site_note_prompt``: on a
+        # single top-level FSM task at a site, ask for the site note first. The
+        # wizard calls back here without the key.
+        if (
+            self.env.context.get("fsm_site_note_prompt")
+            and not stop_running_timers
+            and len(self) == 1
+            and self.is_fsm
+            and not self.parent_id
+            and self.partner_id
+        ):
+            return self._action_open_fsm_site_note_wizard()
         # Override to close out subtasks as well
-        all_tasks = self | self._get_all_subtasks()
+        all_tasks = (self | self._get_all_subtasks()).with_context(
+            fsm_site_note_prompt=False
+        )
         return super(Task, all_tasks).action_fsm_validate(stop_running_timers)
+
+    def _action_open_fsm_site_note_wizard(self):
+        self.ensure_one()
+        wizard = self.env["fsm.site.note.wizard"].create(
+            {"task_id": self.id, "note": self.partner_id.fsm_site_note}
+        )
+        return {
+            "name": self.env._("Anything to remember next time at this site?"),
+            "type": "ir.actions.act_window",
+            "res_model": "fsm.site.note.wizard",
+            "res_id": wizard.id,
+            "view_mode": "form",
+            "views": [[self.env.ref("bemade_fsm.fsm_site_note_wizard_view_form").id, "form"]],
+            "target": "new",
+            "context": {"fsm_site_note_prompt": False},
+        }
+
+    def action_open_fsm_site_note_edit(self):
+        """« Update site note » on a visit: open the small window on the
+        current note of the task's site (all field service users)."""
+        self.ensure_one()
+        wizard = self.env["fsm.site.note.edit.wizard"].create(
+            {"task_id": self.id, "note": self.partner_id.fsm_site_note}
+        )
+        return {
+            "name": self.env._("Update site note"),
+            "type": "ir.actions.act_window",
+            "res_model": "fsm.site.note.edit.wizard",
+            "res_id": wizard.id,
+            "view_mode": "form",
+            "views": [
+                [self.env.ref("bemade_fsm.fsm_site_note_edit_wizard_view_form").id, "form"]
+            ],
+            "target": "new",
+        }
+
+    def _fsm_update_site_note(self, note):
+        """Write ``note`` as the site note of this visit's site.
+
+        Shared by the « Update site note » window and the close-out wizard so
+        both log identically: one history row (author, date, this visit) via
+        the res.partner write hook and a bilingual note on the visit.
+
+        The partner is written with sudo so that technicians who cannot edit
+        contacts can still update the note -- limited to this single field,
+        to field service users, and to an FSM task the user can read.
+        Returns True when the note changed."""
+        self.ensure_one()
+        if not self.env.su and not self.env.user.has_group(
+            "industry_fsm.group_fsm_user"
+        ):
+            raise AccessError(
+                self.env._("Only field service users can update the site note.")
+            )
+        self.check_access("read")
+        if not self.is_fsm:
+            raise UserError(
+                self.env._("The site note can only be updated from a field service task.")
+            )
+        partner = self.partner_id
+        if not partner:
+            raise UserError(self.env._("This task has no customer / site."))
+        note = (note or "").strip() or False
+        if note == ((partner.sudo().fsm_site_note or "").strip() or False):
+            return False
+        partner.sudo().with_context(fsm_site_note_task_id=self.id).write(
+            {"fsm_site_note": note}
+        )
+        if note:
+            body = Markup(
+                "<p>Note du site mise à jour / Site note updated:</p><p>%s</p>"
+            ) % Markup("<br/>").join(escape(line) for line in note.splitlines())
+        else:
+            body = Markup("<p>Note du site effacée / Site note cleared</p>")
+        # sudo: a technician may read a visit without being allowed to post on
+        # it; the note is still credited to them.
+        self.sudo().message_post(
+            body=body,
+            message_type="comment",
+            subtype_xmlid="mail.mt_note",
+            author_id=self.env.user.partner_id.id,
+        )
+        return True
 
     def _get_full_hierarchy(self):
         if self.child_ids:

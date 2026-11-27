@@ -51,12 +51,12 @@ msgstr ""
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_sale_order_table_with_pricing_and_labour
 msgid "<strong>Taxes</strong>"
-msgstr ""
+msgstr "<strong>Taxes</strong>"
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_sale_order_table_with_pricing_and_labour
 msgid "<strong>Total</strong>"
-msgstr ""
+msgstr "<strong>Total</strong>"
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_sale_order_table_with_pricing_and_labour
@@ -87,7 +87,7 @@ msgstr "Icône du type d'activité"
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_equipment__tag_ids
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_equipment_summary
 msgid "Application"
-msgstr ""
+msgstr "Application"
 
 #. module: bemade_fsm
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_visit__approx_date
@@ -112,7 +112,14 @@ msgid "Can be billed"
 msgstr "Peut être facturé"
 
 #. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_carried_todo_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_carried_todo_view_list
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_edit_wizard_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.project_task_from_template_wizard_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_carried_todo_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_carried_todo_view_list
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
 msgid "Cancel"
 msgstr "Annuler"
 
@@ -134,7 +141,7 @@ msgstr "Équipement client"
 #: model:ir.ui.menu,name:bemade_fsm.menu_service_client
 #: model:ir.ui.menu,name:bemade_fsm.menu_service_client_clients
 msgid "Clients"
-msgstr ""
+msgstr "Clients"
 
 #. module: bemade_fsm
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_equipment_tag__color
@@ -148,6 +155,8 @@ msgstr "Commentaires"
 
 #. module: bemade_fsm
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_template__company_id
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_carried_todo__company_id
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_config_settings__company_id
 msgid "Company"
 msgstr "Société"
 
@@ -159,7 +168,7 @@ msgstr "Complété"
 #. module: bemade_fsm
 #: model:ir.model,name:bemade_fsm.model_res_partner
 msgid "Contact"
-msgstr ""
+msgstr "Contact"
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.sale_order_form_inherit
@@ -173,8 +182,10 @@ msgstr "Créer une tâche"
 
 #. module: bemade_fsm
 #. openerp-web
+#. odoo-javascript
 #: code:addons/bemade_fsm/static/src/xml/project_view_buttons.xml:0
 #: code:addons/bemade_fsm/static/src/xml/project_view_buttons.xml:0
+#: code:addons/bemade_fsm/static/src/xml/project_task_list_buttons.xml:0
 #, python-format
 msgid "Create Task from Template"
 msgstr "Créer une tâche à partir d'un gabarit"
@@ -186,7 +197,9 @@ msgstr "Assistant pour création de tâche à partir d'un gabarit"
 
 #. module: bemade_fsm
 #. openerp-web
+#. odoo-javascript
 #: code:addons/bemade_fsm/static/src/xml/project_view_buttons.xml:0
+#: code:addons/bemade_fsm/static/src/xml/project_task_list_buttons.xml:0
 #, python-format
 msgid "Create from Template"
 msgstr "Créer à partir d'un gabarit"
@@ -198,6 +211,9 @@ msgstr "Créer à partir d'un gabarit"
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_visit__create_uid
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_from_template_wizard__create_uid
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_template__create_uid
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_carried_todo__create_uid
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard__create_uid
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard_todo__create_uid
 msgid "Created by"
 msgstr "Créé par"
 
@@ -208,6 +224,9 @@ msgstr "Créé par"
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_visit__create_date
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_from_template_wizard__create_date
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_template__create_date
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_carried_todo__create_date
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard__create_date
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard_todo__create_date
 msgid "Created on"
 msgstr "Date de création"
 
@@ -224,7 +243,7 @@ msgstr "Client :"
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_timesheet_entries
 msgid "Date"
-msgstr ""
+msgstr "Date"
 
 #. module: bemade_fsm
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_template__assignees
@@ -279,7 +298,7 @@ msgstr "Livré"
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_materials_table
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_sale_order_table_with_pricing_and_labour
 msgid "Description"
-msgstr ""
+msgstr "Description"
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.view_task_form2_inherit
@@ -298,6 +317,13 @@ msgstr "Détails"
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_visit__display_name
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_from_template_wizard__display_name
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_template__display_name
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_carried_todo__display_name
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard__display_name
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard_todo__display_name
+#: model:ir.model.fields,field_description:bemade_fsm.field_project_project__display_name
+#: model:ir.model.fields,field_description:bemade_fsm.field_report_industry_fsm_worksheet_custom__display_name
+#: model:ir.model.fields,field_description:bemade_fsm.field_product_template__display_name
+#: model:ir.model.fields,field_description:bemade_fsm.field_sale_order_line__display_name
 msgid "Display Name"
 msgstr "Nom pour affichage"
 
@@ -310,13 +336,6 @@ msgstr "Employés assignés aux tâches créées à partir de ce gabarit."
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task__planned_date_end
 msgid "End Date"
 msgstr "Date de fin"
-
-#. module: bemade_fsm
-#: model:ir.actions.act_window,name:bemade_fsm.action_window_equipment
-#: model_terms:ir.ui.view,arch_db:bemade_fsm.equipment_view_form
-#: model_terms:ir.ui.view,arch_db:bemade_fsm.equipment_view_tree
-msgid "Equipment"
-msgstr "Équipement"
 
 #. module: bemade_fsm
 #: model:ir.model.fields,field_description:bemade_fsm.field_sale_order__summary_equipment_ids
@@ -371,7 +390,7 @@ msgstr "Durée estimée"
 #. module: bemade_fsm
 #: model:project.task.type,name:bemade_fsm.planning_project_stage_exception
 msgid "Exception"
-msgstr ""
+msgstr "Exception"
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.bemade_fsm_project_task_form_inherit
@@ -437,6 +456,13 @@ msgstr "A un message"
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_visit__id
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_from_template_wizard__id
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_template__id
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_carried_todo__id
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard__id
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard_todo__id
+#: model:ir.model.fields,field_description:bemade_fsm.field_project_project__id
+#: model:ir.model.fields,field_description:bemade_fsm.field_report_industry_fsm_worksheet_custom__id
+#: model:ir.model.fields,field_description:bemade_fsm.field_product_template__id
+#: model:ir.model.fields,field_description:bemade_fsm.field_sale_order_line__id
 msgid "ID"
 msgstr "Identifiant"
 
@@ -502,7 +528,7 @@ msgstr "Nom d'intervention"
 #. module: bemade_fsm
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_equipment__task_ids
 msgid "Interventions"
-msgstr ""
+msgstr "Interventions"
 
 #. module: bemade_fsm
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_visit__is_invoiced
@@ -553,6 +579,9 @@ msgstr "Dernière modification"
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_visit__write_uid
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_from_template_wizard__write_uid
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_template__write_uid
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_carried_todo__write_uid
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard__write_uid
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard_todo__write_uid
 msgid "Last Updated by"
 msgstr "Modifié par"
 
@@ -563,6 +592,9 @@ msgstr "Modifié par"
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_visit__write_date
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_from_template_wizard__write_date
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_template__write_date
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_carried_todo__write_date
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard__write_date
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard_todo__write_date
 msgid "Last Updated on"
 msgstr "Dernière mise à jour"
 
@@ -578,6 +610,7 @@ msgstr "Pièce jointe principale"
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.bemade_fsm_project_task_form_inherit
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.project_task_view_kanban_fsm_site_note
 msgid "Mark as Delivered"
 msgstr "Marquer comme livré"
 
@@ -594,7 +627,7 @@ msgstr "Erreur de livraison de message"
 #. module: bemade_fsm
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_equipment__message_ids
 msgid "Messages"
-msgstr ""
+msgstr "Messages"
 
 #. module: bemade_fsm
 #: code:addons/bemade_fsm/models/task.py:0
@@ -604,6 +637,9 @@ msgid ""
 " task already has planning records associated to it. Please modify or delete"
 " the planning records instead."
 msgstr ""
+"Il n'est pas permis de modifier l'heure de début ou de fin prévue d'une "
+"tâche qui a déjà des enregistrements de planification associés. Modifiez ou "
+"supprimez plutôt les enregistrements de planification."
 
 #. module: bemade_fsm
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_equipment__my_activity_date_deadline
@@ -746,6 +782,7 @@ msgstr ""
 #. module: bemade_fsm
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task_from_template_wizard__project_id
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.task_template_search_view
+#: model:ir.model,name:bemade_fsm.model_project_project
 msgid "Project"
 msgstr "Projet"
 
@@ -813,6 +850,7 @@ msgid "Sequence"
 msgstr "Séquence"
 
 #. module: bemade_fsm
+#. odoo-python
 #: code:addons/bemade_fsm/models/sale_order.py:0
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_visit__task_id
 #, python-format
@@ -827,7 +865,7 @@ msgstr "Visites de service"
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_signature_block
 msgid "Signature"
-msgstr ""
+msgstr "Signature"
 
 #. module: bemade_fsm
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task__site_contacts
@@ -855,6 +893,8 @@ msgstr "Date de début"
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_tasks_table
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_carried_todo__state
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_carried_todo_view_search
 msgid "Status"
 msgstr "Statut"
 
@@ -895,6 +935,7 @@ msgstr "Le nom d'étiquette existe déjà !"
 #: model:ir.model,name:bemade_fsm.model_project_task
 #: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_visit__task_ids
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_tasks_table
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard__task_id
 msgid "Task"
 msgstr "Tâche"
 
@@ -941,7 +982,7 @@ msgstr ""
 #. module: bemade_fsm
 #: model:ir.model.fields,help:bemade_fsm.field_project_task_from_template_wizard__project_id
 msgid "The project the new task should be created in."
-msgstr ""
+msgstr "Le projet dans lequel la nouvelle tâche doit être créée."
 
 #. module: bemade_fsm
 #: model:ir.model.fields,help:bemade_fsm.field_bemade_fsm_visit__so_section_id
@@ -979,8 +1020,8 @@ msgid ""
 "This task has been created from: <a href=# data-oe-model=sale.order data-oe-"
 "id=%d>%s</a> (%s)"
 msgstr ""
-"Cette tâche a été créée à partir de : <a href=# data-oe-model=sale.order data-oe-"
-"id=%d>%s</a> (%s)"
+"Cette tâche a été créée à partir de : <a href=# data-oe-model=sale.order "
+"data-oe-id=%d>%s</a> (%s)"
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_timesheet_entries
@@ -1023,11 +1064,12 @@ msgid "View Task"
 msgstr "Voir tâche"
 
 #. module: bemade_fsm
+#. odoo-python
 #: code:addons/bemade_fsm/models/sale_order_line.py:0
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_history__task_id
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task__visit_id
 #: model:ir.model.fields,field_description:bemade_fsm.field_sale_order__visit_ids
 #: model:ir.model.fields,field_description:bemade_fsm.field_sale_order_line__visit_id
-#, python-format
 msgid "Visit"
 msgstr "Visite"
 
@@ -1103,7 +1145,18 @@ msgid ""
 "                                 position: absolute;"
 "                                 top: 19px; right: -21px; left: auto;"
 "                                 padding: 0;\">Signed</span>"
-msgstr "<span style=\"                                 font-size: 10px;                                 color: #fff;                                 text-transform: uppercase;                                 text-align: center;                                 font-weight: bold; line-height: 20px;                                 transform: rotate(45deg);                                 width: 100px; height: auto; display: block;                                 background: green;                                 position: absolute;                                 top: 19px; right: -21px; left: auto;                                 padding: 0;\">Signé</span>"
+msgstr ""
+"<span style=\"                                 font-size: 10px;"
+"                                 color: #fff;"
+"                                 text-transform: uppercase;"
+"                                 text-align: center;"
+"                                 font-weight: bold; line-height: 20px;"
+"                                 transform: rotate(45deg);"
+"                                 width: 100px; height: auto; display: block;"
+"                                 background: green;"
+"                                 position: absolute;"
+"                                 top: 19px; right: -21px; left: auto;"
+"                                 padding: 0;\">Signé</span>"
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_sale_order_table_with_pricing_and_labour
@@ -1118,6 +1171,7 @@ msgstr "<strong class=\"mr16\">Sous-total de section</strong>"
 #. module: bemade_fsm
 #. odoo-python
 #: code:addons/bemade_fsm/models/task.py:0
+#: model:ir.model.fields.selection,name:bemade_fsm.selection__fsm_carried_todo__state__done
 msgid "Done"
 msgstr "Fait"
 
@@ -1132,3 +1186,421 @@ msgstr "Non fait"
 #: code:addons/bemade_fsm/models/task.py:0
 msgid "Waiting"
 msgstr "En attente"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.bemade_fsm_project_task_form_inherit
+msgid "<i class=\"fa fa-thumb-tack fa-lg mt-1\" role=\"img\" title=\"Site note\"/>"
+msgstr "<i class=\"fa fa-thumb-tack fa-lg mt-1\" role=\"img\" title=\"Note du site\"/>"
+
+#. module: bemade_fsm
+#. odoo-python
+#: code:addons/bemade_fsm/models/task.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
+msgid "Anything to remember next time at this site?"
+msgstr "Quelque chose à retenir pour la prochaine visite à ce site ?"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_edit_wizard_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.partner_equipment_location_view_form
+msgid "E.g.: gate code changed, bring the tall ladder"
+msgstr "Ex. : code de la barrière changé, apporter la grande échelle"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.bemade_fsm_project_task_form_inherit
+msgid "Note du site / Site note"
+msgstr "Note du site / Site note"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
+msgid "Save & close"
+msgstr "Enregistrer et terminer"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,help:bemade_fsm.field_project_task__fsm_site_note
+#: model:ir.model.fields,help:bemade_fsm.field_res_partner__fsm_site_note
+#: model:ir.model.fields,help:bemade_fsm.field_res_users__fsm_site_note
+msgid ""
+"Shown as a banner at the top of every field service task at this site (the "
+"task's customer / delivery address) until someone clears it. A note on the "
+"parent company does not show on its delivery addresses."
+msgstr ""
+"Affichée en bannière en haut de chaque intervention de service à ce site (le"
+" client / l'adresse de livraison de la tâche) jusqu'à ce que quelqu'un "
+"l'efface. Une note sur la société mère ne s'affiche pas sur ses adresses de "
+"livraison."
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.partner_equipment_location_view_form
+msgid "Shown as a banner on every service task at this address until cleared."
+msgstr ""
+"Affichée en bannière sur chaque intervention de service à cette adresse "
+"jusqu'à ce qu'on l'efface."
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard__partner_id
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_carried_todo__partner_id
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_carried_todo_view_search
+msgid "Site"
+msgstr "Site"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_edit_wizard__note
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard__note
+#: model:ir.model.fields,field_description:bemade_fsm.field_project_task__fsm_site_note
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_partner__fsm_site_note
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_users__fsm_site_note
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.project_task_view_kanban_fsm_site_note
+msgid "Site note"
+msgstr "Note du site"
+
+#. module: bemade_fsm
+#: model:ir.model,name:bemade_fsm.model_fsm_site_note_wizard
+msgid "Site note close-out prompt"
+msgstr "Invite de note du site à la clôture"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
+msgid "Skip"
+msgstr "Passer"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_edit_wizard_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
+msgid "This note shows as a banner on every service task at"
+msgstr "Cette note s'affiche en bannière sur chaque intervention de service à"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
+msgid "until someone clears it."
+msgstr "jusqu'à ce que quelqu'un l'efface."
+
+#. module: bemade_fsm
+#. odoo-python
+#: code:addons/bemade_fsm/models/task.py:0
+msgid "Apply template %s?"
+msgstr "Appliquer le modèle %s ?"
+
+#. module: bemade_fsm
+#. odoo-python
+#: code:addons/bemade_fsm/models/task.py:0
+msgid ""
+"Applying this template on save replaces this task's name, description, "
+"assignees, tags, allocated hours, customer and equipment, and adds the "
+"template's subtasks. Clear the field (or Discard) to cancel."
+msgstr ""
+"À l'enregistrement, ce modèle remplace le nom, la description, les assignés,"
+" les étiquettes, les heures allouées, le client et l'équipement de cette "
+"tâche, et ajoute les sous-tâches du modèle. Videz le champ (ou cliquez sur "
+"Abandonner) pour annuler."
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_project_task__template_id
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.view_task_form2_inherit
+msgid "From Template"
+msgstr "Depuis le modèle"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.bemade_fsm_project_task_form_inherit
+msgid "<i class=\"fa fa-list-ul fa-lg mt-1\" role=\"img\" title=\"From last visit\"/>"
+msgstr ""
+"<i class=\"fa fa-list-ul fa-lg mt-1\" role=\"img\" title=\"De la dernière "
+"visite\"/>"
+
+#. module: bemade_fsm
+#: model:ir.model.fields.selection,name:bemade_fsm.selection__fsm_carried_todo__state__cancelled
+msgid "Cancelled"
+msgstr "Annulée"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_carried_todo__visit_ids
+msgid "Carried to visits"
+msgstr "Reportée aux visites"
+
+#. module: bemade_fsm
+#: model:ir.actions.act_window,name:bemade_fsm.fsm_carried_todo_action
+#: model:ir.model.fields,field_description:bemade_fsm.field_project_task__fsm_carried_todo_ids
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_partner__fsm_carried_todo_ids
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_users__fsm_carried_todo_ids
+msgid "Carried to-dos"
+msgstr "À faire reportés"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,help:bemade_fsm.field_project_task__fsm_carried_todo_count
+msgid "Carried to-dos still to do on this visit's subtasks."
+msgstr "À faire reportés encore ouverts dans les sous-tâches de cette visite."
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_carried_todo_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_carried_todo_view_list
+msgid "Carry again"
+msgstr "Reporter de nouveau"
+
+#. module: bemade_fsm
+#: model:ir.model,name:bemade_fsm.model_fsm_site_note_wizard_todo
+msgid "Close-out prompt: to do on the next visit"
+msgstr "Fenêtre de fermeture : à faire à la prochaine visite"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
+msgid "E.g.: replace the gasket on the softener"
+msgstr "Ex. : remplacer le joint de l'adoucisseur"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_history__author_id
+msgid "Author"
+msgstr "Auteur"
+
+#. module: bemade_fsm
+#. odoo-python
+#: code:addons/bemade_fsm/models/fsm_carried_todo.py:0
+msgid "From last visit: %s"
+msgstr "De la dernière visite : %s"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_carried_todo__target_visit_id
+msgid "Next visit"
+msgstr "Prochaine visite"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.partner_equipment_location_view_form
+msgid "Site Notes"
+msgstr "Notes du site"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.partner_equipment_location_view_form
+msgid "History"
+msgstr "Historique"
+
+#. module: bemade_fsm
+#. odoo-python
+#: code:addons/bemade_fsm/models/task.py:0
+msgid "Only field service users can update the site note."
+msgstr ""
+"Seuls les utilisateurs du service terrain peuvent mettre à jour la note du "
+"site."
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_edit_wizard_view_form
+msgid "Save"
+msgstr "Enregistrer"
+
+#. module: bemade_fsm
+#: model:ir.model,name:bemade_fsm.model_fsm_site_note_history
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_partner__fsm_site_note_history_ids
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_users__fsm_site_note_history_ids
+msgid "Site note history"
+msgstr "Historique de la note du site"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,help:bemade_fsm.field_fsm_site_note_history__task_id
+msgid "The field service task the note was updated from, if any."
+msgstr ""
+"La tâche de service terrain depuis laquelle la note a été mise à jour, le "
+"cas échéant."
+
+#. module: bemade_fsm
+#. odoo-python
+#: code:addons/bemade_fsm/models/task.py:0
+msgid "The site note can only be updated from a field service task."
+msgstr ""
+"La note du site ne peut être mise à jour que depuis une tâche de service "
+"terrain."
+
+#. module: bemade_fsm
+#. odoo-python
+#: code:addons/bemade_fsm/models/task.py:0
+msgid "This task has no customer / site."
+msgstr "Cette tâche n'a pas de client / site."
+
+#. module: bemade_fsm
+#. odoo-python
+#: code:addons/bemade_fsm/models/task.py:0
+#: model:ir.model,name:bemade_fsm.model_fsm_site_note_edit_wizard
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.bemade_fsm_project_task_form_inherit
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_edit_wizard_view_form
+msgid "Update site note"
+msgstr "Mettre à jour la note du site"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_edit_wizard_view_form
+msgid "until someone clears it. Every change is kept in the site's history."
+msgstr ""
+"jusqu'à ce que quelqu'un l'efface. Chaque modification est conservée dans "
+"l'historique du site."
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_partner__fsm_carried_todo_count
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_users__fsm_carried_todo_count
+msgid "To-dos for next visit"
+msgstr "À faire prochaine visite"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_project_task__fsm_carried_todo_count
+msgid "To-dos from last visit"
+msgstr "À faire de la dernière visite"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,help:bemade_fsm.field_res_partner__fsm_carried_todo_count
+#: model:ir.model.fields,help:bemade_fsm.field_res_users__fsm_carried_todo_count
+msgid "To-dos noted at a visit's close that are not done yet."
+msgstr "À faire notés à la fermeture d'une visite et pas encore faits."
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard__task_equipment_ids
+msgid "Visit equipment"
+msgstr "Équipement de la visite"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,help:bemade_fsm.field_fsm_carried_todo__visit_ids
+msgid ""
+"Visits this to-do was carried to. It is not carried to the same visit twice."
+msgstr ""
+"Visites auxquelles ce à faire a été reporté. Il n'est jamais reporté deux "
+"fois à la même visite."
+
+#. module: bemade_fsm
+#: model:ir.model.fields.selection,name:bemade_fsm.selection__fsm_carried_todo__state__pending
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_carried_todo_view_search
+msgid "Waiting for a visit"
+msgstr "En attente d'une visite"
+
+#. module: bemade_fsm
+#: model_terms:ir.actions.act_window,help:bemade_fsm.fsm_carried_todo_action
+msgid ""
+"When a visit is marked as done, the close-out window lets you note\n"
+"                what to do on the next visit at the site."
+msgstr ""
+"Quand une visite est marquée comme faite, la fenêtre de fermeture permet de "
+"noter ce qu'il faut faire à la prochaine visite à ce site."
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.bemade_fsm_project_task_form_inherit
+msgid ""
+"<span class=\"fw-bold\">\n"
+"                            à faire de la dernière visite / to-do(s) from last visit\n"
+"                        </span>\n"
+"                        <span class=\"text-muted\"> (Sous-tâches / Sub-tasks)</span>"
+msgstr ""
+"<span class=\"fw-bold\">\n"
+"                            à faire de la dernière visite / to-do(s) from last visit\n"
+"                        </span>\n"
+"                        <span class=\"text-muted\"> (Sous-tâches / Sub-tasks)</span>"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_project_task__is_closed
+msgid "Closed state"
+msgstr "Terminé"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_company__create_default_fsm_visit
+msgid "Create Default Fsm Visit"
+msgstr "Créer une visite FSM par défaut"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_config_settings__create_default_fsm_visit
+msgid "Create Default Visit for FSM Sales Orders"
+msgstr "Créer une visite par défaut pour les commandes FSM"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.res_config_settings_view_form
+msgid ""
+"Create a default FSM visit if a service SO doesn't already contain one at "
+"confirmation."
+msgstr ""
+"Créer une visite FSM par défaut si une commande de service n'en contient pas"
+" déjà une à la confirmation."
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.bemade_fsm_project_task_form_inherit
+msgid "Equipment and Contacts"
+msgstr "Équipements et contacts"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_product_product__bemade_task_template_id
+#: model:ir.model.fields,field_description:bemade_fsm.field_product_template__bemade_task_template_id
+msgid "FSM Task Template"
+msgstr "Modèle de tâche FSM"
+
+#. module: bemade_fsm
+#: model:ir.actions.act_window,name:bemade_fsm.action_visit_task_tree
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.bemade_fsm_visit_list
+msgid "Full Task Tree"
+msgstr "Arborescence complète des tâches"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_project_task__root_ancestor
+msgid "Root Ancestor"
+msgstr "Ancêtre racine"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_config_settings__separate_time_on_work_orders
+msgid "Separate Time from Materials on Work Order"
+msgstr "Séparer le temps et le matériel sur le bon de travail"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.res_config_settings_view_form
+msgid "Separate blocks for materials and time on work order reports."
+msgstr ""
+"Blocs distincts pour le matériel et le temps sur les rapports de bon de "
+"travail."
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_company__split_time_from_materials_on_service_work_orders
+msgid "Split Time From Materials On Service Work Orders"
+msgstr "Séparer le temps et le matériel sur les bons de travail de service"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.bemade_fsm_visit_task_tree_list
+msgid "Task Tree"
+msgstr "Arborescence des tâches"
+
+#. module: bemade_fsm
+#: model:ir.model,name:bemade_fsm.model_report_industry_fsm_worksheet_custom
+msgid "Task Worksheet Custom Report"
+msgstr "Rapport personnalisé des feuilles de travail par tâche"
+
+#. module: bemade_fsm
+#. odoo-python
+#: code:addons/bemade_fsm/models/sale_order_line.py:0
+msgid ""
+"This task has been created from: <a href=# data-oe-model=sale.order data-oe-"
+"id=%(so_id)d>%(so_name)s</a> (%(product_name)s)"
+msgstr ""
+"Cette tâche a été créée à partir de : <a href=# data-oe-model=sale.order "
+"data-oe-id=%(so_id)d>%(so_name)s</a> (%(product_name)s)"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_visit__visit_no
+msgid "Visit No"
+msgstr "N° de visite"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard_todo__wizard_id
+msgid "Wizard"
+msgstr "Assistant"
+
+#. module: bemade_fsm
+#: model:ir.model,name:bemade_fsm.model_product_template
+msgid "Product"
+msgstr "Produit"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.partner_equipment_location_view_form
+msgid "Service Sites"
+msgstr "Sites de service"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,help:bemade_fsm.field_res_partner__is_service_site
+#: model:ir.model.fields,help:bemade_fsm.field_res_users__is_service_site
+msgid ""
+"A partner is a service site if they have one or more equipments, site "
+"contacts or work order contacts."
+msgstr ""
+"Un partenaire est un site de service s'il a un ou plusieurs équipements, "
+"contacts de site ou contacts de bon de travail."
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_history__content
+msgid "Note"
+msgstr "Note"

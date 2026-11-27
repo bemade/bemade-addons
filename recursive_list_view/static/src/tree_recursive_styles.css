@@ -3,8 +3,10 @@
 }
 
 .o_expand_button {
-    border-color: transparent;
-    background-color: transparent;
+    /* No native button border: its outset corner showed as a stray dot next to the caret (dark theme). */
+    border: 0;
+    padding: 0 4px;
+    background: none;
 }
 
 button.o_expand_button[data-depth="1"] {
@@ -42,3 +44,8 @@ button.o_expand_button[data-depth="5"] {
 .o_recursive_bullet[data-depth="3"] { margin-left: 48px; }
 .o_recursive_bullet[data-depth="4"] { margin-left: 63px; }
 .o_recursive_bullet[data-depth="5"] { margin-left: 78px; }
+
+/* Child rows of a recursive list embedded in a form: read-only, click opens */
+.o_list_renderer tr.o_recursive_child_row > td.o_data_cell {
+    background-color: rgba(0, 0, 0, 0.025);
+}

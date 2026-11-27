@@ -75,12 +75,12 @@ tours.add("sc_1721_resolved_back_to_active", {
         },
         {
             content: "The resolved card's status pill",
-            trigger: `${FOLD}[open] [data-pk-fragment-item] [data-sc-pill-select][data-sc-pill-key="stage"] button[data-pk-menu-toggle]`,
+            trigger: `${FOLD}[open] [data-pk-fragment-item] [data-pk-pill-select][data-pk-pill-key="stage"] button[data-pk-menu-toggle]`,
             run: "click",
         },
         {
             content: "« Active »",
-            trigger: `${FOLD} [data-sc-pill-key="stage"] [role="menu"]:not([hidden]) button[data-sc-pill-value="active"]`,
+            trigger: `${FOLD} [data-pk-pill-key="stage"] [role="menu"]:not([hidden]) button[data-pk-pill-value="active"]`,
             run: "click",
         },
         {
@@ -99,12 +99,12 @@ tours.add("sc_1721_note_check_top_right", {
     steps: () => [
         {
             content: "A note's pencil",
-            trigger: `${PANE} .o_sc_note_card[data-pk-edit-card] .o_sc_note_head button[data-sc-edit-toggle]`,
+            trigger: `${PANE} .o_sc_note_card[data-pk-edit-card] .o_sc_note_head button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "The ✓ at the top right of the card",
-            trigger: `${PANE} .o_sc_note_card[data-sc-edit-open] .o_sc_note_head button[data-sc-edit-toggle-done]`,
+            trigger: `${PANE} .o_sc_note_card[data-pk-edit-open] .o_sc_note_head button[data-pk-edit-toggle-done]`,
             run() {
                 const card = this.anchor.closest(".o_sc_note_card").getBoundingClientRect();
                 const check = this.anchor.getBoundingClientRect();

@@ -4,10 +4,10 @@
 
 ACCEPTANCE CRITERIA
 1. A confirmed purchase order line within the price-age window is Firm and
-   reads "Firm. Last purchased {date}."
+   reads "Firm. {price}, purchased on {date} ({order})."
 2. One older than the window is Estimated and reads
-   "Estimated. Last purchased {date}, over {n} months ago. No contract in
-   force."
+   "Estimated. {price}, purchased on {date} ({order}), over {n} months ago.
+   No contract in force."
 3. A purchase newer than a dated supplier price wins; an older one loses to it
    (the last known price is the more recent of the two).
 4. A vendor price list in force (end date) still outranks a newer purchase.
@@ -28,22 +28,25 @@ from .common import PurchaseCostSourceCommon
 class TestPurchaseHistory(PurchaseCostSourceCommon):
     def test_recent_purchase_is_firm(self):
         on = self._months_ago(2)
-        self._order(40.0, on=on)
+        order = self._order(40.0, on=on)
         resolution = self._resolve()
         self.assertEqual(resolution.confidence, "firm")
         self.assertAlmostEqual(resolution.unit_cost, 40.0)
-        self.assertEqual(resolution.evidence, [f"Firm. Last purchased {self._fmt(on)}."])
+        self.assertEqual(
+            resolution.evidence,
+            [f"Firm. {self._money(40.0)}, purchased on {self._fmt(on)} ({order.name})."],
+        )
 
     def test_old_purchase_is_estimated(self):
         on = self._months_ago(8)
-        self._order(40.0, on=on)
+        order = self._order(40.0, on=on)
         resolution = self._resolve()
         self.assertEqual(resolution.confidence, "estimated")
         self.assertEqual(
             resolution.evidence,
             [
-                f"Estimated. Last purchased {self._fmt(on)}, over 6 months ago. "
-                "No contract in force."
+                f"Estimated. {self._money(40.0)}, purchased on {self._fmt(on)} "
+                f"({order.name}), over 6 months ago. No contract in force."
             ],
         )
 

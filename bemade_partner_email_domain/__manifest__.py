@@ -1,6 +1,6 @@
 {
     "name": "Partner Parent by Email Domain",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Sales/CRM",
     "summary": "Attach new contacts to their company from the email domain; "
     "ambiguous cases go to an internal triage list",

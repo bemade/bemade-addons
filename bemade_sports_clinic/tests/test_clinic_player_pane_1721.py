@@ -75,8 +75,8 @@ class TestClinicPlayerPane1721(Pane1721Common):
         card = pane.xpath('.//*[@data-pk-section="clinic.dossier.player"]//div[contains(@class, "o_sc_player_row")]')
         self.assertEqual(len(card), 1)
         self.assertEqual(card[0].get('data-sc-player-id'), str(self.player.id))
-        self.assertTrue(card[0].xpath('.//*[@data-sc-fragment="sports.patient:%s:row-clinic"]' % self.player.id))
-        self.assertTrue(card[0].xpath('.//button[@data-sc-row-expand]'))
+        self.assertTrue(card[0].xpath('.//*[@data-pk-fragment="sports.patient:%s:row-clinic"]' % self.player.id))
+        self.assertTrue(card[0].xpath('.//button[@data-pk-row-expand]'))
         self.assertFalse(pane.xpath('.//*[@data-pk-section="clinic.dossier.status"]'))
         self.assertFalse(pane.xpath('.//*[@data-sc-action="clinic.full_file"]'))
         # The card comes first, the injuries after it, the notes last.
@@ -101,15 +101,15 @@ class TestClinicPlayerPane1721(Pane1721Common):
         # The resolved block comes after the active list.
         self.assertIs(folded[0].getparent().getprevious(), active)
         # AC-7: one list fragment holds both lists (and the count).
-        lists = section.xpath('.//*[@data-sc-fragment="sports.patient:%s:injury-lists"]' % self.player.id)
+        lists = section.xpath('.//*[@data-pk-fragment="sports.patient:%s:injury-lists"]' % self.player.id)
         self.assertEqual(len(lists), 1)
-        self.assertEqual(lists[0].get('data-sc-fragment-mode'), 'list')
+        self.assertEqual(lists[0].get('data-pk-fragment-mode'), 'list')
         self.assertIs(active.getparent(), lists[0])
-        self.assertTrue(lists[0].xpath('.//details[@data-sc-resolved-injuries][@data-sc-keep-open]'))
+        self.assertTrue(lists[0].xpath('.//details[@data-sc-resolved-injuries][@data-pk-keep-open]'))
         items = lists[0].xpath('.//*[@data-pk-fragment-item]/@data-pk-fragment-item')
         self.assertIn('sports.patient.injury:%s:card' % self.inj_old.id, items)
         self.assertIn('sports.patient.injury:%s:card' % self.inj_new.id, items)
-        self.assertFalse(section.xpath('.//*[@data-sc-fragment="sports.patient:%s:active-injuries"]'
+        self.assertFalse(section.xpath('.//*[@data-pk-fragment="sports.patient:%s:active-injuries"]'
                                        % self.player.id))
 
     def _resolve_all(self):
@@ -168,10 +168,10 @@ class TestClinicPlayerPane1721(Pane1721Common):
         self._note(self.inj_new)
         self._login_tp()
         _text, tree = self._get(self._dossier_url())
-        self.assertIn('o_pk_content_wide', tree.xpath('//main[@id="sc_content"]')[0].get('class'))
+        self.assertIn('o_pk_content_wide', tree.xpath('//main[@id="pk_content"]')[0].get('class'))
         card = tree.xpath('//*[@data-pk-section="clinic.dossier"]//*[@data-sc-note-id][@data-pk-edit-card]')[0]
         head = card.xpath('./div[contains(@class, "o_sc_note_head")]')[0]
-        self.assertTrue(head.xpath('./button[@data-sc-edit-toggle]'))
+        self.assertTrue(head.xpath('./button[@data-pk-edit-toggle]'))
         self.assertTrue(head.xpath('./*[contains(@class, "o_sc_note_meta")]'))
         self.assertFalse(card.xpath('.//*[contains(@class, "o_sc_note_body")]'))
         player = tree.xpath('//*[@data-pk-section="clinic.dossier.player"]')[0]
@@ -180,14 +180,14 @@ class TestClinicPlayerPane1721(Pane1721Common):
         self.assertEqual(line[0].xpath('./button/@data-sc-med-pill'), ['allergy', 'medical_alert'])
         # Right under the Match / Practice line, inside the card's fragment.
         self.assertIn('o_sc_row_status', line[0].getprevious().get('class'))
-        self.assertTrue(line[0].xpath('ancestor::*[@data-sc-fragment="sports.patient:%s:row-clinic"]'
+        self.assertTrue(line[0].xpath('ancestor::*[@data-pk-fragment="sports.patient:%s:row-clinic"]'
                                       % self.player.id))
         self.assertFalse(tree.xpath('//*[contains(@class, "o_sc_clinic_medical")]'))
 
     def test_french(self):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

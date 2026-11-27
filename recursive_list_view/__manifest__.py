@@ -19,7 +19,7 @@
 #
 {
     "name": "Recursive List View",
-    "version": "19.0.0.0.2",
+    "version": "19.0.0.1.1",
     "summary": "Adds the ability to mark a List view as recursive, to expand "
     "descendants of a parent record.",
     "category": "Technical",

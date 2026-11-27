@@ -4,14 +4,14 @@
  * shell only, the legacy create / edit pages' inline scripts:
  *
  * - task 1608: teams and assigned staff are form-mode tags fields
- *   (sc_autosave_field) writing the CSV hidden inputs the routes accept
+ *   (the kit's autosave field) writing the CSV hidden inputs the routes accept
  *   (team_ids, assigned_staff_ids) — the organization select narrows the
  *   teams through the field's ``groupSelect`` (task 1597);
  * - « Nouveau lieu »: the venue sheet's form posts through pkFetch to the
  *   CSRF-checked /my/venue/create (JSON answer); the created venue is added
  *   to the venue select and selected, the sheet closes; on the event page
  *   (task 1612) the same request also sets it on the event — task 1611: the
- *   page then shows it in place (an « sc:saved » of the venue), no reload;
+ *   page then shows it in place (an « pk:saved » of the venue), no reload;
  * - task 1608: the coverage times follow the event times exactly as in the
  *   legacy portal: an empty start opens on « now » (create); a new start
  *   sets the coverage start to it, the end to start + 2 h and the coverage
@@ -193,7 +193,7 @@ async function createVenue(form) {
             const recordId = Number(form.dataset.scVenueEvent);
             const shown = { value: result.id, display: result.name, options: result.venue_options };
             document.dispatchEvent(
-                new CustomEvent("sc:saved", {
+                new CustomEvent("pk:saved", {
                     detail: {
                         model: "sports.event",
                         recordId,
@@ -254,7 +254,7 @@ document.addEventListener("submit", (ev) => {
 // Task 1612: keep the event page's venue sheet in step with the card's
 // autosaves (a sibling field moves the write date; a venue pick changes the
 // venue the sheet will be compared against).
-document.addEventListener("sc:saved", (ev) => {
+document.addEventListener("pk:saved", (ev) => {
     const detail = ev.detail || {};
     if (detail.model !== "sports.event" || !detail.result) {
         return;

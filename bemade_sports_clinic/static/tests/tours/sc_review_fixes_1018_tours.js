@@ -42,37 +42,37 @@ tours.add("sc_1018_header_pencil", {
     steps: () => [
         {
             content: "Read view: status pills (task 1627; task 1753: outside the read view), no « Remove player »; open the pencil",
-            trigger: `${HERO} [data-pk-section="player.status"] [data-sc-pill-key="match"] button.o_pk_pill_select`,
+            trigger: `${HERO} [data-pk-section="player.status"] [data-pk-pill-key="match"] button.o_pk_pill_select`,
             run() {
                 window.__sc1018NoReload = true;
-                assert(!document.querySelector(`${HERO} .o_pk_autosave[data-sc-field="sc_status"]`), "a 4-way selector");
+                assert(!document.querySelector(`${HERO} .o_pk_autosave[data-pk-autosave-field="sc_status"]`), "a 4-way selector");
                 assert(!visible(`${HERO} [data-sc-action="player.remove"]`), "« Remove player » shown in read mode");
-                document.querySelector(`${HERO} [data-sc-card-icons] > button[data-sc-edit-toggle]`).click();
+                document.querySelector(`${HERO} [data-pk-card-icons] > button[data-pk-edit-toggle]`).click();
             },
         },
         {
             content: "Edit view: every header field and « Remove player »",
-            trigger: `${HERO} [data-sc-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="training_recommendation"] textarea`,
+            trigger: `${HERO} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-pk-autosave-field="training_recommendation"] textarea`,
             run() {
                 // Task 1630: no allergies in the header pencil (the pills' popups).
-                assert(!document.querySelector(`${HERO} [data-sc-edit-view="edit"] .o_pk_autosave[data-sc-field^="allerg"]`), "allergies in the pencil");
+                assert(!document.querySelector(`${HERO} [data-pk-edit-view="edit"] .o_pk_autosave[data-pk-autosave-field^="allerg"]`), "allergies in the pencil");
                 // Task 1627: no status selector in the pencil any more.
-                assert(!document.querySelector(`${HERO} .o_pk_autosave[data-sc-field="sc_status"]`), "status in the pencil");
+                assert(!document.querySelector(`${HERO} .o_pk_autosave[data-pk-autosave-field="sc_status"]`), "status in the pencil");
                 for (const field of ["training_recommendation", "predicted_return_date", "return_date"]) {
-                    assert(visible(`${HERO} .o_pk_autosave[data-sc-field="${field}"]`), `${field} missing`);
+                    assert(visible(`${HERO} .o_pk_autosave[data-pk-autosave-field="${field}"]`), `${field} missing`);
                 }
                 assert(visible(`${HERO} [data-sc-action="player.remove"]`), "« Remove player » hidden in edit mode");
-                assert(!visible(`${HERO} [data-sc-edit-view="read"]`), "read view still shown");
+                assert(!visible(`${HERO} [data-pk-edit-view="read"]`), "read view still shown");
             },
         },
         {
             content: "Type the recommendation",
-            trigger: `${HERO} [data-sc-edit-view="edit"] .o_pk_autosave[data-sc-field="training_recommendation"] textarea`,
+            trigger: `${HERO} [data-pk-edit-view="edit"] .o_pk_autosave[data-pk-autosave-field="training_recommendation"] textarea`,
             run: "edit Synthetic latex",
         },
         {
             content: "Leave the field so it saves",
-            trigger: `${HERO} [data-sc-edit-view="edit"] .o_pk_autosave[data-sc-field="training_recommendation"] textarea`,
+            trigger: `${HERO} [data-pk-edit-view="edit"] .o_pk_autosave[data-pk-autosave-field="training_recommendation"] textarea`,
             run() {
                 this.anchor.blur();
                 this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI
@@ -80,16 +80,16 @@ tours.add("sc_1018_header_pencil", {
         },
         {
             content: "Saved",
-            trigger: `${HERO} [data-sc-edit-view="edit"] .o_pk_autosave[data-sc-field="training_recommendation"][data-sc-state="saved"]`,
+            trigger: `${HERO} [data-pk-edit-view="edit"] .o_pk_autosave[data-pk-autosave-field="training_recommendation"][data-pk-autosave-state="saved"]`,
         },
         {
             content: "« Done »",
-            trigger: `${HERO} [data-sc-edit-view="edit"] button[data-pk-edit-done]`,
+            trigger: `${HERO} [data-pk-edit-view="edit"] button[data-pk-edit-done]`,
             run: "click",
         },
         {
             content: "The read view shows the recommendation (read fragment, no reload)",
-            trigger: `${HERO} [data-sc-edit-view="read"]`,
+            trigger: `${HERO} [data-pk-edit-view="read"]`,
             async run() {
                 await waitFor(
                     () => (document.querySelector(`${HERO} [data-pk-section="player.training"]`) || {})
@@ -110,25 +110,25 @@ tours.add("sc_1018_injury_dates", {
     steps: () => [
         {
             content: "Open the card's details pencil",
-            trigger: `${CARD} > summary button[data-sc-edit-toggle][data-sc-edit-for="injury-details"]`, // task 1736: the top-bar pencil
+            trigger: `${CARD} > summary button[data-pk-edit-toggle][data-pk-edit-for="injury-details"]`, // task 1736: the top-bar pencil
             run: "click",
         },
         {
             content: "Active: the predicted date, not the resolution date",
-            trigger: `${DETAILS} [data-sc-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="predicted_resolution_date"]`,
+            trigger: `${DETAILS} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-pk-autosave-field="predicted_resolution_date"]`,
             run() {
-                assert(!visible(`${DETAILS} .o_pk_autosave[data-sc-field="resolution_date"]`), "resolution date shown");
+                assert(!visible(`${DETAILS} .o_pk_autosave[data-pk-autosave-field="resolution_date"]`), "resolution date shown");
             },
         },
         // Task 1631: resolved from the header pill (the resolve sheet).
         {
             content: "Open the status pill",
-            trigger: `${CARD} > summary [data-sc-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select`,
+            trigger: `${CARD} > summary [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select`,
             run: "click",
         },
         {
             content: "Mark it resolved",
-            trigger: `${CARD} > summary [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]`,
+            trigger: `${CARD} > summary [data-pk-pill-key="stage"] [role="menuitemradio"][data-pk-pill-value="resolved"]`,
             run: "click",
         },
         {
@@ -138,11 +138,11 @@ tours.add("sc_1018_injury_dates", {
         },
         {
             content: "Resolved: the resolution date shows, the predicted one goes (in place)",
-            trigger: `${CARD} > summary [data-sc-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_green`,
+            trigger: `${CARD} > summary [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_green`,
             async run() {
                 await waitFor(
-                    () => visible(`${DETAILS} .o_pk_autosave[data-sc-field="resolution_date"]`)
-                        && !visible(`${DETAILS} .o_pk_autosave[data-sc-field="predicted_resolution_date"]`),
+                    () => visible(`${DETAILS} .o_pk_autosave[data-pk-autosave-field="resolution_date"]`)
+                        && !visible(`${DETAILS} .o_pk_autosave[data-pk-autosave-field="predicted_resolution_date"]`),
                     "the date fields flip"
                 );
                 const dismiss = document.querySelector("dialog#sc_proposal_sheet[open] [data-sc-proposal-dismiss]");

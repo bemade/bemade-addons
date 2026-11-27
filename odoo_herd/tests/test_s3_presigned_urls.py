@@ -23,11 +23,17 @@ from urllib.parse import urlsplit
 from odoo.tests.common import TransactionCase, tagged
 from odoo.tools.misc import mute_logger
 
+# No cluster to reach: the failed connections are expected.
+CLUSTER_LOGGERS = (
+    "odoo.addons.odoo_herd.models.k8s_cluster",
+    "odoo.addons.odoo_herd.models.k8s_odoo_instance",
+)
+
 
 @tagged("post_install", "-at_install")
 class TestS3PresignedUrls(TransactionCase):
     @classmethod
-    @mute_logger("odoo.addons.odoo_herd.models.k8s_cluster")  # no cluster to reach
+    @mute_logger(*CLUSTER_LOGGERS)
     def setUpClass(cls):  # type: ignore[misc]
         super().setUpClass()
         env: Any = cls.env
@@ -81,7 +87,7 @@ class TestS3PresignedUrls(TransactionCase):
         )
 
     def setUp(self):
-        self.enterContext(mute_logger("odoo.addons.odoo_herd.models.k8s_cluster"))
+        self.enterContext(mute_logger(*CLUSTER_LOGGERS))
         super().setUp()
 
     @contextmanager

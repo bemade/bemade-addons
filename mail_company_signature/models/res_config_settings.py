@@ -16,3 +16,6 @@ class ResConfigSettings(models.TransientModel):
     company_signature_notice_until = fields.Date(
         related="company_id.company_signature_notice_until", readonly=False
     )
+    mail_send_from_signature_address = fields.Boolean(
+        related="company_id.mail_send_from_signature_address", readonly=False
+    )

@@ -1,0 +1,400 @@
+// Bemade Portal Kit Chat (task 5516): the bubble, the floating window, the
+// thread and the conversation pages. Kit tokens only (neutral defaults,
+// light / dark follow the shell). Scoped under .o_pk_app.
+
+.o_pk_app {
+    .o_pk_chat_bubble {
+        position: relative;
+    }
+
+    .o_pk_chat_toggle {
+        position: relative;
+    }
+
+    .o_pk_chat_badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 9px;
+        background: var(--pk-bad);
+        color: var(--pk-tone-fg, #fff);
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .o_pk_chat_badge_dot {
+        position: absolute;
+        top: 4px;
+        right: 2px;
+    }
+
+    // Below the laptop breakpoint the list is a full-width sheet under the
+    // app bar: the bubble sits mid-bar, so a menu anchored to it ran off the
+    // left edge of a phone. Anchored to the bubble from the laptop width.
+    .o_pk_chat_menu {
+        position: fixed;
+        left: var(--pk-space-2);
+        right: var(--pk-space-2);
+        top: calc(var(--pk-appbar-height) + env(safe-area-inset-top, 0px) + var(--pk-ribbon-h, 0px));
+        z-index: 45;
+        max-height: calc(100vh - var(--pk-appbar-height) - var(--pk-tabs-height) - 16px);
+        overflow-y: auto;
+        background: var(--pk-surface);
+        color: var(--pk-fg);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-md);
+        box-shadow: var(--pk-shadow);
+        padding: var(--pk-space-2);
+    }
+
+    .o_pk_chat_menu_head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--pk-space-2);
+        padding: var(--pk-space-1) var(--pk-space-2) var(--pk-space-2);
+    }
+
+    .o_pk_chat_picker {
+        padding: 0 var(--pk-space-2) var(--pk-space-2);
+    }
+
+    .o_pk_chat_all {
+        display: block;
+        text-align: center;
+        padding: var(--pk-space-2);
+        color: var(--pk-accent);
+    }
+
+    .o_pk_chat_row {
+        display: flex;
+        align-items: center;
+        gap: var(--pk-space-3);
+        width: 100%;
+        min-height: var(--pk-tap);
+        padding: var(--pk-space-2);
+        border: 0;
+        border-radius: var(--pk-radius-md);
+        background: transparent;
+        color: inherit;
+        text-align: left;
+        text-decoration: none;
+        cursor: pointer;
+
+        &:hover {
+            background: var(--pk-hover);
+        }
+    }
+
+    .o_pk_chat_row_unread .o_pk_chat_row_title {
+        font-weight: 700;
+    }
+
+    .o_pk_chat_avatar {
+        flex: 0 0 36px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--pk-avatar-bg, var(--pk-surface-2));
+    }
+
+    .o_pk_chat_row_text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .o_pk_chat_row_title,
+    .o_pk_chat_row_preview {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_pk_chat_row_preview,
+    .o_pk_chat_row_meta {
+        color: var(--pk-fg-3);
+        font-size: var(--pk-text-sm);
+    }
+
+    .o_pk_chat_row_meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+    }
+
+    // The ONE floating window: a full-screen sheet below the laptop
+    // breakpoint (above the tabs), docked bottom-right from it.
+    .o_pk_chat_window {
+        position: fixed;
+        z-index: 42;
+        left: 0;
+        right: 0;
+        top: calc(var(--pk-appbar-height) + var(--pk-ribbon-h, 0px));
+        bottom: calc(var(--pk-tabs-height) + env(safe-area-inset-bottom, 0px));
+        display: flex;
+        flex-direction: column;
+        background: var(--pk-surface);
+        color: var(--pk-fg);
+        border-top: 1px solid var(--pk-line);
+
+        &[data-pk-chat-minimised="1"] {
+            top: auto;
+            height: var(--pk-appbar-height);
+
+            .o_pk_chat_thread_host {
+                display: none;
+            }
+        }
+    }
+
+    .o_pk_chat_window_head {
+        display: flex;
+        align-items: center;
+        gap: var(--pk-space-1);
+        padding: 0 var(--pk-space-2);
+        min-height: var(--pk-appbar-height);
+        border-bottom: 1px solid var(--pk-line);
+    }
+
+    .o_pk_chat_window_title {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_pk_chat_thread_host {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .o_pk_chat_thread {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .o_pk_chat_block .o_pk_chat_thread {
+        max-height: 70vh;
+    }
+
+    .o_pk_chat_members {
+        padding: var(--pk-space-2) var(--pk-space-3);
+        border-bottom: 1px solid var(--pk-line);
+        font-size: var(--pk-text-sm);
+        color: var(--pk-fg-2);
+
+        ul {
+            margin: var(--pk-space-2) 0 0;
+            padding-left: var(--pk-space-4);
+        }
+    }
+
+    .o_pk_chat_older {
+        align-self: center;
+        margin: var(--pk-space-2);
+        border: 0;
+        background: transparent;
+        color: var(--pk-accent);
+        cursor: pointer;
+    }
+
+    .o_pk_chat_messages {
+        flex: 1 1 auto;
+        min-height: 120px;
+        overflow-y: auto;
+        list-style: none;
+        margin: 0;
+        padding: var(--pk-space-3);
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+    }
+
+    .o_pk_chat_msg {
+        max-width: 85%;
+        align-self: flex-start;
+        padding: var(--pk-space-2) var(--pk-space-3);
+        border-radius: var(--pk-radius-md);
+        background: var(--pk-surface-2);
+        overflow-wrap: anywhere;
+    }
+
+    .o_pk_chat_msg_own {
+        align-self: flex-end;
+        background: var(--pk-accent);
+        color: var(--pk-accent-fg);
+
+        .o_pk_chat_when,
+        .o_pk_chat_quote {
+            color: inherit;
+            opacity: 0.8;
+        }
+    }
+
+    .o_pk_chat_msg_head {
+        display: flex;
+        gap: var(--pk-space-2);
+        align-items: baseline;
+        font-size: var(--pk-text-sm);
+    }
+
+    .o_pk_chat_author {
+        font-weight: 600;
+    }
+
+    .o_pk_chat_when {
+        color: var(--pk-fg-3);
+    }
+
+    .o_pk_chat_msg_body p {
+        margin: 0;
+    }
+
+    .o_pk_chat_quote {
+        margin: 0 0 var(--pk-space-1);
+        padding-left: var(--pk-space-2);
+        border-left: 3px solid var(--pk-line);
+        color: var(--pk-fg-2);
+        font-size: var(--pk-text-sm);
+    }
+
+    .o_pk_chat_reply {
+        margin-top: var(--pk-space-1);
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--pk-accent);
+        font-size: var(--pk-text-sm);
+        cursor: pointer;
+    }
+
+    .o_pk_chat_msg_own .o_pk_chat_reply {
+        color: inherit;
+        text-decoration: underline;
+    }
+
+    .o_pk_chat_empty,
+    .o_pk_chat_reader_hint {
+        margin: var(--pk-space-3);
+        color: var(--pk-fg-3);
+        text-align: center;
+    }
+
+    .o_pk_chat_composer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: var(--pk-space-2);
+        padding: var(--pk-space-2) var(--pk-space-3);
+        border-top: 1px solid var(--pk-line);
+    }
+
+    .o_pk_chat_replying {
+        flex: 1 0 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: var(--pk-text-sm);
+        color: var(--pk-fg-2);
+
+        button {
+            border: 0;
+            background: transparent;
+            color: inherit;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    }
+
+    .o_pk_chat_input {
+        flex: 1 1 auto;
+        min-height: var(--pk-tap);
+        max-height: 140px;
+        resize: vertical;
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-md);
+        background: var(--pk-bg);
+        color: var(--pk-fg);
+        padding: var(--pk-space-2);
+        font: inherit;
+    }
+
+    .o_pk_chat_send {
+        min-height: var(--pk-tap);
+        padding: 0 16px;
+        border: 0;
+        border-radius: var(--pk-radius-md);
+        background: var(--pk-accent);
+        color: var(--pk-accent-fg);
+        font-weight: 600;
+        cursor: pointer;
+
+        &:disabled {
+            opacity: 0.6;
+        }
+    }
+}
+
+@media (min-width: $pk-laptop) {
+    .o_pk_app {
+        .o_pk_chat_menu {
+            position: absolute;
+            left: auto;
+            right: 0;
+            top: calc(100% + 6px);
+            width: 360px;
+            max-height: 70vh;
+        }
+
+        .o_pk_chat_window {
+            left: auto;
+            top: auto;
+            right: 24px;
+            bottom: 0;
+            width: 380px;
+            height: 560px;
+            max-height: calc(100vh - var(--pk-appbar-height) - 48px);
+            border: 1px solid var(--pk-line);
+            border-bottom: 0;
+            border-radius: var(--pk-radius-md) var(--pk-radius-md) 0 0;
+            box-shadow: var(--pk-shadow);
+        }
+    }
+}
+
+// Task 5546: the one-time « get notified on this phone? » banner.
+.o_pk_chat_push_banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--pk-space-2);
+    margin: var(--pk-space-2);
+    padding: var(--pk-space-2) var(--pk-space-3);
+    border-radius: var(--pk-radius-md);
+    background: var(--pk-surface-2);
+    color: var(--pk-fg);
+
+    p {
+        margin: 0;
+        flex: 1 1 12rem;
+    }
+
+    .o_pk_chat_push_actions {
+        display: flex;
+        gap: var(--pk-space-2);
+    }
+}

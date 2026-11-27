@@ -1,9 +1,39 @@
-## 0.8.8 (2026-11-23)
+## 1.0.4 (2026-11-25)
 
-- Synchronize the event privacy with the iCalendar CLASS property
-  (Infomaniak "Public" / "Privé"): Public <-> PUBLIC, Private <-> PRIVATE.
-  "Only internal users" is sent as PRIVATE and kept when PRIVATE comes
-  back; CONFIDENTIAL from other clients is read as "Only internal users".
+- The synchronization from the server never writes to it. A series whose rule
+  was changed on the server used to be deleted there, then in Odoo.
+- A series turned into a single event on the server is no longer deleted from
+  Odoo by the next poll. Both fixes by Sabrine Mbarek (JumpTo).
+
+## 1.0.3 (2026-11-25)
+
+- An occurrence changed on its own in an all-day series (`RECURRENCE-ID` is a
+  date) no longer stops the synchronization.
+- A calendar that cannot be synchronized no longer stops the other users':
+  the failure is logged and the poll goes on.
+
+## 1.0.2 (2026-11-25)
+
+- A recurring event with a date-only `UNTIL`, all-day or timed, no longer
+  stops the synchronization. Initial report and fix by schnarks.
+- Such a series holds the same occurrences in Odoo as on the server, and an
+  unchanged series ending on a date is no longer taken for a changed one.
+
+## 1.0.1 (2026-10-27)
+
+- The CalDAV connection moves to the new `base_caldav` module
+  (`caldav.connection.mixin`), now a dependency. User settings keep the
+  same fields, so no data migration is needed; `_get_caldav_client()` and
+  `_get_caldav_events()` keep working.
+- "Show as free" is synchronized: `TRANSP` is pushed from and imported into
+  `show_as`. Previously every imported event came in as busy.
+- The `caldav` and `icalendar` version pins move to `base_caldav`.
+- An occurrence of a recurring series whose only change is "show as" is
+  pushed as its own exception.
+- An update reaches every CalDAV-enabled attendee's calendar even when one
+  of those calendars does not hold the event; the push used to stop at the
+  first such calendar.
+- Cancelled events (`STATUS:CANCELLED`) are imported as available.
 
 ## 0.8.2 (2024-11-28)
 

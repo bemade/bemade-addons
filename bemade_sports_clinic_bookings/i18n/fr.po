@@ -145,10 +145,15 @@ msgid "Calendar"
 msgstr "Calendrier"
 
 #. module: bemade_sports_clinic_bookings
+#: model:ir.model,name:bemade_sports_clinic_bookings.model_calendar_event
+msgid "Calendar Event"
+msgstr "Événement calendrier"
+
+#. module: bemade_sports_clinic_bookings
 #. odoo-javascript
 #. odoo-python
 #: code:addons/bemade_sports_clinic_bookings/models/portal_kit.py:0
-#: code:addons/bemade_sports_clinic_bookings/static/src/js/sc_booking_calendar.xml:0
+#: code:addons/bemade_sports_clinic_bookings/static/src/js/sc_booking_calendar.js:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_cancel
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
 msgid "Cancel booking"
@@ -197,8 +202,16 @@ msgid "Date"
 msgstr "Date"
 
 #. module: bemade_sports_clinic_bookings
+#: model:ir.model.fields,field_description:bemade_sports_clinic_bookings.field_calendar_event__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic_bookings.field_ir_http__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic_bookings.field_portal_kit__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic_bookings.field_res_users__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: bemade_sports_clinic_bookings
 #. odoo-javascript
-#: code:addons/bemade_sports_clinic_bookings/static/src/js/sc_booking_calendar.xml:0
+#: code:addons/bemade_sports_clinic_bookings/static/src/js/sc_booking_calendar.js:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
 msgid "Edit"
 msgstr "Modifier"
@@ -238,6 +251,19 @@ msgstr "Entrez une date, une heure de début et une durée valides."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
 msgid "From"
 msgstr "Du"
+
+#. module: bemade_sports_clinic_bookings
+#: model:ir.model,name:bemade_sports_clinic_bookings.model_ir_http
+msgid "HTTP Routing"
+msgstr "Routage HTTP"
+
+#. module: bemade_sports_clinic_bookings
+#: model:ir.model.fields,field_description:bemade_sports_clinic_bookings.field_calendar_event__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic_bookings.field_ir_http__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic_bookings.field_portal_kit__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic_bookings.field_res_users__id
+msgid "ID"
+msgstr "Identifiant"
 
 #. module: bemade_sports_clinic_bookings
 #: model:ir.model.fields,field_description:bemade_sports_clinic_bookings.field_res_users__sc_booking_digest_last_run
@@ -379,6 +405,11 @@ msgstr "Aujourd'hui"
 #: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
 msgid "Upcoming"
 msgstr "À venir"
+
+#. module: bemade_sports_clinic_bookings
+#: model:ir.model,name:bemade_sports_clinic_bookings.model_res_users
+msgid "User"
+msgstr "Utilisateur"
 
 #. module: bemade_sports_clinic_bookings
 #: model:ir.model.fields,help:bemade_sports_clinic_bookings.field_res_users__sc_booking_digest_last_run

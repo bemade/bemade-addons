@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2026 Bemade Inc. License LGPL-3.0 or later. -->
+<odoo>
+    <record id="view_partner_form_phone_list" model="ir.ui.view">
+        <field name="name">res.partner.form.phone.list</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <!-- Main contact header: Phone stays in the arch (other views
+                 extend it) but is hidden. The phonebook widget shows Phone and
+                 Mobile as text and edits the number list in a dialog. -->
+            <xpath expr="//field[@name='phone'][not(ancestor::field)]/.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='phone'][not(ancestor::field)]/.." position="after">
+                <div class="w-md-75 o_partner_phone_list" name="phone_list">
+                    <field name="mobile" invisible="1" />
+                    <field name="phone_sms_available" invisible="1" />
+                    <field name="phone_ids" widget="partner_phone_list" nolabel="1" class="w-100">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle" />
+                            <field name="type" width="110px" />
+                            <field name="number" widget="partner_phone_number" />
+                            <field name="extension" string="Ext." width="70px" />
+                            <field name="label" optional="show" />
+                            <field name="sms_available" column_invisible="1" />
+                        </list>
+                    </field>
+                </div>
+            </xpath>
+            <!-- Child contact popup -->
+            <xpath expr="//field[@name='child_ids']/form//field[@name='phone']/.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='child_ids']/form//field[@name='phone']/.." position="after">
+                <div class="o_partner_phone_list" name="phone_list">
+                    <field name="mobile" invisible="1" />
+                    <field name="phone_sms_available" invisible="1" />
+                    <field name="phone_ids" widget="partner_phone_list" nolabel="1" class="w-100">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle" />
+                            <field name="type" width="110px" />
+                            <field name="number" widget="partner_phone_number" />
+                            <field name="extension" string="Ext." width="70px" />
+                            <field name="label" optional="show" />
+                            <field name="sms_available" column_invisible="1" />
+                        </list>
+                    </field>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Simplified contact form: the contact pop-up of the mail composer,
+         followers, calendar attendees, invitation and "send" wizards... -->
+    <record id="view_partner_simple_form_phone_list" model="ir.ui.view">
+        <field name="name">res.partner.simplified.form.phone.list</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_simple_form" />
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <field name="phone" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </field>
+            <field name="phone" position="after">
+                <field name="mobile" invisible="1" />
+                <field name="phone_sms_available" invisible="1" />
+                <field name="phone_ids" string="Phone" widget="partner_phone_list" class="o_partner_phone_list w-100">
+                    <list editable="bottom">
+                        <field name="sequence" widget="handle" />
+                        <field name="type" width="110px" />
+                        <field name="number" widget="partner_phone_number" />
+                        <field name="extension" string="Ext." width="70px" />
+                        <field name="label" optional="show" />
+                        <field name="sms_available" column_invisible="1" />
+                    </list>
+                </field>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_partner_tree_phone_list" model="ir.ui.view">
+        <field name="name">res.partner.list.phone.list</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree" />
+        <field name="arch" type="xml">
+            <!-- a minimum width, so numbers are not cut at load -->
+            <xpath expr="//field[@name='phone']" position="attributes">
+                <attribute name="widget">partner_phone_list_char</attribute>
+            </xpath>
+            <xpath expr="//field[@name='phone']" position="after">
+                <field name="mobile" class="o_force_ltr" optional="hide" widget="partner_phone_list_char" options="{'min_width': 140}" />
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -3,8 +3,8 @@
 #        team and its sending transport; from_address is validated and the
 #        transport follows it (soft on clear).
 #   AC2  Mail to the alias creates a conversation owned by the team: sender
-#        as requester, To/Cc as participants, zero followers, primary
-#        transport set.
+#        as requester, the other To/Cc as participants (never the team's
+#        own alias), zero followers, primary transport set.
 #   AC3  Every active internal team member sees it unread; nobody outside
 #        the team is notified in-app or by email.
 #   AC7  The team form builds, requires a from address when creating a team
@@ -69,7 +69,9 @@ class TestTeamInboxAlias(TeamInboxCommon):
             (p.role, p.email_normalized) for p in conversation.participant_ids
         }
         self.assertIn(("requester", "customer@client.example"), by_role)
-        self.assertIn(("to", self.alias_email), by_role)
+        # The team's own alias is the address the mail came in on: it is
+        # not a participant, so a reply draft never lists it.
+        self.assertNotIn(self.alias_email, {email for _role, email in by_role})
         self.assertIn(("cc", "watcher@client.example"), by_role)
 
     def test_members_see_unread_and_nobody_else_is_notified(self):

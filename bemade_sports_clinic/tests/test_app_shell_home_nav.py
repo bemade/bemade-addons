@@ -103,18 +103,18 @@ class TestAppShellHomeNav(Parity1577Common):
         self.assertEqual(self._return_url(more[0]), HOME)
         _text, tree = self._get(more[0])
         self.assertEqual(self._back(tree), [HOME])
-        segments = dict(zip(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'),
-                            tree.xpath('//nav[@data-sc-tabs]//a/@href')))
+        segments = dict(zip(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'),
+                            tree.xpath('//nav[@data-pk-tabs]//a/@href')))
         for key in ('upcoming', 'past', 'calendar'):
             self.assertEqual(self._return_url(segments[key]), HOME, key)
         for chip in tree.xpath('//a[@data-sc-event-type]/@href'):
             self.assertEqual(self._return_url(chip), HOME, chip)
         _text, tree = self._get(segments['calendar'])
         self.assertEqual(self._back(tree), [HOME])
-        node = tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_calendar"]')[0]
+        node = tree.xpath('//owl-component[@name="bemade_portal_kit.pk_calendar"]')[0]
         self.assertNotIn('return_url', json.loads(node.get('props'))['params'])
-        segments = dict(zip(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'),
-                            tree.xpath('//nav[@data-sc-tabs]//a/@href')))
+        segments = dict(zip(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'),
+                            tree.xpath('//nav[@data-pk-tabs]//a/@href')))
         for key in ('upcoming', 'past'):
             self.assertEqual(self._return_url(segments[key]), HOME, key)
 
@@ -133,7 +133,7 @@ class TestAppShellHomeNav(Parity1577Common):
     # -- UC-H5 -----------------------------------------------------------
     def _nav_hrefs(self, tree, key):
         return tree.xpath('//nav[contains(@class, "o_pk_tabs") or contains(@class, "o_pk_rail_nav")]'
-                          '//a[@data-sc-nav-key="%s"]/@href' % key)
+                          '//a[@data-pk-nav-key="%s"]/@href' % key)
 
     def test_teams_nav_opens_teams_list(self):
         _text, tree = self._get(HOME)
@@ -144,7 +144,7 @@ class TestAppShellHomeNav(Parity1577Common):
         _text, tree = self._get('/my/teams')
         self.assertEqual(self._back(tree), [])
         self.assertTrue(tree.xpath('//a[contains(@class, "o_pk_logo")][@href="%s"]' % HOME))
-        current = tree.xpath('//nav[contains(@class, "o_pk_rail_nav")]//a[@aria-current="page"]/@data-sc-nav-key')
+        current = tree.xpath('//nav[contains(@class, "o_pk_rail_nav")]//a[@aria-current="page"]/@data-pk-nav-key')
         self.assertEqual(current, ['teams'])
 
     def test_team_crumbs_point_to_teams_list(self):
@@ -174,7 +174,7 @@ class TestAppShellHomeNav(Parity1577Common):
     @staticmethod
     def _sort_options(tree):
         # Task 1607 (deliberate update): the list header's sort menu.
-        return {a.get('data-sc-sort'): a for a in tree.xpath(
+        return {a.get('data-pk-sort'): a for a in tree.xpath(
             '//*[@data-pk-section="players.sort"]//a[@role="menuitemradio"]')}
 
     def test_players_list_most_injured_first(self):
@@ -216,13 +216,13 @@ class TestAppShellHomeNav(Parity1577Common):
                          ['teams', 'players', 'notepad', 'activities',
                           'clinic', 'events', 'timesheets', 'more'])
         _text, tree = self._get('/my/app/more')
-        plus = tree.xpath('//main[@id="sc_content"]//a/@data-sc-nav-key')
+        plus = tree.xpath('//main[@id="pk_content"]//a/@data-pk-nav-key')
         for key in ('clinic', 'events', 'timesheets'):
             self.assertIn(key, plus, key)
         for key in ('teams', 'players', 'notepad', 'activities'):
             self.assertNotIn(key, plus, key)
         # Already on the laptop rail: marked so « More » hides them there.
-        railed = tree.xpath('//main[@id="sc_content"]//a[@data-sc-in-rail]/@data-sc-nav-key')
+        railed = tree.xpath('//main[@id="pk_content"]//a[@data-pk-in-rail]/@data-pk-nav-key')
         self.assertEqual(set(railed), {'clinic', 'events', 'timesheets'})
 
     def test_coach_tabs_and_rail(self):
@@ -233,7 +233,7 @@ class TestAppShellHomeNav(Parity1577Common):
         self.assertEqual(self._nav_keys(tree, 'o_pk_rail_nav'),
                          ['teams', 'players', 'activities', 'events', 'more'])
         _text, tree = self._get('/my/app/more')
-        self.assertIn('events', tree.xpath('//main[@id="sc_content"]//a/@data-sc-nav-key'))
+        self.assertIn('events', tree.xpath('//main[@id="pk_content"]//a/@data-pk-nav-key'))
 
     # -- UC-H8 -----------------------------------------------------------
     def test_digest_history_opens_the_list_page(self):

@@ -4,8 +4,9 @@ from odoo.tools import format_datetime, html2plaintext, plaintext2html
 from odoo.exceptions import UserError, AccessError
 from datetime import datetime, timedelta
 from .access_control_mixin import AccessControlMixin
-from .app_shell import (AppShellMixin, sc_event_team_choices, sc_event_team_ids_check, sc_now_ms,
-                        sc_refresh_patterns)
+from odoo.addons.bemade_portal_kit.tools import pk_form_props, pk_now_ms, pk_options
+
+from .app_shell import AppShellMixin, sc_app_page, sc_event_team_choices, sc_event_team_ids_check
 import json
 import logging
 import pytz
@@ -35,14 +36,6 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     # _parse_portal_datetime / _prepare_events_domain / _get_accessible_teams /
     # _get_organizations now live on AccessControlMixin (dead-route audit cleanup).
 
-    def _prepare_home_portal_values(self, counters):
-        """Add events count to portal home"""
-        rtn = super()._prepare_home_portal_values(counters)
-        if 'events_count' in counters:
-            events_domain = self._prepare_events_domain()
-            rtn['events_count'] = http.request.env['sports.event'].search_count(events_domain)
-        return rtn
-
     def _get_treatment_professionals(self):
         """Get all treatment professionals from team staff with relevant roles.
 
@@ -67,10 +60,14 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return active_users.sorted('name')
 
     @http.route(['/my/events', '/my/events/page/<int:page>'], type='http', auth='user', website=True)
+    @sc_app_page
     def view_events(self, page=1, view_type=None, team_id=None, organization_id=None, assigned_user_id=None,
                    date_from=None, date_to=None, sortby=None, group_by=None, search=None, no_default_dates=None,
                    show_cancelled=None, **kw):
         """Main events view with filtering and pagination"""
+        # Review 2026-11-26: a malformed filter id (an edited URL) is ignored.
+        team_id, organization_id, assigned_user_id = (
+            self._int_or_none(v) for v in (team_id, organization_id, assigned_user_id))
         
         # Check access
         user = http.request.env.user
@@ -318,13 +315,11 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_event_view_default': view_default,
         }
 
-        # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            values.update(self._sc_events_values(values, event_types, event_type))
-        return self._sc_render('bemade_sports_clinic.portal_events_list',
-                               'bemade_sports_clinic.sc_app_events', values)
+        values.update(self._sc_events_values(values, event_types, event_type))
+        return self._sc_render('bemade_sports_clinic.sc_app_events', values)
 
     @http.route(['/my/events/calendar'], type='http', auth='user', website=True)
+    @sc_app_page
     def view_events_calendar(self, team_id=None, organization_id=None,
                              assigned_user_id=None, date_from=None, date_to=None, **kw):
         """Calendar (month view) of accessible sports events for the user.
@@ -334,6 +329,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         (team / organization / assigned professional / date range) are
         rendered here; their current values seed the calendar's data fetch.
         """
+        # Review 2026-11-26: a malformed filter id (an edited URL) is ignored.
+        team_id, organization_id, assigned_user_id = (
+            self._int_or_none(v) for v in (team_id, organization_id, assigned_user_id))
         user = http.request.env.user
         is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
                       user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
@@ -367,10 +365,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'can_edit': is_therapist,
         }
         # Task 1540: the shell calendar (sc_calendar component, same feed).
-        if self._sc_app_shell_active():
-            values.update(self._sc_events_calendar_values(values))
-        return self._sc_render('bemade_sports_clinic.portal_events_calendar',
-                               'bemade_sports_clinic.sc_app_events_calendar', values)
+        values.update(self._sc_events_calendar_values(values))
+        return self._sc_render('bemade_sports_clinic.sc_app_events_calendar', values)
 
     @http.route(['/my/events/calendar/data'], type='http', auth='user', methods=['GET'], website=True)
     def view_events_calendar_data(self, start=None, end=None, team_id=None,
@@ -489,6 +485,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         )
 
     @http.route(['/my/event', '/my/event/<int:event_id>'], type='http', auth='user', website=True)
+    @sc_app_page
     def view_event_detail(self, event_id=None, **kw):
         """View individual event detail"""
         # Canonical public URL shape is /my/event?event_id=<id> to align with
@@ -497,13 +494,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         if not event_id:
             # If not provided in the path, try to get it from the query string
-            raw_id = http.request.httprequest.args.get('event_id')
-            if not raw_id:
+            event_id = http.request.httprequest.args.get('event_id')
+            if not event_id:
                 return http.request.redirect('/my/events')
-            try:
-                event_id = int(raw_id)
-            except Exception:
-                return http.request.redirect('/my/events')
+        # Review 2026-11-26: a malformed id is an id that does not exist
+        # (« not found » below), never a 500.
+        event_id = self._sc_record_id(event_id)
 
         # Check access
         user = http.request.env.user
@@ -514,12 +510,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if not (is_therapist or is_coach or user.has_group('base.group_system')):
             raise AccessError(_("You don't have access to events."))
         
-        # Get the event. If it cannot be found via the query-string based
-        # entry (/my/event?event_id=..), fall back to the path-style URL so
-        # existing links continue to work without a hard 404.
+        # An event that does not exist (deleted, or an edited URL) is not
+        # found. Review 2026-11-26: it used to redirect to its own path URL,
+        # i.e. to itself — an endless redirect loop.
         event = http.request.env['sports.event'].browse(event_id)
         if not event.exists():
-            return http.request.redirect(f'/my/event/{event_id}')
+            raise http.request.not_found()
         
         # Check team access for coaches
         if is_coach and not is_therapist:
@@ -671,11 +667,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'missing_names': missing_names,
         }
 
-        # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            values.update(self._sc_event_values(event, event_sudo, values, kw))
-        return self._sc_render('bemade_sports_clinic.portal_event_detail',
-                               'bemade_sports_clinic.sc_app_event', values)
+        values.update(self._sc_event_values(event, event_sudo, values, kw))
+        return self._sc_render('bemade_sports_clinic.sc_app_event', values)
 
     def _get_event_return_qs(self, post):
         return_url = post.get('return_url') if post else None
@@ -840,101 +833,16 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return http.request.redirect(f'/my/event/{event.id}?error={urllib.parse.quote(msg)}{return_qs}')
 
     @http.route(['/my/event/<int:event_id>/edit'], type='http', auth='user', website=True)
+    @sc_app_page
     def edit_event_form(self, event_id, **kw):
-        """Edit event form - only accessible to therapists"""
-        # Owner review 2026-10-11: in the app shell the event is edited in
-        # place (pencil card) on its page.
-        if self._sc_app_shell_active():
-            return http.request.redirect('/my/event/%s' % int(event_id))
-        
-        # Check access - only therapists can edit
-        user = http.request.env.user
-        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-                      user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        
-        if not (is_therapist or user.has_group('base.group_system')):
-            raise AccessError(_("You don't have permission to edit events."))
-        
-        # Get the event
-        event = http.request.env['sports.event'].browse(event_id)
-        if not event.exists():
-            return http.request.not_found()
-
-        return_url = kw.get('return_url')
-        if return_url and isinstance(return_url, str) and '&amp;' in return_url:
-            return_url = return_url.replace('&amp;', '&')
-        return_url = self._safe_return_url(return_url, None, prefixes=EVENT_RETURN_PREFIXES)
-        if not return_url:
-            try:
-                ref = http.request.httprequest.referrer
-                if ref:
-                    parsed = urllib.parse.urlparse(ref)
-                    qs = urllib.parse.parse_qs(parsed.query or '')
-                    cand = (qs.get('return_url') or [None])[0]
-                    if cand and isinstance(cand, str) and '&amp;' in cand:
-                        cand = cand.replace('&amp;', '&')
-                    return_url = self._safe_return_url(
-                        cand, None, prefixes=EVENT_RETURN_PREFIXES)
-            except Exception:
-                return_url = None
-        
-        # Get filter options for form. Union the user's readable teams with the
-        # event's CURRENT teams (sudo) so a portal user editing an event for a
-        # team they don't staff still sees that team as a (pre-checked) option,
-        # instead of the team silently dropping out on save.
-        # .sudo() the whole set so the template can render the names/labels of
-        # the event's current teams even when the portal user doesn't staff them
-        # (otherwise reading team.name at render raises AccessError -> 403).
-        # Task 1577: explicit scope (all teams for a clinic admin, staffed
-        # teams otherwise) instead of a bare search([]) left to the rules.
-        # Review fixes 2026-10-18 b (#1608, owner decision): every team.
-        teams = sc_event_team_choices(event.sudo())
-        organizations = teams.mapped('parent_id').filtered(lambda p: p).sorted('name')
-        treatment_professionals = self._get_treatment_professionals()
-        venues = http.request.env['res.partner'].search([('is_venue', '=', True)])
-
-        # Helper to format dt for datetime-local inputs in user's tz
-        def _format_dt_local(dt):
-            if not dt:
-                return ''
-            user_tz = http.request.env.tz
-            # Odoo stores as UTC-naive; localize to UTC first
-            if dt.tzinfo is None:
-                utc_dt = pytz.UTC.localize(dt)
-            else:
-                utc_dt = dt.astimezone(pytz.UTC)
-            local_dt = utc_dt.astimezone(user_tz)
-            return local_dt.strftime('%Y-%m-%dT%H:%M')
-
-        event_sudo = event.sudo()
-        values = {
-            'event': event,
-            'event_sudo': event_sudo,
-            # Pre-resolved id lists for pre-checking the team/staff checkboxes.
-            # Reading event.team_ids / assigned_staff_ids in the template loses
-            # sudo for records the portal user can't see (other teams/users), so
-            # resolve under sudo in the controller and compare by id in the view.
-            'selected_team_ids': event_sudo.team_ids.ids,
-            'selected_staff_ids': event_sudo.assigned_staff_ids.ids,
-            'teams': teams,
-            'organizations': organizations,
-            'treatment_professionals': treatment_professionals,
-            'venues': venues,
-            'page_name': 'event_edit',
-            'return_url': return_url,
-            # Preformatted local datetime values
-            'date_start_local': _format_dt_local(event.date_start),
-            'date_end_local': _format_dt_local(event.date_end),
-            'therapist_start_local': _format_dt_local(event.therapist_start),
-            'therapist_end_local': _format_dt_local(event.therapist_end),
-            'organization_id_selected': event.partner_id.id if event.partner_id else None,
-        }
-
-        # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            values.update(self._sc_event_form_values('edit', values, kw))
-        return self._sc_render('bemade_sports_clinic.portal_event_edit',
-                               'bemade_sports_clinic.sc_app_event_form', values)
+        """Task 1541: an old link / bookmark — the event is edited in place
+        (pencil card) on its page (owner review 2026-10-11)."""
+        url = '/my/event/%s' % int(event_id)
+        # A refused /my/event/<id>/save still lands here with its message.
+        flash = [(key, kw[key]) for key in ('error', 'success') if kw.get(key)]
+        if flash:
+            url += '?' + urllib.parse.urlencode(flash)
+        return http.request.redirect(url, code=301)
 
     @http.route(['/my/event/<int:event_id>/save'], type='http', auth='user', website=True, methods=['POST'])
     def save_event(self, event_id, **post):
@@ -1088,6 +996,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return http.request.redirect(f'/my/event/{event_id}/edit?error={urllib.parse.quote(error_msg)}{return_qs}')
 
     @http.route(['/my/event/create'], type='http', auth='user', website=True)
+    @sc_app_page
     def create_event_form(self, **kw):
         """Display event creation form - only accessible to therapists"""
         # Access: only therapists (or system) can create
@@ -1133,11 +1042,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'assigned_staff_selected': _ids(flash_data.get('assigned_staff_ids')),
                 'organization_id_selected': int(flash_data['organization_id']) if flash_data.get('organization_id') else None,
             })
-        # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            values.update(self._sc_event_form_values('create', values, kw))
-        return self._sc_render('bemade_sports_clinic.portal_event_create',
-                               'bemade_sports_clinic.sc_app_event_form', values)
+        values.update(self._sc_event_form_values('create', values, kw))
+        return self._sc_render('bemade_sports_clinic.sc_app_event_form', values)
 
     @http.route(['/my/event/create/submit'], type='http', auth='user', website=True, methods=['POST'])
     def create_event_submit(self, **post):
@@ -1366,9 +1272,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return {
             'success': True, 'id': venue.id, 'name': venue.name,
             'event_write_date': fields.Datetime.to_string(event.sudo().write_date),
-            'venue_options': self._sc_options(self._sc_event_venue_options(event.sudo())),
-            'refresh': sc_refresh_patterns('sports.event', event, 'venue_id'),
-            'saved_at': sc_now_ms(),
+            'venue_options': pk_options(self._sc_event_venue_options(event.sudo())),
+            'refresh': http.request.env['portal.kit'].pk_refresh_patterns(event, 'venue_id'),
+            'saved_at': pk_now_ms(),
         }
 
     @staticmethod
@@ -1380,7 +1286,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return [('', '—')] + [(v.id, v.name) for v in venues]
 
     # ------------------------------------------------------------------
-    # Task 1540 — the app shell (switch on): values of the events pages
+    # Task 1540 — the app: values of the events pages
     # ------------------------------------------------------------------
     @staticmethod
     def _sc_event_when(event, start_field='date_start', end_field='date_end'):
@@ -1643,6 +1549,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 # Task 1605: therapist colour dots + the legend under the
                 # calendar (bookings does not opt in).
                 'staffColors': True,
+                # Task 5200 (kit P5): the kit's calendar is neutral; the
+                # legend's texts and the filter parameter are the clinic's.
+                'legendTitle': str(_("Therapists")),
+                'showAllLabel': str(_("Show all therapists")),
+                'unassignedLabel': str(_("Unassigned")),
+                'assigneeParam': 'assigned_user_id',
             }),
             sc_event_segments=[(key, labels[key], urls[key]) for key in SC_EVENT_SEGMENTS],
         )
@@ -1721,7 +1633,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # event's row in « Events » (MY activities on it, task 1592).
             'sc_event_clock': self._sc_activity_clocks(
                 event, lambda e: '/my/event/activities?event_id=%s' % e.id).get(event.id),
-            'sc_flash': {'success': success, 'error': error},
+            'pk_flash': {'success': success, 'error': error},
         }
 
     @staticmethod
@@ -1838,11 +1750,19 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         offered_staff = {option[0] for option in staff_options}
         form['team_csv'] = ','.join(str(i) for i in form['team_ids'] if i in offered_teams)
         form['staff_csv'] = ','.join(str(i) for i in form['staff_ids'] if i in offered_staff)
-        form['team_props'] = self._sc_form_props(
+        # Task 5382 (kit P4c3): the organization select narrows the teams; the
+        # kit's field asks before dropping the teams of another organization,
+        # in the clinic's words.
+        grouped = bool(values.get('organizations'))
+        form['team_props'] = pk_form_props(
             'sc_event_team_ids', env._("Teams"), value=form['team_csv'], options=team_options,
             placeholder=env._("Add a team…"),
-            groupSelect='sc_event_org' if values.get('organizations') else None)
-        form['staff_props'] = self._sc_form_props(
+            groupSelect='sc_event_org' if grouped else None,
+            groupConfirmMessage=env._(
+                "Changing the organization removes the teams of the other organization: %s.") if grouped else None,
+            groupConfirmLabel=env._("Change organization") if grouped else None,
+            groupNotice=env._("The teams of another organization were removed.") if grouped else None)
+        form['staff_props'] = pk_form_props(
             'sc_event_staff_ids', env._("Assigned staff"), value=form['staff_csv'], options=staff_options,
             placeholder=env._("Add a therapist…"))
         # Review fixes 2026-10-24 (owner policy): on an event of a team the
@@ -1868,5 +1788,5 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_form_mode': mode,
             'sc_form': form,
             'sc_event_types': types,
-            'sc_flash': {'success': None, 'error': error},
+            'pk_flash': {'success': None, 'error': error},
         }

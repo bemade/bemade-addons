@@ -20,7 +20,7 @@
  */
 import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 // Task 1658: the greyed button + reason line are the shared form guard's.
-import { guardFlash, guardRefresh } from "@bemade_sports_clinic/js/sc_form_guard";
+import { guardFlash, guardRefresh } from "@bemade_portal_kit/js/pk_form_guard";
 
 const DEBOUNCE_MS = 300;
 const timers = new WeakMap();
@@ -134,7 +134,7 @@ function refreshSubmit(form) {
     // Task 1674: only similar players found — « Create » stays enabled, the
     // reason line asks to check them first.
     if (!busy && !reason && form.dataset.scCheckedNear === "1") {
-        const line = form.querySelector("[data-sc-guard-reason]");
+        const line = form.querySelector("[data-pk-guard-reason]");
         if (line) {
             line.textContent = reasons(form).near || "";
             line.hidden = !line.textContent;

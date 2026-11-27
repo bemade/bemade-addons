@@ -44,12 +44,12 @@ function typeAndLeave(input, value) {
 
 const CARD = ".o_sc_injury_item[open]";
 const SHEET = "dialog#sc_proposal_sheet";
-const HEADER_FIELD = '[data-pk-section="player.predicted_return"] .o_pk_autosave[data-sc-field="predicted_return_date"]';
+const HEADER_FIELD = '[data-pk-section="player.predicted_return"] .o_pk_autosave[data-pk-autosave-field="predicted_return_date"]';
 
 // Review fixes 2026-10-18: the header's fields are behind its one pencil.
 const HEADER_PENCIL = {
     content: "Open the header's pencil",
-    trigger: '[data-pk-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle][aria-expanded="false"]',
+    trigger: '[data-pk-section="player.hero"] [data-pk-card-icons] > button[data-pk-edit-toggle][aria-expanded="false"]',
     run: "click",
 };
 
@@ -62,7 +62,7 @@ tours.add("sc_1603_injury_to_player", {
     steps: () => [
         {
             content: "Open card: pencil",
-            trigger: `${CARD} button[data-sc-edit-toggle]`,
+            trigger: `${CARD} button[data-pk-edit-toggle]`,
             run(helpers) {
                 markNoReload();
                 return helpers.click();
@@ -70,7 +70,7 @@ tours.add("sc_1603_injury_to_player", {
         },
         {
             content: "Change the predicted resolution date and leave it",
-            trigger: `${CARD} .o_pk_autosave[data-sc-field="predicted_resolution_date"] input`,
+            trigger: `${CARD} .o_pk_autosave[data-pk-autosave-field="predicted_resolution_date"] input`,
             run() {
                 typeAndLeave(this.anchor, "2030-05-01");
             },
@@ -128,7 +128,7 @@ function kneeRead() {
     const card = [...document.querySelectorAll(".o_sc_injury_item")].find((node) =>
         node.querySelector("summary").textContent.includes("Synthetic knee")
     );
-    return card.querySelector('[data-sc-fragment$=":read"]');
+    return card.querySelector('[data-pk-fragment$=":read"]');
 }
 
 tours.add("sc_1603_player_to_injuries", {
@@ -183,7 +183,7 @@ tours.add("sc_1603_last_resolved", {
     steps: () => [
         {
             content: "Open card: pencil",
-            trigger: `${CARD} button[data-sc-edit-toggle]`,
+            trigger: `${CARD} button[data-pk-edit-toggle]`,
             run(helpers) {
                 markNoReload();
                 return helpers.click();
@@ -192,12 +192,12 @@ tours.add("sc_1603_last_resolved", {
         // Task 1631: « Resolved » from the header pill (the resolve sheet).
         {
             content: "Open the status pill",
-            trigger: `${CARD} [data-sc-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select`,
+            trigger: `${CARD} [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select`,
             run: "click",
         },
         {
             content: "« Resolved »",
-            trigger: `${CARD} [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]`,
+            trigger: `${CARD} [data-pk-pill-key="stage"] [role="menuitemradio"][data-pk-pill-value="resolved"]`,
             run: "click",
         },
         {
@@ -230,7 +230,7 @@ tours.add("sc_1603_last_resolved", {
                 // actual return date (its read view shows ONE date).
                 await waitFor(
                     () => document.querySelector(
-                        '[data-pk-section="player.return_date.edit"] .o_pk_autosave[data-sc-field="return_date"] input'
+                        '[data-pk-section="player.return_date.edit"] .o_pk_autosave[data-pk-autosave-field="return_date"] input'
                     ).value === "2030-01-31",
                     "actual return date in the header"
                 );
@@ -261,7 +261,7 @@ tours.add("sc_1603_dismiss", {
             trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => !document.querySelector(`${SHEET}[open]`), "sheet closed");
-                await waitFor(() => document.querySelector(`${HEADER_FIELD}[data-sc-state="saved"]`), "saved");
+                await waitFor(() => document.querySelector(`${HEADER_FIELD}[data-pk-autosave-state="saved"]`), "saved");
             },
         },
     ],

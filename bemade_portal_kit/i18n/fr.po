@@ -10,6 +10,7 @@ msgstr ""
 "PO-Revision-Date: 2026-11-08 01:18+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
@@ -17,8 +18,40 @@ msgstr ""
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "1 Jan 2026"
+msgstr "1 janv. 2026"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "1. Enter your password to confirm this is your account"
+msgstr ""
+"1. Entrez votre mot de passe pour confirmer qu'il s'agit bien de votre "
+"compte"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "2 days ago"
 msgstr "il y a 2 jours"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "2. Type your login to confirm:"
+msgstr "2. Tapez votre identifiant pour confirmer :"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "3 items"
+msgstr "3 éléments"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "<option value=\"\">Country…</option>"
+msgstr "<option value=\"\">Pays…</option>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "<option value=\"\">State / Province…</option>"
+msgstr "<option value=\"\">Province / État…</option>"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -40,12 +73,8 @@ msgstr "<small class=\"o_pk_hint\">Une indication sous le champ.</small>"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
-msgid ""
-"<span class=\"o_pk_appbar_title_text\">Style guide</span>\n"
-"                            <small class=\"o_pk_appbar_context\">Bemade Portal Kit</small>"
-msgstr ""
-"<span class=\"o_pk_appbar_title_text\">Guide de style</span>\n"
-"                            <small class=\"o_pk_appbar_context\">Bemade Portal Kit</small>"
+msgid "<span class=\"o_pk_chip o_pk_chip_ghost\">Chip</span>"
+msgstr "<span class=\"o_pk_chip o_pk_chip_ghost\">Pastille</span>"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -121,6 +150,20 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "<span class=\"o_pk_field_label\">Read-only value</span>"
 msgstr "<span class=\"o_pk_field_label\">Valeur en lecture seule</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_overdue_flag
+msgid ""
+"<span class=\"o_pk_overdue_sep\" aria-hidden=\"true\"> · </span><span "
+"class=\"o_pk_overdue_flag\" data-pk-overdue=\"1\">Passed</span>"
+msgstr ""
+"<span class=\"o_pk_overdue_sep\" aria-hidden=\"true\"> · </span><span "
+"class=\"o_pk_overdue_flag\" data-pk-overdue=\"1\">Dépassé</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span class=\"o_pk_row_title\">A card with its top bar</span>"
+msgstr "<span class=\"o_pk_row_title\">Une carte et sa barre du haut</span>"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -217,6 +260,11 @@ msgstr "<span>Boutons</span>"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Card icons</span>"
+msgstr "<span>Icônes de carte</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "<span>Cards</span>"
 msgstr "<span>Cartes</span>"
 
@@ -224,6 +272,11 @@ msgstr "<span>Cartes</span>"
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "<span>Chips and status pills</span>"
 msgstr "<span>Pastilles et statuts</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "<span>Country</span>"
+msgstr "<span>Pays</span>"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -241,6 +294,26 @@ msgid "<span>Fields</span>"
 msgstr "<span>Champs</span>"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_user_menu_popup
+msgid "<span>Help</span>"
+msgstr "<span>Aide</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>History</span>"
+msgstr "<span>Historique</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>List header and link rows</span>"
+msgstr "<span>En-tête de liste et lignes à liens</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Locked switch and flash banner</span>"
+msgstr "<span>Interrupteur verrouillé et bandeau de message</span>"
+
+#. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "<span>Rows</span>"
 msgstr "<span>Lignes</span>"
@@ -251,9 +324,24 @@ msgid "<span>Segmented control and page tabs</span>"
 msgstr "<span>Choix segmenté et onglets de page</span>"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_user_menu_popup
+msgid "<span>Settings</span>"
+msgstr "<span>Paramètres</span>"
+
+#. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "<span>Sheet</span>"
 msgstr "<span>Feuille</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_user_menu_popup
+msgid "<span>Sign out</span>"
+msgstr "<span>Se déconnecter</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "<span>State / Province</span>"
+msgstr "<span>Province / État</span>"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -297,26 +385,280 @@ msgstr "Une carte présente un enregistrement ou un groupe de champs. Son en-tê
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "A confirm sheet asks first, then posts its form."
+msgstr ""
+"Une feuille de confirmation demande d'abord, puis envoie son formulaire."
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/styleguide.py:0
+msgid "A flash banner after a save."
+msgstr "Un bandeau de message après un enregistrement."
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/styleguide.py:0
+msgid "A history entry: when, who, what, then the text."
+msgstr "Une entrée d'historique : quand, qui, quoi, puis le texte."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.actions.act_window,help:bemade_portal_kit.pk_help_action
+msgid ""
+"A key is the page's help key (e.g. settings, account); « key.tab » for a page whose help follows\n"
+"               its tab. An unmapped page opens the help home (Settings › Portal App › Help home)."
+msgstr ""
+"Une clé est la clé d'aide de la page (p. ex. settings, account); « clé.onglet » pour une page dont l'aide suit\n"
+"               son onglet. Une page sans article ouvre l'accueil de l'aide (Paramètres › Application portail › Accueil de l'aide)."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "A link row"
+msgstr "Une ligne à liens"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "A link with a lead icon"
+msgstr "Un lien avec une icône en tête"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "A locked option"
+msgstr "Une option verrouillée"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/styleguide.py:0
+msgid "A refusal banner after a post."
+msgstr "Un bandeau de refus après un envoi."
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/styleguide.py:0
+msgid "A secondary link"
+msgstr "Un lien secondaire"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Account"
+msgstr "Compte"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_help__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_card_icons
+msgid "Activities"
+msgstr "Activités"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_list_header
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Add"
 msgstr "Ajouter"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Add an item"
+msgstr "Ajouter un élément"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Added on"
+msgstr "Ajoutée le"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "Address"
+msgstr "Adresse"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "An entity row"
+msgstr "Une ligne d'entité"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "Apartment, suite, etc."
+msgstr "Appartement, bureau, etc."
+
+#. module: bemade_portal_kit
+#: model:ir.actions.act_window,name:bemade_portal_kit.pk_help_action
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_help_view_list
+msgid "App help"
+msgstr "Aide de l'application"
+
+#. module: bemade_portal_kit
+#: model:ir.model,name:bemade_portal_kit.model_portal_kit_help
+msgid "App help: page key to help article"
+msgstr "Aide de l'application : clé de page vers article d'aide"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Appearance"
+msgstr "Apparence"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_card_icons
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Archive"
+msgstr "Archiver"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Archive this card?"
+msgstr "Archiver cette carte ?"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_search_results
+msgid "Archived"
+msgstr "Archivée"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_help__url
+msgid "Article URL"
+msgstr "URL de l'article"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_more
+msgid "Articles and videos"
+msgstr "Articles et vidéos"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_calendar.js:0
+msgid "Assigned"
+msgstr "Assigné"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_layout
+msgid "Back"
+msgstr "Retour"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_layout
+msgid "Breadcrumb"
+msgstr "Fil d'Ariane"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_confirm_sheet
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_list_add_cancel
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Cancel"
 msgstr "Annuler"
 
 #. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_calendar.xml:0
+msgid "Cancelled"
+msgstr "Annulé"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Change"
+msgstr "Changer"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Change password"
+msgstr "Changer le mot de passe"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid ""
+"Changing the country is not allowed once documents have been issued for your"
+" account. Please contact us for this change."
+msgstr ""
+"Le pays ne peut plus être modifié une fois que des documents ont été émis "
+"pour votre compte. Communiquez avec nous pour ce changement."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "City"
+msgstr "Ville"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_history_entry
+msgid "Cleared"
+msgstr "Effacée"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_calendar.xml:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_search_sheet
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_sheet
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Close"
 msgstr "Fermer"
 
 #. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/pk_shell.py:0
+msgid "Close results"
+msgstr "Résultats approchants"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/styleguide.py:0
+msgid "Components"
+msgstr "Composants"
+
+#. module: bemade_portal_kit
+#: model:ir.model,name:bemade_portal_kit.model_res_config_settings
+msgid "Config Settings"
+msgstr "Paramètres de config"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Confirm"
 msgstr "Confirmer"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Confirm the new password"
+msgstr "Confirmer le nouveau mot de passe"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "Contact details"
+msgstr "Coordonnées"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_help__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_help__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Current password"
+msgstr "Mot de passe actuel"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields.selection,name:bemade_portal_kit.selection__res_users__pk_theme__dark
+msgid "Dark"
+msgstr "Sombre"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Dark mode"
+msgstr "Mode sombre"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/styleguide.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Date"
 msgstr "Date"
@@ -327,12 +669,55 @@ msgid "Day"
 msgstr "Jour"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_card_icons
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Delete"
 msgstr "Supprimer"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Delete account"
+msgstr "Supprimer le compte"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Delete your account?"
+msgstr "Supprimer votre compte?"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Description"
+msgstr "Description"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Developer API keys"
+msgstr "Clés API de développeur"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Disable two-factor authentication"
+msgstr "Désactiver l'authentification à deux facteurs"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid ""
+"Disables your account: you can no longer sign in. This cannot be undone."
+msgstr ""
+"Désactive votre compte : vous ne pourrez plus vous connecter. Cette action "
+"est irréversible."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+msgid "Discard the draft"
+msgstr "Jeter le brouillon"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_ir_http__display_name
 #: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit__display_name
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_help__display_name
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:bemade_portal_kit.field_res_users__display_name
 msgid "Display Name"
 msgstr "Nom affiché"
@@ -343,15 +728,107 @@ msgid "Done"
 msgstr "Terminé"
 
 #. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Draft kept on this device"
+msgstr "Brouillon gardé sur cet appareil"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+msgid "Draft restored"
+msgstr "Brouillon restauré"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Due date"
+msgstr "Échéance"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_card_icons
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_edit_card_head
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Edit"
 msgstr "Modifier"
 
 #. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/styleguide.py:0
+msgid "Edited"
+msgstr "Modifiée"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "Email"
+msgstr "Courriel"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Enable two-factor authentication"
+msgstr "Activer l'authentification à deux facteurs"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Expiration date"
+msgstr "Date d'expiration"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_res_config_settings__pk_help_home_url
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_res_config_settings_view_form
+msgid "Help home"
+msgstr "Accueil de l'aide"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_layout
+msgid "Help on this page"
+msgstr "Aide sur cette page"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/models/portal_kit.py:0
+msgid "Home"
+msgstr "Accueil"
+
+#. module: bemade_portal_kit
+#: model:ir.model,name:bemade_portal_kit.model_ir_http
+msgid "HTTP Routing"
+msgstr "Routage HTTP"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_res_config_settings_view_form
+msgid "https://…"
+msgstr "https://…"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_ir_http__id
 #: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit__id
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_help__id
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_res_config_settings__id
 #: model:ir.model.fields,field_description:bemade_portal_kit.field_res_users__id
 msgid "ID"
 msgstr "Identifiant"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,help:bemade_portal_kit.field_portal_kit_help__note
+msgid "Internal note (e.g. the article's title)."
+msgstr "Note interne (p. ex. le titre de l'article)."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+msgid "Keep mine"
+msgstr "Garder le mien"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_picker.js:0
+msgid "Keep typing to narrow the list."
+msgstr "Continuez à taper pour réduire la liste."
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_help__key
+msgid "Key"
+msgstr "Clé"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -359,9 +836,54 @@ msgid "Kind"
 msgstr "Type"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Language"
+msgstr "Langue"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_help__write_uid
+msgid "Last Updated by"
+msgstr "Dernière mise à jour par"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_help__write_date
+msgid "Last Updated on"
+msgstr "Dernière mise à jour le"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,help:bemade_portal_kit.field_res_config_settings__pk_theme_choice_enabled
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_res_config_settings_view_form
+msgid ""
+"Let each user choose the light or dark theme. Off: everyone gets the default"
+" theme."
+msgstr ""
+"Chaque utilisateur choisit le thème clair ou sombre. Désactivé : tout le "
+"monde a le thème par défaut."
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields.selection,name:bemade_portal_kit.selection__res_users__pk_theme__light
+msgid "Light"
+msgstr "Clair"
+
+#. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Link button"
 msgstr "Bouton lien"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Log out from all devices"
+msgstr "Se déconnecter de tous les appareils"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_layout
+msgid "Main"
+msgstr "Navigation principale"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.actions.act_window,help:bemade_portal_kit.pk_help_action
+msgid "Map an app page to its help article."
+msgstr "Associez une page de l'application à son article d'aide."
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -374,11 +896,75 @@ msgid "Month"
 msgstr "Mois"
 
 #. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/models/portal_kit.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_more
+msgid "More"
+msgstr "Plus"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "My account"
+msgstr "Mon compte"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "N/A"
+msgstr "S/O"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/styleguide.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Name"
 msgstr "Nom"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Name, email, phone"
+msgstr "Nom, courriel, téléphone"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_layout
+msgid "Navigation"
+msgstr "Navigation"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "New API key"
+msgstr "Nouvelle clé API"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "New password"
+msgstr "Nouveau mot de passe"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "New text"
+msgstr "Nouveau texte"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "No address yet."
+msgstr "Aucune adresse pour l'instant."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "No history yet."
+msgstr "Aucun historique pour l'instant."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_search_results
+msgid "No results"
+msgstr "Aucun résultat"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_help__note
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Note"
 msgstr "Note"
@@ -389,9 +975,74 @@ msgid "Nothing here yet."
 msgstr "Rien ici pour l’instant."
 
 #. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Nothing matches « %s »: pick it from the list."
+msgstr "Aucun choix ne correspond à « %s » : choisissez dans la liste."
+
+#. module: bemade_portal_kit
+#: model:ir.model.constraint,message:bemade_portal_kit.constraint_portal_kit_help_key_unique
+msgid "One article per page key."
+msgstr "Un seul article par clé de page."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Only an administrator can change it."
+msgstr "Seul un administrateur peut la modifier."
+
+#. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Owner"
 msgstr "Responsable"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Password and sign-in"
+msgstr "Mot de passe et connexion"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "Phone"
+msgstr "Téléphone"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/styleguide.py:0
+msgid "Plain text"
+msgstr "Texte simple"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/tools/save.py:0
+msgid "Please enter a valid date."
+msgstr "Veuillez saisir une date valide."
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/tools/activity.py:0
+msgid "Please fill in all required fields."
+msgstr "Veuillez remplir tous les champs obligatoires."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_res_config_settings_view_form
+msgid "Portal App"
+msgstr "Application portail"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_res_config_settings__pk_shell_enabled
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_res_config_settings_view_form
+msgid "Portal app"
+msgstr "Application portail"
+
+#. module: bemade_portal_kit
+#: model:ir.ui.menu,name:bemade_portal_kit.pk_help_menu
+msgid "Portal App Help"
+msgstr "Aide de l'application portail"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_res_users__pk_theme
+msgid "Portal App Theme"
+msgstr "Thème de l'application du portail"
 
 #. module: bemade_portal_kit
 #: model:ir.model,name:bemade_portal_kit.model_portal_kit
@@ -399,14 +1050,63 @@ msgid "Portal Kit Registries"
 msgstr "Registres de la trousse portail"
 
 #. module: bemade_portal_kit
-#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
-msgid "Portal kit style guide"
-msgstr "Guide de style de la trousse portail"
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Put my email and phone on a block list so I am never contacted again"
+msgstr ""
+"Inscrire mon courriel et mon téléphone sur une liste de blocage pour ne plus"
+" jamais être contacté"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/pk_app.py:0
+msgid "Record not found."
+msgstr "Enregistrement introuvable."
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Reference"
 msgstr "Référence"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Remove %s"
+msgstr "Retirer %s"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Remove this device"
+msgstr "Retirer cet appareil"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+msgid "Replaces the previous text; the old one is kept in the history."
+msgstr ""
+"Remplace le texte précédent ; l'ancien est conservé dans l'historique."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Reuse current text"
+msgstr "Reprendre le texte actuel"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Revoke all devices"
+msgstr "Révoquer tous les appareils"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/styleguide.py:0
+msgid "Rows"
+msgstr "Lignes"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/styleguide.py:0
+msgid "Sample author"
+msgstr "Auteur exemple"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -429,9 +1129,52 @@ msgid "Save"
 msgstr "Enregistrer"
 
 #. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Saved"
+msgstr "Enregistré"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_account.js:0
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Saved · %s"
+msgstr "Enregistré · %s"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_account.js:0
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Saving…"
+msgstr "Enregistrement…"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Scope"
+msgstr "Portée"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_layout
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_search_sheet
+msgid "Search"
+msgstr "Rechercher"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/models/portal_kit.py:0
+msgid "Search…"
+msgstr "Rechercher…"
+
+#. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Secondary"
 msgstr "Secondaire"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Security"
+msgstr "Sécurité"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -439,14 +1182,90 @@ msgid "See all"
 msgstr "Tout voir"
 
 #. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_help__sequence
+msgid "Sequence"
+msgstr "Séquence"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Sessions"
+msgstr "Sessions"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/models/portal_kit.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Settings"
+msgstr "Paramètres"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_calendar.js:0
+msgid "Show all"
+msgstr "Tout afficher"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_calendar.js:0
+msgid "Show only %s"
+msgstr "Afficher seulement %s"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_security_password
+msgid "Show password"
+msgstr "Afficher le mot de passe"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,help:bemade_portal_kit.field_res_config_settings__pk_shell_enabled
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_res_config_settings_view_form
+msgid ""
+"Show the portal app to the users who hold an app role. Off: the stock "
+"portal."
+msgstr ""
+"Affiche l'application portail aux utilisateurs qui ont un rôle dans "
+"l'application. Désactivé : le portail standard."
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_res_users__pk_show_done_buttons
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Show « Done » buttons"
+msgstr "Afficher les boutons Terminé"
+
+#. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Shown, not editable"
 msgstr "Affichée, non modifiable"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Signs you out everywhere you are signed in, this device included."
+msgstr "Vous déconnecte partout où vous êtes connecté, cet appareil compris."
+
+#. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Small"
 msgstr "Petit"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Sort the items"
+msgstr "Trier les éléments"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "Street and number"
+msgstr "Rue et numéro"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Style guide"
+msgstr "Guide de style"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_calendar.js:0
+msgid "The calendar could not be loaded."
+msgstr "Le calendrier n'a pas pu être chargé."
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -457,14 +1276,120 @@ msgid ""
 msgstr "Les composants génériques de l’application portail, dessinés avec les jetons de style neutres de la trousse (--pk-*). Un module leur donne sa marque en définissant ces jetons sur .o_pk_app."
 
 #. module: bemade_portal_kit
+#: model:ir.model.fields,help:bemade_portal_kit.field_portal_kit_help__url
+msgid "The help article: an https address or a site path (/…)."
+msgstr "L'article d'aide : une adresse https ou un chemin du site (/…)."
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,help:bemade_portal_kit.field_res_config_settings__pk_help_home_url
+msgid ""
+"The help home article (an https address or a site path). Empty: no « Help » "
+"entry."
+msgstr ""
+"L'article d'accueil de l'aide (une adresse https ou un chemin du site). Vide"
+" : aucune entrée « Aide »."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_res_config_settings_view_form
+msgid ""
+"The help home article (an https address or a site path). The page-by-page "
+"articles: Settings › Technical › Portal App Help."
+msgstr ""
+"L'article d'accueil de l'aide (une adresse https ou un chemin du site). Les "
+"articles page par page : Paramètres › Technique › Aide de l'application "
+"portail."
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/models/portal_kit_help.py:0
+msgid "The help link must be an https address or a site path (/…)."
+msgstr "Le lien d'aide doit être une adresse https ou un chemin du site (/…)."
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,help:bemade_portal_kit.field_portal_kit_help__key
+msgid "The page's help key (e.g. « settings », « account »)."
+msgstr "La clé d'aide de la page (p. ex. « settings », « account »)."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "The whole row opens its page"
+msgstr "Toute la ligne ouvre sa page"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_res_config_settings__pk_theme_choice_enabled
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_res_config_settings_view_form
+msgid "Theme choice"
+msgstr "Choix du thème"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "This change can no longer be undone."
+msgstr "Ce changement ne peut plus être annulé."
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/tools/activity.py:0
+msgid "The due date cannot be in the past."
+msgstr "La date d'échéance ne peut pas être dans le passé."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_layout
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Toggle theme"
-msgstr "Changer de thème"
+msgstr "Basculer le thème"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Trusted devices"
+msgstr "Appareils de confiance"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Two-factor authentication"
+msgstr "Authentification à deux facteurs"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Two-factor authentication is enabled."
+msgstr "L'authentification à deux facteurs est activée."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid ""
+"Two-factor authentication is not enabled. With it, signing in also asks for "
+"a code from an app on your phone."
+msgstr ""
+"L'authentification à deux facteurs n'est pas activée. Avec elle, la "
+"connexion demande aussi un code fourni par une application sur votre "
+"téléphone."
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Type a name"
 msgstr "Saisissez un nom"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_search_results
+msgid "Type at least 2 letters"
+msgstr "Tapez au moins 2 lettres"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_picker.js:0
+msgid "Type to search…"
+msgstr "Tapez pour chercher…"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Type your login exactly as shown above."
+msgstr "Tapez votre identifiant exactement comme indiqué ci-dessus."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_calendar.js:0
+msgid "Unassigned"
+msgstr "Non assigné"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -477,6 +1402,338 @@ msgid "User"
 msgstr "Utilisateur"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_more
+msgid "User guide"
+msgstr "Guide d'utilisation"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_layout
+msgid "User menu"
+msgstr "Menu utilisateur"
+
+#. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Week"
 msgstr "Semaine"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "When off, tap ✓ at the top of a card to finish editing."
+msgstr ""
+"Désactivé : touchez ✓ en haut d'une carte pour terminer la modification."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Wrong password."
+msgstr "Mot de passe erroné."
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/tools/activity.py:0
+msgid "You cannot assign this activity to that user."
+msgstr "Vous ne pouvez pas assigner cette activité à cet utilisateur."
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/pk_app.py:0
+msgid "You cannot edit this record."
+msgstr "Vous ne pouvez pas modifier cet enregistrement."
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/tools/activity.py:0
+msgid "You do not have access to this activity."
+msgstr "Vous n'avez pas accès à cette activité."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_fragments.js:0
+msgid "You no longer have access to this page."
+msgstr "Vous n'avez plus accès à cette page."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid ""
+"Your account will be disabled: you will no longer be able to sign in. This "
+"cannot be undone."
+msgstr ""
+"Votre compte sera désactivé : vous ne pourrez plus vous connecter. Cette "
+"action est irréversible."
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/pk_shell.py:0
+msgid "Your details have been saved."
+msgstr "Vos coordonnées ont été enregistrées."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "Your name"
+msgstr "Votre nom"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_security
+msgid "Your password has been changed."
+msgstr "Votre mot de passe a été changé."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+msgid "Your unpublished text was kept on this device."
+msgstr "Votre texte non publié a été gardé sur cet appareil."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_form_guard.js:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_layout
+msgid "Complete:"
+msgstr "Complétez :"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_form_guard.js:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_layout
+msgid "This could not be saved. Please check the form and try again."
+msgstr "Impossible d'enregistrer. Vérifiez le formulaire et réessayez."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "This field was changed elsewhere while you were typing."
+msgstr "Ce champ a été modifié ailleurs pendant votre saisie."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "To confirm"
+msgstr "À confirmer"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_form_guard.js:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_layout
+msgid "No connection. Nothing was sent; try again when you are back online."
+msgstr ""
+"Aucune connexion. Rien n'a été envoyé ; réessayez une fois de retour en "
+"ligne."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+#: code:addons/bemade_portal_kit/static/src/js/pk_status_pills.js:0
+msgid "Changed elsewhere"
+msgstr "Modifié ailleurs"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Changing this removes the other group's choices: %s."
+msgstr "Ce changement retire les choix de l'autre groupe : %s."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+#: code:addons/bemade_portal_kit/static/src/js/pk_picker.js:0
+msgid "Clear"
+msgstr "Effacer"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_account.js:0
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+#: code:addons/bemade_portal_kit/static/src/js/pk_status_pills.js:0
+msgid "Error — not saved"
+msgstr "Erreur — non enregistré"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+#: code:addons/bemade_portal_kit/static/src/js/pk_status_pills.js:0
+msgid "Change saved"
+msgstr "Modification enregistrée"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+#: code:addons/bemade_portal_kit/static/src/js/pk_status_pills.js:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_toast_host
+msgid "Undo"
+msgstr "Annuler"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_toast.js:0
+msgid "Back online."
+msgstr "De retour en ligne."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_toast.js:0
+msgid "You are offline."
+msgstr "Vous êtes hors ligne."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_toast.js:0
+msgid "Something went wrong. Please try again."
+msgstr "Une erreur est survenue. Veuillez réessayer."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+msgid "Take theirs"
+msgstr "Prendre le leur"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "The choices of another group were removed."
+msgstr "Les choix d'un autre groupe ont été retirés."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_toast.js:0
+msgid "No connection. Try again when you are back online."
+msgstr "Pas de connexion. Réessayez une fois de retour en ligne."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+#: code:addons/bemade_portal_kit/static/src/js/pk_picker.js:0
+msgid "No match"
+msgstr "Aucun résultat"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_sheets.js:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_calendar
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_sheet
+msgid "Loading…"
+msgstr "Chargement…"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_sheets.js:0
+msgid "Nothing to show."
+msgstr "Rien à afficher."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Offline — pending"
+msgstr "Hors ligne — en attente"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_sheets.js:0
+msgid "Could not load. Close and open again to retry."
+msgstr "Chargement impossible. Fermez et rouvrez pour réessayer."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Current text"
+msgstr "Texte actuel"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_edit_cards.js:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_layout
+msgid "Finish editing"
+msgstr "Terminer la modification"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "%s changed this field while you were typing."
+msgstr "%s a modifié ce champ pendant votre saisie."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_account
+msgid "Zip code"
+msgstr "Code postal"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/models/portal_kit.py:0
+msgid "Daily digest"
+msgstr "Résumé quotidien"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/models/portal_kit.py:0
+msgid "Each message"
+msgstr "Chaque message"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_notification_pref__mode
+msgid "Mode"
+msgstr "Mode"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/models/portal_kit.py:0
+msgid "Never"
+msgstr "Jamais"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Notifications"
+msgstr "Notifications"
+
+#. module: bemade_portal_kit
+#: model:ir.model.constraint,message:bemade_portal_kit.constraint_portal_kit_notification_pref_pk_user_kind_unique
+msgid "One notification preference per user and kind."
+msgstr "Une seule préférence d'avis par utilisateur et par type."
+
+#. module: bemade_portal_kit
+#: model:ir.model,name:bemade_portal_kit.model_portal_kit_notification_pref
+msgid "Portal Kit Notification Preference"
+msgstr "Préférence d'avis du portail"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "What we send you by e-mail."
+msgstr "Ce que nous vous envoyons par courriel."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Add the app to your home screen to get notifications"
+msgstr "Ajoutez l'app à l'écran d'accueil pour recevoir les avis"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Blocked: turn them back on in the phone's settings"
+msgstr "Bloqué : réactivez-les dans les réglages du téléphone"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Enabled on this phone"
+msgstr "Activé sur ce téléphone"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Not enabled yet"
+msgstr "Pas encore activé"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit_notification_pref__push
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "On the phone"
+msgstr "Sur le téléphone"
+
+#. module: bemade_portal_kit
+#: model:ir.model.fields,field_description:bemade_portal_kit.field_res_users__pk_push_prompted
+msgid "Phone notification prompt answered"
+msgstr "Invitation aux avis sur le téléphone répondue"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "This browser cannot show notifications"
+msgstr "Ce navigateur ne peut pas afficher les avis"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_app_settings
+msgid "Turn on for this phone"
+msgstr "Activer sur ce téléphone"

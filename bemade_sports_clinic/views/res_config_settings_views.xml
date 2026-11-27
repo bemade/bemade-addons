@@ -24,11 +24,6 @@
                 <field name="product_event_clinic_vendor_id"/>
               </div>
             </setting>
-            <setting string="User Guide Home" help="Public page of the user guide's home article (/knowledge/article/&lt;id&gt;). The page-by-page articles: Sports Clinic › Administration › App help.">
-              <div class="content-group">
-                <field name="sc_help_home_url" placeholder="/knowledge/article/…"/>
-              </div>
-            </setting>
             <setting string="Material Report Recipient" help="Email address pre-filled in the portal Add Timesheet notice inviting therapists to report personal material used, for client re-invoicing.">
               <div class="content-group">
                 <field name="material_report_email"/>
@@ -133,14 +128,24 @@
           </block>
           <!-- Task 1538: the new portal app shell switch (staging only until launch). -->
           <block title="Sports Clinic Portal" id="bemade_sports_clinic_portal_app_settings">
-            <setting string="New Portal App (preview)" help="Show the sports-clinic portal (home, teams, « More ») in the new Fit Crew app shell. Leave off in production until the launch; a staging refresh from production turns it off again.">
-              <field name="sc_app_shell_enabled"/>
-            </setting>
             <!-- Task 1752: the instance banner (empty = none). -->
             <setting string="Instance banner" help="Text of a red strip shown at the top of every page to mark a non-production instance (e.g. « DÉMO »). Leave empty in production.">
               <field name="sc_instance_banner" placeholder="DÉMO"/>
             </setting>
           </block>
+        </xpath>
+      </field>
+    </record>
+
+    <!-- Task 1541 (P4): the clinic portal is the app only — the kit's
+         switch must stay on for the kit's pages (home, More, settings). -->
+    <record id="view_res_config_settings_sc_kit_required" model="ir.ui.view">
+      <field name="name">res.config.settings.view.form.bemade_sports_clinic.kit_required</field>
+      <field name="model">res.config.settings</field>
+      <field name="inherit_id" ref="bemade_portal_kit.pk_res_config_settings_view_form"/>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='pk_shell_enabled']" position="after">
+          <div class="text-muted small o_sc_kit_required">Required by the clinic: its portal is the app only. Off, the clinic pages still open in the app, but the home, « More » and the settings fall back to the stock portal.</div>
         </xpath>
       </field>
     </record>

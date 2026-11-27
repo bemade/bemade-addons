@@ -157,7 +157,7 @@ class TestMissingFeatures1665(Features1665Common):
                for o in tree.xpath('//select[@id="sc_note_injury"]/option') if o.get('value')]
         self.assertEqual(add, [(str(self.injury.id), 'Sprain'),
                                (str(resolved.id), 'Synthetic old strain (resolved)')])
-        edits = [json.loads(raw) for raw in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+        edits = [json.loads(raw) for raw in tree.xpath('//owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
         pickers = [p for p in edits if p.get('model') == 'sports.treatment.note' and p.get('field') == 'injury_id'
                    and p.get('recordId', p.get('id')) in (note.id, str(note.id))] or \
                   [p for p in edits if p.get('model') == 'sports.treatment.note' and p.get('field') == 'injury_id']

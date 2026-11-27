@@ -8,6 +8,8 @@ import pytz
 from odoo import api, fields, models
 from odoo.tools import format_datetime
 
+from odoo.addons.bemade_sports_clinic.models import sc_app_roles
+
 _logger = logging.getLogger(__name__)
 
 SC_BOOKING_EMAIL_PREFS = [
@@ -19,9 +21,6 @@ SC_BOOKING_EMAIL_PREFS = [
 SC_DIGEST_TIME = time(6, 30)
 SC_DEFAULT_TZ = 'America/Toronto'
 MAIL_FROM_PARAM = 'appointment_portal_staff.mail_from'
-# The clinic app's switch (bemade_sports_clinic controllers/app_shell.py).
-APP_SHELL_PARAM = 'bemade_sports_clinic.app_shell_enabled'
-_TRUTHY = ('1', 'true', 'yes', 'on')
 
 
 class ResUsers(models.Model):
@@ -59,17 +58,16 @@ class ResUsers(models.Model):
 
     def _sc_booking_prefs_apply(self):
         """The preference governs this user's booking mails only when they
-        can see it: « Paramètres » of the clinic app (switch on + an app
-        role) AND staff of a booking. Anyone else (e.g. a plain portal
+        can see it: « Paramètres » of the clinic app (a clinic app role)
+        AND staff of a booking. Anyone else (e.g. a plain portal
         appointment staff user) gets every mail, as in standard Odoo,
         whatever the stored value."""
         self.ensure_one()
         if not self.active or self._is_public():
             return False
-        raw = self.env['ir.config_parameter'].sudo().get_param(APP_SHELL_PARAM)
-        if str(raw or '').strip().lower() not in _TRUTHY:
-            return False
-        if not (self._sc_app_roles() & self.env['portal.kit'].pk_app_roles()):
+        # Task 1541: a clinic app role (the clinic has no off mode: the
+        # kit's switch is not read).
+        if not set(self._sc_app_roles()) & sc_app_roles.STAFF:
             return False
         return self._sc_booking_is_staff()
 

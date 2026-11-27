@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Layout signing with the record's responsible (sale orders...): the
+         responsible's signature is built for the record (its sending address). -->
+    <template
+    id="mail_notification_layout_with_responsible_signature"
+    inherit_id="mail.mail_notification_layout_with_responsible_signature"
+  >
+        <xpath expr="//div[hasclass('o_signature')]" position="attributes">
+            <attribute
+        name="t-out"
+      >record.user_id.sudo()._mail_signature_for(record)</attribute>
+        </xpath>
+    </template>
+</odoo>

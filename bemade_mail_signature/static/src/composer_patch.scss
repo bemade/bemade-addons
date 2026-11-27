@@ -1,0 +1,29 @@
+.o_bemade_mail_signature_preview {
+  // The composer is a 2-column grid (avatar | core): keep the block in the
+  // core column, on its own row under the input and the attachments.
+  grid-column: 2;
+  grid-row: 4;
+  font-size: 0.85em;
+  opacity: 0.85;
+
+  .o_bemade_mail_signature_block {
+    // Tall enough for a full company signature (name, job, company,
+    // phones, address, website): the sending address, the line the user
+    // checks, must not be cut off. A taller one (logo, notice) scrolls;
+    // its links stay inert, the box itself takes the wheel.
+    max-height: 20em;
+    overflow: auto;
+    user-select: none;
+
+    * {
+      pointer-events: none;
+    }
+  }
+}
+
+// Another addon may already show a client-side signature preview in the same
+// place: show only this one (it is the block the server actually appends).
+.o-mail-Composer:has(.o_bemade_mail_signature_preview)
+  .o-mail-Composer-signaturePreview:not(.o_bemade_mail_signature_preview) {
+  display: none !important;
+}

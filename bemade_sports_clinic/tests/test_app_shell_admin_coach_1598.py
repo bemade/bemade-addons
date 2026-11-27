@@ -92,7 +92,7 @@ class TestAppShellAdminCoach1598(AppShellCommon):
 
     @staticmethod
     def _panel(tree, key):
-        nodes = tree.xpath('//section[@data-sc-tab-panel="%s"]' % key)
+        nodes = tree.xpath('//section[@data-pk-tab-panel="%s"]' % key)
         return nodes[0] if nodes else None
 
     # -- UC-A1 -----------------------------------------------------------

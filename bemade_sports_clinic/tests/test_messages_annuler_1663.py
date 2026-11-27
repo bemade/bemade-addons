@@ -35,7 +35,7 @@ class Messages1663Common(PlayerAdd1655Common):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):
@@ -88,7 +88,7 @@ class TestMessagesAnnuler1663(Messages1663Common):
         self.assertNotIn('success=player_undone', resp.headers['Location'])
         self.assertFalse(player.exists())
         _text, tree = self._page('/my/players')
-        self.assertEqual(tree.xpath('//*[contains(@class, "o_pk_toast")]/@data-sc-notify'),
+        self.assertEqual(tree.xpath('//*[contains(@class, "o_pk_toast")]/@data-pk-notify'),
                          ['Création du joueur annulée.'])
 
     def test_player_undo_refused_message(self):
@@ -118,16 +118,16 @@ class TestMessagesAnnuler1663(Messages1663Common):
         self.assertIn('announcement_archived=1', resp.headers['Location'])
         self.assertFalse(self.team_a.announcement)
         _text, tree = self._page(resp.headers['Location'])
-        form = tree.xpath('//form[@data-sc-form="announcement.undo"]')
+        form = tree.xpath('//form[@data-pk-undo-offer="announcement"]')
         self.assertEqual(len(form), 1)
         # (website installed, CI: the form action carries the /fr prefix)
         self.assertTrue(form[0].get('action').endswith('/my/team/%s/announcement/restore' % self.team_a.id),
                         form[0].get('action'))
-        self.assertEqual(form[0].get('data-sc-toast-message'), 'Annonce archivée')
-        self.assertEqual(form[0].get('data-sc-toast-action'), 'Annuler')
+        self.assertEqual(form[0].get('data-pk-toast-message'), 'Annonce archivée')
+        self.assertEqual(form[0].get('data-pk-toast-action'), 'Annuler')
         # A plain reload (no ?announcement_archived) offers nothing.
         _text, tree = self._page('/my/team?team_id=%s' % self.team_a.id)
-        self.assertFalse(tree.xpath('//form[@data-sc-form="announcement.undo"]'))
+        self.assertFalse(tree.xpath('//form[@data-pk-undo-offer="announcement"]'))
         resp = self._restore()
         self.assertIn(resp.status_code, (302, 303))
         self.env.invalidate_all()
@@ -163,7 +163,7 @@ class TestMessagesAnnuler1663(Messages1663Common):
         self.env.invalidate_all()
         self.assertFalse(self.team_a.announcement)
         _text, tree = self._page(resp.headers['Location'])
-        self.assertEqual(tree.xpath('//*[contains(@class, "o_pk_toast")]/@data-sc-notify'),
+        self.assertEqual(tree.xpath('//*[contains(@class, "o_pk_toast")]/@data-pk-notify'),
                          ['Cette annonce ne peut plus être restaurée.'])
 
     def test_restore_refused_after_window_or_change(self):
@@ -196,14 +196,14 @@ class TestMessagesAnnuler1663(Messages1663Common):
         self.assertIn("Supprimer l'activité", sheet_text)
         self.assertIn('Supprimer cette activité ?', sheet_text)
         self.assertEqual(sheet.xpath('.//button[@type="submit"]')[0].text_content().strip(), 'Oui, supprimer')
-        buttons = tree.xpath('//button[@data-sc-action="activity.cancel"]')
+        buttons = tree.xpath('//button[@data-pk-action="activity.cancel"]')
         self.assertTrue(buttons)
         # Task 1736 (deliberate update): the red trash icon — its name.
         for button in buttons:
             self.assertEqual(button.get('aria-label'), 'Supprimer')
         self.assertNotIn("Annuler l'activité", text)
         _text, tree = self._page('/my/activity/%s' % self.act_player.id)
-        detail = tree.xpath('//button[@data-sc-action="activity.cancel"]')
+        detail = tree.xpath('//button[@data-pk-action="activity.cancel"]')
         self.assertEqual([b.get('aria-label') for b in detail], ['Supprimer'])
         resp = self.url_open('/my/activity/cancel', data={
             'csrf_token': self._csrf(), 'activity_id': self.act_team.id,

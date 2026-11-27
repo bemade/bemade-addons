@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Task 1542 (epic #1535) — P1b pages of the portal app shell: the team page
-    (/my/team, three segmented tabs), « Installer l'application » and the
-    data-free offline page the service worker falls back to.
+    (/my/team, three segmented tabs). Task 5201 (kit P6): « Installer
+    l'application » and the offline page moved to bemade_portal_kit_pwa.
 
     Rendered only with the system switch on (controllers/app_shell.py
     _sc_render). Today's portal_my_team_players and the shared legacy
@@ -23,7 +23,7 @@
          history sheet's body (shared history entries). -->
     <template id="sc_announcement_history_fragment" name="App shell: announcement history">
         <t t-set="empty_message">No announcement history yet.</t>
-        <t t-call="bemade_sports_clinic.sc_history_list">
+        <t t-call="bemade_portal_kit.pk_history_list">
             <t t-set="section" t-value="'team.announcement.history'"/>
         </t>
     </template>
@@ -31,8 +31,8 @@
     <!-- /my/team?team_id=<id> (shell) -->
     <template id="sc_app_team" name="Sports Clinic App: team">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="team.name"/>
-            <t t-set="sc_active_nav" t-value="'teams'"/>
+            <t t-set="pk_title" t-value="team.name"/>
+            <t t-set="pk_active_nav" t-value="'teams'"/>
             <t t-set="sc_show_add" t-value="sc_can_add_directly and sc_can('team.add_player')"/>
             <t t-set="sc_show_request" t-value="not sc_can_add_directly and sc_can('team.request_add')"/>
             <t t-set="sc_show_activities" t-value="can_view_activities and sc_can('team.activities')"/>
@@ -42,12 +42,12 @@
 
             <!-- Flash messages. The session notification is the shell's
                  status toast now (task 1583, sc_app_layout). -->
-            <t t-if="error" t-call="bemade_sports_clinic.sc_banner">
+            <t t-if="error" t-call="bemade_portal_kit.pk_banner">
                 <t t-set="flash_error" t-value="True"/>
                 <t t-set="tone" t-value="'warn'"/>
                 <t t-out="error"/>
             </t>
-            <t t-if="success" t-call="bemade_sports_clinic.sc_banner">
+            <t t-if="success" t-call="bemade_portal_kit.pk_banner">
                 <t t-out="success"/>
             </t>
 
@@ -56,13 +56,13 @@
             <t t-set="sc_tab_activities">Activities</t>
             <t t-set="sc_team_tabs" t-value="[('dashboard', sc_tab_dashboard, sc_team_url + '&amp;tab=dashboard'), ('players', sc_tab_players, sc_team_url + '&amp;tab=players')] + ([('activities', sc_tab_activities, sc_team_url + '&amp;tab=activities', '', sc_team_activities_badge)] if sc_show_activities else [])"/>
             <t t-set="sc_active_tab" t-value="active_tab if (active_tab != 'activities' or sc_show_activities) else 'dashboard'"/>
-            <t t-call="bemade_sports_clinic.sc_page_tabs">
+            <t t-call="bemade_portal_kit.pk_page_tabs">
                 <t t-set="tabs" t-value="sc_team_tabs"/>
                 <t t-set="active" t-value="sc_active_tab"/>
             </t>
 
             <!-- ============================ Dashboard ============================ -->
-            <section class="o_pk_tab_panel" data-sc-tab-panel="dashboard" role="tabpanel"
+            <section class="o_pk_tab_panel" data-pk-tab-panel="dashboard" role="tabpanel"
                      t-att-hidden="None if sc_active_tab == 'dashboard' else 'hidden'">
 
                 <!-- Team announcement (task 1270): all-staff, TP-authored.
@@ -70,12 +70,12 @@
                      row. ONE title line « Team announcement » · « History » ·
                      the pencil and archive icons (editors); under it the
                      megaphone beside the text, clamped to 3 lines with « See
-                     more » (sc_app_ui.js), and one muted « Until <date> »
+                     more » (the kit's pk_clamp.js), and one muted « Until <date> »
                      line; a thin divider before the counters. Empty: a muted
                      « No current announcement. » for editors (the pencil adds
                      one); for everyone else the section is not rendered. The
                      section is the edit card: the pencil reveals the compose
-                     form (a LOCAL draft while typing, sc_autosave_field draft
+                     form (a LOCAL draft while typing, the kit's autosave field, draft
                      mode; « Publier » posts the unchanged PRG form). -->
                 <section t-if="team.announcement or sc_show_compose"
                          t-attf-class="o_pk_section o_sc_announcement #{'o_sc_announcement_expired' if team.announcement_is_expired else ''} #{'' if team.announcement else 'o_sc_announcement_none'}"
@@ -84,77 +84,78 @@
                         <h2 class="o_pk_section_header">
                             <span class="o_sc_announcement_heading">Team announcement</span>
                             <button type="button" class="o_pk_section_more o_pk_link_btn"
-                                    data-sc-sheet-open="sc_announcement_history_sheet">History</button>
+                                    data-pk-sheet-open="sc_announcement_history_sheet">History</button>
                         </h2>
                         <!-- Task 1736 (owner 2026-11-01): the shared top bar —
                              archive (visible in read mode, the undo toast below),
                              then the pencil, rightmost. -->
-                        <t t-if="sc_show_compose" t-call="bemade_sports_clinic.sc_card_icons">
+                        <t t-if="sc_show_compose" t-call="bemade_portal_kit.pk_card_icons">
                             <t t-set="ci_archive" t-value="team.announcement and {'action': '/my/team/%s/announcement/dismiss' % team.id, 'section': 'team.announcement.archive'}"/>
                             <t t-set="ci_editable" t-value="True"/>
                             <!-- Task 1663: archived a moment ago — « Annonce archivée
-                                 — Annuler » (sc_app_ui.js shows the toast; the
+                                 — Annuler » (the kit's undo offer, pk_toast.js; the
                                  server re-checks the window). -->
                             <t t-if="sc_announcement_undo">
                                 <t t-set="sc_archived_label">Announcement archived</t>
                                 <t t-set="sc_restore_label">Undo</t>
                                 <form t-attf-action="/my/team/#{team.id}/announcement/restore" method="post" hidden="hidden"
-                                      data-sc-form="announcement.undo" t-att-data-sc-toast-message="sc_archived_label"
-                                      t-att-data-sc-toast-action="sc_restore_label">
+                                      data-pk-undo-offer="announcement" data-pk-undo-param="announcement_archived"
+                                      t-att-data-pk-toast-message="sc_archived_label"
+                                      t-att-data-pk-toast-action="sc_restore_label">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 </form>
                             </t>
                         </t>
                     </div>
-                    <div data-sc-edit-view="read" data-pk-section="team.announcement">
+                    <div data-pk-edit-view="read" data-pk-section="team.announcement">
                         <div t-if="team.announcement" class="o_sc_announcement_content">
                             <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'megaphone'"/></t>
                             <div class="o_sc_announcement_text">
-                                <p class="o_pk_pre o_sc_announcement_body" data-sc-clamp="3" t-out="team.announcement"/>
-                                <p class="o_pk_meta o_sc_announcement_meta" data-sc-clamp-meta="1"
+                                <p class="o_pk_pre o_sc_announcement_body" data-pk-clamp="3" t-out="team.announcement"/>
+                                <p class="o_pk_meta o_sc_announcement_meta" data-pk-clamp-meta="1"
                                    t-att-hidden="None if (sc_announcement_until or team.announcement_is_expired) else 'hidden'">
                                     <t t-if="team.announcement_is_expired" t-call="bemade_portal_kit.pk_status_chip">
                                         <t t-set="tone" t-value="'ghost'"/>
                                         <t t-set="label">Expired</t>
                                     </t>
                                     <span t-if="sc_announcement_until" class="o_sc_announcement_until" t-out="sc_announcement_until"/>
-                                    <span class="o_sc_announcement_more_sep" data-sc-clamp-sep="1" hidden="hidden"> · </span>
-                                    <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-sc-clamp-more="1"
+                                    <span class="o_sc_announcement_more_sep" data-pk-clamp-sep="1" hidden="hidden"> · </span>
+                                    <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-pk-clamp-more="1"
                                             aria-expanded="false" hidden="hidden">See more</button>
                                     <!-- Review round 1 (owner 2026-10-27): « See less » folds it back. -->
-                                    <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-sc-clamp-less="1"
+                                    <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-pk-clamp-less="1"
                                             aria-expanded="true" hidden="hidden">See less</button>
                                 </p>
                             </div>
                         </div>
                         <p t-else="" class="o_pk_muted o_sc_announcement_empty">No current announcement.</p>
                     </div>
-                    <div t-if="sc_show_compose" data-sc-edit-view="edit" hidden="hidden"
+                    <div t-if="sc_show_compose" data-pk-edit-view="edit" hidden="hidden"
                          data-pk-section="team.announcement.edit">
-                        <t t-call="bemade_sports_clinic.sc_banner">
+                        <t t-call="bemade_portal_kit.pk_banner">
                             <t t-set="tone" t-value="'warn'"/>
                             Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player.
                         </t>
                         <form t-attf-action="/my/team/#{team.id}/announcement" method="post" class="o_pk_form"
-                              data-sc-draft-form="1" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"announcement"}]'>
+                              data-pk-guard="1" data-pk-guard-mode="fetch" data-pk-guard-rules='[{"type":"required","field":"announcement"}]'>
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <t t-set="sc_ann_label">Announcement</t>
                             <t t-set="sc_ann_placeholder">Write an announcement for all team staff…</t>
                             <t t-set="sc_deadline_label">Valid until (optional)</t>
-                            <owl-component name="bemade_sports_clinic.sc_autosave_field"
+                            <owl-component name="bemade_portal_kit.pk_autosave_field"
                                            t-att-props="json.dumps({'mode': 'draft', 'name': 'announcement', 'inputType': 'textarea', 'inputId': 'sc_team_announcement', 'label': sc_ann_label, 'placeholder': sc_ann_placeholder, 'value': team.announcement or '', 'draftKey': 'sports.team.%s.announcement' % team.id})"/>
-                            <owl-component name="bemade_sports_clinic.sc_autosave_field"
+                            <owl-component name="bemade_portal_kit.pk_autosave_field"
                                            t-att-props="json.dumps({'mode': 'draft', 'name': 'announcement_deadline', 'inputType': 'date', 'inputId': 'sc_team_announcement_deadline', 'label': sc_deadline_label, 'value': team.announcement_deadline and team.announcement_deadline.strftime('%Y-%m-%d') or '', 'draftKey': 'sports.team.%s.announcement_deadline' % team.id})"/>
                             <div class="o_pk_form_actions">
                                 <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-action="team.announcement.publish">Publish</button>
                                 <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-edit-done="1">Cancel</button>
                             </div>
-                            <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_announcement'"/></t>
+                            <t t-call="bemade_portal_kit.pk_form_guard_slots"><t t-set="guard_id" t-value="'sc_announcement'"/></t>
                         </form>
                     </div>
                     <!-- Task 1581: the shared history sheet, fetched on every
                          open (/my/team/<id>/announcement/history). -->
-                    <t t-call="bemade_sports_clinic.sc_sheet">
+                    <t t-call="bemade_portal_kit.pk_sheet">
                         <t t-set="sheet_id" t-value="'sc_announcement_history_sheet'"/>
                         <t t-set="title">Announcement history</t>
                         <t t-set="lazy_url" t-value="'/my/team/%s/announcement/history' % team.id"/>
@@ -271,10 +272,10 @@
             </section>
 
             <!-- ============================= Players ============================= -->
-            <section class="o_pk_tab_panel" data-sc-tab-panel="players" role="tabpanel"
+            <section class="o_pk_tab_panel" data-pk-tab-panel="players" role="tabpanel"
                      t-att-hidden="None if sc_active_tab == 'players' else 'hidden'">
                 <t t-if="sc_pending_count and can_remove_on_team and sc_can('team.pending_removals')"
-                   t-call="bemade_sports_clinic.sc_banner">
+                   t-call="bemade_portal_kit.pk_banner">
                     <t t-set="tone" t-value="'warn'"/>
                     <t t-set="title">Pending removals</t>
                     <t t-out="sc_pending_label"/>
@@ -283,7 +284,7 @@
                      player: search the existing ones first, then create; or
                      request an addition) opens the panel below it; the sort
                      (by status / by number) on the right. -->
-                <t t-call="bemade_sports_clinic.sc_list_header">
+                <t t-call="bemade_portal_kit.pk_list_header">
                     <t t-set="header_section" t-value="'team.roster.header'"/>
                     <t t-if="sc_show_add">
                         <t t-set="add_label">Add a player</t>
@@ -318,7 +319,7 @@
                         <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'plus'"/></t>
                         <span>Request a player addition</span>
                     </summary>
-                    <form t-attf-action="/my/team/#{team.id}/player/request_add" method="post" class="o_pk_form" data-sc-guard="1" data-sc-guard-mode="fetch">
+                    <form t-attf-action="/my/team/#{team.id}/player/request_add" method="post" class="o_pk_form" data-pk-guard="1" data-pk-guard-mode="fetch">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <div class="o_pk_field">
                             <label class="o_pk_field_label" for="sc_req_first_name">First name</label>
@@ -341,7 +342,7 @@
                             <t t-call="bemade_portal_kit.pk_list_add_cancel"/>
                             <button type="submit" class="o_pk_btn o_pk_btn_primary">Send the request</button>
                         </div>
-                        <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_request_add'"/></t>
+                        <t t-call="bemade_portal_kit.pk_form_guard_slots"><t t-set="guard_id" t-value="'sc_request_add'"/></t>
                     </form>
                 </details>
                 <div t-if="sc_roster_rows" class="o_pk_list" data-pk-section="team.roster">
@@ -361,7 +362,7 @@
             <!-- ============================ Activities =========================== -->
             <!-- Task 1539: the shell's activity list + sheets (the legacy
                  partials stay for the legacy page). -->
-            <section t-if="sc_show_activities" class="o_pk_tab_panel" data-sc-tab-panel="activities" role="tabpanel"
+            <section t-if="sc_show_activities" class="o_pk_tab_panel" data-pk-tab-panel="activities" role="tabpanel"
                      t-att-hidden="None if sc_active_tab == 'activities' else 'hidden'">
                 <t t-set="sc_team_activities_return" t-value="'/my/team?team_id=%s&amp;tab=activities' % team.id"/>
                 <t t-call="bemade_sports_clinic.sc_activity_add_sheet">
@@ -386,95 +387,6 @@
         </t>
     </template>
 
-    <!-- /my/app/install — « Plus › Installer l'application » (no banner anywhere) -->
-    <template id="sc_app_install" name="Sports Clinic App: install">
-        <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Install the app</t>
-            <t t-set="sc_active_nav" t-value="'more'"/>
-
-            <div class="o_pk_card o_pk_install_hero" data-sc-install="1">
-                <img src="/bemade_sports_clinic/static/src/img/sc_icon_192.png" alt="" width="56" height="56" class="o_pk_install_icon"/>
-                <div>
-                    <strong>Le Fit Crew</strong>
-                    <p class="o_pk_meta">Full screen, an icon on your home screen, instant opening. Health data is never stored on the device.</p>
-                </div>
-            </div>
-
-            <!-- Shown by sc_sw_register.js when display-mode is standalone. -->
-            <div class="o_pk_install_done" hidden="hidden" data-sc-install-state="installed">
-                <t t-call="bemade_sports_clinic.sc_banner">
-                    <t t-set="title">The app is installed</t>
-                    You are using Le Fit Crew from your home screen.
-                </t>
-            </div>
-
-            <!-- Android / Chrome / Edge: the browser's own prompt, when offered. -->
-            <section class="o_pk_section" data-sc-install-state="prompt" hidden="hidden">
-                <button type="button" class="o_pk_btn o_pk_btn_primary" data-sc-install-prompt="1">Install Le Fit Crew</button>
-            </section>
-
-            <section class="o_pk_section" data-sc-install-steps="ios">
-                <t t-call="bemade_portal_kit.pk_section_header">
-                    <t t-set="title">iPhone and iPad (Safari or Chrome)</t>
-                </t>
-                <ol class="o_pk_steps">
-                    <li>Open this page in Safari or Chrome.</li>
-                    <li>Tap the Share button <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'share'"/></t> at the bottom of the screen (Safari) or in the address bar (Chrome).</li>
-                    <li>Choose « Add to Home Screen », then « Add ».</li>
-                </ol>
-            </section>
-
-            <section class="o_pk_section" data-sc-install-steps="android">
-                <t t-call="bemade_portal_kit.pk_section_header">
-                    <t t-set="title">Android (Chrome)</t>
-                </t>
-                <ol class="o_pk_steps">
-                    <li>Open this page in Chrome.</li>
-                    <li>Open the ⋮ menu at the top right.</li>
-                    <li>Choose « Install app » (or « Add to Home screen »).</li>
-                </ol>
-            </section>
-
-            <section class="o_pk_section" data-sc-install-steps="desktop">
-                <t t-call="bemade_portal_kit.pk_section_header">
-                    <t t-set="title">Computer (Chrome or Edge)</t>
-                </t>
-                <ol class="o_pk_steps">
-                    <li>Click the install icon at the right of the address bar.</li>
-                    <li>Confirm « Install ».</li>
-                </ol>
-            </section>
-            <p class="o_pk_footnote">Without a connection the app only shows an offline page: no team or player data is kept on the device.</p>
-        </t>
-    </template>
-
-    <!--
-        /my/app/offline — what the service worker shows when a navigation
-        fails offline. Cached on the device, so it carries NO data at all: no
-        layout, no user, no session info, no CSRF token, no asset bundle (its
-        own static stylesheet, precached with it).
-    -->
-    <template id="sc_app_offline" name="Sports Clinic App: offline">
-        <html t-att-lang="(request.env.lang or 'fr_CA').replace('_', '-')">
-            <head>
-                <meta charset="utf-8"/>
-                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-                <meta name="theme-color" content="#120e12"/>
-                <meta name="robots" content="noindex"/>
-                <title>Le Fit Crew</title>
-                <link rel="stylesheet" href="/bemade_sports_clinic/static/src/css/sc_offline.css"/>
-            </head>
-            <body class="o_pk_offline">
-                <main class="o_pk_offline_main">
-                    <img src="/bemade_sports_clinic/static/src/img/sc_logo_chrome.png" alt="" width="96" height="96"/>
-                    <h1>You are offline</h1>
-                    <p>Le Fit Crew needs a connection to show teams and players. Your drafts stay on this device and come back when you return to the page.</p>
-                    <a href="/my/home" class="o_pk_offline_retry">Try again</a>
-                </main>
-            </body>
-        </html>
-    </template>
-
     <!-- Task 1651: the head of a player card's expanded detail, shared by
          the recent-changes detail and the row detail (roster, « to watch »,
          /my/players): the training recommendation (heading, text, its
@@ -495,7 +407,7 @@
         <div t-if="player.stage != 'healthy'" class="text-muted small d-flex align-items-center mb-2">
             <i class="fa fa-clock-o" title="Estimated Return"/>
             <span class="ms-1">Predicted return:</span>
-            <span t-if="player.predicted_return_date and player.predicted_return_overdue" class="ms-1 o_sc_overdue"><span t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
+            <span t-if="player.predicted_return_date and player.predicted_return_overdue" class="ms-1 o_pk_overdue"><span t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/><t t-call="bemade_portal_kit.pk_overdue_flag"/></span>
             <span t-elif="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/>
             <span t-else="" class="ms-1">—</span>
         </div>

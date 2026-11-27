@@ -20,7 +20,7 @@ class TestDuplicatesFrench1682(TransactionCase):
         super().setUpClass()
         cls.env['res.lang']._activate_lang('fr_CA')
         cls.env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         cls.fr = cls.env(context=dict(cls.env.context, lang='fr_CA'))
 
     def test_ac1_field_labels(self):

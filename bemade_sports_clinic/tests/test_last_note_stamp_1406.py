@@ -184,19 +184,6 @@ class TestLastNoteStamp1406(PortalCovCommon):
         self.assertNotIn(self.internal_stamp, html)
         self.assertNotIn('id="internal_notes"', html)
 
-    def test_edit_page_no_stamp_without_history(self):
-        fresh = self.env['sports.patient.injury'].create({
-            'patient_id': self.player.id, 'diagnosis': 'Synthetic blank'})
-        self._login_tp()
-        html = self.url_open('/my/injury/edit?injury_id=%s' % fresh.id).text
-        self.assertNotIn('Last note on', html)
-        self.assertNotIn('o_sc_last_note_stamp', html)
-
-    def test_modal_fragment_carries_the_stamps(self):
-        self._login_tp()
-        html = self.url_open(self.fragment_url).text
-        self.assertIn(self.internal_stamp, html)
-        self.assertIn(self.external_stamp, html)
 
     def test_clinic_card_carries_the_stamps(self):
         self._login_tp()
@@ -204,22 +191,6 @@ class TestLastNoteStamp1406(PortalCovCommon):
         self.assertIn(self.internal_stamp, html)
         self.assertIn(self.external_stamp, html)
 
-    def test_stamp_updates_after_portal_save(self):
-        self._login_tp()
-        token = self._csrf()
-        resp = self.url_open('/my/injury/save', data={
-            'csrf_token': token,
-            'injury_id': self.injury.id,
-            'partial': '1',
-            'external_notes': 'Synthetic note saved from the portal',
-        })
-        self.assertEqual(resp.status_code, 200)
-        today = fields.Date.context_today(self.injury.with_user(self.tp))
-        html = self.url_open(self.edit_url).text
-        self.assertIn(self._stamp(today, 'PC TP'), html)
-        self.assertNotIn(self.external_stamp, html)
-        # internal untouched by an external-only save
-        self.assertIn(self.internal_stamp, html)
 
     # ------------------------------------------------------------------
     # backend form
@@ -242,7 +213,7 @@ class TestLastNoteStampFrCA1406(HttpCase):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'])
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'])
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

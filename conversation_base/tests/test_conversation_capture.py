@@ -12,9 +12,11 @@
 #     call for the same external_id -- so acting twice on one inbox item
 #     (e.g. reply, then later reassign) never creates two conversations.
 
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
-from odoo.tests import TransactionCase
+from odoo.addons.mail.tests.common import MailCommon
+from odoo.tests import TransactionCase, tagged
 
 
 class TestConversationCapture(TransactionCase):
@@ -115,6 +117,71 @@ class TestConversationCapture(TransactionCase):
         )
         self.assertEqual(self._outgoing_mail_ids(), before_mail_ids)
 
+    def _captured_message(self, conversation, external_id):
+        return conversation.message_ids.filtered(
+            lambda m: m.external_id == external_id
+        )
+
+    def test_capture_keeps_sent_date_with_offset_new_conversation(self):
+        sent = datetime(2025, 11, 4, 9, 15, tzinfo=timezone(timedelta(hours=-5)))
+        conversation = self.Conversation._capture_stub(
+            self.transport, self._stub(date=sent), mode="new"
+        )
+        message = self._captured_message(conversation, "ext-msg-1")
+        self.assertEqual(message.date, datetime(2025, 11, 4, 14, 15))
+        self.assertEqual(conversation.last_message_date, datetime(2025, 11, 4, 14, 15))
+        self.assertTrue(conversation.unanswered)
+        self.assertEqual(conversation.unanswered_since, datetime(2025, 11, 4, 14, 15))
+
+    def test_capture_sent_date_rfc822_string(self):
+        conversation = self.Conversation._capture_stub(
+            self.transport,
+            self._stub(date="Tue, 04 Nov 2025 09:15:00 -0500"),
+            mode="new",
+        )
+        message = self._captured_message(conversation, "ext-msg-1")
+        self.assertEqual(message.date, datetime(2025, 11, 4, 14, 15))
+
+    def test_capture_old_mail_into_existing_conversation_sorts_by_date(self):
+        conversation = self.Conversation._capture_stub(
+            self.transport,
+            self._stub(date=datetime(2025, 11, 10, 12, 0, tzinfo=timezone.utc)),
+            mode="new",
+        )
+        self.assertEqual(conversation.last_message_date, datetime(2025, 11, 10, 12, 0))
+
+        self.Conversation._capture_stub(
+            self.transport,
+            self._stub(
+                external_id="ext-msg-old",
+                body="<p>Older.</p>",
+                date=datetime(
+                    2025, 11, 4, 9, 15, tzinfo=timezone(timedelta(hours=-5))
+                ),
+            ),
+            mode="existing",
+            target=conversation,
+        )
+        old = self._captured_message(conversation, "ext-msg-old")
+        self.assertEqual(old.date, datetime(2025, 11, 4, 14, 15))
+        # the newest message still defines the thread's last activity ...
+        self.assertEqual(conversation.last_message_date, datetime(2025, 11, 10, 12, 0))
+        # ... and the unanswered stretch starts at the OLDEST inbound mail
+        self.assertTrue(conversation.unanswered)
+        self.assertEqual(conversation.unanswered_since, datetime(2025, 11, 4, 14, 15))
+
+    def test_capture_without_usable_date_keeps_filing_time(self):
+        for index, bad in enumerate((None, False, "", "not a date")):
+            external_id = f"ext-bad-{index}"
+            before = datetime.now() - timedelta(seconds=5)
+            conversation = self.Conversation._capture_stub(
+                self.transport,
+                self._stub(external_id=external_id, date=bad),
+                mode="new",
+            )
+            message = self._captured_message(conversation, external_id)
+            self.assertGreaterEqual(message.date, before)
+
     def test_capture_link_mode_links_record(self):
         record = self.env["res.partner"].create({"name": "Linked Record"})
         conversation = self.Conversation._capture_stub(
@@ -178,3 +245,126 @@ class TestConversationCapture(TransactionCase):
         self.assertNotIn("watcher@example.com", reply_only)
         self.assertIn("watcher@example.com", reply_all)
         self.assertIn("customer@example.com", reply_all)
+
+
+@tagged("post_install", "-at_install")
+class TestCaptureSkipsAliasParticipants(MailCommon):
+    # Acceptance criteria:
+    #   - a captured reply-all whose To or Cc holds an Odoo alias adds no
+    #     participant for that alias; the other addresses are added as before;
+    #   - the next reply draft does not list the alias;
+    #   - the gateway path is unchanged (covered by test_conversation_gateway).
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.Conversation = cls.env["mail.conversation"]
+        cls.transport = cls.env["conversation.transport"].create(
+            {"name": "Alias Capture Transport"}
+        )
+        cls.alias = cls.env["mail.alias"].create(
+            {
+                "alias_name": "team-inbox",
+                "alias_model_id": cls.env["ir.model"]._get("mail.conversation").id,
+                "alias_domain_id": cls.mail_alias_domain.id,
+            }
+        )
+        cls.alias_email = "%s@%s" % (cls.alias.alias_name, cls.mail_alias_domain.name)
+
+    def _capture(self, **overrides):
+        stub = {
+            "subject": "Reply all",
+            "body": "<p>Hello</p>",
+            "email_from": "customer@example.com",
+            "to": ["Sales <sales@example.com>"],
+            "cc": ["watcher@example.com"],
+            "external_id": "alias-ext-1",
+        }
+        stub.update(overrides)
+        return self.Conversation._capture_stub(self.transport, stub, mode="new")
+
+    def _emails(self, conversation):
+        return set(conversation.participant_ids.mapped("email_normalized"))
+
+    def test_alias_in_to_is_not_a_participant(self):
+        conversation = self._capture(
+            to=["sales@example.com", "Team <%s>" % self.alias_email]
+        )
+        self.assertEqual(
+            self._emails(conversation),
+            {"customer@example.com", "sales@example.com", "watcher@example.com"},
+        )
+
+    def test_alias_in_cc_is_not_a_participant(self):
+        conversation = self._capture(cc=[self.alias_email.upper(), "w@example.com"])
+        self.assertEqual(
+            self._emails(conversation),
+            {"customer@example.com", "sales@example.com", "w@example.com"},
+        )
+
+    def test_alias_only_recipients_leave_just_the_sender(self):
+        conversation = self._capture(to=[self.alias_email], cc=[])
+        self.assertEqual(self._emails(conversation), {"customer@example.com"})
+
+    def _local_part_alias(self, name):
+        """An alias that core also matches on its local part alone
+        (``alias_incoming_local``), with no ``mail.catchall.domain.allowed``:
+        then ``_find_aliases`` matches ``<name>@<any domain>``."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            "mail.catchall.domain.allowed", False
+        )
+        return self.env["mail.alias"].create(
+            {
+                "alias_name": name,
+                "alias_model_id": self.env["ir.model"]._get("mail.conversation").id,
+                "alias_domain_id": self.mail_alias_domain.id,
+                "alias_incoming_local": True,
+            }
+        )
+
+    def test_local_part_alias_keeps_outside_address(self):
+        alias = self._local_part_alias("orders")
+        outside = "orders@customer.example.com"
+        self.assertIn(
+            outside,
+            self.env["mail.alias.domain"]._find_aliases([outside]),
+            "core matches the outside address on the local part alone",
+        )
+        conversation = self._capture(
+            to=["Orders <%s>" % outside, "sales@example.com"],
+            cc=[alias.alias_full_name, "watcher@example.com"],
+        )
+        self.assertEqual(
+            self._emails(conversation),
+            {
+                "customer@example.com",
+                outside,
+                "sales@example.com",
+                "watcher@example.com",
+            },
+        )
+
+    def test_local_part_alias_on_other_alias_domain_is_left_out(self):
+        self._local_part_alias("orders")
+        other_domain = self.env["mail.alias.domain"].create(
+            {"name": "other-alias.example.com"}
+        )
+        own_address = "orders@%s" % other_domain.name
+        conversation = self._capture(to=[own_address, "sales@example.com"])
+        self.assertEqual(
+            self._emails(conversation),
+            {"customer@example.com", "sales@example.com", "watcher@example.com"},
+        )
+
+    def test_alias_domain_catchall_and_bounce_are_left_out(self):
+        conversation = self._capture(
+            cc=[
+                self.mail_alias_domain.catchall_email,
+                self.mail_alias_domain.bounce_email,
+                "watcher@example.com",
+            ]
+        )
+        self.assertEqual(
+            self._emails(conversation),
+            {"customer@example.com", "sales@example.com", "watcher@example.com"},
+        )

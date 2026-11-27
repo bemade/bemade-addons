@@ -6,7 +6,7 @@ Acceptance criteria:
   appointment_portal_staff templates unchanged (no shell marker).
 * UC-B2 Switch ON (therapist who is appointment staff): the list renders on
   the shell with the same search (upcoming by default, past / all segments),
-  one row per booking; the calendar is the shared sc_calendar component on
+  one row per booking; the calendar is the shared pk_calendar component on
   the unchanged feed; « Réservations » is in the navigation.
 * UC-B3 The feed keeps its shape; no inline script / style in this addon's
   shell views.
@@ -29,23 +29,17 @@ from .common import BookingsShellCommon
 @tagged('post_install', '-at_install')
 class TestBookingsShell(BookingsShellCommon):
 
-    def test_switch_off_legacy(self):
-        self.authenticate('bk.tp@example.com', 'bk-tp-pass')
-        for url in ('/my/bookings', '/my/bookings/calendar'):
-            text, tree = self._get(url)
-            self.assertIsNone(self._shell(tree), url)
-            self.assertNotIn('data-pk-app-shell', text)
 
     def test_list_in_shell(self):
         self._switch(True)
         self.authenticate('bk.tp@example.com', 'bk-tp-pass')
         _text, tree = self._get('/my/bookings')
         self.assertIsNotNone(self._shell(tree))
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'),
                          ['upcoming', 'past', 'all', 'calendar'])
         ids = [int(x) for x in tree.xpath('//*[@data-sc-booking-id]/@data-sc-booking-id')]
         self.assertEqual(ids, [self.booking_soon.id])
-        self.assertIn('bookings', tree.xpath('//nav[contains(@class, "o_pk_rail_nav")]//a/@data-sc-nav-key'))
+        self.assertIn('bookings', tree.xpath('//nav[contains(@class, "o_pk_rail_nav")]//a/@data-pk-nav-key'))
         _text, tree = self._get('/my/bookings?filterby=past')
         ids = [int(x) for x in tree.xpath('//*[@data-sc-booking-id]/@data-sc-booking-id')]
         self.assertEqual(ids, [self.booking_past.id])
@@ -98,7 +92,7 @@ class TestBookingsShell(BookingsShellCommon):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic', 'bemade_sports_clinic_bookings', 'appointment_portal_staff'],
+            ['bemade_portal_kit', 'bemade_sports_clinic', 'bemade_sports_clinic_bookings', 'appointment_portal_staff'],
             ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')

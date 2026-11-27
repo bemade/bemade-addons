@@ -43,12 +43,10 @@ class PurchaseCostSourceCommon(TransactionCase):
         product = product or self.product
         on = on or fields.Date.today()
         moment = datetime.combine(on, time(12, 0))
-        line = {
-            "product_id": product.id,
-            "product_qty": 5,
-            "price_unit": price,
-            "discount": discount,
-        }
+        line = {"product_id": product.id, "product_qty": 5, "discount": discount}
+        # price None: leave the price to Odoo's pre-fill from the vendor price.
+        if price is not None:
+            line["price_unit"] = price
         if uom:
             line["product_uom_id"] = uom.id
         order = (
@@ -70,8 +68,8 @@ class PurchaseCostSourceCommon(TransactionCase):
         order.write(values)
         return order
 
-    def _supplier_price(self, price, **values):
-        return self.env["product.supplierinfo"].create(
+    def _supplier_price(self, price, entered=None, **values):
+        seller = self.env["product.supplierinfo"].create(
             {
                 "partner_id": self.vendor.id,
                 "product_tmpl_id": self.product.product_tmpl_id.id,
@@ -79,6 +77,24 @@ class PurchaseCostSourceCommon(TransactionCase):
                 **values,
             }
         )
+        return self._enter_on(
+            seller,
+            entered or fields.Date.today() - relativedelta(years=3),
+        )
+
+    def _enter_on(self, seller, on):
+        """Pretend the supplier price line was created on ``on``.
+
+        A line with no tracked change takes its age from its creation; the
+        fixtures create lines years ago by default, so a test only meets a
+        fresh price when it asks for one.
+        """
+        self.env.cr.execute(
+            "UPDATE product_supplierinfo SET create_date = %s WHERE id = %s",
+            [datetime.combine(on, time(12, 0)), seller.id],
+        )
+        seller.invalidate_recordset(["create_date"])
+        return seller
 
     def _resolve(self, product=None, **kwargs):
         return (product or self.product)._resolve_cost(qty=kwargs.pop("qty", 1.0), **kwargs)

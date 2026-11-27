@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 from odoo import SUPERUSER_ID
 from odoo.tests import HttpCase, tagged
+from odoo.tools.misc import mute_logger
 
 SAMPLE_RAW = (
     b"From: sender@example.org\r\n"
@@ -138,6 +139,9 @@ class TestMailGatewayController(HttpCase):
         self.assertFalse(body["ok"])
         self.assertEqual(body["error"], "bad_request")
 
+    # A global router (e.g. mail_manual_routing) logs the unroutable probe
+    # as a warning when it turns it into a lost message: expected here.
+    @mute_logger("odoo.addons.mail_manual_routing.models.mail_thread")
     def test_process_with_no_alias_returns_422(self):
         """When Odoo cannot route an incoming message, the gateway returns 422.
 
@@ -243,6 +247,9 @@ class TestMailGatewayController(HttpCase):
         )
         self.assertTrue(msgs, "expected exactly one mail.message for our test")
 
+    # A global router (e.g. mail_manual_routing) logs the unroutable probe
+    # as a warning when it turns it into a lost message: expected here.
+    @mute_logger("odoo.addons.mail_manual_routing.models.mail_thread")
     def test_process_updates_token_usage(self):
         rec, raw = self.Token.action_generate("ctl-usage")
         self.assertEqual(rec.use_count, 0)

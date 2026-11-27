@@ -60,7 +60,7 @@
     // red trash, the green ✓, the filled ★ (following), the red clock (an
     // overdue activity).
     .o_pk_card_icons {
-        &[data-sc-card-icons] .o_pk_icon_btn .o_pk_icon {
+        &[data-pk-card-icons] .o_pk_icon_btn .o_pk_icon {
             color: inherit;
         }
     }
@@ -106,25 +106,7 @@
         }
     }
 
-    .o_sc_card_clock {
-        position: relative;
-        color: inherit;
-        text-decoration: none;
-
-        &:hover,
-        &:focus-visible {
-            text-decoration: none;
-        }
-    }
-
-    .o_sc_card_clock_overdue {
-        color: var(--pk-bad);
-
-        .o_pk_card_badge {
-            background: var(--pk-bad);
-            color: var(--pk-tone-fg);
-        }
-    }
+    // Task 5345: the card clock (o_pk_card_clock) is the kit's.
 
     .o_sc_announcement_content {
         display: flex;
@@ -154,13 +136,7 @@
         line-height: 1.4;
     }
 
-    .o_sc_announcement_body[data-sc-clamp]:not([data-sc-clamp-open]) {
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
+    // Task 5381 (P4c2): the 3-line clamp is the kit's ([data-pk-clamp="3"]).
 
     .o_sc_announcement_meta {
         font-size: var(--pk-text-xs);
@@ -182,21 +158,107 @@
         opacity: 0.7;
     }
 
-    .o_pk_history_entry[data-sc-history-state="archived"] .o_pk_history_body {
-        color: var(--pk-fg-2);
-    }
 }
 
-// Task 1676: « Afficher les boutons Terminé » off (the default) — the edit
-// cards' « Done » buttons are hidden; the head pencil's ✓ closes the card.
-.o_pk_app[data-sc-hide-done="1"] {
-    .o_pk_edit_done_actions,
-    .o_pk_edit_done {
-        display: none !important;
-    }
-}
+// Task 1676: « Afficher les boutons Terminé » off (the default) hides the
+// edit cards' « Done » buttons: the kit's rule since task 5345
+// (.o_pk_app[data-pk-hide-done="1"], pk_components.scss).
 
 // Task 1676: the head pencil while its card is in edit mode (a ✓).
-.o_pk_app [data-sc-edit-toggle].o_pk_edit_toggle_done {
+.o_pk_app [data-pk-edit-toggle].o_pk_edit_toggle_done {
     color: var(--pk-accent, currentColor);
+}
+
+// Task 1541 (P4): « Pas d'accès » (sc_no_access) — a lone card on the app
+// background, no rail / tabs (the user has no app).
+.o_pk_app.o_sc_no_access {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--pk-space-4, 16px);
+    background: var(--pk-bg);
+    color: var(--pk-fg);
+    font-family: var(--pk-font-text);
+
+    .o_sc_no_access_main {
+        width: 100%;
+        max-width: 440px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--pk-space-4, 16px);
+    }
+
+    .o_sc_no_access_brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .o_pk_logo_mark {
+            width: 48px;
+            height: 48px;
+        }
+    }
+
+    .o_sc_no_access_name {
+        font-family: var(--pk-font-title);
+        text-transform: var(--pk-title-transform);
+        letter-spacing: var(--pk-title-spacing);
+        font-size: 1.6rem;
+    }
+
+    .o_sc_no_access_card {
+        width: 100%;
+        text-align: center;
+    }
+
+    .o_sc_no_access_title {
+        font-family: var(--pk-font-title);
+        text-transform: var(--pk-title-transform);
+        letter-spacing: var(--pk-title-spacing);
+        font-size: 1.8rem;
+        margin: 0 0 var(--pk-space-2, 8px);
+    }
+
+    .o_sc_no_access_text {
+        color: var(--pk-fg-2);
+        margin: 0 0 var(--pk-space-4, 16px);
+    }
+
+    .o_sc_no_access_actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--pk-space-2, 8px);
+    }
+}
+
+// Review 2026-11-26: « Pas d'accès » follows the device when the user has no
+// theme of their own (data-sc-theme-auto): rendered dark, light here.
+@media (prefers-color-scheme: light) {
+    .o_pk_app.o_sc_no_access[data-sc-theme-auto],
+    body.o_pk_app_body.o_pk_app_body_dark.o_sc_no_access_auto {
+        @include pk-theme-light;
+        @include sc-theme-light;
+    }
+}
+
+// Review 2026-11-26: a page refused to a clinic app user, inside the app
+// (sc_app_refused) — one centred card under the app bar.
+.o_pk_app .o_sc_refused {
+    max-width: 440px;
+    margin: var(--pk-space-6, 32px) auto;
+    text-align: center;
+
+    .o_sc_refused_text {
+        color: var(--pk-fg-2);
+        margin: 0 0 var(--pk-space-4, 16px);
+    }
+
+    .o_sc_refused_actions {
+        display: flex;
+        justify-content: center;
+    }
 }

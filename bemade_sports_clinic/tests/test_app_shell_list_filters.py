@@ -61,7 +61,7 @@ class TestAppShellListFilters(AppShellCommon):
         for name in ('organization_id', 'team_id', 'assigned_user_id', 'date_from', 'date_to',
                      'show_cancelled', 'group_by', 'event_type', 'view_type'):
             self.assertIn(name, names)
-        self.assertTrue(tree.xpath('//*[@data-pk-section="events.sort"]//a[@data-sc-sort="date_desc"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="events.sort"]//a[@data-pk-sort="date_desc"]'))
         self.assertEqual(form.xpath('.//input[@name="event_type"]/@value'), ['game'])
         self._login_coach()
         _text, tree = self._get('/my/events')
@@ -96,7 +96,7 @@ class TestAppShellListFilters(AppShellCommon):
         names = set(form.xpath('.//*[@name]/@name'))
         for name in ('search', 'date_from', 'date_to', 'team_id', 'organization_id', 'group_by'):
             self.assertIn(name, names)
-        self.assertTrue(tree.xpath('//*[@data-pk-section="timesheets.sort"]//a[@data-sc-sort="state"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="timesheets.sort"]//a[@data-pk-sort="state"]'))
         _text, tree = self._get('/my/sc/timesheets?group_by=team&no_default_dates=1&date_from=2000-01-01')
         groups = tree.xpath('//*[@data-pk-section="timesheets.list"]//*[@data-sc-group]')
         self.assertTrue(groups)

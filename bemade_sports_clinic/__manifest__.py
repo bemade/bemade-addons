@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.139.0",
+    'version': "19.0.2.0.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -75,8 +75,8 @@ Portal app shell (preview)
 --------------------------
 A new Fit Crew app shell for the portal (brand colours and type, phone
 bottom tabs, laptop left rail, dark theme by default, per-user theme)
-behind the system switch Settings > Sports Clinic Portal > New Portal App
-(``bemade_sports_clinic.app_shell_enabled``). Switch off (the default)
+behind the system switch Settings > Portal App > Portal app (the kit's
+``bemade_portal_kit.enabled``, task 5200). Switch off (the default)
 leaves today's portal unchanged. Menus, sections and fields are shown from
 a declarative, multi-role registry (``models/sc_app_roles.py``, on the
 ``portal.kit`` hooks of ``bemade_portal_kit``): a user
@@ -96,7 +96,11 @@ installable app: a ``/my/``-scoped web manifest and service worker (network
 first; no team or player page is ever cached — offline shows a data-free
 page), with « Plus › Installer l'application ». With the switch off, the
 manifest and the service worker answer 404 and any installed worker
-unregisters itself.
+unregisters itself. Task 5201 (kit P6): the installable app is the kit
+addon ``bemade_portal_kit_pwa`` (same URLs, scope and manifest id); the
+clinic fills the company's app fields with the Fit Crew name, colours and
+icons where they are empty (install and upgrade) and brings its start URL,
+shortcuts, offline colours and wording.
 
 P3 puts the therapist surfaces on the shell: the clinic list and clinic
 page, whose waiting list is a LIVE component (20 s poll of
@@ -117,8 +121,9 @@ layouts).
 
 The app dashboard (/my/home) is made of widget sections each user may show,
 hide, reorder, duplicate and limit to some organisations / teams from its
-« Configurer » page (one registry: ``models/sc_dashboard.py``; the layout is
-stored per user, versioned). A scope only ever narrows what the user may
+« Configurer » page (task 5202: the engine, the page frame and the sheet are
+bemade_portal_kit_dashboard's; ``models/sc_dashboard.py`` registers the
+clinic's widgets; the layout is stored per user, versioned). A scope only ever narrows what the user may
 already access. Round 1: Today, Indicators, To do (each line folds out into
 its activity / injury / player cards), Recent changes, Players to watch,
 Players I follow (a personal « Follow » on the player cards and page),
@@ -139,6 +144,8 @@ nothing; PDF reports never carry it.
         "mail",  # Required for mail.activity functionality
         "portal",
         "bemade_portal_kit",  # Task 5196: the app shell registries (roles, nav, pages)
+        "bemade_portal_kit_pwa",  # Task 5201: the installable app (manifest, worker, offline / install pages)
+        "bemade_portal_kit_dashboard",  # Task 5202: the configurable dashboard (engine, page frame, configure sheet)
         "contacts",
         "base_setup",  # For res.config.settings base view inheritance
         "phone_validation",  # For phone number formatting in patient contacts
@@ -189,29 +196,22 @@ nothing; PDF reports never carry it.
         "views/sports_team_views.xml",
         "views/sports_patient_injury_views.xml",
         "views/sports_clinic_menus.xml",
-        "views/sc_help_article_views.xml",
         "data/sc_guide_video_assets.xml",
         "data/sc_knowledge_public_view.xml",
+        # Task 5200 (kit P5): the in-app help moved to the kit
+        # (portal.kit.help); the clinic's back-end menu entry.
+        "views/sc_app_help_views.xml",
         # Task 1399: attendance report (pivot/graph/list) + the Reports menu.
         # After the menus (parent = sports_clinic_root), before the event views
         # (their smart-button action points at these views' model).
         "views/sports_clinic_attendance_views.xml",
         "views/team_digest_views.xml",
         "views/sports_patient_views.xml",
-        # Task 1384: shared "Effacer"/Clear macro for long-text portal fields.
-        # Load before the portal templates that t-call it.
-        "views/portal_field_clear_templates.xml",
         # Task 1414: the portal patient combo snippet (typeahead over a real
         # <select>, « Last, First »). Load before every template that t-calls it.
         "views/portal_widgets_templates.xml",
         "views/sports_clinic_portal_views.xml",
         "views/team_digest_portal_templates.xml",
-        "views/sports_patient_injury_portal.xml",
-        "views/player_management_portal_templates.xml",
-        "views/injury_management_portal_templates.xml",
-        "views/injury_note_history_portal_templates.xml",
-        "views/task_management_portal_templates.xml",
-        "views/events_portal_templates.xml",
         "views/event_invoicing_wizard_views.xml",
         "views/event_batch_invoicing_wizard_views.xml",
         "views/event_vendor_po_wizard_views.xml",
@@ -220,16 +220,8 @@ nothing; PDF reports never carry it.
         "views/event_cancel_wizard_views.xml",
         "views/res_config_settings_views.xml",
         "views/sports_event_views.xml",
-        "views/portal_activity_detail_template.xml",
-        "views/portal_event_detail_template.xml",
-        "views/portal_event_edit_template.xml",
-        "views/portal_event_create_template.xml",
-        "views/portal_timesheets_templates.xml",
         "views/treatment_note_views.xml",
         "views/sports_quick_note_views.xml",
-        "views/quick_note_portal_templates.xml",
-        # Task 1398: the TP clinic worklist (/my/clinics, /my/clinic/<id>).
-        "views/clinic_portal_templates.xml",
         # Task 1397/1433: the public clinic sign-in kiosk (stable
         # /clinic/kiosk dispatcher, device bound by pairing code).
         "views/clinic_kiosk_templates.xml",
@@ -252,15 +244,18 @@ nothing; PDF reports never carry it.
         # switch) — components, layout, then the pages that t-call them.
         "views/sc_components.xml",
         "views/sc_app_layout.xml",
+        # Task 1541 (P4): « Pas d'accès » for a user without a clinic app role.
+        "views/sc_no_access.xml",
         "views/instance_banner.xml",
-        "views/sc_app_search.xml",
         "views/sc_app_player_add.xml",
         "views/sc_app_pages.xml",
-        # Task 1624: the dashboard (/my/home) widgets + « Configurer ».
+        # Task 1624: the dashboard (/my/home) widgets (task 5202: the frame
+        # and « Configurer » are bemade_portal_kit_dashboard's).
         "views/sc_app_dashboard.xml",
-        "views/sc_app_account.xml",
-        # Task 1542: team page, install page, offline page.
+        # Task 1542: team page (task 5201: the install and offline pages are
+        # bemade_portal_kit_pwa's; sc_app_pwa.xml words them for Fit Crew).
         "views/sc_app_team.xml",
+        "views/sc_app_pwa.xml",
         # Task 1539: P2 — players, injuries, notes, documents, activities.
         "views/sc_app_activities.xml",
         "views/sc_app_players.xml",
@@ -295,35 +290,9 @@ nothing; PDF reports never carry it.
             "bemade_sports_clinic/static/src/scss/portal_badges.scss",
             # Task 1272 (round 3): same digest « voir plus » de-dup on the portal.
             "bemade_sports_clinic/static/src/scss/dashboard_digest.scss",
-            # Task 1385: homogenized portal card expandable styling + the
-            # lazy-load toggle listener for the recent-changes feed.
+            # Task 1385: the player card's <details> expandable (the digest
+            # snapshot card) and the static injury detail block.
             "bemade_sports_clinic/static/src/scss/portal_card.scss",
-            "bemade_sports_clinic/static/src/js/portal_card_recent_changes.js",
-            # Task 1389: lazy-loader for the team-dashboard digest-history modal.
-            "bemade_sports_clinic/static/src/js/portal_digest_history.js",
-            # Task 1384: one-tap "Effacer"/Clear for long-text portal fields.
-            "bemade_sports_clinic/static/src/js/portal_field_clear.js",
-            # Task 1398: desktop drag-reorder for the clinic worklist (plus its
-            # small drag affordance styling). Progressive enhancement only — the
-            # up/down buttons work without it. Task 1401: the same script/styles
-            # drive the /my/teams personal order (data-reorder-* opt-in).
-            "bemade_sports_clinic/static/src/scss/portal_clinic.scss",
-            "bemade_sports_clinic/static/src/js/portal_clinic_reorder.js",
-            # Task 1397: worklist auto-refresh (20 s poll of the fragment route
-            # while the tab is visible) + the kiosk-link Copy button. Both are
-            # progressive enhancement — reload / select-the-text work without.
-            "bemade_sports_clinic/static/src/js/portal_clinic_worklist_refresh.js",
-            # Task 1411: snap the dossier's match / practice selects to a valid
-            # pair. Progressive enhancement — the server validates regardless.
-            "bemade_sports_clinic/static/src/js/portal_clinic_quick_status.js",
-            # Task 1412: the dossier's injury modal (quick-add / edit form
-            # fragments fetched into #clinicInjuryModal). Progressive
-            # enhancement — the same links open the full pages without it.
-            "bemade_sports_clinic/static/src/js/portal_clinic_injury_modal.js",
-            # Task 1413: « Cancel » of the inline treatment-note edit form
-            # (clinic notes table + player notes tab). Progressive enhancement
-            # — the <details> summary opens / closes the form without it.
-            "bemade_sports_clinic/static/src/js/portal_treatment_note_edit.js",
             # Task 1414: portal patient combo — typeahead over the rendered
             # <select> options (clinic add-patient, quick-note pickers).
             # Progressive enhancement — the plain select posts without it.
@@ -331,11 +300,11 @@ nothing; PDF reports never carry it.
             "bemade_sports_clinic/static/src/js/portal_patient_combo.js",
             # Task 1538: portal app shell (since task 5357 the brand file +
             # the clinic's own rules; the generic ones are the kit's), scoped
-            # under .o_pk_app — inert outside the shell; the JS only acts on
-            # data-sc-pref forms inside it). Not duplicated in the lazy list.
+            # under .o_pk_app — inert outside the shell; task 5345: the theme
+            # preference script is the kit's, pk_theme_pref.js). Not
+            # duplicated in the lazy list.
             "bemade_sports_clinic/static/src/scss/sc_tokens.scss",
             "bemade_sports_clinic/static/src/scss/sc_components.scss",
-            "bemade_sports_clinic/static/src/js/sc_app_shell.js",
             # Task 1542: P1b — page styles, the one fetch helper, the device
             # draft store, page behaviours (tabs / sheets / lazy rows /
             # toast), the service worker registration + kill switch, and the
@@ -349,59 +318,41 @@ nothing; PDF reports never carry it.
             # bemade_portal_kit (pk_*.js, bundled by the kit, a dependency);
             # task 5198 (P3a) removed their one-release aliases.
             "bemade_sports_clinic/static/src/js/sc_app_ui.js",
-            "bemade_sports_clinic/static/src/js/sc_help.js",
             # Task 1660: guide videos on the public Knowledge article pages.
             "bemade_sports_clinic/static/src/js/sc_guide_video.js",
-            # Task 1650: the header search (magnifier, « / », Ctrl/⌘-K).
-            "bemade_sports_clinic/static/src/js/sc_search.js",
-            # Task 1648: the type-to-filter picker of the link fields.
-            "bemade_sports_clinic/static/src/js/sc_picker.js",
             # Task 1652: the red card pills open the medical popups.
             "bemade_sports_clinic/static/src/js/sc_med_card_pills.js",
             # Task 1677: the allergy / condition lists and the EpiPen card
             # of the medical popups.
             "bemade_sports_clinic/static/src/js/sc_medical_lists.js",
             # Task 1655: create a player inline (existence check as you type).
-            "bemade_sports_clinic/static/src/js/sc_form_guard.js",
+            # Task 5370 (kit P4b): the form guard moved to the kit
+            # (pk_form_guard.js); sc_guard_rules.js is the clinic's own
+            # « assign » rule of the kit's guard.
+            "bemade_sports_clinic/static/src/js/sc_guard_rules.js",
             "bemade_sports_clinic/static/src/js/sc_player_add.js",
-            # Task 1611: read fragments (in-place refresh after a save) and
-            # the « back shows current data » check.
-            "bemade_sports_clinic/static/src/js/sc_fragments.js",
             # Task 1603: follow-up proposals (the sheet after a save).
             "bemade_sports_clinic/static/src/js/sc_proposal.js",
             # Task 1604: quick « Vérifier » / « Résoudre » of an injury.
             "bemade_sports_clinic/static/src/js/sc_injury_quick.js",
-            # Task 1627: status pill dropdowns (Match / Practice).
-            "bemade_sports_clinic/static/src/js/sc_status_pills.js",
             "bemade_sports_clinic/static/src/js/sc_injury_card.js",
-            "bemade_sports_clinic/static/src/js/sc_account.js",
-            "bemade_sports_clinic/static/src/js/sc_sw_register.js",
-            # Task 1624: « Configurer » the dashboard (saves as you go).
-            "bemade_sports_clinic/static/src/js/sc_dashboard_config.js",
             # Task 1624 review round 1: « Suivre » a player (fetch toggle).
             "bemade_sports_clinic/static/src/js/sc_follow.js",
-            # Task 1624 review round 2: the dashboard's two fixed columns,
-            # scroll anchoring of its fold-outs, the quick « Retour prévu ».
+            # Task 1624 review round 2: the quick « Retour prévu » (task 5202:
+            # the configure sheet and the scroll anchoring are
+            # bemade_portal_kit_dashboard's).
             "bemade_sports_clinic/static/src/js/sc_dashboard_live.js",
-            "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
-            "bemade_sports_clinic/static/src/js/sc_autosave_field.xml",
-            # Task 1736 r1: an activity card's edit fields, mounted on its
-            # first pencil tap.
-            "bemade_sports_clinic/static/src/js/sc_lazy_edit.js",
             # Task 1539: the shell's activity sheets (replaces, in the shell
             # only, the legacy activity partials' inline scripts).
             "bemade_sports_clinic/static/src/js/sc_activities.js",
             # Task 1540: P3 styles, the live clinic waiting list.
             "bemade_sports_clinic/static/src/scss/sc_p3.scss",
             "bemade_sports_clinic/static/src/scss/sc_dashboard.scss",
-            # Task 1620: « Mon compte » / « Sécurité » in the shell.
-            "bemade_sports_clinic/static/src/scss/sc_account.scss",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml",
-            # Task 1540: the shared calendar (FullCalendar lazy-loaded from
-            # web.fullcalendar_lib) and the event form behaviours.
-            "bemade_sports_clinic/static/src/js/sc_calendar.js",
-            "bemade_sports_clinic/static/src/js/sc_calendar.xml",
+            # Task 1540: the event form behaviours (task 5200: the calendar
+            # is the kit's pk_calendar; task 1541: its one-release alias of
+            # the old OWL key is gone).
             "bemade_sports_clinic/static/src/js/sc_events.js",
         ],
         # Task 1540: the sign-in kiosk's OWN stylesheet bundle, included
@@ -429,33 +380,6 @@ nothing; PDF reports never carry it.
         # Task 1542: the addon's first browser tours.
         "web.assets_tests": [
             "bemade_sports_clinic/static/tests/tours/**/*",
-        ],
-        # Also load in lazy bundle since many website widgets initialize lazily
-        "web.assets_frontend_lazy": [
-            "bemade_sports_clinic/static/src/js/jquery_scrolling_polyfill.js",
-            # Ensure patch is also present in lazy assets where snippet may initialize
-            "bemade_sports_clinic/static/src/js/website_toc_safety_patch.js",
-            # Task 1385: the card lazy-loader must also be present where portal
-            # pages initialize via the lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_card_recent_changes.js",
-            # Task 1389: digest-history modal loader also present in lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_digest_history.js",
-            # Task 1384: clear control also present in lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_field_clear.js",
-            # Task 1398: clinic worklist drag also present in lazy bundle.
-            "bemade_sports_clinic/static/src/scss/portal_clinic.scss",
-            "bemade_sports_clinic/static/src/js/portal_clinic_reorder.js",
-            # Task 1397: worklist auto-refresh also present in lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_clinic_worklist_refresh.js",
-            # Task 1411: quick status snap also present in lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_clinic_quick_status.js",
-            # Task 1412: injury modal loader also present in lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_clinic_injury_modal.js",
-            # Task 1413: note edit cancel also present in lazy bundle.
-            "bemade_sports_clinic/static/src/js/portal_treatment_note_edit.js",
-            # Task 1414: patient combo also present in lazy bundle.
-            "bemade_sports_clinic/static/src/scss/portal_widgets.scss",
-            "bemade_sports_clinic/static/src/js/portal_patient_combo.js",
         ],
     },
 }

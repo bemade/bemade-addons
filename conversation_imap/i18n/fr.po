@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-01 20:43+0000\n"
+"POT-Creation-Date: 2026-11-24 00:37+0000\n"
 "PO-Revision-Date: 2026-10-16 20:13+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -91,8 +91,8 @@ msgstr ""
 "Mot de passe du compte IMAP/SMTP. L'IMAP générique n'a pas de mécanisme "
 "OAuth universel : il reste donc un secret stocké en clair. Seuls les "
 "administrateurs peuvent le lire ou l'écrire; le propriétaire d'un compte "
-"personnel définit le sien par le champ Nouveau mot de passe. Laissé vide "
-"sur un compte connecté par OAuth (conversation_gmail, ...) : ceux-ci "
+"personnel définit le sien par le champ Nouveau mot de passe. Laissé vide sur "
+"un compte connecté par OAuth (conversation_gmail, ...) : ceux-ci "
 "s'authentifient par jeton, jamais par un mot de passe stocké."
 
 #. module: conversation_imap
@@ -104,6 +104,16 @@ msgstr "Nouveau mot de passe"
 #: model:ir.model.fields.selection,name:conversation_imap.selection__conversation_transport__smtp_encryption__none
 msgid "None"
 msgstr "Aucun"
+
+#. module: conversation_imap
+#. odoo-python
+#: code:addons/conversation_imap/models/conversation_transport.py:0
+msgid ""
+"Only a Conversations manager can change the server settings and login of a "
+"shared mail account (%(transport)s)."
+msgstr ""
+"Seul un gestionnaire des conversations peut modifier les paramètres du "
+"serveur et l'identifiant d'un compte courriel partagé (%(transport)s)."
 
 #. module: conversation_imap
 #: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__password
@@ -160,8 +170,8 @@ msgid ""
 "provider that is actually installed and implemented."
 msgstr ""
 "L'implémentation concrète de la boîte courriel qui fournit cette connexion "
-"(IMAP/SMTP générique, Gmail OAuth, ...). Ce module de base ne définit "
-"aucune option : chaque module de fournisseur facultatif (conversation_imap, "
+"(IMAP/SMTP générique, Gmail OAuth, ...). Ce module de base ne définit aucune "
+"option : chaque module de fournisseur facultatif (conversation_imap, "
 "conversation_gmail, ...) enregistre la sienne par selection_add, de sorte "
 "que la liste n'offre que des fournisseurs réellement installés et "
 "implémentés."
@@ -171,8 +181,8 @@ msgstr ""
 msgid ""
 "Whether a password is stored for this account. Says nothing about its value."
 msgstr ""
-"Indique si un mot de passe est enregistré pour ce compte. Ne dit rien sur "
-"sa valeur."
+"Indique si un mot de passe est enregistré pour ce compte. Ne dit rien sur sa "
+"valeur."
 
 #. module: conversation_imap
 #: model:ir.model.fields,help:conversation_imap.field_conversation_transport__new_password
@@ -200,5 +210,5 @@ msgstr ""
 #~ "Use STARTTLS on the SMTP connection (the common case on port 587). Leave "
 #~ "off only for a plain/legacy relay."
 #~ msgstr ""
-#~ "Utiliser STARTTLS sur la connexion SMTP (le cas courant sur le port "
-#~ "587). Ne le désactivez que pour un relais simple ou ancien."
+#~ "Utiliser STARTTLS sur la connexion SMTP (le cas courant sur le port 587). "
+#~ "Ne le désactivez que pour un relais simple ou ancien."

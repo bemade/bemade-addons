@@ -39,13 +39,13 @@ tours.add("sc_1630_medical_coach", {
             run() {
                 assert(this.anchor.textContent.includes("Synthetic asthma"), "details missing");
                 const dialog = this.anchor.closest("dialog");
-                assert(!dialog.querySelector("[data-sc-edit-toggle], [data-sc-action='medical.edit']"), "a pencil");
+                assert(!dialog.querySelector("[data-pk-edit-toggle], [data-sc-action='medical.edit']"), "a pencil");
                 assert(!dialog.querySelector(".o_pk_autosave, owl-component"), "an editor");
             },
         },
         {
             content: "Close it",
-            trigger: "dialog[open] [data-sc-sheet-close]",
+            trigger: "dialog[open] [data-pk-sheet-close]",
             run: "click",
         },
     ],
@@ -84,7 +84,7 @@ tours.add("sc_1630_card_pills", {
             content: "Task 1652: its popup opens (read-only for a coach)",
             trigger: 'dialog[id^="sc_med_card_allergy_"][open]',
             run() {
-                assert(!this.anchor.querySelector("[data-sc-edit-toggle]"), "a coach gets a pencil");
+                assert(!this.anchor.querySelector("[data-pk-edit-toggle]"), "a coach gets a pencil");
             },
         },
     ],

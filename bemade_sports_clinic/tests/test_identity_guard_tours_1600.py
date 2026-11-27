@@ -25,17 +25,6 @@ from odoo.addons.bemade_sports_clinic.tests.test_identity_guard_1600 import SWIT
 class TestIdentityGuardTours1600(IdentityCommon):
     browser_size = '390x844'
 
-    def test_legacy_confirm_tour(self):
-        self.env['ir.config_parameter'].sudo().set_param(SWITCH, False)
-        self.player.write({'team_ids': [Command.set([self.team_a.id, self.team_c.id])],
-                           'pending_removal': True})
-        self.start_tour('/my/player/edit?patient_id=%s' % self.player.id,
-                        'sc_1600_legacy_confirm', login='pc.tp@example.com')
-        self.player.invalidate_recordset()
-        self.assertEqual(self.player.first_name, 'Patty')
-        self.assertEqual(self.player.team_ids, self.team_a)
-        self.assertFalse(self.player.pending_removal)
-        self.assertEqual(len(self._notes(self.player)), 1)
 
     def test_pencil_confirm_tour(self):
         self.env['ir.config_parameter'].sudo().set_param(SWITCH, 'True')

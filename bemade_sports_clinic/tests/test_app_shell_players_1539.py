@@ -17,7 +17,7 @@ Acceptance criteria covered here:
   every activity sheet carries its CSRF token and return URL; a created note
   clears its device draft on landing.
 * UC-P4 (AC2/AC3/AC5) Player form in the shell: every field is a server
-  autosave field (SAVE_REGISTRY), therapist-only fields are not rendered for
+  autosave field (the save specs), therapist-only fields are not rendered for
   a coach; the primary emergency contact is editable by a coach; the team
   multi-select posts to today's /my/player/save; create keeps the
   search-first flow and posts to /my/player/create/save; the contact add /
@@ -65,7 +65,7 @@ class PlayersCommon1539(AppShellCommon):
 
     @staticmethod
     def _panel(tree, key):
-        nodes = tree.xpath('//section[@data-sc-tab-panel="%s"]' % key)
+        nodes = tree.xpath('//section[@data-pk-tab-panel="%s"]' % key)
         return nodes[0] if nodes else None
 
     @staticmethod
@@ -74,7 +74,7 @@ class PlayersCommon1539(AppShellCommon):
         Task 1736 r1 (deliberate update): scoped to the node passed (was the
         whole page) — the activity cards now carry their own « note » field."""
         out = {}
-        for node in tree.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+        for node in tree.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'):
             props = json.loads(node.get('props'))
             out[props.get('field') or props.get('name')] = props
         return out
@@ -83,16 +83,6 @@ class PlayersCommon1539(AppShellCommon):
 @tagged('post_install', '-at_install')
 class TestAppShellPlayersList1539(PlayersCommon1539):
 
-    # -- UC-P1 -----------------------------------------------------------
-    def test_switch_off_players_legacy(self):
-        for login in (self._login_coach, self._login_tp):
-            login()
-            with patch.object(TeamStaffPortal, '_sc_players_values',
-                              side_effect=AssertionError('shell values computed')):
-                text, tree = self._get('/my/players')
-            self.assertIn('o_portal_search_panel', text)
-            self.assertIsNone(self._shell(tree))
-            self.assertNotIn('data-pk-app-shell', text)
 
     # -- UC-P2 -----------------------------------------------------------
     def test_players_rows_in_shell(self):
@@ -105,11 +95,11 @@ class TestAppShellPlayersList1539(PlayersCommon1539):
         self.assertIn('/my/player?player_id=%s' % self.player.id, hrefs)
         self.assertIn('#12', text)
         # Coach: no « Créer un joueur ».
-        self.assertFalse(tree.xpath('//*[@data-sc-action="players.create"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-action="players.create"]'))
         self._login_tp()
         _text, tree = self._get('/my/players')
         # Task 1607 (deliberate update): « + Ajouter » is in the list header.
-        action = tree.xpath('//div[contains(@class, "o_pk_list_header")]//button[@data-sc-action="players.create"]')
+        action = tree.xpath('//div[contains(@class, "o_pk_list_header")]//button[@data-pk-action="players.create"]')
         # Task 1655: it opens the inline create panel.
         self.assertEqual(action[0].get('aria-controls'), 'sc_player_add')
 
@@ -160,19 +150,6 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         super().setUpClass()
         cls.url = '/my/player?player_id=%s' % cls.player.id
 
-    # -- UC-P1 -----------------------------------------------------------
-    def test_switch_off_player_legacy_and_email_link(self):
-        for login in (self._login_coach, self._login_tp):
-            login()
-            with patch.object(TeamStaffPortal, '_sc_player_values',
-                              side_effect=AssertionError('shell values computed')):
-                text, tree = self._get(self.url)
-            self.assertIn('id="playerTabs"', text)
-            self.assertIn('id="injuries-tab"', text)
-            self.assertIsNone(self._shell(tree))
-        # E-mail deep link shape (data/sports_clinic_data.xml) with a team.
-        text, _tree = self._get(self.url + '&team_id=%s' % self.team_a.id)
-        self.assertIn('id="playerTabs"', text)
 
     # -- UC-P3 -----------------------------------------------------------
     def test_coach_tabs_and_no_therapist_data(self):
@@ -181,7 +158,7 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         text, tree = self._get(self.url)
         self.assertIsNotNone(self._shell(tree))
         self.assertNotIn('id="playerTabs"', text)
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]/a/@data-pk-tab'),
                          ['injuries', 'info', 'documents', 'activities'])
         for secret in ('Hidden synthetic injury', 'Internal synthetic text',
                        'TP-only synthetic remark', 'Synthetic allergy',
@@ -193,7 +170,7 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         self.assertNotIn('training_recommendation', self._owl_fields(tree))
         self.assertIn('Bike 15 min (synthetic)', text)
         self.assertTrue(tree.xpath('//*[@data-pk-section="player.status.readonly"]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-pill-select]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-pill-select]'))
         # « Report Injury » for coaches too, with the team context kept —
         # inline on the Injuries tab since the owner review of 2026-10-10.
         _text, tree = self._get(self.url + '&team_id=%s' % self.team_a.id)
@@ -204,20 +181,20 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         self._switch(True)
         self._login_tp()
         text, tree = self._get(self.url)
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]/a/@data-pk-tab'),
                          ['injuries', 'info', 'documents', 'notes', 'activities'])
         owl = self._owl_fields(tree)
         # Task 1627: the status is the header's Match / Practice pill
         # dropdowns (posting ``sc_status``), not an autosave field.
         self.assertNotIn('sc_status', owl)
-        pills = tree.xpath('//*[@data-sc-pill-select][@data-sc-field="sc_status"]')
-        self.assertEqual([p.get('data-sc-old-value') for p in pills], ['yes:yes', 'yes:yes'])
+        pills = tree.xpath('//*[@data-pk-pill-select][@data-pk-field="sc_status"]')
+        self.assertEqual([p.get('data-pk-old-value') for p in pills], ['yes:yes', 'yes:yes'])
         self.assertEqual(owl['training_recommendation']['mode'], 'server')
         for visible in ('Hidden synthetic injury', 'Synthetic allergy', 'Synthetic team note',
                         'Synthetic history'):
             self.assertIn(visible, text, visible)
         # Legacy #patient-info / #team-info open the Info tab.
-        aliases = tree.xpath('//nav[@data-sc-tabs]/a[@data-sc-tab="info"]/@data-sc-tab-aliases')
+        aliases = tree.xpath('//nav[@data-pk-tabs]/a[@data-pk-tab="info"]/@data-pk-tab-aliases')
         self.assertEqual(aliases, ['patient-info team-info contacts'])
 
     def test_tab_deep_link(self):
@@ -296,7 +273,7 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         self.assertEqual(props['note']['mode'], 'draft')
         self.assertEqual(props['note']['draftKey'], 'sports.patient.%s.new_note.note' % self.player.id)
         _text, tree = self._get(self.url + '&success=note_added#notes')
-        self.assertEqual(tree.xpath('//*[@data-sc-draft-clear]/@data-sc-draft-clear'),
+        self.assertEqual(tree.xpath('//*[@data-pk-draft-clear]/@data-pk-draft-clear'),
                          ['sports.patient.%s.new_note.' % self.player.id])
 
 
@@ -311,23 +288,11 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
     @staticmethod
     def _owl_keys(tree):
         keys = set()
-        for node in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+        for node in tree.xpath('//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'):
             props = json.loads(node.get('props'))
             keys.add('%s.%s' % (props.get('model'), props.get('field') or props.get('name')))
         return keys
 
-    # -- UC-P1 -----------------------------------------------------------
-    def test_switch_off_forms_legacy(self):
-        self._login_tp()
-        for url, marker in ((self.edit_url, 'id="edit-player-form"'),
-                            ('/my/player/create', 'id="create-player-client-error"'),
-                            ('/my/player/contact/add?patient_id=%s' % self.player.id,
-                             'action="/my/player/contact/save"'),
-                            ('/my/player/contact/edit?contact_id=%s' % self.contact.id,
-                             'action="/my/player/contact/update"')):
-            text, tree = self._get(url)
-            self.assertIn(marker, text, url)
-            self.assertIsNone(self._shell(tree), url)
 
     # -- UC-P4 -----------------------------------------------------------
     # Owner review 2026-10-10: the edit page is retired in the shell — the
@@ -366,9 +331,9 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
             self.assertIn('sports.patient.%s' % field, keys, field)
         # Task 1627: the status posts from the header's pills (no island).
         self.assertNotIn('sports.patient.sc_status', keys)
-        self.assertEqual(len(tree.xpath('//*[@data-sc-pill-select][@data-sc-field="sc_status"]')), 2)
+        self.assertEqual(len(tree.xpath('//*[@data-pk-pill-select][@data-pk-field="sc_status"]')), 2)
         teams = [json.loads(p) for p in tree.xpath(
-            '//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')
+            '//owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')
             if json.loads(p).get('field') == 'sc_team_ids'][0]
         self.assertEqual(teams['value'], str(self.team_a.id))
 
@@ -401,19 +366,16 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self._switch(True)
         self._login_tp()
         resp = self.url_open('/my/player/create', allow_redirects=False)
-        self.assertIn(resp.status_code, (302, 303))
+        self.assertEqual(resp.status_code, 301)
         self.assertTrue(resp.headers['Location'].endswith('/my/players?add=1'))
+        # Task 1541: the coach's search-first page (sc_app_player_create,
+        # reachable only by URL — no app link led to it) is retired too: the
+        # old URL lands on the Players list; the coach's create route stays
+        # (test_coach_dob_1633).
         self._login_coach()
-        _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
-        form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
-        self.assertEqual(form.get('action'), '/my/player/create/save')
-        self.assertTrue(form.xpath('.//input[@name="date_of_birth"][@required]'))
-        # Task 1633: a coach's create form has the date of birth too,
-        # required as for therapists (owner review 2026-10-21).
-        self._login_coach()
-        _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
-        form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
-        self.assertTrue(form.xpath('.//input[@name="date_of_birth"][@required]'))
+        resp = self.url_open('/my/player/create?first_name=Nobody&last_name=Synthetic', allow_redirects=False)
+        self.assertEqual(resp.status_code, 301)
+        self.assertTrue(resp.headers['Location'].endswith('/my/players?add=1'))
 
     def test_contact_forms_in_shell(self):
         # Owner review 2026-10-10: added / edited inline on the Contacts tab.

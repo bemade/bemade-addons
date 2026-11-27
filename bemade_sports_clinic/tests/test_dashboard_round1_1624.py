@@ -82,7 +82,7 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         return self.url_open(url, data=data, headers=XHR, allow_redirects=False)
 
     def _title(self, tree, instance_id):
-        node = self._section(tree, instance_id).xpath('.//*[contains(@class, "o_sc_dw_title_text")]')[0]
+        node = self._section(tree, instance_id).xpath('.//*[contains(@class, "o_pk_dash_title_text")]')[0]
         return node.text_content().strip()
 
     # -- UC-R1 ---------------------------------------------------------------
@@ -94,17 +94,17 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         _text, tree = self._get('/my/home')
         self.assertEqual(self._title(tree, 'coverage'), 'Upcoming coverage')
         # The empty state follows the role.
-        self._dash(self.tp)._sc_layout_update('coverage', settings={'scope_team_ids': [self.team_c.id], 'days': 7})
+        self._dash(self.tp)._pk_dash_layout_update('coverage', settings={'scope_team_ids': [self.team_c.id], 'days': 7})
         _text, tree = self._get('/my/home')
         self.assertIn('No upcoming coverage', self._section(tree, 'coverage').text_content())
         # A custom title still wins.
-        self._dash(self.coach)._sc_layout_update('coverage', title='Synthetic games')
+        self._dash(self.coach)._pk_dash_layout_update('coverage', title='Synthetic games')
         self._login_coach()
         _text, tree = self._get('/my/home')
         self.assertEqual(self._title(tree, 'coverage'), 'Synthetic games')
         # The Configurer page names it the same way.
         _text, tree = self._get('/my/app/dashboard/configure')
-        self.assertIn('Upcoming events', tree.xpath('//*[@data-sc-dash-item="coverage"]')[0].text_content())
+        self.assertIn('Upcoming events', tree.xpath('//*[@data-pk-dash-item="coverage"]')[0].text_content())
 
     # -- UC-R2 ---------------------------------------------------------------
     def test_coach_todo_lines(self):
@@ -118,19 +118,19 @@ class TestDashboardRound1_1624(Dashboard1624Common):
 
     # -- UC-R3 ---------------------------------------------------------------
     def test_default_order(self):
-        self.assertEqual([i['id'] for i in self._dash(self.tp)._sc_layout()], TP_ORDER)
-        self.assertEqual([i['id'] for i in self._dash(self.coach)._sc_layout()], COACH_ORDER)
+        self.assertEqual([i['id'] for i in self._dash(self.tp)._pk_dash_layout()], TP_ORDER)
+        self.assertEqual([i['id'] for i in self._dash(self.coach)._pk_dash_layout()], COACH_ORDER)
         # A saved (round-0) layout keeps its order; the new widgets join at the end.
         old = ['today', 'todo', 'recent_changes', 'watch', 'announcements', 'indicators', 'coverage']
-        self.tp.sudo().sc_dashboard_layout = {'v': 1, 'instances': [
+        self.tp.sudo().pk_dashboard_layout = {'v': 1, 'instances': [
             {'id': key, 'widget': key, 'enabled': True, 'settings': {}} for key in old]}
-        layout = self._dash(self.tp)._sc_layout()
+        layout = self._dash(self.tp)._pk_dash_layout()
         # Round 2: the v1 order kept, its first half left, the rest right;
         # the widgets it did not hold join their default zone's end.
         self.assertEqual([i['id'] for i in layout if i['zone'] == 'left'], old[:4] + ['missing_timesheets'])
         self.assertEqual([i['id'] for i in layout if i['zone'] == 'right'], old[4:] + ['followed'])
-        self._dash(self.tp)._sc_layout_reset()
-        self.assertEqual([i['id'] for i in self._dash(self.tp)._sc_layout()], TP_ORDER)
+        self._dash(self.tp)._pk_dash_layout_reset()
+        self.assertEqual([i['id'] for i in self._dash(self.tp)._pk_dash_layout()], TP_ORDER)
 
     # -- UC-R4 ---------------------------------------------------------------
     def test_todo_activity_cards(self):
@@ -157,7 +157,7 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         self.assertTrue(overdue[0].xpath('.//button[@data-sc-action="activity.complete"]'))
         # Task 1736 r1 (deliberate update): « Reschedule » is the card's
         # pencil (inline edit); a tap on the card opens the details popout.
-        self.assertTrue(overdue[0].xpath('.//button[@data-sc-action="activity.edit"]'))
+        self.assertTrue(overdue[0].xpath('.//button[@data-pk-action="activity.edit"]'))
         self.assertFalse(overdue[0].xpath('.//button[@data-sc-action="activity.reschedule"]'))
         for sheet in ('sc_activity_complete_sheet', 'sc_activity_detail_sheet'):
             self.assertEqual(len(tree.xpath('//dialog[@id="%s"]' % sheet)), 1, sheet)
@@ -188,7 +188,7 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         self.assertEqual([int(i) for i in returns.xpath('.//*[@data-sc-player-id]/@data-sc-player-id')],
                          [self.shared.id])
         # The player cards keep their lazy « Details ».
-        self.assertTrue(returns.xpath('.//*[@data-sc-row-expand]'))
+        self.assertTrue(returns.xpath('.//*[@data-pk-row-expand]'))
         # Unique ids on the page.
         ids = tree.xpath('//@id')
         self.assertEqual(len(ids), len(set(ids)), [i for i in ids if ids.count(i) > 1])
@@ -226,7 +226,7 @@ class TestDashboardRound1_1624(Dashboard1624Common):
             './/*[@data-sc-event-id]/@data-sc-event-id') if int(i) in mine]
 
     def test_missing_timesheets_widget(self):
-        self.assertNotIn('missing_timesheets', [s['key'] for s in self._dash(self.coach)._sc_widgets()])
+        self.assertNotIn('missing_timesheets', [s['key'] for s in self._dash(self.coach)._pk_dash_widgets()])
         self._login_tp()
         _text, tree = self._get('/my/home')
         # Default 30 days back, newest first; my timesheet / cancelled / older never.
@@ -235,11 +235,11 @@ class TestDashboardRound1_1624(Dashboard1624Common):
             './/a[@data-sc-action="dashboard.timesheet.add"]/@href')
         self.assertIn('/my/event/%s?add_timesheet=1' % self.ev_missing.id, ' '.join(add))
         # Days back.
-        self._dash(self.tp)._sc_layout_update('missing_timesheets', settings={'days_back': 60})
+        self._dash(self.tp)._pk_dash_layout_update('missing_timesheets', settings={'days_back': 60})
         _text, tree = self._get('/my/home')
         self.assertIn(self.ev_missing_old.id, self._missing_ids(tree))
         # Portée.
-        self._dash(self.tp)._sc_layout_update(
+        self._dash(self.tp)._pk_dash_layout_update(
             'missing_timesheets', settings={'scope_team_ids': [self.team_c.id], 'days_back': 30})
         _text, tree = self._get('/my/home')
         self.assertEqual(self._missing_ids(tree), [self.ev_missing_c.id])
@@ -251,17 +251,17 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         # A coach never gets the section.
         self._login_coach()
         _text, tree = self._get('/my/home')
-        self.assertFalse(tree.xpath('//section[@data-sc-widget="missing_timesheets"]'))
+        self.assertFalse(tree.xpath('//section[@data-pk-dash-widget="missing_timesheets"]'))
         with self.assertRaises(Exception):
-            self._dash(self.coach)._sc_layout_add('missing_timesheets')
+            self._dash(self.coach)._pk_dash_layout_add('missing_timesheets')
 
     def test_add_timesheet_deep_link_opens_sheet(self):
         self._login_tp()
         _text, tree = self._get('/my/event/%s?add_timesheet=1' % self.ev_missing.id)
-        self.assertTrue(tree.xpath('//dialog[@id="sc_ts_add_sheet"][@data-sc-sheet-open-on-load="1"]'))
+        self.assertTrue(tree.xpath('//dialog[@id="sc_ts_add_sheet"][@data-pk-sheet-open-on-load="1"]'))
         _text, tree = self._get('/my/event/%s' % self.ev_missing.id)
         self.assertTrue(tree.xpath('//dialog[@id="sc_ts_add_sheet"]'))
-        self.assertFalse(tree.xpath('//dialog[@id="sc_ts_add_sheet"][@data-sc-sheet-open-on-load]'))
+        self.assertFalse(tree.xpath('//dialog[@id="sc_ts_add_sheet"][@data-pk-sheet-open-on-load]'))
 
     # -- UC-R7 ---------------------------------------------------------------
     def test_follow_and_unfollow(self):
@@ -323,9 +323,9 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         ids = [int(i) for i in section.xpath('.//*[@data-sc-player-id]/@data-sc-player-id')]
         self.assertEqual(sorted(ids), sorted((self.red | self.yellow).ids))
         # Full cards: the lazy « Details ».
-        self.assertTrue(section.xpath('.//*[@data-sc-row-expand]'))
+        self.assertTrue(section.xpath('.//*[@data-pk-row-expand]'))
         # Portée.
-        self._dash(self.tp)._sc_layout_update('followed', settings={'scope_team_ids': [self.team_c.id]})
+        self._dash(self.tp)._pk_dash_layout_update('followed', settings={'scope_team_ids': [self.team_c.id]})
         _text, tree = self._get('/my/home')
         section = self._section(tree, 'followed')
         self.assertEqual([int(i) for i in section.xpath('.//*[@data-sc-player-id]/@data-sc-player-id')],

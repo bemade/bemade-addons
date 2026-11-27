@@ -59,7 +59,7 @@ class ProductTemplate(models.Model):
             # relevant part of product.pricelist._compute_price_rule, mirroring
             # product_pricelist_supplierinfo (pricelist methods are atomic, so
             # we cannot defer to super for this).
-            qty_uom_id = self._context.get("uom") or self.uom_id.id
+            qty_uom_id = self.env.context.get("uom") or self.uom_id.id
             price_uom = self.env["uom.uom"].browse([qty_uom_id])
             price_limit = price
             price = (price - (price * (rule.price_discount / 100))) or 0.0

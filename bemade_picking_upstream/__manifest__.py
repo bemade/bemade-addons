@@ -10,7 +10,7 @@
 #
 {
     "name": "Show Upstream Pickings",
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.0.2",
     "summary": "Show upstream pickings when a picking is waiting on other moves.",
     "category": "Stock",
     "author": "Bemade Inc.",

@@ -20,9 +20,10 @@ def _recursive_aware_validator(arch, **kwargs):
         # Deep copy the arch element to avoid mutating the original
         arch_copy = etree.fromstring(etree.tostring(arch))
         
-        # Strip the 'recursive' attribute on the root if present
-        if "recursive" in arch_copy.attrib:
-            del arch_copy.attrib["recursive"]
+        # Strip the 'recursive' / 'recursive_depth' attributes on the root
+        for attribute in ("recursive", "recursive_depth"):
+            if attribute in arch_copy.attrib:
+                del arch_copy.attrib[attribute]
         
         # Get original validators for this view type
         original_validators = _original_validators.get(view_type, [])

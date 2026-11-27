@@ -30,7 +30,7 @@ from odoo.tests import tagged
 from .portal_cov_common import PortalCovCommon
 
 SECRET = 'ZZ-1544-coach-flow-secret'
-SWITCH = 'bemade_sports_clinic.app_shell_enabled'
+SWITCH = 'bemade_portal_kit.enabled'
 
 
 @tagged('-at_install', 'post_install')
@@ -59,7 +59,9 @@ class TestInternalNotesCoachFlows1544(PortalCovCommon):
         self._get_ok('/my/players')
         resp = self._get_ok('/my/player?player_id=%s' % self.player.id)
         self.assertIn('ZZ ext visible', resp.text)
-        self._get_ok('/my/player/%s/recent-changes' % self.player.id)
+        # Task 1541: the app's recent changes are the detail fragment (the
+        # bare URL is gone, 404); the old injury edit URL lands on the card.
+        self._get_ok('/my/player/%s/recent-changes?detail=1' % self.player.id)
         self._get_ok('/my/injury/edit?injury_id=%s' % self.injury.id)
 
     def test_coach_pages_app_shell(self):
@@ -71,10 +73,17 @@ class TestInternalNotesCoachFlows1544(PortalCovCommon):
         self._get_ok('/my/player?player_id=%s' % self.player.id)
 
     def test_tp_still_sees_internal_note_on_card(self):
+        # Task 1541 (rewritten): the app's roster row detail (the legacy team
+        # card is gone) — the TP's keeps the internal note, the coach's never.
+        url = '/my/player/%s/row-detail?team_id=%s' % (self.player.id, self.team_a.id)
         self._login_tp()
-        resp = self.url_open('/my/team/%s' % self.team_a.id)
+        resp = self.url_open(url)
         self.assertEqual(resp.status_code, 200)
         self.assertIn(SECRET, resp.text, 'the TP card keeps the internal note')
+        self._login_coach()
+        resp = self.url_open(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn(SECRET, resp.text)
 
     def test_card_detail_for_coach_env(self):
         """The live card's injury dict built in the coach's env: no error, no
@@ -135,7 +144,6 @@ class TestInternalNotesCoachFlows1544(PortalCovCommon):
                 [('patient_id', '=', self.player.id)]), before + 1)
         self.assertFalse(created.internal_notes, 'a coach cannot set internal notes')
         self.assertFalse(created.external_notes, '#1675: nor the external note')
-        self.assertIn('data-sc-warning="external_notes_readonly"', resp.text)
 
     def test_coach_edits_injury(self):
         self._login_coach()
@@ -145,7 +153,6 @@ class TestInternalNotesCoachFlows1544(PortalCovCommon):
             'internal_notes': 'ZZ coach sneaky',
         })
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('warning=external_notes_readonly', resp.url)
         self.injury.invalidate_recordset()
         self.assertEqual(self.injury.external_notes, 'ZZ ext visible', '#1675: coaches no longer write it')
         self.assertEqual(self.injury.internal_notes, SECRET, 'internal notes untouched')
@@ -156,8 +163,8 @@ class TestInternalNotesCoachFlows1544(PortalCovCommon):
             'csrf_token': self._csrf(), 'injury_id': self.injury.id, 'partial': '1',
             'external_notes': 'ZZ partial ext', 'internal_notes': 'ZZ coach sneaky',
         })
+        # Task 1541: a partial save writes nothing any more.
         self.assertIn(resp.status_code, (200, 204))
-        self.assertIn('warning=external_notes_readonly', resp.url)
         self.injury.invalidate_recordset()
         self.assertEqual(self.injury.external_notes, 'ZZ ext visible', '#1675: coaches no longer write it')
         self.assertEqual(self.injury.internal_notes, SECRET)

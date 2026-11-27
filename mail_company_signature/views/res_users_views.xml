@@ -11,6 +11,11 @@
             <field name="signature" position="before">
                 <field name="company_signature_enforced" invisible="1" />
                 <field name="company_signature_manual" groups="base.group_system" />
+                <field
+          name="mail_send_as_alias_id"
+          groups="base.group_system"
+          options="{'no_create': True}"
+        />
             </field>
             <field name="signature" position="after">
                 <div
@@ -49,6 +54,20 @@
                 <field name="employee_id" invisible="1" />
             </field>
             <field name="signature" position="after">
+                <div
+          class="o_company_signature_copy d-flex justify-content-end"
+          colspan="2"
+          invisible="not signature"
+        >
+                    <field
+            name="signature"
+            widget="CopyClipboardButton"
+            string="Copy signature HTML"
+            options="{'btn_class': 'secondary'}"
+            nolabel="1"
+            readonly="1"
+          />
+                </div>
                 <div
           class="text-muted"
           colspan="2"

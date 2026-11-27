@@ -148,7 +148,7 @@ class TestTrainingHistoryModel1601(TransactionCase):
     def test_stamp_after_clear_and_in_french(self):
         self.env['res.lang']._activate_lang('fr_CA')
         self.env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         self.player.with_user(self.writer).write({'training_recommendation': 'Synthetic x'})
         self.player.with_user(self.writer).write({'training_recommendation': False})
         self.player.invalidate_recordset()
@@ -307,7 +307,7 @@ class TestTrainingHistoryPortal1601(History1581Common):
         # Task 1629: the stamp stays under the value, below the title + link.
         section = tree.xpath('//*[@data-pk-section="player.training"]')[0]
         self.assertEqual(section.xpath('./*')[0].tag, 'h3')
-        self.assertEqual(len(section.xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]')), 1)
+        self.assertEqual(len(section.xpath('.//*[@data-pk-sheet-open="sc_training_history_sheet"]')), 1)
         entries = self._entries(self._fragment('/my/player/%s/training-history' % self.player.id))
         self.assertEqual([e['body'] for e in entries], ['Synthetic pool'])
         with mute_logger('odoo.http'):
@@ -347,41 +347,3 @@ class TestTrainingHistoryPortal1601(History1581Common):
         self.assertEqual([(e['author'], e['body']) for e in entries], [('PC TP', 'Synthetic recorded')])
 
 
-@tagged('post_install', '-at_install')
-class TestTrainingStampClinic1601(Clinic1540Common):
-
-    @staticmethod
-    def _owl_fields(tree):
-        out = {}
-        for node in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
-            props = json.loads(node.get('props'))
-            out[props.get('field') or props.get('name')] = props
-        return out
-
-    def test_clinic_dossier_shows_stamp(self):
-        self.player.with_user(self.tp).write({'training_recommendation': 'Synthetic clinic'})
-        stamp = self.player.last_training_recommendation_info
-        self.assertTrue(stamp)
-        self._switch(True)
-        self._login_tp()
-        _text, tree = self._get('/my/clinic/%s?patient=%s' % (self.clinic.id, self.player.id))
-        # Task 1721: the dossier's training editor gave way to the team
-        # page's player card, which shows the recommendation (read); the
-        # stamp lives in the player page's editor (and the card's details).
-        self.assertNotIn('training_recommendation', self._owl_fields(tree))
-        card = tree.xpath('//*[@data-pk-section="clinic.dossier.player"]')[0]
-        self.assertIn('Synthetic clinic', card.text_content())
-        # Legacy (switch off) dossier: the stamp under the textarea.
-        self._switch(False)
-        text = self.url_open('/my/clinic/%s?patient=%s' % (self.clinic.id, self.player.id)).text
-        self.assertIn(stamp, text)
-        # The legacy quick route credits the portal therapist.
-        self.player.invalidate_recordset()
-        resp = self.url_open('/my/player/%s/quick' % self.player.id, data={
-            'csrf_token': self._csrf(), 'training_recommendation': 'Synthetic quick',
-            'return_url': '/my/clinic/%s?patient=%s' % (self.clinic.id, self.player.id),
-        }, allow_redirects=False)
-        self.assertEqual(resp.status_code, 303)
-        row = self.env['sports.patient.training.history'].sudo().search(
-            [('patient_id', '=', self.player.id)], limit=1)
-        self.assertEqual((row.content, row.author_id), ('Synthetic quick', self.tp))

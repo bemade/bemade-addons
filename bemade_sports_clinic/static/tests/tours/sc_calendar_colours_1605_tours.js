@@ -9,10 +9,10 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const CAL = ".o_sc_calendar_box[data-sc-calendar-ready='1']";
+const CAL = ".o_pk_calendar_box[data-pk-calendar-ready='1']";
 const EVENT = ".fc-event"; // list rows carry it too
-const LEGEND = '.o_sc_staff_legend[data-pk-section="calendar.legend"]';
-const SECOND = `${LEGEND} button.o_sc_staff_legend_item:contains(ZZ Second TP 1605)`;
+const LEGEND = '.o_pk_calendar_legend[data-pk-section="calendar.legend"]';
+const SECOND = `${LEGEND} button.o_pk_calendar_legend_item:contains(ZZ Second TP 1605)`;
 
 function assert(condition, message) {
     if (!condition) {
@@ -21,14 +21,14 @@ function assert(condition, message) {
 }
 
 function dotOf(title) {
-    const row = [...document.querySelectorAll(`.o_sc_calendar ${EVENT}`)].find((el) =>
+    const row = [...document.querySelectorAll(`.o_pk_calendar ${EVENT}`)].find((el) =>
         el.textContent.includes(title)
     );
-    return row && row.querySelector(".o_sc_staff_dot");
+    return row && row.querySelector(".o_pk_calendar_dot");
 }
 
 function calendarText() {
-    return document.querySelector(".o_sc_calendar").textContent;
+    return document.querySelector(".o_pk_calendar").textContent;
 }
 
 function noOverflow() {
@@ -42,20 +42,20 @@ tours.add("sc_1605_calendar_colours", {
     steps: () => [
         {
             content: "Each event has a dot: one colour, a split circle, grey",
-            trigger: `${CAL} ${EVENT}:contains(SC 1605 Nobody) .o_sc_staff_dot`,
+            trigger: `${CAL} ${EVENT}:contains(SC 1605 Nobody) .o_pk_calendar_dot`,
             run() {
                 const solo = dotOf("SC 1605 Solo");
                 assert(solo, "Solo has a dot");
-                assert(!solo.dataset.scStaffDot.includes(","), `solo: ${solo.dataset.scStaffDot}`);
+                assert(!solo.dataset.pkCalendarDot.includes(","), `solo: ${solo.dataset.pkCalendarDot}`);
                 assert(/^rgb|^#/.test(solo.style.background), `solo bg: ${solo.style.background}`);
                 assert(solo.getAttribute("aria-label") === "PC TP", solo.getAttribute("aria-label"));
                 const duo = dotOf("SC 1605 Duo");
-                assert(duo.dataset.scStaffDot.split(",").length === 2, `duo: ${duo.dataset.scStaffDot}`);
+                assert(duo.dataset.pkCalendarDot.split(",").length === 2, `duo: ${duo.dataset.pkCalendarDot}`);
                 assert(duo.style.background.includes("conic-gradient"), `duo bg: ${duo.style.background}`);
                 assert(duo.title.includes("ZZ Second TP 1605"), duo.title);
                 const nobody = dotOf("SC 1605 Nobody");
-                assert(nobody.classList.contains("o_sc_staff_dot_none"), "unassigned is grey");
-                assert(nobody.dataset.scStaffDot === "none", nobody.dataset.scStaffDot);
+                assert(nobody.classList.contains("o_pk_calendar_dot_none"), "unassigned is grey");
+                assert(nobody.dataset.pkCalendarDot === "none", nobody.dataset.pkCalendarDot);
             },
         },
         {
@@ -64,7 +64,7 @@ tours.add("sc_1605_calendar_colours", {
             run() {
                 const legend = document.querySelector(LEGEND).textContent;
                 assert(legend.includes("PC TP"), "PC TP in the legend");
-                assert(document.querySelector(`${LEGEND} [data-sc-staff-legend="none"]`), "unassigned key");
+                assert(document.querySelector(`${LEGEND} [data-pk-calendar-legend="none"]`), "unassigned key");
                 assert(this.anchor.getAttribute("aria-pressed") === "false", "not filtered yet");
                 noOverflow();
                 this.anchor.click();
@@ -81,7 +81,7 @@ tours.add("sc_1605_calendar_colours", {
             run() {
                 const params = new URLSearchParams(window.location.search);
                 assert(params.get("assigned_user_id"), `url: ${window.location.search}`);
-                assert(window.location.hash.includes("sc_date="), `hash: ${window.location.hash}`);
+                assert(window.location.hash.includes("pk_date="), `hash: ${window.location.hash}`);
                 const text = calendarText();
                 assert(!text.includes("SC 1605 Solo"), "Solo is filtered out");
                 assert(!text.includes("SC 1605 Nobody"), "Nobody is filtered out");

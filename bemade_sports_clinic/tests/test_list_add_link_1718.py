@@ -13,7 +13,7 @@ Acceptance criteria:
   the FIRST item (just above the list's top-left edge, where the filled
   button sat) and carries no « + » icon — AC-1's « the plus icon » too.
 * AC-3 The toggle/aria behaviour is unchanged (``aria-controls``,
-  ``aria-expanded``, ``data-pk-list-add-toggle``; ``data-sc-sheet-open``).
+  ``aria-expanded``, ``data-pk-list-add-toggle``; ``data-pk-sheet-open``).
 * AC-4 Form submit buttons inside the panels stay filled.
 
 The look (light/dark, 44 px target, the open state) stays UNVERIFIED until
@@ -57,7 +57,7 @@ class TestListAddLink1718(ListHeader1607Common):
                 self._check(add)
                 if add.tag == 'a':
                     seen.add('url')
-                elif add.get('data-sc-sheet-open'):
+                elif add.get('data-pk-sheet-open'):
                     seen.add('sheet')
                 elif add.get('data-pk-list-add-toggle'):
                     seen.add('panel')

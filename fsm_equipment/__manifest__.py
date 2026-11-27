@@ -19,7 +19,7 @@
 #
 {
     "name": "FSM Equipment",
-    "version": "19.0.0.2.0",
+    "version": "19.0.0.3.2",
     "summary": "Add the notion of client equipment for Field Service",
     "category": "Services/Field Service",
     "author": "Bemade Inc.",
@@ -32,7 +32,11 @@
         "views/res_partner_views.xml",
         "views/project_task_views.xml",
     ],
-    "assets": {},
+    "assets": {
+        "web.assets_backend": [
+            "fsm_equipment/static/src/scss/fsm_equipment.scss",
+        ],
+    },
     "installable": True,
     "auto_install": False,
 }

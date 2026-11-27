@@ -6,6 +6,7 @@ from unittest.mock import patch
 from odoo import http
 from odoo.tests import tagged
 from odoo.tests.common import HttpCase
+from odoo.tools.misc import mute_logger
 
 _logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ class TestFSMVisitConfirmation(HttpCase):
         """Override http_port to handle Odoo 18.0 PreforkServer changes"""
         import odoo.tools.config
         import odoo.service.server
-        
+
         try:
             if odoo.service.server.server is not None:
                 server = odoo.service.server.server
@@ -32,7 +33,7 @@ class TestFSMVisitConfirmation(HttpCase):
                     return getattr(server, 'port')
         except (AttributeError, TypeError):
             pass
-        
+
         # Final fallback to config
         return odoo.tools.config['http_port']
 
@@ -94,10 +95,10 @@ class TestFSMVisitConfirmation(HttpCase):
         from odoo.addons.fsm_visit_confirmation.controllers.main import CustomerPortalExtended
         from odoo.addons.http_routing.tests.common import MockRequest
         from unittest.mock import patch
-        
+
         # Create controller instance
         controller = CustomerPortalExtended()
-        
+
         # Patch HttpCase.http_port to use our safe implementation
         with patch('odoo.tests.common.HttpCase.http_port', self.http_port):
             with MockRequest(self.env):
@@ -105,7 +106,7 @@ class TestFSMVisitConfirmation(HttpCase):
                 response = controller.fsm_confirmation_action(
                     "approve", access_token=self.token
                 )
-                
+
                 # Verify we got a redirect response (werkzeug Response object)
                 self.assertTrue(hasattr(response, 'status_code'), "Should return a response object")
 
@@ -184,7 +185,7 @@ class TestFSMVisitConfirmation(HttpCase):
         from odoo.addons.fsm_visit_confirmation.controllers.main import CustomerPortalExtended
         from odoo.addons.http_routing.tests.common import MockRequest
         from unittest.mock import patch
-        
+
         # Create controller instance
         controller = CustomerPortalExtended()
         feedback = "Need some changes"
@@ -194,7 +195,7 @@ class TestFSMVisitConfirmation(HttpCase):
             with MockRequest(self.env):
                 # First test the change action (should redirect to form)
                 response = controller.fsm_confirmation_action("change", access_token=self.token)
-                
+
                 # Verify we got a redirect response (werkzeug Response object)
                 self.assertTrue(hasattr(response, 'status_code'), "Should return a response object")
 
@@ -240,7 +241,7 @@ class TestFSMVisitConfirmation(HttpCase):
                 "name": "Water Shutdown Required",
                 "description": "You will not have water during this service visit.",
             })
-        
+
         # Set requirements on the task
         self.task.write({
             "client_requirement_ids": [(6, 0, [req.id])],
@@ -258,7 +259,7 @@ class TestFSMVisitConfirmation(HttpCase):
 
         # Find the generated mail
         new_mail = self.env["mail.mail"].search([], order="id desc", limit=1)
-        
+
         # Verify client requirements notice appears in email body
         self.assertIn("Important Requirements for Your Visit", new_mail.body_html, "Email should contain requirements header")
         self.assertIn("Water Shutdown Required", new_mail.body_html, "Email should contain requirement name")
@@ -283,7 +284,7 @@ class TestFSMVisitConfirmation(HttpCase):
 
         # Find the generated mail
         new_mail = self.env["mail.mail"].search([], order="id desc", limit=1)
-        
+
         # Verify requirements section does NOT appear in email body
         self.assertNotIn("Important Requirements for Your Visit", new_mail.body_html, "Email should NOT contain requirements section when no requirements")
 
@@ -308,7 +309,7 @@ class TestFSMVisitConfirmation(HttpCase):
                 "name": "Power Shutdown Required",
                 "description": "Power will be interrupted briefly.",
             })
-        
+
         # Set requirements on the task
         self.task.write({
             "client_requirement_ids": [(6, 0, [req1.id, req2.id])],
@@ -325,7 +326,7 @@ class TestFSMVisitConfirmation(HttpCase):
 
         # Find the generated mail
         new_mail = self.env["mail.mail"].search([], order="id desc", limit=1)
-        
+
         # Verify both requirements appear in email
         self.assertIn("Water Shutdown Required", new_mail.body_html, "Email should contain first requirement")
         self.assertIn("Power Shutdown Required", new_mail.body_html, "Email should contain second requirement")
@@ -503,6 +504,7 @@ class TestFSMVisitConfirmationController(HttpCase):
                     "bogus", access_token=self.token
                 )
 
+    @mute_logger("odoo.addons.fsm_visit_confirmation.controllers.main")
     def test_action_approve_exception_renders_error(self):
         """If message_post raises during approve, the except branch renders an
         error page (lines 101-103)."""
@@ -535,6 +537,7 @@ class TestFSMVisitConfirmationController(HttpCase):
             )
         self.assertTrue(hasattr(response, "status_code"))
 
+    @mute_logger("odoo.addons.fsm_visit_confirmation.controllers.main")
     def test_submit_change_exception_renders_error(self):
         """If message_post raises during submit_change, the except branch renders
         an error page (lines 163-165)."""

@@ -65,20 +65,20 @@ class TestDashboardWidgets1624(Dashboard1624Common):
     # -- UC-W0 ---------------------------------------------------------------
     def test_sections_order_titles_and_no_my_teams(self):
         dash = self._dash(self.tp)
-        dash._sc_layout_move('coverage', -1)
-        dash._sc_layout_update('today', enabled=False)
-        dash._sc_layout_update('todo', title='Synthetic chores')
+        dash._pk_dash_layout_move('coverage', -1)
+        dash._pk_dash_layout_update('today', enabled=False)
+        dash._pk_dash_layout_update('todo', title='Synthetic chores')
         self._login_tp()
         text, tree = self._get('/my/home')
-        ids = [s.get('data-sc-instance') for s in self._sections(tree)]
+        ids = [s.get('data-pk-dash-instance') for s in self._sections(tree)]
         # Review round 2: the default, zone by zone (left, right, bottom).
         self.assertEqual(ids, ['coverage', 'todo', 'missing_timesheets', 'indicators', 'announcements',
                                'followed', 'recent_changes', 'watch'])
-        title = self._section(tree, 'todo').xpath('.//*[contains(@class, "o_sc_dw_title_text")]')[0]
+        title = self._section(tree, 'todo').xpath('.//*[contains(@class, "o_pk_dash_title_text")]')[0]
         self.assertEqual(title.text_content().strip(), 'Synthetic chores')
         self.assertNotIn('My teams', text)
         self.assertFalse(tree.xpath('//a[@data-sc-team-id]'))
-        self.assertTrue(tree.xpath('//a[@data-sc-action="dashboard.configure"]'
+        self.assertTrue(tree.xpath('//a[@data-pk-action="dashboard.configure"]'
                                    '[@href="/my/app/dashboard/configure"]'))
         text, _tree = self._get('/my/home?classic=1')
         self.assertIn('o_portal_my_home', text)
@@ -142,7 +142,7 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         returns = todo.xpath('.//*[@data-sc-todo="returns"]')[0]
         self.assertIn('Synth, Shared', returns.text_content())
         # The kinds filter hides a kind.
-        self._dash(self.tp)._sc_layout_update('todo', settings={'kinds': ['returns']})
+        self._dash(self.tp)._pk_dash_layout_update('todo', settings={'kinds': ['returns']})
         _text, tree = self._get('/my/home')
         todo = self._section(tree, 'todo')
         self.assertFalse(todo.xpath('.//*[@data-sc-todo="verify"]'))
@@ -178,19 +178,19 @@ class TestDashboardWidgets1624(Dashboard1624Common):
             _text, tree = self._get('/my/home')
         section = self._section(tree, 'recent_changes')
         self.assertEqual(set(self._player_ids(section)), set(changed.ids))
-        detail = section.xpath('.//*[@data-sc-player-id="%s"]//*[@data-sc-row-detail]/@data-sc-lazy-url'
+        detail = section.xpath('.//*[@data-sc-player-id="%s"]//*[@data-sc-row-detail]/@data-pk-lazy-url'
                                % self.yellow.id)[0]
         self.assertIn('/my/player/%s/recent-changes?detail=1' % self.yellow.id, detail)
-        self.assertTrue(section.xpath('.//*[@data-sc-player-id="%s"]//a[@data-sc-row-link]' % self.yellow.id))
-        self.assertFalse(section.xpath('.//a[@data-sc-action="dashboard.history"]'))
+        self.assertTrue(section.xpath('.//*[@data-sc-player-id="%s"]//a[@data-pk-row-link]' % self.yellow.id))
+        self.assertFalse(section.xpath('.//a[@data-pk-action="dashboard.history"]'))
         # One team in scope: « History » (its digest list).
-        self._dash(self.tp)._sc_layout_update(
+        self._dash(self.tp)._pk_dash_layout_update(
             'recent_changes', settings={'scope_team_ids': [self.team_c.id]})
         with self._presence(changed):
             _text, tree = self._get('/my/home')
         section = self._section(tree, 'recent_changes')
         self.assertEqual(self._player_ids(section), [self.yellow.id])
-        self.assertEqual(section.xpath('.//a[@data-sc-action="dashboard.history"]/@href'),
+        self.assertEqual(section.xpath('.//a[@data-pk-action="dashboard.history"]/@href'),
                          ['/my/team/%s/digest-history' % self.team_c.id])
 
     # -- UC-W4 ---------------------------------------------------------------
@@ -202,7 +202,7 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         ids = self._player_ids(self._section(tree, 'watch'))
         # Red / yellow, not the changed one, each once, red first.
         self.assertEqual(ids, [self.shared.id, self.yellow.id])
-        self._dash(self.tp)._sc_layout_update('watch', settings={'level': 'red'})
+        self._dash(self.tp)._pk_dash_layout_update('watch', settings={'level': 'red'})
         with self._presence(self.red):
             _text, tree = self._get('/my/home')
         self.assertEqual(self._player_ids(self._section(tree, 'watch')), [self.shared.id])
@@ -235,7 +235,7 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         self.assertEqual(self._dash(self.cadmin)._sc_data_indicators(
             self._dash(self.cadmin)._sc_scope_teams({})), {'no_play': 2, 'practice_ok': 0, 'healthy': 1})
         # ... only when the admin scopes to it.
-        self._dash(self.cadmin)._sc_layout_update(
+        self._dash(self.cadmin)._pk_dash_layout_update(
             'indicators', settings={'scope_team_ids': [self.team_b.id]})
         self._login_cadmin()
         _text, tree = self._get('/my/home')
@@ -252,13 +252,13 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         self._login_tp()
         _text, tree = self._get('/my/home')
         self.assertEqual(self._coverage_ids(tree), [self.ev_soon.id])
-        self._dash(self.tp)._sc_layout_update('coverage', settings={'days': 30})
+        self._dash(self.tp)._pk_dash_layout_update('coverage', settings={'days': 30})
         _text, tree = self._get('/my/home')
         self.assertEqual(self._coverage_ids(tree), [self.ev_soon.id, self.ev_far.id])
         self.assertIn('30', self._section(tree, 'coverage').xpath(
             './/*[contains(@class, "o_pk_section_sub")]')[0].text_content())
         # Scoped to Team C: only its events.
-        self._dash(self.tp)._sc_layout_update('coverage', settings={'scope_team_ids': [self.team_c.id]})
+        self._dash(self.tp)._pk_dash_layout_update('coverage', settings={'scope_team_ids': [self.team_c.id]})
         _text, tree = self._get('/my/home')
         self.assertEqual(self._coverage_ids(tree), [self.ev_far.id])
         # A coach: my teams' events (not Team B's), never cancelled.
@@ -276,7 +276,7 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         self._login_tp()
         with self._presence(self.red):
             _text, tree = self._get('/my/home')
-        self.assertTrue(tree.xpath('//section[@data-sc-instance="watch"]'
+        self.assertTrue(tree.xpath('//section[@data-pk-dash-instance="watch"]'
                                    '//*[@data-sc-med-level="unset"]'))
         self._login_coach()
         with self._presence(self.red):
@@ -287,20 +287,20 @@ class TestDashboardWidgets1624(Dashboard1624Common):
     # -- UC-W9 ---------------------------------------------------------------
     def test_second_watch_instance(self):
         dash = self._dash(self.tp)
-        new_id = dash._sc_layout_add('watch')
-        dash._sc_layout_update(new_id, title='Watch C only',
+        new_id = dash._pk_dash_layout_add('watch')
+        dash._pk_dash_layout_update(new_id, title='Watch C only',
                                settings={'scope_team_ids': [self.team_c.id]})
-        dash._sc_layout_move(new_id, -1)
+        dash._pk_dash_layout_move(new_id, -1)
         self._login_tp()
         _text, tree = self._get('/my/home')
-        ids = [s.get('data-sc-instance') for s in self._sections(tree)]
+        ids = [s.get('data-pk-dash-instance') for s in self._sections(tree)]
         # Round 2: added to the shorter column (right), then one up.
         self.assertEqual(self._instance(self.tp, new_id)['zone'], 'right')
         self.assertEqual(ids.index(new_id), ids.index('followed') - 1)
         second = self._section(tree, new_id)
         self.assertIn('Watch C only', second.text_content())
-        self.assertIn('DB Team C', second.xpath('.//*[@data-sc-dw-scope]')[0].text_content())
+        self.assertIn('DB Team C', second.xpath('.//*[@data-pk-dash-scope]')[0].text_content())
         self.assertEqual(sorted(self._player_ids(second)), sorted((self.shared | self.yellow).ids))
         # Row fragments / detail ids stay unique on the page.
-        frags = tree.xpath('//*[@data-sc-fragment]/@data-sc-fragment')
+        frags = tree.xpath('//*[@data-pk-fragment]/@data-pk-fragment')
         self.assertEqual(len(frags), len(set(frags)))

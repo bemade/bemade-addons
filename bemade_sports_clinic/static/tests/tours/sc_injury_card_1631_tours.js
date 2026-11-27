@@ -19,7 +19,7 @@ const CARD = "details.o_sc_injury_item[open]";
 const DETAILS = `${CARD} [data-pk-edit-card="injury-details"]`;
 // Task 1675: the Notes section (one « History » in its head), one edit card per note.
 const NOTES = `${CARD} section[data-pk-section="injury.notes"]`;
-const FIELD = `${NOTES} .o_pk_autosave[data-sc-field="external_notes"]`;
+const FIELD = `${NOTES} .o_pk_autosave[data-pk-autosave-field="external_notes"]`;
 const PROPOSAL = "#sc_proposal_sheet";
 const NEW_NOTE = "Synthetic rewritten 1631";
 
@@ -44,13 +44,13 @@ async function waitFor(check, what, timeout = 5000) {
 }
 
 function toggle(scope, key, tone = "") {
-    return `${scope} [data-sc-pill-select][data-sc-pill-key="${key}"]:not([aria-busy]) button.o_pk_pill_select${
+    return `${scope} [data-pk-pill-select][data-pk-pill-key="${key}"]:not([aria-busy]) button.o_pk_pill_select${
         tone ? `.o_pk_chip_${tone}` : ""
     }`;
 }
 
 function item(scope, key, value) {
-    return `${scope} [data-sc-pill-key="${key}"] [role="menuitemradio"][data-sc-pill-value="${value}"]`;
+    return `${scope} [data-pk-pill-key="${key}"] [role="menuitemradio"][data-pk-pill-value="${value}"]`;
 }
 
 function pick(scope, key, value, fromTone) {
@@ -67,7 +67,7 @@ tours.add("sc_1631_injury_card", {
             trigger: toggle(`${CARD} > summary`, "stage", "red"),
             run() {
                 window.__sc1631NoReload = true;
-                assert(!document.querySelector(`${CARD} .o_pk_autosave[data-sc-field="stage"]`), "a status selector in the body");
+                assert(!document.querySelector(`${CARD} .o_pk_autosave[data-pk-autosave-field="stage"]`), "a status selector in the body");
                 assert(document.querySelector(`${CARD} > summary button[data-sc-injury-quick="resolve"]`), "no quick Resolve");
             },
         },
@@ -121,7 +121,7 @@ tours.add("sc_1631_injury_card", {
                 await waitFor(() => !document.querySelector(`${PROPOSAL}[open]`), "popup closed");
                 await waitFor(() => {
                     const read = document.querySelector(
-                        `${DETAILS} [data-sc-edit-view="read"] [data-sc-display$=":predicted_resolution_date"]`
+                        `${DETAILS} [data-pk-edit-view="read"] [data-pk-display$=":predicted_resolution_date"]`
                     );
                     return read && read.textContent.trim() && read.textContent.trim() !== "—";
                 }, "the predicted date in the read view");
@@ -133,7 +133,7 @@ tours.add("sc_1631_injury_card", {
             content: "Consent and visibility pills share one row",
             trigger: `${DETAILS} .o_sc_injury_flags`,
             run() {
-                const pills = this.anchor.querySelectorAll("[data-sc-pill-key]");
+                const pills = this.anchor.querySelectorAll("[data-pk-pill-key]");
                 assert(pills.length === 2, `${pills.length} pills`);
             },
         },
@@ -152,22 +152,22 @@ tours.add("sc_1631_injury_card", {
         // -- one Historique
         {
             content: "One notes « History », in the head",
-            trigger: `${NOTES} .o_pk_edit_card_head [data-sc-sheet-open^="sc_note_history_sheet_"]`,
+            trigger: `${NOTES} .o_pk_edit_card_head [data-pk-sheet-open^="sc_note_history_sheet_"]`,
             run() {
-                const links = document.querySelectorAll(`${NOTES} [data-sc-sheet-open^="sc_note_history_sheet_"]`);
+                const links = document.querySelectorAll(`${NOTES} [data-pk-sheet-open^="sc_note_history_sheet_"]`);
                 assert(links.length === 1, `${links.length} History links`);
             },
         },
         {
             content: "Edit the external note (pencil)",
-            trigger: `${NOTES} [data-pk-edit-card="injury-notes-external"] button[data-sc-edit-toggle]`,
+            trigger: `${NOTES} [data-pk-edit-card="injury-notes-external"] button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "Still one « History » in edit mode",
-            trigger: `${FIELD} textarea[data-sc-replace="new"]`,
+            trigger: `${FIELD} textarea[data-pk-replace="new"]`,
             run() {
-                const links = [...document.querySelectorAll(`${NOTES} [data-sc-sheet-open^="sc_note_history_sheet_"]`)].filter(
+                const links = [...document.querySelectorAll(`${NOTES} [data-pk-sheet-open^="sc_note_history_sheet_"]`)].filter(
                     (el) => el.offsetParent
                 );
                 assert(links.length === 1, `${links.length} visible History links`);
@@ -181,16 +181,16 @@ tours.add("sc_1631_injury_card", {
         },
         {
             content: "Cleared and saved",
-            trigger: `${FIELD}[data-sc-state="saved"]`,
+            trigger: `${FIELD}[data-pk-autosave-state="saved"]`,
         },
         {
             content: "Write a new note",
-            trigger: `${FIELD} textarea[data-sc-replace="new"]`,
+            trigger: `${FIELD} textarea[data-pk-replace="new"]`,
             run: `edit ${NEW_NOTE}`,
         },
         {
             content: "Leave the field so it saves",
-            trigger: `${FIELD}[data-sc-state="dirty"] textarea[data-sc-replace="new"]`,
+            trigger: `${FIELD}[data-pk-autosave-state="dirty"] textarea[data-pk-replace="new"]`,
             run() {
                 this.anchor.blur();
                 this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI
@@ -198,7 +198,7 @@ tours.add("sc_1631_injury_card", {
         },
         {
             content: "Saved: the new text is the current one",
-            trigger: `${FIELD}[data-sc-state="saved"] .o_sc_replace_current_text:contains(${NEW_NOTE})`,
+            trigger: `${FIELD}[data-pk-autosave-state="saved"] .o_pk_replace_current_text:contains(${NEW_NOTE})`,
             run: () => noReload(),
         },
     ],

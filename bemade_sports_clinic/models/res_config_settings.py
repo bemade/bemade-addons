@@ -19,13 +19,6 @@ class ResConfigSettings(models.TransientModel):
         'product.product', string='Clinic Product (Vendor PO)',
         config_parameter='bemade_sports_clinic.product_event_clinic_vendor_id')
 
-    # Task 1660: the user guide's home article (the app's « Aide »).
-    sc_help_home_url = fields.Char(
-        string="User Guide Home",
-        config_parameter="bemade_sports_clinic.help_home_url",
-        help="Public page of the user guide's home article "
-             "(/knowledge/article/<id>). Empty: no « Aide » entry in the app.")
-
     # Team dashboard daily-digest snapshot config (task 1267)
     digest_capture_time = fields.Char(
         string="Digest Capture Time",
@@ -89,15 +82,8 @@ class ResConfigSettings(models.TransientModel):
              "5-minute notification and surfaced on the dashboard/daily digest. "
              "Turn on to restore the old one-email-per-change behaviour.")
 
-    # Task 1538: system switch for the new portal app shell (epic #1535).
-    # Absent/False (prod until launch) = today's portal, untouched; True
-    # (staging) = the sports-clinic /my pages render in the new shell.
-    sc_app_shell_enabled = fields.Boolean(
-        string="New Portal App (preview)",
-        config_parameter="bemade_sports_clinic.app_shell_enabled",
-        help="Render the sports-clinic portal pages (home, teams, « More ») in "
-             "the new Fit Crew app shell. Leave off in production until the "
-             "launch; a staging refresh from production turns it off again.")
+    # Task 5200 (kit P5): the app's switch, theme choice and help home are
+    # the kit's settings (Settings › Portal App).
 
     # Task 1752: generic instance banner (« DÉMO » on the demo instance).
     sc_instance_banner = fields.Char(

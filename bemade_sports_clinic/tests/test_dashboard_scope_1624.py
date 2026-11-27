@@ -49,10 +49,10 @@ class TestDashboardScope1624(Dashboard1624Common):
                          self.team_c)
         for user in (self.coach, self.tp):
             with self.assertRaises(ValidationError):
-                self._dash(user)._sc_layout_update(
+                self._dash(user)._pk_dash_layout_update(
                     'watch', settings={'scope_team_ids': [self.team_b.id]})
             with self.assertRaises(ValidationError):
-                self._dash(user)._sc_layout_update(
+                self._dash(user)._pk_dash_layout_update(
                     'watch', settings={'scope_org_ids': [self.env.ref('base.main_company').partner_id.id]})
 
     def test_crafted_post_refused(self):
@@ -75,7 +75,7 @@ class TestDashboardScope1624(Dashboard1624Common):
     # -- UC-S3 ---------------------------------------------------------------
     def test_clinic_admin_may_pick_unstaffed_teams(self):
         dash = self._dash(self.cadmin)
-        dash._sc_layout_update('watch', settings={'scope_team_ids': [self.team_b.id]})
+        dash._pk_dash_layout_update('watch', settings={'scope_team_ids': [self.team_b.id]})
         self.assertEqual(self._scope(self.cadmin, scope_team_ids=[self.team_b.id]), self.team_b)
         players = dash._sc_data_watch(self.team_b, 'red_yellow', self.env['sports.patient'])
         self.assertEqual(players, self.player_b)
@@ -93,7 +93,7 @@ class TestDashboardScope1624(Dashboard1624Common):
 
     # -- UC-S5 ---------------------------------------------------------------
     def test_lost_access_dropped(self):
-        self._dash(self.coach)._sc_layout_update(
+        self._dash(self.coach)._pk_dash_layout_update(
             'watch', settings={'scope_team_ids': [self.team_c.id]})
         self.env['sports.team.staff'].search([
             ('team_id', '=', self.team_c.id), ('partner_id', '=', self.coach.partner_id.id)]).unlink()
@@ -112,7 +112,7 @@ class TestDashboardScope1624(Dashboard1624Common):
         self.assertTrue({self.team_a.id, self.team_b.id, self.team_c.id} <= {t[0] for t in teams})
         self._login_coach()
         _text, tree = self._get(URL)
-        item = tree.xpath('//*[@data-sc-dash-item="watch"]')[0]
+        item = tree.xpath('//*[@data-pk-dash-item="watch"]')[0]
         props = json.loads(item.xpath('.//owl-component[contains(@props, "scope_team_ids") or '
                                       'contains(@props, "_teams")]/@props')[0])
         self.assertEqual({int(o[0]) for o in props['options']}, {self.team_a.id, self.team_c.id})

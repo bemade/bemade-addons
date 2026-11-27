@@ -222,10 +222,16 @@ class TestPortalAccessSweepHotfix(PortalCovCommon):
         self._get_ok(f'/my/event/{self.event.id}')
 
     def test_other_role_staff_pages_render(self):
+        # Task 1541 (owner 2026-11-25): a staffer with no clinic app role
+        # gets « Pas d'accès » (403) on the clinic pages — never a 500.
         self.authenticate('sweep.other@example.com', 'sweep-other')
-        self._get_ok(f'/my/player?player_id={self.player.id}&team_id={self.team_a.id}')
-        self._get_ok(f'/my/team/{self.team_a.id}')
-        self._get_ok('/my/teams')
+        for url in (f'/my/player?player_id={self.player.id}&team_id={self.team_a.id}',
+                    f'/my/team/{self.team_a.id}', '/my/teams'):
+            resp = self.url_open(url)
+            self.assertEqual(resp.status_code, 403, url)
+            self.assertNotIn('Traceback', resp.text, url)
+            self.assertIn('data-sc-no-access-page', resp.text, url)
+        self._get_ok('/my')
 
     def test_portal_tp_pages_render(self):
         self._login_tp()
@@ -253,7 +259,9 @@ class TestPortalAccessSweepHotfix(PortalCovCommon):
             'role': 'therapist',
         })
         self._login_tp()
-        resp = self._get_ok(f'/my/event/{self.event_b.id}/edit')
+        # Task 1541: the app's event form (the legacy edit page redirects to
+        # the event's in-place edit).
+        resp = self._get_ok('/my/event/create')
         self.assertIn(self.int_admin.name, resp.text)
 
     # ------------------------------------------------------------------

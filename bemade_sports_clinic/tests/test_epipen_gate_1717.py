@@ -145,7 +145,7 @@ class TestEpiPenGate1717(EpiPen1717Common):
         _text, tree = self._get('/my/player?player_id=%s&tab=injuries' % player.id)
         sheet = tree.xpath('//dialog[@id="sc_med_player_allergy_%s"]' % player.id)[0]
         card = sheet.xpath('.//section[@data-pk-section="medical.allergy.epipen"]')[0]
-        self.assertEqual(card.get('data-sc-edit-open-on-load'), '1')
+        self.assertEqual(card.get('data-pk-edit-open-on-load'), '1')
         self.assertEqual(card.xpath('.//*[@data-sc-med-epipen-state]/@data-sc-med-epipen-state'), ['unset'])
         self.assertEqual(sorted(card.xpath('.//input[@type="radio"][@data-sc-med-set="allergy_epipen_state"]/@value')),
                          ['no', 'yes'])
@@ -174,7 +174,7 @@ class TestEpiPenGate1717(EpiPen1717Common):
         self.assertFalse(sheet.xpath('.//*[@data-sc-med-epipen-first]'))
         self.assertTrue(sheet.xpath('.//button[@data-pk-list-add-toggle]'))
         self.assertIsNone(sheet.xpath('.//section[@data-pk-section="medical.allergy.epipen"]')[0].get(
-            'data-sc-edit-open-on-load'))
+            'data-pk-edit-open-on-load'))
 
     # -- AC-5 --------------------------------------------------------------
     def test_todo_to_the_creator(self):
@@ -196,7 +196,7 @@ class TestEpiPenGate1717(EpiPen1717Common):
     def test_french(self):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         self.tp.write({'lang': 'fr_CA'})
         player = self._new_player(user=self.tp)
         self.assertEqual(self._todos(player).summary, 'Compléter le dossier médical (allergies/EpiPen)')

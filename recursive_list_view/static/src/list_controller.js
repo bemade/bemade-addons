@@ -25,6 +25,9 @@ patch(ListController.prototype, {
             record.expanded = false;
         } else {
             await this.model._loadChildren(record);
+            // Prefetch the next level so the children that have children of
+            // their own show an expand button too.
+            await this.model._loadChildren(record.children || []);
             record.expanded = true;
         }
     },
@@ -33,6 +36,9 @@ patch(ListController.prototype, {
         const params = super.modelParams;
         if (this.recursive) {
             params["config"]["recursive"] = true;
+            if (this.props.archInfo.recursiveDepth) {
+                params["config"]["recursiveDepth"] = this.props.archInfo.recursiveDepth;
+            }
         }
         return params;
     },

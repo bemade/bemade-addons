@@ -40,18 +40,7 @@ MIGRATION = os.path.join(
 
 def _load_fr(env):
     env['res.lang']._activate_lang('fr_CA')
-    env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
-
-
-@tagged('post_install', '-at_install')
-class TestInjuryReportFrench1739(TransactionCase):
-
-    def test_submitted_masculine(self):
-        _load_fr(self.env)
-        arch = self.env.ref('bemade_sports_clinic.portal_injury_created').with_context(
-            lang='fr_CA').arch_db
-        self.assertIn('Votre rapport de blessure a été soumis avec succès.', arch)
-        self.assertNotIn('soumise avec succès', arch)
+    env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
 
 
 @tagged('post_install', '-at_install')

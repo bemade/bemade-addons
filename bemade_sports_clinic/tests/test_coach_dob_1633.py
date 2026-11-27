@@ -18,7 +18,7 @@ Acceptance criteria covered:
 * AC-3 A coach's app save of a BLANK date of birth answers 200 and stores
   it (no confirmation).
 * AC-4 A coach's app save CHANGING an existing date of birth answers 428
-  ``confirm_identity`` and writes nothing; re-posted with ``confirm=1`` it
+  ``confirm`` and writes nothing; re-posted with ``confirm=1`` it
   answers 200 and the correction note (« Identity correction confirmed by
   <coach> ») is posted on the player's file.
 * AC-5 A coach's save giving the player the exact name + date of birth of
@@ -65,7 +65,7 @@ class TestCoachDob1633(PlayerInlineCommon):
         self.assertTrue(values['age'])
         self._login_coach()
         _text, tree = self._get(self._url(tab='info'))
-        read = self._identity(tree).xpath('.//*[@data-sc-edit-view="read"]')[0]
+        read = self._identity(tree).xpath('.//*[@data-pk-edit-view="read"]')[0]
         text = ' '.join(read.text_content().split())
         self.assertIn('Date of birth', text)
         self.assertIn('Age', text)
@@ -98,7 +98,7 @@ class TestCoachDob1633(PlayerInlineCommon):
         self._login_coach()
         resp = self._save(self.player, 'date_of_birth', '2008-04-04')
         self.assertEqual(resp.status_code, 428, resp.text)
-        self.assertTrue(resp.json()['confirm_identity'])
+        self.assertTrue(resp.json()['confirm'])
         self.player.invalidate_recordset()
         self.assertEqual(self.player.date_of_birth, date(2008, 3, 4))
         resp = self.url_open('/my/app/save/sports.patient/%s' % self.player.id, data={
@@ -134,14 +134,13 @@ class TestCoachDob1633(PlayerInlineCommon):
     def test_coach_pencil_has_dob_field(self):
         self._login_coach()
         _text, tree = self._get(self._url(tab='info'))
-        edit = self._identity(tree).xpath('.//*[@data-sc-edit-view="edit"]')[0]
+        edit = self._identity(tree).xpath('.//*[@data-pk-edit-view="edit"]')[0]
         self.assertTrue(any('"date_of_birth"' in props for props in self._fields_in(edit)))
 
     def test_coach_create_form_has_dob(self):
         self._login_coach()
-        _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic1633')
-        form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
-        self.assertTrue(form.xpath('.//input[@name="date_of_birth"]'))
+        # Task 1541: the retired create page redirects to the Players panel;
+        # the create route keeps the coach's date of birth.
         resp = self.url_open('/my/player/create/save', data={
             'csrf_token': self._csrf(), 'first_name': 'Nobody', 'last_name': 'Synthetic1633',
             'date_of_birth': '2011-05-06'}, allow_redirects=False)

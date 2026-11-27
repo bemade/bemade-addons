@@ -26,7 +26,7 @@ tours.add("sc_1663_announcement_undo", {
         },
         {
             content: "Archived at once; the toast offers « Undo »",
-            trigger: '.o_pk_toast:not([hidden]) button[data-sc-toast-action]',
+            trigger: '.o_pk_toast:not([hidden]) button[data-pk-toast-action]',
             expectUnloadPage: true,
             run() {
                 assert(!document.querySelector(".o_sc_announcement_body"), "the announcement is still shown");
@@ -47,12 +47,12 @@ tours.add("sc_1663_activity_delete", {
             // Task 1736 (deliberate update): the delete is the card's red
             // trash, shown while the activity is being edited.
             content: "The activity card's pencil",
-            trigger: '[data-pk-edit-card="activity"] [data-sc-card-icons] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="activity"] [data-pk-card-icons] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
             content: "« Delete » (the trash) on the activity page",
-            trigger: '[data-pk-edit-card="activity"][data-sc-edit-open] button[data-sc-action="activity.cancel"][aria-label="Delete"]:visible',
+            trigger: '[data-pk-edit-card="activity"][data-pk-edit-open] button[data-pk-action="activity.cancel"][aria-label="Delete"]:visible',
             run: "click",
         },
         {

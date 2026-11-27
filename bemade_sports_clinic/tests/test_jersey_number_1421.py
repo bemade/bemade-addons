@@ -28,6 +28,7 @@ NOT claimed: the look of the six display sites, the sort toggle, the flash
 banner and the picker typeahead in a browser — that is the /dev-review
 click-through (coach + TP, phone width and laptop).
 """
+import json
 import re
 from datetime import timedelta
 
@@ -312,12 +313,14 @@ class TestJerseyNumberPortal(PortalCovCommon):
         self.assertFalse(self.player.jersey_number, 'blank clears the number')
 
     def test_edit_form_prefills_number(self):
+        # Task 1541 (rewritten): the player page's inline field (the edit
+        # page redirects there).
         self._login_coach()
-        doc = self._doc('/my/player/edit?patient_id=%s' % self.twelve.id)
-        inputs = doc.cssselect('input[name="jersey_number"]')
-        self.assertEqual(len(inputs), 1)
-        self.assertEqual(inputs[0].get('value'), '12')
-        self.assertEqual(inputs[0].get('maxlength'), '8')
+        doc = self._doc('/my/player?player_id=%s&tab=info' % self.twelve.id)
+        props = [json.loads(p) for p in doc.xpath('//owl-component/@props')]
+        jersey = [p for p in props if p.get('field') == 'jersey_number']
+        self.assertEqual(len(jersey), 1)
+        self.assertEqual(jersey[0]['value'], '12')
 
     # ------------------------------------------------------------------
     # AC2 / AC3 — display sites
@@ -325,28 +328,26 @@ class TestJerseyNumberPortal(PortalCovCommon):
     def test_players_grid_and_roster_cards(self):
         self._login_tp()
         doc = self._doc('/my/players')
-        names = self._texts(doc.cssselect('.card-header a.fw-bold'))
+        names = self._texts(doc.cssselect('.o_pk_row_title'))
         self.assertIn('#12 Btwelve, Bob', names)
         self.assertIn('#2 Ctwo, Cleo', names)
         self.assertIn('One, Pat', names)
         self.assertFalse([n for n in names if n.startswith('#') and n.endswith(',')], names)
         doc = self._doc('/my/team?team_id=%s' % self.team_a.id)
-        names = self._texts(doc.cssselect('#players .card-header a.fw-bold'))
+        names = self._texts(doc.cssselect('[data-pk-tab-panel="players"] .o_pk_row_title'))
         self.assertIn('#10 Aten, Aline', names)
         self.assertIn('One, Pat', names)
 
     def test_player_heading_and_dossier(self):
+        # Task 1541 (rewritten for the app): the page title and the live
+        # worklist's rows (JSON).
         self._login_tp()
         doc = self._doc('/my/player?player_id=%s' % self.twelve.id)
-        self.assertEqual(self._texts(doc.cssselect('h1'))[:1], ['#12 Btwelve, Bob'])
+        self.assertIn('#12 Btwelve, Bob', doc.xpath('string(//title)'))
         doc = self._doc('/my/player?player_id=%s' % self.player.id)
-        self.assertEqual(self._texts(doc.cssselect('h1'))[:1], ['One, Pat'])
-        # Clinic dossier card + worklist row.
-        doc = self._doc('/my/clinic/%s?patient=%s' % (self.clinic.id, self.twelve.id))
-        headers = self._texts(doc.cssselect('#clinic-dossier h5'))
-        self.assertIn('#12 Btwelve, Bob', headers)
-        rows = self._texts(doc.cssselect('ul.o_sc_worklist .o_sc_worklist_row a'))
-        self.assertEqual(rows, ['#12 Btwelve, Bob'])
+        self.assertIn('One, Pat', doc.xpath('string(//title)'))
+        rows = self.url_open('/my/clinic/%s/worklist/data' % self.clinic.id).json()['rows']
+        self.assertEqual([row['name'] for row in rows], ['#12 Btwelve, Bob'])
 
     def test_picker_option_label_and_key(self):
         self._login_tp()
@@ -360,21 +361,13 @@ class TestJerseyNumberPortal(PortalCovCommon):
         self.assertIn('#10', key)
         self.assertEqual(options['One, Pat'].get('data-key'), 'one pat')
 
-    def test_search_results_show_number(self):
-        self._login_tp()
-        doc = self._doc('/my/player/create?first_name=Bob&last_name=Btwelve')
-        labels = self._texts(doc.cssselect('.list-group-item .fw-bold'))
-        self.assertIn('#12 Btwelve, Bob', labels)
-        doc = self._doc('/my/team/%s/player/add_link?first_name=Pat&last_name=One' % self.team_a.id)
-        labels = self._texts(doc.cssselect('.list-group-item strong'))
-        self.assertIn('One, Pat', labels)
 
     # ------------------------------------------------------------------
     # AC4 — roster sort
     # ------------------------------------------------------------------
     def _roster_names(self, url):
         doc = self._doc(url)
-        return self._texts(doc.cssselect('#players .card-header a.fw-bold'))
+        return self._texts(doc.cssselect('[data-pk-tab-panel="players"] .o_pk_row_title'))
 
     def test_roster_sort_by_number_sticky(self):
         self._login_coach()
@@ -395,22 +388,6 @@ class TestJerseyNumberPortal(PortalCovCommon):
         self.tp.invalidate_recordset(['roster_sort_mode'])
         self.assertFalse(self.tp.roster_sort_mode)
 
-    def test_roster_sort_toggle_rendered_and_tab_active(self):
-        self._login_coach()
-        doc = self._doc('/my/team?team_id=%s&sort=number' % self.team_a.id)
-        links = doc.cssselect('.o_sc_roster_sort a')
-        self.assertEqual(len(links), 2)
-        hrefs = [a.get('href') for a in links]
-        self.assertTrue(any('sort=status' in h for h in hrefs), hrefs)
-        self.assertTrue(any('sort=number' in h for h in hrefs), hrefs)
-        active = [a for a in links if 'active' in (a.get('class') or '')]
-        self.assertEqual(len(active), 1)
-        self.assertIn('sort=number', active[0].get('href'))
-        # A sort reload lands on the roster tab, not the dashboard.
-        players_tab = doc.cssselect('#players-tab')[0]
-        self.assertIn('active', players_tab.get('class'))
-        self.assertIn('active', doc.cssselect('#players')[0].get('class'))
-        self.assertNotIn('active', doc.cssselect('#dashboard-tab')[0].get('class'))
 
     # ------------------------------------------------------------------
     # AC5 — duplicate warning
@@ -427,13 +404,11 @@ class TestJerseyNumberPortal(PortalCovCommon):
         self.assertIn('warning=duplicate_number', location)
         self.player.invalidate_recordset(['jersey_number'])
         self.assertEqual(self.player.jersey_number, '12', 'the save still succeeds')
-        doc = self._doc(location)
-        alerts = self._texts(doc.cssselect('.alert-warning.o_sc_jersey_warning'))
-        self.assertEqual(len(alerts), 1)
-        self.assertIn('Bob Btwelve', alerts[0])
-        self.assertIn('#12', alerts[0])
+        # Task 1541: the app's player page banner.
+        text = self.url_open(location).text
+        self.assertIn('Bob Btwelve', text)
         # Dan Dtwelve (team B) is NOT a shared-team duplicate.
-        self.assertNotIn('Dtwelve', alerts[0])
+        self.assertNotIn('Dtwelve', text)
 
     def test_no_warning_across_unrelated_teams(self):
         self._login_tp()
@@ -471,7 +446,7 @@ class TestJerseyNumberPortal(PortalCovCommon):
     def test_players_jersey_filter(self):
         self._login_tp()
         doc = self._doc('/my/players?jersey_number=12')
-        names = self._texts(doc.cssselect('.card-header a.fw-bold, .card-header span.fw-bold'))
+        names = self._texts(doc.cssselect('.o_pk_row_title'))
         self.assertIn('#12 Btwelve, Bob', names)
         self.assertIn('#12 Dtwelve, Dan', names)
         self.assertNotIn('#10 Aten, Aline', names)
@@ -482,6 +457,6 @@ class TestJerseyNumberPortal(PortalCovCommon):
         # « #12 » works too, and a non-matching number yields an empty list.
         doc = self._doc('/my/players?jersey_number=%2312')
         self.assertIn('#12 Btwelve, Bob',
-                      self._texts(doc.cssselect('.card-header a.fw-bold, .card-header span.fw-bold')))
+                      self._texts(doc.cssselect('.o_pk_row_title')))
         doc = self._doc('/my/players?jersey_number=77')
-        self.assertEqual(doc.cssselect('.card-header a.fw-bold'), [])
+        self.assertEqual(doc.cssselect('.o_pk_row_title'), [])

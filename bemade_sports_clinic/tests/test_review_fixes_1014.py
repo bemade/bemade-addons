@@ -191,7 +191,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
                 (self.act_player, 'Pat One', '/my/player?player_id=%s' % self.player.id),
                 (self.act_team, 'PC Team A', '/my/team?team_id=%s' % self.team_a.id)):
             row = self._activity_row(tree, activity)
-            title = row.xpath('.//*[@data-sc-title-split]')
+            title = row.xpath('.//*[@data-pk-title-split]')
             self.assertEqual(len(title), 1, activity.summary)
             self.assertEqual(_text(title[0]), activity.summary)
             links = title[0].xpath('.//a[contains(@class, "o_pk_row_title_link")]')
@@ -203,7 +203,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
             self.assertFalse(row.xpath('.//a//a'))
         # A title without a record name stays the plain main link.
         row = self._activity_row(tree, self.act_event)
-        self.assertFalse(row.xpath('.//*[@data-sc-title-split]'))
+        self.assertFalse(row.xpath('.//*[@data-pk-title-split]'))
         self.assertEqual(_text(row.xpath('.//a[contains(@class, "o_pk_link_row_main")]')[0]),
                          self.act_event.summary)
 
@@ -214,7 +214,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
                           side_effect=AccessError('refused')):
             _text_, tree = self._get('/my/activities')
         row = self._activity_row(tree, self.act_player)
-        self.assertFalse(row.xpath('.//*[@data-sc-title-split]'))
+        self.assertFalse(row.xpath('.//*[@data-pk-title-split]'))
         self.assertNotIn('/my/player?player_id=', lxml_html.tostring(row).decode())
 
     # -- RF6 -------------------------------------------------------------
@@ -262,7 +262,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
         self.assertEqual(resp.status_code, 303)
         self.assertFalse(self.env['sports.event'].search([('name', '=', 'Synthetic bad times')]))
         _text_, tree = self._get('/my/event/create')
-        error = tree.xpath('//*[@data-sc-field-error="date_end"]')
+        error = tree.xpath('//*[@data-pk-field-error="date_end"]')
         self.assertEqual(len(error), 1)
         self.assertEqual(_text(error[0]), 'Event end time must be after start time.')
         self.assertEqual(tree.xpath('//input[@name="date_end"]/@aria-invalid'), ['true'])
@@ -280,7 +280,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
 
     # -- RF9 -------------------------------------------------------------
     def _add_card(self, tree):
-        return tree.xpath('//section[@data-sc-tab-panel="players"]'
+        return tree.xpath('//section[@data-pk-tab-panel="players"]'
                           '/details[@data-pk-section="team.add_player"]')[0]
 
     def test_add_player_one_set_of_fields(self):
@@ -364,7 +364,7 @@ class TestReviewFixes1014I18n(TestAppShellI18n1538):
         }, allow_redirects=False)
         self.assertEqual(resp.status_code, 303)
         tree = lxml_html.fromstring(self._fr('/my/event/create'))
-        error = tree.xpath('//*[@data-sc-field-error="date_end"]')
+        error = tree.xpath('//*[@data-pk-field-error="date_end"]')
         self.assertEqual([_text(e) for e in error], ["La fin de l'événement doit être après le début."])
         self.event.invalidate_recordset()
         resp = self.url_open('/my/app/save/sports.event/%s' % self.event.id, data={

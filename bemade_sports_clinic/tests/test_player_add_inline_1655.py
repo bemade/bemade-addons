@@ -116,8 +116,8 @@ class TestPlayerAddInline1655(PlayerAdd1655Common):
         self.assertIn('tab=info', location)
         self.assertIn('created_player=%s' % player.id, location)
         tree = lxml_html.fromstring(self.url_open(location).text)
-        self.assertEqual(tree.xpath('//*[@data-pk-edit-card="identity"]/@data-sc-edit-open-on-load'), ['1'])
-        undo = tree.xpath('//form[@data-sc-form="player.undo"]/@action')
+        self.assertEqual(tree.xpath('//*[@data-pk-edit-card="identity"]/@data-pk-edit-open-on-load'), ['1'])
+        undo = tree.xpath('//form[@data-pk-undo-offer="player"]/@action')
         self.assertEqual(undo, ['/my/player/%s/undo-create' % player.id])
         resp = self.url_open(undo[0], data={'csrf_token': self._csrf(), 'return_url': '/my/players'},
                              allow_redirects=False)
@@ -163,7 +163,7 @@ class TestPlayerAddInline1655(PlayerAdd1655Common):
     def test_panels_and_retired_page(self):
         self._login_tp()
         resp = self.url_open('/my/player/create', allow_redirects=False)
-        self.assertIn(resp.status_code, (302, 303))
+        self.assertEqual(resp.status_code, 301)
         self.assertTrue(resp.headers['Location'].endswith('/my/players?add=1'))
         _text, tree = self._get('/my/players?add=1')
         panel = tree.xpath('//details[@id="sc_player_add"]')

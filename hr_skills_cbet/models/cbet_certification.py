@@ -167,6 +167,28 @@ class CbetCertification(models.Model):
         return responsible
 
     @api.model
+    def _cbet_expiry_text(self):
+        self.ensure_one()
+        return self.env._("Certification expiring: %s", self.competency_id.code)
+
+    def _cbet_expiry_summary(self):
+        """Expiry to-do title, French first then English ("<fr> / <en>").
+
+        The job runs as OdooBot (en_US), so the recipient's language cannot be
+        relied on. English only when no French language is active, or when the
+        term has no French translation."""
+        self.ensure_one()
+        english = self.with_context(lang="en_US")._cbet_expiry_text()
+        fr_codes = [code for code, _name in self.env["res.lang"].get_installed()
+                    if code.startswith("fr")]
+        if not fr_codes:
+            return english
+        fr_code = "fr_FR" if "fr_FR" in fr_codes else sorted(fr_codes)[0]
+        french = self.with_context(lang=fr_code)._cbet_expiry_text()
+        if french == english:
+            return english
+        return f"{french} / {english}"
+
     def _cron_expiry_activities(self):
         today = fields.Date.context_today(self)
         horizon = today + relativedelta(months=self._horizon_months())
@@ -193,7 +215,7 @@ class CbetCertification(models.Model):
                 cert.activity_schedule(
                     "mail.mail_activity_data_todo",
                     date_deadline=cert.valid_to,
-                    summary=self.env._("Certification expiring: %s", cert.competency_id.code),
+                    summary=cert._cbet_expiry_summary(),
                     user_id=user.id,
                 )
             if cert.valid_to < today:

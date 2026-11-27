@@ -33,6 +33,10 @@ class TestComposerPreview(TransactionCase):
             email="sender@example.com",
             groups="base.group_user,base.group_partner_manager",
         )
+        # No signature: addons that append the sender's signature to the
+        # posted body (e.g. bemade_mail_signature) must not change the
+        # exact body this suite asserts.
+        cls.sender.signature = False
         cls.user_inbox = new_test_user(
             cls.env,
             login="composer_inbox",

@@ -29,6 +29,8 @@ from odoo.addons.odoo_herd_portal.models.k8s_odoo_instance import (
     PORTAL_VISIBLE_FIELDS,
 )
 
+from .common import NoClusterMixin
+
 # Framework / audit fields that are readable by any user by design and are not
 # instance/cluster secrets. They are intentionally NOT in PORTAL_VISIBLE_FIELDS
 # (the client UI doesn't surface them) but the drift-guard must not demand
@@ -62,7 +64,7 @@ _FRAMEWORK_READABLE = frozenset(
 
 
 @tagged("post_install", "-at_install", "odoo_herd_portal")
-class TestAccessOwnership(TransactionCase):
+class TestAccessOwnership(NoClusterMixin, TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

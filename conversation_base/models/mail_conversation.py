@@ -1,10 +1,13 @@
 import ast
+from datetime import datetime, timezone
 
 from markupsafe import Markup
 
 from odoo import _, api, fields, models, tools
 from odoo.exceptions import AccessError, MissingError, UserError
 from odoo.tools.mail import html_to_inner_content
+
+from ..tools import mime
 
 SNIPPET_LENGTH = 160
 TRIAGE_LIST_LIMIT = 3
@@ -559,7 +562,7 @@ class MailConversation(models.Model):
     def _sync_participants_from_msg_dict(self, msg_dict):
         """Build ``mail.conversation.participant`` rows from a gateway
         ``msg_dict`` (as produced by ``mail.thread.message_parse``/
-        ``message_route``: comma-joined ``to``/``cc`` strings, a resolved
+        ``message_route``: comma-joined ``to_filtered``/``cc_filtered`` strings, a resolved
         ``author_id``). Used by ``message_new`` (real inbound via the
         alias) and by ``_route_via_alias`` (a captured stub routed through
         the gateway).
@@ -572,9 +575,23 @@ class MailConversation(models.Model):
         self._sync_participants(
             from_email=msg_dict.get("email_from") or msg_dict.get("from"),
             from_partner=author_partner,
-            to_emails=tools.email_split(msg_dict.get("to") or ""),
-            cc_emails=tools.email_split(msg_dict.get("cc") or ""),
+            to_emails=tools.email_split(self._msg_dict_recipients(msg_dict, "to")),
+            cc_emails=tools.email_split(self._msg_dict_recipients(msg_dict, "cc")),
         )
+
+    @api.model
+    def _msg_dict_recipients(self, msg_dict, key):
+        """Comma-joined ``to``/``cc`` addresses of a gateway ``msg_dict``
+        without the addresses of Odoo's own aliases (the team's own
+        address): ``message_parse`` provides them as ``<key>_filtered``.
+        The raw value is used only when that key is absent (a hand-built
+        ``msg_dict``), not when it is present and empty -- empty means every
+        recipient was an alias.
+        """
+        filtered = msg_dict.get(f"{key}_filtered")
+        if filtered is None:
+            filtered = msg_dict.get(key)
+        return filtered or ""
 
     def _sync_participants_from_stub(self, stub):
         """Build ``mail.conversation.participant`` rows from a normalized
@@ -587,12 +604,62 @@ class MailConversation(models.Model):
         author_partner = (
             self.env["res.partner"].browse(author_id) if author_id else False
         )
+        to_emails, cc_emails = self._stub_recipients_without_aliases(stub)
         self._sync_participants(
             from_email=stub.get("email_from") or stub.get("author"),
             from_partner=author_partner,
-            to_emails=stub.get("to") or [],
-            cc_emails=stub.get("cc") or [],
+            to_emails=to_emails,
+            cc_emails=cc_emails,
         )
+
+    def _stub_recipients_without_aliases(self, stub):
+        """The ``to`` and ``cc`` addresses of a captured stub, as two lists,
+        without those of Odoo's own mail aliases (a team inbox, a helpdesk
+        alias), as the gateway path does through
+        ``to_filtered``/``cc_filtered``. The aliases are looked up once, over
+        To and Cc together, the way ``mail.thread.message_parse`` does, with
+        the same ``mail.alias.domain`` helper.
+
+        Only Odoo's own addresses are left out. For an alias with
+        ``alias_incoming_local`` set, ``_find_aliases`` also matches on the
+        local part alone, on any domain, when ``mail.catchall.domain.allowed``
+        is unset; so an outside ``sales@customer.example`` would be dropped
+        because some alias is called ``sales``. Its result is therefore kept
+        only for the bounce, catchall and default-from addresses of an alias
+        domain, and for addresses whose domain is one of the instance's alias
+        domains.
+        """
+        to_emails = list(stub.get("to") or [])
+        cc_emails = list(stub.get("cc") or [])
+        AliasDomain = self.env["mail.alias.domain"].sudo()
+        found = AliasDomain._find_aliases(
+            tools.email_normalize_all(",".join(to_emails + cc_emails))
+        )
+        alias_emails = set()
+        if found:
+            alias_domains = AliasDomain.search([])
+            own_domains = {name.lower() for name in alias_domains.mapped("name") if name}
+            own_addresses = {
+                email.lower()
+                for email in alias_domains.mapped("bounce_email")
+                + alias_domains.mapped("catchall_email")
+                + alias_domains.mapped("default_from_email")
+                if email
+            }
+            alias_emails = {
+                email
+                for email in found
+                if email in own_addresses or email.rpartition("@")[2] in own_domains
+            }
+
+        def without_aliases(emails):
+            return [
+                email
+                for email in emails
+                if tools.email_normalize(email) not in alias_emails
+            ]
+
+        return without_aliases(to_emails), without_aliases(cc_emails)
 
     def _sync_participants(
         self, from_email=None, from_partner=None, to_emails=None, cc_emails=None
@@ -737,13 +804,29 @@ class MailConversation(models.Model):
         # holding the transport's own native id -- an IMAP UID, which is
         # meaningless outside that one mailbox -- for provenance and
         # capture-idempotency lookups.
-        message.write(
-            {
-                "external_id": stub.get("external_id"),
-                "message_id": stub.get("message_id") or message.message_id,
-            }
-        )
+        values = {
+            "external_id": stub.get("external_id"),
+            "message_id": stub.get("message_id") or message.message_id,
+        }
+        # A filed mail keeps the date it was SENT (the Date header), not the
+        # moment it was filed. Missing/unparsable -> keep the filing time.
+        sent_date = self._stub_sent_date(stub.get("date"))
+        if sent_date:
+            values["date"] = sent_date
+        message.write(values)
         return conversation
+
+    @api.model
+    def _stub_sent_date(self, value):
+        """A stub ``date`` (aware/naive ``datetime`` or RFC822 string) as a
+        naive-UTC ``datetime`` for ``mail.message.date``, or ``False``."""
+        if value and isinstance(value, str):
+            value = mime.parse_date(value)
+        if not isinstance(value, datetime):
+            return False
+        if value.tzinfo is not None:
+            value = value.astimezone(timezone.utc).replace(tzinfo=None)
+        return value
 
     @api.model
     def _find_captured(self, transport, external_id):

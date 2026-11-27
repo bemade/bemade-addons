@@ -7,7 +7,7 @@ Acceptance criteria:
   note, player add — team page and players list —, player request, medical
   list items) has a ``button[data-pk-list-add-cancel]`` « Cancel » next to
   its submit (type=button, never submits). Bottom-sheet adds (documents,
-  timesheet, clinic patient) already had « Cancel » (sc_sheet).
+  timesheet, clinic patient) already had « Cancel » (pk_sheet).
 * AC-2 Browser: « Annuler » closes the panel, clears its fields and its
   device draft, the focus goes back to « + Ajouter »; reopened, the panel
   is empty (activity panel + the note panel, phone and laptop).

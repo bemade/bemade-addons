@@ -98,7 +98,7 @@ class TestFragmentsPlayer1611(FragmentsCommon):
         for part in ('hero-head', 'memberships', 'hero-actions', 'removal-sheets'):
             self.assertRefreshes(payload, self._key(part))
         hero = self._fragment(self._url(), self._key('hero-head'))
-        self.assertEqual(sorted(hero.xpath('.//a[@data-sc-row-link="sports.team"]/text()')),
+        self.assertEqual(sorted(hero.xpath('.//a[@data-pk-row-link="sports.team"]/text()')),
                          ['PC Team A', 'PC Team C'])
         members = self._fragment(self._url(), self._key('memberships'))
         self.assertIn('PC Team C', self._text(members))
@@ -109,7 +109,7 @@ class TestFragmentsPlayer1611(FragmentsCommon):
         members = self._fragment(url, self._key('memberships'))
         self.assertNotIn('PC Team A', self._text(members))
         hero = self._fragment(url, self._key('hero-head'))
-        self.assertEqual(hero.xpath('.//a[@data-sc-row-link="sports.team"]/text()'), ['PC Team C'])
+        self.assertEqual(hero.xpath('.//a[@data-pk-row-link="sports.team"]/text()'), ['PC Team C'])
         self.assertFragmentMatchesPage(url, self._key('removal-sheets'))
 
     # -- AC-P5 -------------------------------------------------------------

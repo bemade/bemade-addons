@@ -15,3 +15,9 @@ from . import test_fsm_contacts_list_view
 from . import test_task_report_state_dots
 from . import test_fsm_menu_actions
 from . import test_visit_numbering
+from . import test_fsm_site_note
+from . import test_subtask_dates
+from . import test_fsm_task_subtask_tree_tour
+from . import test_task_form_template
+from . import test_fsm_site_note_history
+from . import test_fsm_kanban_mark_delivered

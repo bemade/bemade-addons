@@ -3,7 +3,7 @@
  *
  * GET / POST, JSON or HTML, the CSRF token added to every POST, a timeout,
  * and an error toast hook: every failure dispatches « pk:fetch-error » on the
- * document (sc_app_ui.js shows the toast) unless called with toast: false.
+ * document (the page's toast shows it) unless called with toast: false.
  * POST bodies are form-encoded so Odoo's standard http CSRF check applies.
  *
  * Used by the shell only (lazy sheets, lazy rows, the autosave component).
@@ -41,7 +41,7 @@ export function notifyFetchError(error) {
  * @param {number} [options.timeout] ms
  * @param {boolean} [options.toast] dispatch pk:fetch-error on failure
  * @param {Object} [options.headers] extra request headers (task 1611:
- *     X-Sc-Fragments)
+ *     X-Pk-Fragments)
  */
 export async function pkFetch(url, options = {}) {
     const { method = "GET", data = null, as = "json", timeout = 15000, toast = true, headers = {} } = options;

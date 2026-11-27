@@ -29,6 +29,21 @@ from odoo.tests import tagged
 
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
+def owl_prop_fields(text):
+    """Task 1541: the field names of the app's in-place fields on a page
+    (autosave ``field`` / draft ``name`` of each owl-component's props)."""
+    import json
+    from lxml import html as _lxml_html
+    names = set()
+    for raw in _lxml_html.fromstring(text).xpath('//owl-component/@props'):
+        try:
+            props = json.loads(raw)
+        except ValueError:
+            continue
+        names.update(v for v in (props.get('field'), props.get('name')) if v)
+    return names
+
+
 
 class Parity1577Common(AppShellCommon):
     """PortalCovCommon + a non-admin internal therapist (``itp``) and a clinic
@@ -80,19 +95,6 @@ class Parity1577Common(AppShellCommon):
 @tagged('post_install', '-at_install')
 class TestInternalTpParity1577(Parity1577Common):
 
-    # -- UC-P1 -----------------------------------------------------------
-    def test_injury_edit_shows_tp_fields(self):
-        url = '/my/injury/edit?injury_id=%s' % self.injury.id
-        self._login_itp()
-        text, _tree = self._get(url)
-        for marker in ('name="stage"', 'name="internal_notes"',
-                       'name="hidden_from_coaches"', 'name="resolution_date"'):
-            self.assertIn(marker, text, marker)
-        # Reference: the coach's page has none of them.
-        self._login_coach()
-        text, _tree = self._get(url)
-        self.assertNotIn('name="internal_notes"', text)
-        self.assertNotIn('name="stage"', text)
 
     def test_injury_edit_shell_shows_tp_fields(self):
         self._switch(True)
@@ -108,7 +110,7 @@ class TestInternalTpParity1577(Parity1577Common):
             self.assertIn('"%s"' % name, props, name)
         # Task 1631: the status and visibility are pill dropdowns (editable).
         for name in ('stage', 'hidden_from_coaches'):
-            self.assertTrue(tree.xpath('//*[@data-sc-pill-select][@data-sc-field="%s"]' % name), name)
+            self.assertTrue(tree.xpath('//*[@data-pk-pill-select][@data-pk-field="%s"]' % name), name)
 
     def test_injury_save_writes_tp_fields(self):
         self._login_itp()
@@ -179,24 +181,29 @@ class TestInternalTpParity1577(Parity1577Common):
         self.assertEqual(patient.medical_history_other, 'P77 fracture')
 
     def test_player_edit_shows_tp_fields(self):
+        # Task 1541 (rewritten): the player page's inline fields (the edit
+        # page redirects there) — the therapist fields for an internal TP,
+        # none for a coach.
+        url = '/my/player?player_id=%s&tab=info' % self.player.id
         self._login_itp()
-        text, _tree = self._get('/my/player/edit?patient_id=%s' % self.player.id)
-        self.assertIn('name="medical_history_other"', text)
-        self.assertIn('name="team_info_notes"', text)
+        text, _tree = self._get(url)
+        self.assertIn('medical_history_other', owl_prop_fields(text))
+        self.assertIn('team_info_notes', owl_prop_fields(text))
         self._login_coach()
-        text, _tree = self._get('/my/player/edit?patient_id=%s' % self.player.id)
-        self.assertNotIn('name="medical_history_other"', text)
+        text, _tree = self._get(url)
+        self.assertNotIn('medical_history_other', owl_prop_fields(text))
 
     # -- UC-P4 -----------------------------------------------------------
     def test_team_add_player_directly(self):
         self._login_itp()
-        # The add/link page opens (it bounced internal TPs back to the team).
+        # Task 1541 (rewritten): the team page's « Add a player » panel (the
+        # legacy add/link page redirects there) and its route.
         resp = self.url_open('/my/team/%s/player/add_link' % self.team_a.id,
                              allow_redirects=False)
-        self.assertEqual(resp.status_code, 200)
-        resp = self._post('/my/team/%s/player/create' % self.team_a.id, {
+        self.assertEqual(resp.status_code, 301)
+        resp = self._post('/my/team/%s/player/add' % self.team_a.id, {
             'first_name': 'Tess', 'last_name': 'Teamadd',
-            'date_of_birth': '2010-05-01',
+            'date_of_birth': '2010-05-01', 'force_new': '1', 'sc_inline': '1',
         })
         self.assertIn(resp.status_code, (302, 303))
         patient = self.env['sports.patient'].search([('last_name', '=', 'Teamadd')])
@@ -216,10 +223,12 @@ class TestInternalTpParity1577(Parity1577Common):
         self.assertEqual(before, after, "a therapist adds directly, never by request")
 
     def test_team_page_legacy_add_player_button(self):
+        # Task 1541 (rewritten): the app's « Add a player » panel, never the
+        # coach's « request an addition ».
         self._login_itp()
-        text, _tree = self._get('/my/team?team_id=%s' % self.team_a.id)
-        self.assertIn('/my/team/%s/player/add_link' % self.team_a.id, text)
-        self.assertNotIn('requestAddPlayerModal%s' % self.team_a.id, text)
+        _text, tree = self._get('/my/team?team_id=%s' % self.team_a.id)
+        self.assertTrue(tree.xpath('//details[@id="sc_add_player"]'))
+        self.assertFalse(tree.xpath('//*[@id="sc_request_add"]'))
 
     # -- UC-P5 -----------------------------------------------------------
     def test_notepad_own_notes(self):
@@ -247,30 +256,17 @@ class TestInternalTpParity1577(Parity1577Common):
             'event_id': self.event.id, 'user_id': self.itp.id,
         })
         self._login_itp()
-        text, _tree = self._get('/my/sc/timesheets')
-        self.assertIn('/my/sc/timesheet/%s/edit' % own.id, text)
-        self.assertNotIn('/my/sc/timesheet/%s/edit' % self.timesheet.id, text,
+        _text, tree = self._get('/my/sc/timesheets')
+        # Task 1541 (rewritten for the app's rows).
+        rows = {int(i) for i in tree.xpath('//*[@data-sc-timesheet-id]/@data-sc-timesheet-id')}
+        self.assertIn(own.id, rows)
+        self.assertNotIn(self.timesheet.id, rows,
                          "another therapist's timesheet must not be listed")
         # Ownership is still enforced on write.
         resp = self._post('/my/sc/timesheet/%s/delete' % self.timesheet.id, {})
         self.assertNotIn(resp.status_code, (302, 303))
         self.assertTrue(self.timesheet.active)
 
-    # -- UC-P7 -----------------------------------------------------------
-    def test_home_counters(self):
-        self._login_itp()
-        result = self._jsonrpc('/my/counters',
-                               counters=['clinics_count', 'quick_notes_count',
-                                         'event_timesheets_count'])
-        self.assertIn('clinics_count', result)
-        self.assertIn('quick_notes_count', result)
-        self.assertIn('event_timesheets_count', result)
-
-    def test_home_cards_legacy(self):
-        self._login_itp()
-        text, _tree = self._get('/my')
-        for url in ('/my/clinics', '/my/notepad', '/my/sc/timesheets', '/my/events'):
-            self.assertIn(url, text, url)
 
     # -- UC-P8 -----------------------------------------------------------
     def test_coach_redirected_from_treatment_notes(self):

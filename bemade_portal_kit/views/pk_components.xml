@@ -4,7 +4,9 @@
     from the first consumer (bemade_sports_clinic). The records kept their
     ir.ui.view ids: tools/adopt.py renamed their external ids from the
     consumer's sc_* names before this file was loaded (pre-migrations of the
-    kit 19.0.1.5.0 and of the clinic 19.0.1.139.0).
+    kit 19.0.1.5.0 and of the clinic 19.0.1.139.0). Task 5370 (P4b) adopted
+    two more the same way: pk_status_pill_select and pk_form_guard_slots
+    (kit 19.0.1.7.0, clinic 19.0.1.141.0).
 
     Styled by static/src/scss/pk_components.scss, scoped under .o_pk_app.
     Calling convention: set the documented variables in the t-call body;
@@ -121,6 +123,638 @@
     <!-- Empty state. Variable: message. -->
     <template id="pk_empty_state" name="Portal kit: empty state">
         <p class="o_pk_empty" t-out="message"/>
+    </template>
+
+    <!--
+        Task 5370 (P4b) — a coloured status pill that is its own dropdown
+        (static/src/js/pk_status_pills.js). Variables:
+
+        - pill: {key, text, label, title, tone, icon, menu_label, options,
+          target}; options [{value, label, tone, checked, disabled, hint,
+          post, action, from}]
+          — ``post`` is the value a pick saves (default: ``value``; an empty
+          string is a value too: a blank choice); a disabled option is
+          greyed, says why (``hint``) and posts nothing; an ``action``
+          option posts nothing either — the pick is announced as a
+          « pk:pill-action » DOM event ({action, value, from, model,
+          recordId, pill}) for the module that owns that action;
+          target {model, id, field, write_date, old_value}: the pick posts
+          ``POST /my/app/save/<model>/<id>`` {field, value: post, write_date,
+          old_value} — render the pill INSIDE a read fragment so the next
+          pick posts fresh values;
+        - editable: False -> the same coloured pill, read-only (a span, no
+          menu, data-pk-pill-readonly);
+        - undo_message: the « Undo » toast's message after a pick;
+        - compact -> the small pill of a list row (``label`` shown, the full
+          ``text`` as its title / accessible name, a small chevron);
+        - scope -> a key making the menu id unique when one record's pills
+          show several times on a page.
+
+        The menu is the shell's generic menu popup (pk_user_menu: keyboard,
+        Escape, outside tap, one open at a time).
+    -->
+    <template id="pk_status_pill_select" name="Portal kit: status pill select">
+        <t t-set="pk_pill_target" t-value="pill['target']"/>
+        <t t-set="pk_pill_menu_id" t-value="'pk-pill-%s-%s-%s%s' % (pk_pill_target['model'].replace('.', '-'), pk_pill_target['id'], pill['key'], ('-%s' % scope) if scope else '')"/>
+        <span t-if="editable" t-attf-class="o_pk_pill_select_wrap#{' o_pk_pill_select_compact' if compact else ''}" data-pk-pill-select="1"
+              t-att-data-pk-pill-key="pill['key']"
+              t-att-data-pk-model="pk_pill_target['model']"
+              t-att-data-pk-record-id="pk_pill_target['id']"
+              t-att-data-pk-field="pk_pill_target['field']"
+              t-att-data-pk-write-date="pk_pill_target['write_date']"
+              t-att-data-pk-old-value="pk_pill_target['old_value']"
+              t-att-data-pk-undo-message="undo_message or None">
+            <button type="button" t-attf-class="o_pk_status_pill o_pk_pill_select o_pk_chip_#{pill['tone']}"
+                    data-pk-menu-toggle="1" aria-haspopup="menu" aria-expanded="false"
+                    t-att-aria-controls="pk_pill_menu_id" t-att-title="pill['title']"
+                    t-att-aria-label="pill['text'] if compact else None"
+                    t-att-data-pk-pill-value="pill['value']">
+                <i t-if="pill['icon']" t-attf-class="fa #{pill['icon']}" aria-hidden="true"/>
+                <span class="o_pk_pill_text" t-out="pill['label'] if compact else pill['text']"/>
+                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
+            </button>
+            <span t-att-id="pk_pill_menu_id" class="o_pk_menu_popup o_pk_pill_popup" role="menu" data-pk-menu-popup="1" data-pk-keep-in-view="1"
+                  t-att-aria-label="pill['menu_label']" hidden="hidden">
+                <button t-foreach="pill['options']" t-as="option" type="button" role="menuitemradio"
+                        class="o_pk_menu_item o_pk_pill_option"
+                        t-att-data-pk-pill-value="option['value']"
+                        t-att-data-pk-pill-post="None if option['disabled'] else option.get('post', option['value'])"
+                        t-att-data-pk-pill-action="option.get('action') or None"
+                        t-att-data-pk-pill-from="option.get('from') or None"
+                        t-att-aria-checked="'true' if option['checked'] else 'false'"
+                        t-att-aria-disabled="'true' if option['disabled'] else None">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'check'"/></t>
+                    <span t-attf-class="o_pk_pill_swatch o_pk_chip_#{option['tone']}" aria-hidden="true"/>
+                    <span class="o_pk_pill_option_text">
+                        <span t-out="option['label']"/>
+                        <small t-if="option['disabled'] and option['hint']" class="o_pk_pill_hint" t-out="option['hint']"/>
+                    </span>
+                </button>
+            </span>
+        </span>
+        <span t-else="" t-attf-class="o_pk_status_pill o_pk_chip_#{pill['tone']}" t-att-title="pill['title']"
+              t-att-data-pk-pill-key="pill['key']" data-pk-pill-readonly="1">
+            <i t-if="pill['icon']" t-attf-class="fa #{pill['icon']}" aria-hidden="true"/>
+            <span class="o_pk_pill_text" t-out="pill['text']"/>
+        </span>
+    </template>
+
+    <!-- Task 5370 (P4b) — the form guard's slots (pk_form_guard.js): the
+         server-error slot and the reason line under the primary action
+         (aria-describedby). Call it right after the form's actions.
+         Variables: guard_id (unique on the page). -->
+    <template id="pk_form_guard_slots" name="Portal kit: form guard slots">
+        <p class="o_pk_field_message o_pk_field_error" role="alert" data-pk-guard-error="1" hidden="hidden"/>
+        <p class="o_pk_hint o_pk_guard_reason" t-att-id="'%s_reason' % guard_id" data-pk-guard-reason="1"
+           aria-live="polite" hidden="hidden"/>
+    </template>
+
+    <!-- Task 5371 (P4c1) — the toast host (pk_toast.js): the page's one toast
+         and the session notification it shows on load. Variables:
+         pk_notification -> PortalKitApp._pk_pop_notification() ({id, message,
+         title, tone, undo_url}) or False. An error also carries the form
+         guard's refusal marker (data-pk-flash-error = its message): a guarded
+         form's fetch that lands here shows it in the form. With an undo URL
+         (PortalKitApp._pk_offer_undo), the toast's « Undo » posts the hidden
+         form[data-pk-undo]. -->
+    <template id="pk_toast_host" name="Portal kit: toast host">
+        <div class="o_pk_toast" role="status" aria-live="polite" hidden="hidden"
+             t-att-data-pk-notify="pk_notification and (pk_notification['message'] or pk_notification['title']) or None"
+             t-att-data-pk-notify-title="pk_notification and pk_notification['message'] and pk_notification['title'] or None"
+             t-att-data-pk-notify-tone="pk_notification and pk_notification['tone'] or None"
+             t-att-data-pk-notify-id="pk_notification and pk_notification.get('id') or None"
+             t-att-data-pk-flash-error="pk_notification and pk_notification['tone'] == 'error' and (pk_notification['message'] or pk_notification['title']) or None"/>
+        <t t-if="pk_notification and pk_notification.get('undo_url')">
+            <t t-set="pk_undo_label">Undo</t>
+            <form t-att-action="pk_notification['undo_url']" method="post" hidden="hidden"
+                  data-pk-undo="1" t-att-data-pk-toast-action="pk_undo_label">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+            </form>
+        </t>
+    </template>
+
+
+    <!--
+        Task 5381 (P4c2) — an inline-editable card's head (pk_edit_cards.js):
+        the title and ONE pencil (data-pk-edit-toggle) that opens the card's
+        edit view (data-pk-edit-view="edit"); while the card is open the
+        pencil is a ✓ that closes it. Variables: title, editable.
+    -->
+    <template id="pk_edit_card_head" name="Portal kit: edit card head">
+        <div class="o_pk_edit_card_head">
+            <h3 class="o_pk_edit_card_title" t-out="title"/>
+            <button t-if="editable" type="button" class="o_pk_icon_btn" data-pk-edit-toggle="1"
+                    aria-expanded="false" aria-label="Edit" title="Edit">
+                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'edit'"/></t>
+            </button>
+        </div>
+    </template>
+
+    <!-- Task 5381 (P4c2) — a read-view row (<dt> + <dd>, in a <dl>).
+         Variables: label, record, field; optional href_kind ('tel' /
+         'mailto'): the value is a tap-to-call / tap-to-email link (no href
+         while empty: « — » is not a link). data-pk-display (a save updates
+         the value in place, pk_edit_cards.js) and data-pk-display-href (the
+         href follows). The caller passes the helpers pk_display,
+         pk_display_key and pk_contact_href (tools/display.py). -->
+    <template id="pk_display_row" name="Portal kit: display row">
+        <dt t-out="label"/>
+        <dd>
+            <t t-if="href_kind">
+                <t t-set="pk_shown" t-value="pk_display(record, field)"/>
+                <a class="o_pk_contact_link" t-att-href="pk_contact_href(href_kind, pk_shown)"
+                   t-att-data-pk-display-href="href_kind"
+                   t-att-data-pk-display="pk_display_key(record, field)" t-out="pk_shown or '—'"/>
+            </t>
+            <span t-else="" t-att-data-pk-display="pk_display_key(record, field)" t-out="pk_display(record, field) or '—'"/>
+        </dd>
+    </template>
+
+    <!--
+        Task 5381 (P4c2) — a bottom sheet (phone) / centred dialog (laptop):
+        a native <dialog> opened by any [data-pk-sheet-open="<sheet_id>"]
+        control (pk_sheets.js). Variables: sheet_id, title; optional lazy_url
+        (the body is fetched on first open, a loading line until then),
+        lazy_fresh (fetched again on every open: a history the page can
+        change), open_on_load (opens on load), head_extra (markup next to the
+        title). Body (0) = the content (ignored with lazy_url).
+    -->
+    <template id="pk_sheet" name="Portal kit: sheet">
+        <dialog t-att-id="sheet_id" class="o_pk_sheet" t-att-aria-labelledby="'%s_title' % sheet_id"
+                t-att-data-pk-lazy-url="lazy_url or None"
+                t-att-data-pk-lazy-fresh="'1' if lazy_url and lazy_fresh else None"
+                t-att-data-pk-sheet-open-on-load="'1' if open_on_load else None">
+            <div class="o_pk_sheet_head">
+                <h2 class="o_pk_sheet_title" t-att-id="'%s_title' % sheet_id" t-out="title"/>
+                <t t-if="head_extra" t-out="head_extra"/>
+                <button type="button" class="o_pk_icon_btn o_pk_sheet_close" data-pk-sheet-close="1" aria-label="Close" title="Close">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'close'"/></t>
+                </button>
+            </div>
+            <div t-attf-class="o_pk_sheet_body #{'o_pk_legacy' if lazy_url else ''}">
+                <p t-if="lazy_url" class="o_pk_empty o_pk_lazy_loading">Loading…</p>
+                <t t-else="" t-out="0"/>
+            </div>
+        </dialog>
+    </template>
+
+    <!--
+        Task 5381 (P4c2) — segmented page tabs, deep-linkable (pk_tabs.js).
+        Variables: tabs = [(key, label, url[, aliases[, badge[, short]]])],
+        active (key). Every tab is a real link (the server renders the
+        active panel); the script switches the panels
+        (<section data-pk-tab-panel="key">) in place and keeps ?tab= in the
+        address. Optional items: aliases, the #fragment names that also open
+        the tab (space separated); badge, a count pill BEFORE the label
+        ({'count', 'tone' ('neutral' | 'red'), 'label' (its aria-label)},
+        None = no pill); short, a short label shown on a phone (the full one
+        stays the tab's title). Up to 5 tabs fit a phone's width; more scroll
+        sideways.
+    -->
+    <template id="pk_page_tabs" name="Portal kit: page tabs">
+        <nav t-attf-class="o_pk_segmented o_pk_segmented_full o_pk_page_tabs #{'o_pk_page_tabs_scroll' if len(tabs) &gt; 5 else ''}" role="tablist" data-pk-tabs="1">
+            <t t-foreach="tabs" t-as="tab">
+                <t t-set="pk_tab_badge" t-value="tab[4] if len(tab) &gt; 4 else None"/>
+                <t t-set="pk_tab_short" t-value="tab[5] if len(tab) &gt; 5 else None"/>
+                <a t-att-href="tab[2]" role="tab" t-att-data-pk-tab="tab[0]"
+                   t-att-data-pk-tab-aliases="tab[3] if len(tab) &gt; 3 and tab[3] else None"
+                   t-att-title="tab[1] if pk_tab_short else None"
+                   t-att-aria-selected="'true' if tab[0] == active else 'false'"
+                   t-att-aria-pressed="'true' if tab[0] == active else 'false'"><span t-if="pk_tab_badge"
+                        t-attf-class="o_pk_tab_badge o_pk_tab_badge_#{pk_tab_badge['tone']}" role="img"
+                        t-att-aria-label="pk_tab_badge['label']" t-att-title="pk_tab_badge['label']"
+                        t-out="pk_tab_badge['count']"/><span t-attf-class="o_pk_tab_label #{'o_pk_tab_label_long' if pk_tab_short else ''}" t-out="tab[1]"/><span
+                        t-if="pk_tab_short" class="o_pk_tab_label o_pk_tab_label_short" aria-hidden="true" t-out="pk_tab_short"/></a>
+            </t>
+        </nav>
+    </template>
+
+    <!--
+        Task 5382 (P4c3) — the autosave field (the kit's OWL component
+        bemade_portal_kit.pk_autosave_field, static/src/js/pk_autosave_field.js).
+        Variable: props = the JSON of a props builder (tools/field_props.py:
+        pk_field_props, pk_draft_props or pk_form_props).
+    -->
+    <template id="pk_field_autosave" name="Portal kit: autosave field">
+        <owl-component name="bemade_portal_kit.pk_autosave_field" t-att-props="props"/>
+    </template>
+
+    <!--
+        Task 5345 (kit P3c2) — the shell components below were the first
+        consumer's (adopted: tools/adopt.py). Calling convention: set the
+        documented variables in the t-call body; 0 (the body) is the
+        trailing / extra content where noted.
+    -->
+
+    <!--
+        List row (a link). Variables: href, title, subtitle, dot
+        (red|yellow|green|False) or lead_icon (a pk_icon key), row_attrs
+        (dict of extra attributes), chevron (default True). Slot row_extra:
+        markup under the subtitle (e.g. a status line). Body (0) = trailing
+        chips.
+    -->
+    <template id="pk_entity_row" name="Portal kit: entity row">
+        <a t-att-href="href" class="o_pk_entity_row" t-att="row_attrs or {}">
+            <span t-if="dot" t-attf-class="o_pk_dot o_pk_tone_#{dot}" aria-hidden="true"/>
+            <span t-elif="lead_icon" class="o_pk_row_lead"><t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="lead_icon"/></t></span>
+            <span t-else="" class="o_pk_row_lead o_pk_row_lead_empty" aria-hidden="true"/>
+            <span class="o_pk_row_text">
+                <span class="o_pk_row_title" t-out="title"/>
+                <span t-if="subtitle" class="o_pk_row_subtitle" t-out="subtitle"/>
+                <t t-out="row_extra"/>
+            </span>
+            <span class="o_pk_row_trailing">
+                <t t-out="0"/>
+                <t t-if="chevron is not False" t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'chevron'"/></t>
+            </span>
+        </a>
+    </template>
+
+    <!--
+        The list header: ONE line directly above a list. « Add » on the left
+        (always that label; add_label, the full action, is its accessible
+        name) and the sort, condensed into a menu, on the right
+        (pk_list_header.js, pk_user_menu.js). Variables (all optional;
+        nothing set renders nothing):
+          add_label      the full action (aria-label / title)
+          add_url        a link …
+          add_sheet      … or the id of the sheet it opens …
+          add_panel      … or the id of the inline panel it opens / closes
+                         (the panel follows the header)
+          add_open       add_panel only: the panel renders open
+          add_key        data-pk-action of the add control
+          count          a short count text
+          sorts          [{key, label, url, active}], the menu's links
+                         (data-pk-sort); sort_id (unique on the page, the
+                         popup's id), sort_label, sort_section
+                         (data-pk-section of the menu)
+          header_section data-pk-section of the header line
+          header_fragment its read-fragment key, when a save can change
+                         what it offers
+    -->
+    <template id="pk_list_header" name="Portal kit: list header">
+        <div t-if="add_label or sorts or count or header_fragment" class="o_pk_list_header"
+             t-att-data-pk-section="header_section or None"
+             t-att-data-pk-fragment="header_fragment or None">
+            <t t-if="add_label">
+                <t t-set="pk_add_text">Add</t>
+                <a t-if="add_url" t-att-href="add_url" class="o_pk_section_more o_pk_link_btn o_pk_list_add"
+                   t-att-data-pk-action="add_key or None" t-att-aria-label="add_label" t-att-title="add_label">
+                    <span class="o_pk_list_add_label" t-out="pk_add_text"/>
+                </a>
+                <button t-elif="add_sheet" type="button" class="o_pk_section_more o_pk_link_btn o_pk_list_add"
+                        t-att-data-pk-sheet-open="add_sheet" t-att-data-pk-action="add_key or None"
+                        t-att-aria-label="add_label" t-att-title="add_label">
+                    <span class="o_pk_list_add_label" t-out="pk_add_text"/>
+                </button>
+                <button t-elif="add_panel" type="button" class="o_pk_section_more o_pk_link_btn o_pk_list_add"
+                        t-att-aria-controls="add_panel" t-att-aria-expanded="'true' if add_open else 'false'"
+                        data-pk-list-add-toggle="1" t-att-data-pk-action="add_key or None"
+                        t-att-aria-label="add_label" t-att-title="add_label">
+                    <span class="o_pk_list_add_label" t-out="pk_add_text"/>
+                </button>
+            </t>
+            <span t-if="count" class="o_pk_meta o_pk_list_header_count" t-out="count"/>
+            <div t-if="sorts" class="o_pk_sort_menu" t-att-data-pk-section="sort_section or None">
+                <t t-set="pk_sort_current" t-value="([s for s in sorts if s['active']] or sorts)[0]"/>
+                <button type="button" class="o_pk_sort_toggle" data-pk-menu-toggle="1" aria-haspopup="menu"
+                        aria-expanded="false" t-att-aria-controls="sort_id">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'sort'"/></t>
+                    <span class="visually-hidden" t-out="sort_label"/>
+                    <span class="o_pk_sort_current" t-out="pk_sort_current['label']"/>
+                </button>
+                <div t-att-id="sort_id" class="o_pk_menu_popup o_pk_sort_popup" role="menu" data-pk-menu-popup="1"
+                     t-att-aria-label="sort_label" hidden="hidden">
+                    <a t-foreach="sorts" t-as="sort" t-att-href="sort['url']" role="menuitemradio"
+                       class="o_pk_menu_item" t-att-data-pk-sort="sort['key']"
+                       t-att-aria-checked="'true' if sort['active'] else 'false'">
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'check'"/></t>
+                        <span t-out="sort['label']"/>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!--
+        A card top bar's icon group: ONE order and ONE colour scheme on every
+        card, left to right: the body (0: status chips / pills), the ci_extra
+        slot (e.g. a follow toggle), the activity clock + count, archive,
+        trash, pencil → ✓ (always rightmost). Neutral icons, except the red
+        trash, the green ✓ (pk_edit_cards.js) and the red clock when an
+        activity is overdue. Every variable optional (ci_ prefixed: a
+        caller's own ``editable`` never leaks in):
+          ci_clock     {count, overdue, url, label, key[, always]}: a link to
+                       the record's activities with a count badge; hidden
+                       at 0 unless ``always`` (then no badge)
+          ci_archive   a recoverable action, visible in read mode: {sheet}
+                       opens that sheet, {form} submits that (outside) form,
+                       {action, hidden[, section]} an inline POST form;
+                       optional label, key (data-pk-action)
+          ci_trash     a permanent delete (it always asks first), red:
+                       {sheet}, {form} or {attrs} (extra attributes, a
+                       JS-handled button; cls = extra classes); shown while
+                       the card is edited (data-pk-edit-only) unless
+                       ``always``; optional label, key
+          ci_editable  the pencil (data-pk-edit-toggle); ci_edit_key = its
+                       data-pk-action, ci_edit_for = the edit card it opens
+                       when it sits outside it (data-pk-edit-for),
+                       ci_edit_open = the card renders in edit mode
+    -->
+    <template id="pk_card_icons" name="Portal kit: card top-bar icons">
+        <t t-set="pk_ci_edit_for" t-value="ci_edit_for or None"/>
+        <span class="o_pk_card_icons" data-pk-card-icons="1">
+            <t t-out="0"/>
+            <t t-out="ci_extra"/>
+            <t t-if="ci_clock and (ci_clock.get('count') or ci_clock.get('always'))">
+                <t t-set="pk_ci_clock_label">Activities</t>
+                <a t-att-href="ci_clock['url']"
+                   t-attf-class="o_pk_icon_btn o_pk_card_clock #{'o_pk_card_clock_overdue' if ci_clock.get('overdue') else ''}"
+                   t-att-data-pk-activity-clock="str(ci_clock.get('count') or 0)"
+                   t-att-data-pk-activity-overdue="str(ci_clock.get('overdue') or 0)"
+                   t-att-data-pk-action="ci_clock.get('key') or None"
+                   t-att-aria-label="ci_clock.get('label') or pk_ci_clock_label" t-att-title="ci_clock.get('label') or pk_ci_clock_label">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'clock'"/></t>
+                    <span t-if="ci_clock.get('count')" class="o_pk_card_badge" aria-hidden="true" t-out="ci_clock['count']"/>
+                </a>
+            </t>
+            <t t-if="ci_archive">
+                <t t-set="pk_ci_archive_label" t-value="ci_archive.get('label')"/>
+                <t t-if="not pk_ci_archive_label"><t t-set="pk_ci_archive_label">Archive</t></t>
+                <form t-if="ci_archive.get('action')" t-att-action="ci_archive['action']" method="post" class="o_pk_inline_form"
+                      t-att-data-pk-section="ci_archive.get('section') or None">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <t t-foreach="(ci_archive.get('hidden') or {}).items()" t-as="hid">
+                        <input type="hidden" t-att-name="hid[0]" t-att-value="hid[1]"/>
+                    </t>
+                    <button type="submit" class="o_pk_icon_btn o_pk_card_archive" data-pk-card-archive="1"
+                            t-att-data-pk-action="ci_archive.get('key') or None"
+                            t-att-aria-label="pk_ci_archive_label" t-att-title="pk_ci_archive_label">
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'archive'"/></t>
+                    </button>
+                </form>
+                <button t-else="" t-att-type="'submit' if ci_archive.get('form') else 'button'"
+                        class="o_pk_icon_btn o_pk_card_archive" data-pk-card-archive="1"
+                        t-att-form="ci_archive.get('form') or None" t-att-data-pk-sheet-open="ci_archive.get('sheet') or None"
+                        t-att-data-pk-action="ci_archive.get('key') or None"
+                        t-att-aria-label="pk_ci_archive_label" t-att-title="pk_ci_archive_label">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'archive'"/></t>
+                </button>
+            </t>
+            <t t-if="ci_trash">
+                <t t-set="pk_ci_trash_label" t-value="ci_trash.get('label')"/>
+                <t t-if="not pk_ci_trash_label"><t t-set="pk_ci_trash_label">Delete</t></t>
+                <t t-set="pk_ci_trash_gated" t-value="not ci_trash.get('always')"/>
+                <button t-att-type="'submit' if ci_trash.get('form') else 'button'" t-attf-class="o_pk_icon_btn o_pk_icon_btn_danger o_pk_card_trash #{ci_trash.get('cls') or ''}" data-pk-card-trash="1"
+                        t-att="ci_trash.get('attrs') or {}" t-att-form="ci_trash.get('form') or None"
+                        t-att-data-pk-sheet-open="ci_trash.get('sheet') or None"
+                        t-att-data-pk-action="ci_trash.get('key') or None"
+                        t-att-data-pk-edit-only="'1' if pk_ci_trash_gated else None"
+                        t-att-data-pk-edit-for="pk_ci_edit_for if pk_ci_trash_gated else None"
+                        t-att-hidden="'hidden' if pk_ci_trash_gated and not ci_edit_open else None"
+                        t-att-aria-label="pk_ci_trash_label" t-att-title="pk_ci_trash_label">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'trash'"/></t>
+                </button>
+            </t>
+            <t t-if="ci_editable">
+                <t t-set="pk_ci_edit_label">Edit</t>
+                <button type="button" class="o_pk_icon_btn o_pk_card_edit" data-pk-edit-toggle="1"
+                        t-att-data-pk-edit-for="pk_ci_edit_for"
+                        t-att-data-pk-action="ci_edit_key or None"
+                        t-att-aria-expanded="'true' if ci_edit_open else 'false'"
+                        t-att-aria-label="pk_ci_edit_label" t-att-title="pk_ci_edit_label">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'edit'"/></t>
+                </button>
+            </t>
+        </span>
+    </template>
+
+    <!-- ONE history entry: « <date> <time> · <author> · <action chip> »,
+         then the body; an empty body reads « Cleared ». Variable: entry =
+         {when, author, action, tone, body, state, scope?} (the caller
+         formats ``when``). data-pk-history-state, data-pk-scope. -->
+    <template id="pk_history_entry" name="Portal kit: history entry">
+        <li class="o_pk_history_entry" t-att-data-pk-history-state="entry['state'] or None"
+            t-att-data-pk-scope="entry.get('scope') or None">
+            <div class="o_pk_meta o_pk_history_meta">
+                <span class="o_pk_history_when" t-out="entry['when']"/>
+                <t t-if="entry['author']"> · <span class="o_pk_history_author" t-out="entry['author']"/></t>
+                <t t-if="entry['action']"> · <span t-attf-class="o_pk_chip o_pk_chip_#{entry['tone']}" t-out="entry['action']"/></t>
+            </div>
+            <p t-if="entry['body']" class="o_pk_pre o_pk_history_body" t-out="entry['body']"/>
+            <p t-else="" class="o_pk_muted o_pk_history_cleared">Cleared</p>
+        </li>
+    </template>
+
+    <!-- A history's body (e.g. a sheet's lazy, fresh-on-every-open
+         fragment): optional filters (0), the entries, or the empty state.
+         Variables: entries, empty_message, section (data-pk-section). -->
+    <template id="pk_history_list" name="Portal kit: history list">
+        <div class="o_pk_history_fragment" t-att-data-pk-section="section or None">
+            <t t-out="0"/>
+            <ol t-if="entries" class="o_pk_history">
+                <t t-foreach="entries" t-as="entry" t-call="bemade_portal_kit.pk_history_entry"/>
+            </ol>
+            <p t-else="" class="o_pk_empty" t-out="empty_message"/>
+        </div>
+    </template>
+
+    <!-- Banner. Variables: title, tone (info|warn|ok), flash_error (a
+         refusal: the form guard reads it from the page a guarded form's
+         fetch landed on). Body (0) = text. -->
+    <template id="pk_banner" name="Portal kit: banner">
+        <div t-attf-class="o_pk_banner o_pk_banner_#{tone or 'info'}" role="status"
+             t-att-data-pk-flash-error="'1' if flash_error else None">
+            <strong t-if="title" class="o_pk_banner_title" t-out="title"/>
+            <t t-out="0"/>
+        </div>
+    </template>
+
+    <!-- The flash messages of a page's POST round-trips: pk_flash =
+         {success, error} (an error is a refusal banner). -->
+    <template id="pk_flash_banners" name="Portal kit: flash banners">
+        <t t-if="pk_flash and pk_flash.get('success')" t-call="bemade_portal_kit.pk_banner">
+            <t t-out="pk_flash['success']"/>
+        </t>
+        <t t-if="pk_flash and pk_flash.get('error')" t-call="bemade_portal_kit.pk_banner">
+            <t t-set="tone" t-value="'warn'"/>
+            <t t-set="flash_error" t-value="True"/>
+            <t t-out="pk_flash['error']"/>
+        </t>
+    </template>
+
+    <!-- « Passed »: a date that has already passed, flagged right after it,
+         inside an element carrying o_pk_overdue (the date and the flag in
+         the overdue colour, token pk-overdue). -->
+    <template id="pk_overdue_flag" name="Portal kit: overdue flag">
+        <span class="o_pk_overdue_sep" aria-hidden="true"> · </span><span class="o_pk_overdue_flag" data-pk-overdue="1">Passed</span>
+    </template>
+
+    <!--
+        A read-only field (label + value) where the viewer may not edit.
+        Variables: label, value, pre (keep line breaks), empty (text when no
+        value, default « — »), no_label (the value only), overdue (the date
+        has passed: pk_overdue_flag), static_hint, history_sheet +
+        history_label (a link button next to the label opening that sheet).
+    -->
+    <template id="pk_field_static" name="Portal kit: static field">
+        <div class="o_pk_field o_pk_field_static">
+            <span t-if="not no_label" class="o_pk_field_label"><span t-out="label"/>
+                <button t-if="history_sheet" type="button" class="o_pk_link_btn o_pk_field_history"
+                        t-att-data-pk-sheet-open="history_sheet" t-out="history_label"/>
+            </span>
+            <p t-if="value and overdue" t-attf-class="o_pk_field_value o_pk_overdue #{'o_pk_pre' if pre else ''}"><t t-out="value"/><t t-call="bemade_portal_kit.pk_overdue_flag"/></p>
+            <p t-elif="value" t-attf-class="o_pk_field_value #{'o_pk_pre' if pre else ''}" t-out="value"/>
+            <p t-else="" class="o_pk_field_value o_pk_muted" t-out="empty or '—'"/>
+            <small t-if="static_hint" class="o_pk_hint" t-out="static_hint"/>
+        </div>
+    </template>
+
+    <!--
+        THE switch (on / off): the label on the left, a pill switch on the
+        right, one line. A real <input type="checkbox" role="switch"> (a form
+        posts what a checkbox posts; Space toggles it; pk_switch.js keeps
+        aria-checked in sync). Variables (all optional except the label):
+          sw_label    the label (a t-set BODY, so its msgid stays plain text)
+          sw_name     the input's name (None: no name)
+          sw_value    the posted value when on (None: the browser's « on »)
+          sw_off      a value posted when OFF: a hidden twin with the same
+                      name, disabled while on, so the form posts ONE value
+          sw_checked  on / off
+          sw_disabled locked (data-pk-switch-locked)
+          sw_reason   the line under the label saying why it is locked
+                      (data-pk-switch-reason)
+          sw_hint     a line under the label (always shown)
+          sw_id       the input id
+          sw_attrs    dict of extra attributes on the input (data-*)
+          sw_class    extra classes on the row
+    -->
+    <template id="pk_switch" name="Portal kit: switch">
+        <label t-attf-class="o_pk_switch #{sw_class or ''}"
+               t-att-data-pk-switch-locked="'1' if sw_disabled else None">
+            <span class="o_pk_switch_text">
+                <span class="o_pk_switch_label" t-out="sw_label"/>
+                <small t-if="sw_hint" class="o_pk_switch_hint" t-out="sw_hint"/>
+                <small t-if="sw_disabled and sw_reason" class="o_pk_switch_hint o_pk_switch_reason"
+                       data-pk-switch-reason="1" t-out="sw_reason"/>
+            </span>
+            <span class="o_pk_switch_control">
+                <input type="checkbox" role="switch" class="o_pk_switch_input"
+                       t-att-id="sw_id" t-att-name="sw_name" t-att-value="sw_value"
+                       t-att-checked="'checked' if sw_checked else None"
+                       t-att-aria-checked="'true' if sw_checked else 'false'"
+                       t-att-disabled="'disabled' if sw_disabled else None"
+                       t-att="sw_attrs or {}"/>
+                <span class="o_pk_switch_track" aria-hidden="true"><span class="o_pk_switch_thumb"/></span>
+            </span>
+            <input t-if="sw_off is not None and sw_name" type="hidden" t-att-name="sw_name" t-att-value="sw_off"
+                   data-pk-switch-off="1" t-att-disabled="'disabled' if sw_checked else None"/>
+        </label>
+    </template>
+
+    <!--
+        A confirm sheet: a pk_sheet holding ONE guarded POST form (fetch
+        mode). Variables: sheet_id, title, message, action, hidden (dict
+        name -> value), confirm_label, danger (bool). Body (0) = extra
+        fields inside the form.
+    -->
+    <template id="pk_confirm_sheet" name="Portal kit: confirm sheet">
+        <t t-call="bemade_portal_kit.pk_sheet">
+            <t t-set="lazy_url" t-value="False"/>
+            <form t-att-action="action" method="post" class="o_pk_form" data-pk-guard="1" data-pk-guard-mode="fetch">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <t t-foreach="(hidden or {}).items()" t-as="hid">
+                    <input type="hidden" t-att-name="hid[0]" t-att-value="hid[1]"/>
+                </t>
+                <p t-if="message" class="o_pk_confirm_message" t-out="message"/>
+                <t t-out="0"/>
+                <div class="o_pk_form_actions">
+                    <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-sheet-close="1">Cancel</button>
+                    <button type="submit" t-attf-class="o_pk_btn #{'o_pk_btn_danger' if danger else 'o_pk_btn_primary'}"
+                            data-pk-confirm-submit="1" t-out="confirm_label"/>
+                </div>
+                <t t-call="bemade_portal_kit.pk_form_guard_slots"><t t-set="guard_id" t-value="sheet_id"/></t>
+            </form>
+        </t>
+    </template>
+
+    <!--
+        LINK ROW: a list row with ONE main link plus secondary links / chips,
+        without nesting anchors. The row is a plain container; the TITLE is
+        the main <a>, whose ::after is stretched over the whole row (the
+        « stretched link » pattern, no script): a tap anywhere on the row
+        opens ``href``. Every other <a> / <button> / <summary> / form control
+        inside the row is layered above it and gets its own tap. Keyboard:
+        the main link is one tab stop (its focus ring outlines the row),
+        each secondary control its own.
+
+        Variables:
+          href          main target (required)
+          title         main link text (required)
+          main_attrs    dict of extra attributes of the main <a>
+          title_parts   optional split title: [{text[, url, model]}]; a part
+                        with ``url`` is its own link (data-pk-title-link),
+                        layered above the main link, which then carries the
+                        whole title as its aria-label (data-pk-title-split)
+          subtitle      text or markup under the title (never a link: use
+                        ``links`` or ``meta``)
+          dot / lead_icon   as pk_entity_row
+          meta          optional markup under the subtitle
+          links         secondary links on their own line under the text
+                        (pk_row_links)
+          row_class     extra classes of the row container
+          row_attrs     dict of extra attributes of the row container
+          chevron       trailing chevron (default True)
+          body (0)      trailing content: chips, counts, icon buttons /
+                        links (each clickable on its own)
+    -->
+    <template id="pk_link_row" name="Portal kit: link row">
+        <div t-attf-class="o_pk_entity_row o_pk_link_row #{row_class or ''}" t-att="row_attrs or {}">
+            <span t-if="dot" t-attf-class="o_pk_dot o_pk_tone_#{dot}" aria-hidden="true"/>
+            <span t-elif="lead_icon" class="o_pk_row_lead"><t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="lead_icon"/></t></span>
+            <span t-else="" class="o_pk_row_lead o_pk_row_lead_empty" aria-hidden="true"/>
+            <span class="o_pk_row_text">
+                <span t-if="title_parts and any(part.get('url') for part in title_parts)"
+                      class="o_pk_row_title o_pk_row_title_split" data-pk-title-split="1">
+                    <a t-att-href="href" class="o_pk_link_row_main" t-att-aria-label="title" t-att="main_attrs or {}"/>
+                    <t t-foreach="title_parts" t-as="title_part">
+                        <a t-if="title_part.get('url')" t-att-href="title_part['url']" class="o_pk_row_title_link"
+                           t-att-data-pk-title-link="title_part.get('model') or '1'" t-out="title_part['text']"/>
+                        <span t-else="" t-out="title_part['text']"/>
+                    </t>
+                </span>
+                <a t-else="" t-att-href="href" class="o_pk_link_row_main o_pk_row_title" t-att="main_attrs or {}" t-out="title"/>
+                <span t-if="subtitle" class="o_pk_row_subtitle" t-out="subtitle"/>
+                <t t-if="meta" t-out="meta"/>
+                <span t-if="links" class="o_pk_row_links" data-pk-row-links="1">
+                    <t t-call="bemade_portal_kit.pk_row_links"/>
+                </span>
+            </span>
+            <span class="o_pk_row_trailing">
+                <t t-out="0"/>
+                <t t-if="chevron is not False" t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'chevron'"/></t>
+            </span>
+        </div>
+    </template>
+
+    <!-- The secondary links of a link row (or any « record links » line).
+         Variable: links = [{label|name, url (False: plain text), icon (a
+         pk_icon key), title (tooltip), model (the data-pk-row-link /
+         data-pk-row-link-plain value)}]. -->
+    <template id="pk_row_links" name="Portal kit: row links">
+        <t t-foreach="links" t-as="row_link">
+            <t t-set="row_link_label" t-value="row_link.get('label') or row_link.get('name')"/>
+            <a t-if="row_link.get('url')" t-att-href="row_link['url']" class="o_pk_row_link"
+               t-att-title="row_link.get('title')" t-att-data-pk-row-link="row_link.get('model') or '1'">
+                <t t-if="row_link.get('icon')" t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="row_link['icon']"/></t>
+                <span t-out="row_link_label"/>
+            </a>
+            <span t-else="" class="o_pk_row_link o_pk_row_link_plain" t-att-title="row_link.get('title')"
+                  t-att-data-pk-row-link-plain="row_link.get('model') or '1'">
+                <t t-if="row_link.get('icon')" t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="row_link['icon']"/></t>
+                <span t-out="row_link_label"/>
+            </span>
+        </t>
     </template>
 
 </odoo>

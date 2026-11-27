@@ -34,16 +34,16 @@ function noHorizontalScroll() {
     assert(doc.scrollWidth <= doc.clientWidth + 1, `horizontal scroll (${doc.scrollWidth} > ${doc.clientWidth})`);
 }
 
-const ITEM = (id) => `li[data-sc-dash-item="${id}"]`;
-const FORM = (id) => `form[data-sc-dash-instance="${id}"]`;
+const ITEM = (id) => `li[data-pk-dash-item="${id}"]`;
+const FORM = (id) => `form[data-pk-dash-instance="${id}"]`;
 const SECTION_IDS = () =>
-    [...document.querySelectorAll("section[data-sc-instance]")].map((el) => el.dataset.scInstance);
+    [...document.querySelectorAll("section[data-pk-dash-instance]")].map((el) => el.dataset.pkDashInstance);
 
 tours.add("sc_1624_dashboard_configure", {
     steps: () => [
         {
             content: "The dashboard: the default sections, « Today » first",
-            trigger: 'section[data-sc-instance="today"]',
+            trigger: 'section[data-pk-dash-instance="today"]',
             run() {
                 const ids = SECTION_IDS();
                 assert(ids[0] === "today" && ids.includes("watch") && ids.includes("coverage"), `sections: ${ids}`);
@@ -52,7 +52,7 @@ tours.add("sc_1624_dashboard_configure", {
         },
         {
             content: "Open « Configure »",
-            trigger: 'a[data-sc-action="dashboard.configure"]',
+            trigger: 'a[data-pk-action="dashboard.configure"]',
             run: "click",
             expectUnloadPage: true,
         },
@@ -61,20 +61,20 @@ tours.add("sc_1624_dashboard_configure", {
             trigger: `${ITEM("today")} label.o_pk_switch`,
             run() {
                 noHorizontalScroll();
-                assert(!document.querySelector("[data-sc-dash-save]:not([hidden])"), "no-JS save button hidden");
+                assert(!document.querySelector("[data-pk-dash-save]:not([hidden])"), "no-JS save button hidden");
                 this.anchor.click();
             },
         },
         {
             content: "Saved in place, the row greyed (no reload)",
-            trigger: `${ITEM("today")}.o_sc_dash_cfg_off ${FORM("today")}:not([data-sc-dash-saving]) [data-sc-dash-status]:not(:empty)`,
+            trigger: `${ITEM("today")}.o_pk_dash_cfg_off ${FORM("today")}:not([data-pk-dash-saving]) [data-pk-dash-status]:not(:empty)`,
             async run() {
-                await waitFor(() => !document.querySelector(`${FORM("today")} [data-sc-guard-error]:not([hidden])`), "no error");
+                await waitFor(() => !document.querySelector(`${FORM("today")} [data-pk-guard-error]:not([hidden])`), "no error");
             },
         },
         {
             content: "Move « Upcoming coverage » up",
-            trigger: `${ITEM("coverage")} button[data-sc-dash-move="up"]`,
+            trigger: `${ITEM("coverage")} button[data-pk-dash-move="up"]`,
             run: "click",
             expectUnloadPage: true,
         },
@@ -82,24 +82,24 @@ tours.add("sc_1624_dashboard_configure", {
             content: "Coverage is now above « To do » (round 2: within its zone)",
             trigger: `${ITEM("coverage")}`,
             run() {
-                const ids = [...document.querySelectorAll("li[data-sc-dash-item]")].map((el) => el.dataset.scDashItem);
+                const ids = [...document.querySelectorAll("li[data-pk-dash-item]")].map((el) => el.dataset.pkDashItem);
                 assert(ids.indexOf("coverage") < ids.indexOf("todo"), `order: ${ids}`);
             },
         },
         {
             content: "Pick « Players to watch » to add",
-            trigger: "select#sc_dash_add_widget",
+            trigger: "select#pk_dash_add_widget",
             run: "select watch",
         },
         {
             content: "« + Add a section »",
-            trigger: "button[data-sc-dash-add]",
+            trigger: "button[data-pk-dash-add]",
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "The new instance: open its settings",
-            trigger: `${ITEM("watch-2")} summary[data-sc-dash-settings]`,
+            trigger: `${ITEM("watch-2")} summary[data-pk-dash-settings]`,
             run: "click",
         },
         {
@@ -109,7 +109,7 @@ tours.add("sc_1624_dashboard_configure", {
         },
         {
             content: "Title saved",
-            trigger: `${FORM("watch-2")}:not([data-sc-dash-saving]) [data-sc-dash-status]:not(:empty)`,
+            trigger: `${FORM("watch-2")}:not([data-pk-dash-saving]) [data-pk-dash-status]:not(:empty)`,
             async run() {
                 await waitFor(
                     () => document.querySelector(`${ITEM("watch-2")} .o_pk_switch_label`).textContent.trim() === "Watch C only",
@@ -119,7 +119,7 @@ tours.add("sc_1624_dashboard_configure", {
         },
         {
             content: "Limit it to DB Team C: type in the teams picker",
-            trigger: `${FORM("watch-2")} [data-sc-dash-scope] input.o_pk_tags_search:last`,
+            trigger: `${FORM("watch-2")} [data-pk-dash-scope] input.o_pk_tags_search:last`,
             run: "edit Team C",
         },
         {
@@ -134,8 +134,8 @@ tours.add("sc_1624_dashboard_configure", {
                 const hidden = document.querySelector(`${FORM("watch-2")} input[name="scope_team_ids"]`);
                 await waitFor(() => hidden.value !== "", "scope filled");
                 await waitFor(
-                    () => document.querySelector(`${FORM("watch-2")}:not([data-sc-dash-saving])`) &&
-                        !document.querySelector(`${FORM("watch-2")} [data-sc-guard-error]:not([hidden])`),
+                    () => document.querySelector(`${FORM("watch-2")}:not([data-pk-dash-saving])`) &&
+                        !document.querySelector(`${FORM("watch-2")} [data-pk-guard-error]:not([hidden])`),
                     "saved"
                 );
                 noHorizontalScroll();
@@ -143,7 +143,7 @@ tours.add("sc_1624_dashboard_configure", {
         },
         {
             content: "Back to the dashboard",
-            trigger: 'a[data-sc-action="dashboard.back"]',
+            trigger: 'a[data-pk-action="dashboard.back"]',
             async run() {
                 // Let the last autosave land before leaving.
                 await new Promise((resolve) => setTimeout(resolve, 400));
@@ -153,16 +153,16 @@ tours.add("sc_1624_dashboard_configure", {
         },
         {
             content: "Today is gone, coverage before « To do », the new section titled and scoped",
-            trigger: 'section[data-sc-instance="watch-2"]',
+            trigger: 'section[data-pk-dash-instance="watch-2"]',
             run() {
                 const ids = SECTION_IDS();
                 assert(!ids.includes("today"), `today switched off: ${ids}`);
                 assert(ids.indexOf("coverage") < ids.indexOf("todo"), `order: ${ids}`);
                 // Round 2: added to the shorter column (a tie: the left one).
-                assert(this.anchor.closest("[data-sc-zone]").dataset.scZone === "left", "watch-2 in the left zone");
+                assert(this.anchor.closest("[data-pk-dash-zone]").dataset.pkDashZone === "left", "watch-2 in the left zone");
                 const section = this.anchor;
-                assert(section.querySelector(".o_sc_dw_title_text").textContent.trim() === "Watch C only", "title");
-                assert(section.querySelector("[data-sc-dw-scope]").textContent.includes("DB Team C"), "scope line");
+                assert(section.querySelector(".o_pk_dash_title_text").textContent.trim() === "Watch C only", "title");
+                assert(section.querySelector("[data-pk-dash-scope]").textContent.includes("DB Team C"), "scope line");
                 const players = [...section.querySelectorAll("[data-sc-player-id]")].map((el) => el.textContent);
                 assert(players.some((t) => t.includes("Yellow")), "Team C's yellow player listed");
                 assert(!players.some((t) => t.includes("Red, ") || t.includes("Synth, Red")), "Team A's red player not listed");
@@ -171,13 +171,13 @@ tours.add("sc_1624_dashboard_configure", {
         },
         {
             content: "Configure again",
-            trigger: 'a[data-sc-action="dashboard.configure"]',
+            trigger: 'a[data-pk-action="dashboard.configure"]',
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "« Restore the default »",
-            trigger: "button[data-sc-dash-reset]",
+            trigger: "button[data-pk-dash-reset]",
             run: "click",
         },
         {
@@ -188,7 +188,7 @@ tours.add("sc_1624_dashboard_configure", {
         },
         {
             content: "Back to the defaults: no second instance, « Today » on",
-            trigger: `${ITEM("today")}:not(.o_sc_dash_cfg_off)`,
+            trigger: `${ITEM("today")}:not(.o_pk_dash_cfg_off)`,
             run() {
                 assert(!document.querySelector(ITEM("watch-2")), "the added instance is gone");
             },

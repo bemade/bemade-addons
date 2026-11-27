@@ -61,7 +61,7 @@ tours.add("sc_1018b_player_documents", {
     steps: () => [
         {
             content: "« + Ajouter » of the Documents list",
-            trigger: '.o_pk_list_header button.o_pk_list_add[data-sc-sheet-open="sc_documents_upload"]',
+            trigger: '.o_pk_list_header button.o_pk_list_add[data-pk-sheet-open="sc_documents_upload"]',
             run: "click",
         },
         {

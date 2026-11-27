@@ -16,7 +16,7 @@
          (_sc_team_row). Task 1592: a link row (sc_link_row) so the activity
          clock chip is its own link; data-sc-team-id on the main link. -->
     <template id="sc_team_list_row" name="App shell: team list row">
-        <t t-call="bemade_sports_clinic.sc_link_row">
+        <t t-call="bemade_portal_kit.pk_link_row">
             <t t-set="href" t-value="row['url']"/>
             <t t-set="dot" t-value="row['status']"/>
             <t t-set="title" t-value="row['title']"/>
@@ -31,11 +31,11 @@
     <!-- /my/teams (shell) — every team, sticky sort (task 1401) kept -->
     <template id="sc_app_teams" name="Sports Clinic App: teams">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">My teams</t>
-            <t t-set="sc_active_nav" t-value="'teams'"/>
+            <t t-set="pk_title">My teams</t>
+            <t t-set="pk_active_nav" t-value="'teams'"/>
 
             <!-- A refused team (1577 review): the clean, translated message. -->
-            <t t-if="error" t-call="bemade_sports_clinic.sc_banner">
+            <t t-if="error" t-call="bemade_portal_kit.pk_banner">
                 <t t-set="flash_error" t-value="True"/>
                 <t t-set="tone" t-value="'warn'"/>
                 <t t-out="error"/>
@@ -53,7 +53,7 @@
 
             <!-- Task 1607: the sort in the list header (a menu, same control
                  on every list); no add on this list. -->
-            <t t-call="bemade_sports_clinic.sc_list_header">
+            <t t-call="bemade_portal_kit.pk_list_header">
                 <t t-set="header_section" t-value="'teams.header'"/>
                 <t t-set="sc_sort_activity">Recent activity</t>
                 <t t-set="sc_sort_alpha">Alphabetical</t>
@@ -106,96 +106,30 @@
         </t>
     </template>
 
-    <!-- /my/app/more — « Plus » -->
-    <template id="sc_app_more" name="Sports Clinic App: more">
-        <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">More</t>
-            <t t-set="sc_active_nav" t-value="'more'"/>
+    <!-- Task 5200 (kit P5): « Plus » (/my/app/more) and « Paramètres »
+         (/my/app/settings) are the kit's pages (bemade_portal_kit.pk_app_more
+         / pk_app_settings, drawn on sc_app_layout). The clinic adds: -->
 
-            <div t-if="sc_plus" class="o_pk_list">
-                <t t-foreach="sc_plus" t-as="entry">
-                    <t t-call="bemade_sports_clinic.sc_entity_row">
-                        <t t-set="href" t-value="entry['url']"/>
-                        <t t-set="lead_icon" t-value="entry['icon']"/>
-                        <t t-set="title" t-value="entry['label']"/>
-                        <t t-set="subtitle" t-value="entry['subtitle']"/>
-                        <!-- Entries also on the laptop rail are hidden there (owner
-                             review 2026-10-10); the phone keeps them here. -->
-                        <t t-set="row_attrs" t-value="{'data-sc-nav-key': entry['key'], 'data-sc-in-rail': '1' if 'rail' in entry['placement'] else None}"/>
-                    </t>
-                </t>
-            </div>
-
-            <!-- Task 1660: the user guide (new tab), every app role. -->
-            <div t-if="sc_help and sc_help['home']" class="o_pk_list" data-pk-section="more.guide">
-                <t t-call="bemade_sports_clinic.sc_entity_row">
-                    <t t-set="href" t-value="sc_help['home']"/>
-                    <t t-set="lead_icon" t-value="'help'"/>
-                    <t t-set="title">User guide</t>
-                    <t t-set="subtitle">Articles and videos</t>
-                    <t t-set="row_attrs" t-value="{'target': '_blank', 'rel': 'noopener', 'data-sc-help-home-link': '1'}"/>
-                </t>
-            </div>
-
+    <!-- « Plus »: the brand footnote. -->
+    <template id="sc_app_more_footnote" inherit_id="bemade_portal_kit.pk_app_more"
+              name="Sports Clinic App: more, footnote">
+        <xpath expr="//t[@name='pk_more_extra']" position="before">
             <p class="o_pk_footnote">Le Fit Crew</p>
-        </t>
+        </xpath>
     </template>
 
-    <!-- /my/app/settings — « Paramètres » (task 1606), opened from the user
-         menu: the language, appearance and account blocks that used to sit
-         at the bottom of « Plus » (moved, not duplicated). Logging out is the
-         menu's « Se déconnecter ». -->
-    <template id="sc_app_settings" name="Sports Clinic App: settings">
-        <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Settings</t>
-            <t t-set="sc_active_nav" t-value="False"/>
-
-            <!-- Task 1588: the profile language (res.users.lang), a plain
-                 POST (full reload: the whole page changes language). -->
-            <section t-if="sc_langs" class="o_pk_section" id="sc_language">
-                <t t-call="bemade_portal_kit.pk_section_header">
-                    <t t-set="title">Language</t>
-                </t>
-                <form method="post" action="/my/app/pref" class="o_pk_segmented o_pk_segmented_full">
-                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <input type="hidden" name="redirect" value="/my/app/settings"/>
-                    <t t-foreach="sc_langs" t-as="sc_lang">
-                        <button type="submit" name="lang" t-att-value="sc_lang['code']"
-                                t-att-title="sc_lang['name']"
-                                t-att-lang="sc_lang['code'].replace('_', '-')"
-                                t-att-aria-pressed="'true' if sc_lang['active'] else 'false'"
-                                t-out="sc_lang['label']"/>
-                    </t>
-                </form>
-            </section>
-
-            <!-- Task 1602: hidden while the app is forced dark. -->
-            <section t-if="sc_theme_choice" class="o_pk_section" id="sc_appearance">
-                <t t-call="bemade_portal_kit.pk_section_header">
-                    <t t-set="title">Appearance</t>
-                </t>
-                <!-- Task 1726: a switch (on = dark); sc_switch.js posts on change. -->
-                <form method="post" action="/my/app/pref" data-sc-pref="1" class="o_pk_card o_pk_switch_card">
-                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <input type="hidden" name="redirect" value="/my/app/settings"/>
-                    <t t-call="bemade_sports_clinic.sc_switch">
-                        <t t-set="sw_name" t-value="'sc_theme'"/>
-                        <t t-set="sw_value" t-value="'dark'"/>
-                        <t t-set="sw_off" t-value="'light'"/>
-                        <t t-set="sw_checked" t-value="sc_theme == 'dark'"/>
-                        <t t-set="sw_attrs" t-value="{'data-pk-switch-submit': '1', 'data-sc-theme-switch': '1'}"/>
-                        <t t-set="sw_label">Dark mode</t>
-                    </t>
-                </form>
-            </section>
-
-            <!-- Task 1665: the morning summary opt-out, for every app role
-                 (the user's own preference; default on). -->
+    <!-- « Paramètres »: task 1665, the morning summary opt-out, for every app
+         role (the user's own preference; default on). Priority 8: applied
+         before the other extensions of the page (the bookings addon inserts
+         its section after this one, //section[@id='sc_morning_summary']). -->
+    <template id="sc_app_settings_morning_summary" inherit_id="bemade_portal_kit.pk_app_settings"
+              name="Sports Clinic App: settings, morning summary" priority="8">
+        <xpath expr="//t[@name='pk_settings_extra']" position="before">
             <section class="o_pk_section" id="sc_morning_summary" data-pk-section="settings.morning_summary">
                 <form method="post" action="/my/app/pref" class="o_pk_card o_pk_switch_card">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="redirect" value="/my/app/settings"/>
-                    <t t-call="bemade_sports_clinic.sc_switch">
+                    <t t-call="bemade_portal_kit.pk_switch">
                         <t t-set="sw_name" t-value="'digest_daily_enabled'"/>
                         <t t-set="sw_value" t-value="'1'"/>
                         <t t-set="sw_off" t-value="'0'"/>
@@ -205,47 +139,7 @@
                     </t>
                 </form>
             </section>
-
-            <!-- Task 1676: the edit cards' « Done » buttons (default hidden:
-                 the pencil turns into a ✓ that closes the card). -->
-            <section class="o_pk_section" id="sc_done_buttons" data-pk-section="settings.done_buttons">
-                <form method="post" action="/my/app/pref" class="o_pk_card o_pk_switch_card">
-                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <input type="hidden" name="redirect" value="/my/app/settings"/>
-                    <t t-call="bemade_sports_clinic.sc_switch">
-                        <t t-set="sw_name" t-value="'sc_show_done_buttons'"/>
-                        <t t-set="sw_value" t-value="'1'"/>
-                        <t t-set="sw_off" t-value="'0'"/>
-                        <t t-set="sw_checked" t-value="sc_show_done"/>
-                        <t t-set="sw_attrs" t-value="{'data-pk-switch-submit': '1'}"/>
-                        <t t-set="sw_hint">When off, tap ✓ at the top of a card to finish editing.</t>
-                        <t t-set="sw_label">Show « Done » buttons</t>
-                    </t>
-                </form>
-            </section>
-
-            <section class="o_pk_section" id="sc_account">
-                <t t-call="bemade_portal_kit.pk_section_header">
-                    <t t-set="title">Account</t>
-                </t>
-                <div class="o_pk_list">
-                    <t t-call="bemade_sports_clinic.sc_entity_row">
-                        <t t-set="href" t-value="'/my/account'"/>
-                        <t t-set="lead_icon" t-value="'account'"/>
-                        <t t-set="title">My account</t>
-                        <t t-set="subtitle">Name, email, phone</t>
-                    </t>
-                    <t t-call="bemade_sports_clinic.sc_entity_row">
-                        <t t-set="href" t-value="'/my/security'"/>
-                        <t t-set="lead_icon" t-value="'security'"/>
-                        <t t-set="title">Security</t>
-                        <t t-set="subtitle">Password and sign-in</t>
-                    </t>
-                    <!-- Review fixes 2026-10-18 (#1606): no « Portail classique »
-                         row any more (owner). -->
-                </div>
-            </section>
-        </t>
+        </xpath>
     </template>
 
 </odoo>

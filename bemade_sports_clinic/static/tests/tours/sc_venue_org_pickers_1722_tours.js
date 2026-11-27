@@ -39,7 +39,7 @@ tours.add("sc_1722_venue_org_pickers", {
                 assert(this.anchor.value.length > 0, "the empty choice has no label in the box");
                 this.anchor.click();
                 const first = document.querySelector(`${VENUE} .o_pk_picker_option`);
-                assert(first && first.dataset.scPickerValue === "", "« To be determined » is not first");
+                assert(first && first.dataset.pkPickerValue === "", "« To be determined » is not first");
             },
         },
         {

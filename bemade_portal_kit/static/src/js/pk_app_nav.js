@@ -2,10 +2,10 @@
  * Task 1579 (epic #1535) — app shell: « back » = where you came from.
  *
  * The server renders the back chevron with the RESOLVED parent as its href
- * (models/sc_app_nav.py): that is where a deep link, a shared link, a fresh
- * PWA launch or a reload goes back to. This script keeps, per browser tab
- * (sessionStorage), a stack of the in-app pages visited, and turns the back
- * chevron into history.back() when the previous entry of THIS tab is an
+ * (portal.kit.pk_resolve, the page registry): that is where a deep link, a
+ * shared link, a fresh PWA launch or a reload goes back to. This script
+ * keeps, per browser tab (sessionStorage), a stack of the in-app pages
+ * visited, and turns the back chevron into history.back() when the previous entry of THIS tab is an
  * in-app page — so back returns to the dashboard, the team, the clinic or the
  * filtered list you actually came from.
  *
@@ -24,7 +24,7 @@
 export const NAV_STACK_KEY = "pk_nav_stack:v1";
 const POST_KEY = "pk_nav_post:v1";
 const UP_KEY = "pk_nav_up:v1";
-// Set by a consumer (sc_fragments.js) when a back/forward step reloads a
+// Set by pk_fragments.js when a back/forward step reloads a
 // stale page: import it, never repeat the string.
 export const NAV_BF_RELOAD_KEY = "pk_nav_bf_reload:v1";
 const MAX_DEPTH = 50;

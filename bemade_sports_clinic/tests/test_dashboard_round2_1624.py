@@ -5,13 +5,13 @@ real browser) is test_dashboard_tours_1624 (« sc_1624_dashboard_round2 »).
 
 Acceptance criteria:
 
-* UC-G1 Gap: every widget's body is ONE stack box (``o_sc_dw_body``, the
+* UC-G1 Gap: every widget's body is ONE stack box (``o_pk_dash_body``, the
   card-list gap), so in « Aujourd'hui » the « Cliniques aujourd'hui » row
   and the first event card are two items of that stack, never touching;
   the other widgets' first cards sit in the same box.
 * UC-A1 Header stays on screen: the dashboard fold-outs (« À faire » lines,
   « Voir les N autres », the player / event « Détails ») are plain
-  summaries / [data-sc-row-expand] toggles with NO autofocus inside; the
+  summaries / [data-pk-row-expand] toggles with NO autofocus inside; the
   layout script that anchors them is in the bundle. (Measured in the tour:
   8+ cards at 390 and 1440 px, the header moves < 2 px.)
 * UC-Q1 Quick « Retour prévu »: each « Retours dépassés » card carries the
@@ -24,10 +24,10 @@ Acceptance criteria:
   à venir and Feuilles de temps manquantes render each event as a row
   group (``o_pk_row_group``) with a link row (``sc_link_row``) whose main
   link (« › » chevron) opens the event, and the shared « Détails »
-  expander ([data-sc-row-expand], aria-expanded) controlling a details
+  expander ([data-pk-row-expand], aria-expanded) controlling a details
   region under the row; ids are unique on the page.
 * UC-F1 Live follow: each « Joueurs que je suis » instance is a LIST read
-  fragment (``sc.dashboard:followed:<instance>``, items = the player cards)
+  fragment (``pk.dashboard:followed:<instance>``, items = the player cards)
   with its count and its empty state; after a follow / unfollow the
   fragment answer adds / drops the card in every instance, each with its
   own scope.
@@ -67,6 +67,7 @@ from odoo.exceptions import ValidationError
 from odoo.tests import tagged
 from odoo.tools.misc import file_open
 
+from odoo.addons.bemade_portal_kit_dashboard.models import portal_kit_dashboard as dash_engine
 from odoo.addons.bemade_sports_clinic.models import sc_dashboard
 from odoo.addons.bemade_sports_clinic.models.patient import PAST_RETURN_OK
 from odoo.addons.bemade_sports_clinic.tests.dashboard_common_1624 import Dashboard1624Common
@@ -87,29 +88,29 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         self._login_tp()
         _text, tree = self._get('/my/home')
         for section in self._sections(tree):
-            if section.get('data-sc-widget') == 'indicators':
+            if section.get('data-pk-dash-widget') == 'indicators':
                 continue
-            bodies = section.xpath('./div[contains(@class, "o_sc_dw_body")]')
-            self.assertEqual(len(bodies), 1, section.get('data-sc-instance'))
-        today = self._section(tree, 'today').xpath('./div[contains(@class, "o_sc_dw_body")]')[0]
+            bodies = section.xpath('./div[contains(@class, "o_pk_dash_body")]')
+            self.assertEqual(len(bodies), 1, section.get('data-pk-dash-instance'))
+        today = self._section(tree, 'today').xpath('./div[contains(@class, "o_pk_dash_body")]')[0]
         # The clinics row and the event cards are siblings in the stack.
         kids = [child.get('class') or '' for child in today]
         self.assertIn('o_sc_dw_clinics', kids[0])
         self.assertTrue(any('o_sc_dw_events' in k for k in kids[1:]), kids)
-        scss = file_open('bemade_sports_clinic/static/src/scss/sc_dashboard.scss').read()
-        self.assertIn('.o_sc_dw_body {', scss)
+        scss = file_open('bemade_portal_kit_dashboard/static/src/scss/pk_dashboard.scss').read()
+        self.assertIn('.o_pk_dash_body {', scss)
 
     # -- UC-A1 ---------------------------------------------------------------
     def test_fold_outs_no_autofocus(self):
         self._overdue(self.shared)
         self._login_tp()
         _text, tree = self._get('/my/home')
-        dash = tree.xpath('//*[@data-sc-dashboard]')[0]
+        dash = tree.xpath('//*[@data-pk-dashboard]')[0]
         self.assertFalse(dash.xpath('.//*[@autofocus]'))
         self.assertTrue(dash.xpath('.//details[@data-sc-todo]/summary'))
-        self.assertTrue(dash.xpath('.//button[@data-sc-row-expand]'))
-        manifest = file_open('bemade_sports_clinic/__manifest__.py').read()
-        self.assertIn('static/src/js/sc_dashboard_live.js', manifest)
+        self.assertTrue(dash.xpath('.//button[@data-pk-row-expand]'))
+        manifest = file_open('bemade_portal_kit_dashboard/__manifest__.py').read()
+        self.assertIn('static/src/js/pk_dashboard_anchor.js', manifest)
 
     # -- UC-Q1 ---------------------------------------------------------------
     def test_quick_return_edit(self):
@@ -127,14 +128,14 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         self.assertTrue(props['clearable'])
         # The face's date: the hook the page updates in place, « Dépassé » on.
         value = card.xpath('.//*[@data-sc-row-return-value="%s"]' % self.shared.id)[0]
-        self.assertIn('o_sc_overdue', value.get('class'))
+        self.assertIn('o_pk_overdue', value.get('class'))
         self.assertTrue(value.xpath('.//*[@data-sc-row-return-date]'))
         # Unique input ids (one per card and line).
         ids = tree.xpath('//@id')
         self.assertEqual(len(ids), len(set(ids)), [i for i in ids if ids.count(i) > 1])
         # The count is a read fragment of the page.
-        key = 'sc.dashboard:todo:dash-todo-returns'
-        self.assertEqual(line.xpath('.//*[@data-sc-todo-count]/@data-sc-fragment'), [key])
+        key = 'pk.dashboard:todo:dash-todo-returns'
+        self.assertEqual(line.xpath('.//*[@data-sc-todo-count]/@data-pk-fragment'), [key])
 
         # A past date: refused inline (#1727), nothing stored.
         past = fields.Date.today() - timedelta(days=1)
@@ -156,7 +157,7 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         self._overdue(self.shared)
         self._overdue(self.red, 5)
         self._login_tp()
-        key = 'sc.dashboard:todo:dash-todo-returns'
+        key = 'pk.dashboard:todo:dash-todo-returns'
         node = self._fragment('/my/home', key)
         self.assertEqual(node.text_content().strip(), '2')
         self._saved(self.red, 'predicted_return_date',
@@ -194,9 +195,9 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
                 # The « › » chevron on the right.
                 self.assertTrue(row[0].xpath('./span[@class="o_pk_row_trailing"]//*[local-name()="svg"]'))
                 # The shared expander, controlling the region under the row.
-                toggle = row[0].xpath('.//button[@data-sc-row-expand]')[0]
+                toggle = row[0].xpath('.//button[@data-pk-row-expand]')[0]
                 self.assertEqual(toggle.get('aria-expanded'), 'false')
-                region = group.xpath('./div[@id="%s"]' % toggle.get('data-sc-row-expand'))[0]
+                region = group.xpath('./div[@id="%s"]' % toggle.get('data-pk-row-expand'))[0]
                 self.assertEqual(region.get('data-sc-event-details'), event_id)
                 self.assertEqual(region.get('hidden'), 'hidden')
                 self.assertIn('o_pk_row_detail', region.get('class'))
@@ -211,17 +212,17 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         self._login_tp()
         _text, tree = self._get('/my/home')
         section = self._section(tree, 'followed')
-        self.assertEqual(section.get('data-sc-fragment'), 'sc.dashboard:followed:followed')
-        self.assertEqual(section.get('data-sc-fragment-mode'), 'list')
-        self.assertEqual(section.get('data-sc-fragment-keep-empty'), '1')
+        self.assertEqual(section.get('data-pk-fragment'), 'pk.dashboard:followed:followed')
+        self.assertEqual(section.get('data-pk-fragment-mode'), 'list')
+        self.assertEqual(section.get('data-pk-fragment-keep-empty'), '1')
         self.assertTrue(section.xpath('.//*[contains(@class, "o_pk_empty")]'))
-        self.assertFalse(section.xpath('.//*[@data-sc-dw-count]'))
+        self.assertFalse(section.xpath('.//*[@data-pk-dash-count]'))
 
     def test_follow_refreshes_every_instance(self):
         # A second instance scoped to Team C (Yellow, Shared; not Red).
-        new_id = self._dash(self.tp)._sc_layout_add('followed')
-        self._dash(self.tp)._sc_layout_update(new_id, settings={'scope_team_ids': [self.team_c.id]})
-        keys = ['sc.dashboard:followed:followed', 'sc.dashboard:followed:%s' % new_id]
+        new_id = self._dash(self.tp)._pk_dash_layout_add('followed')
+        self._dash(self.tp)._pk_dash_layout_update(new_id, settings={'scope_team_ids': [self.team_c.id]})
+        keys = ['pk.dashboard:followed:followed', 'pk.dashboard:followed:%s' % new_id]
         self._login_tp()
         csrf = self._csrf()
 
@@ -240,7 +241,7 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         payload = self._fragments('/my/home', keys)
         items, node = cards(payload, keys[0])
         self.assertEqual(items, ['p%s' % self.red.id])
-        self.assertEqual(node.xpath('.//*[@data-sc-dw-count]')[0].text_content().strip(), '(1)')
+        self.assertEqual(node.xpath('.//*[@data-pk-dash-count]')[0].text_content().strip(), '(1)')
         # The scoped instance: Red is not on Team C — still empty.
         items, node = cards(payload, keys[1])
         self.assertEqual(items, [])
@@ -293,7 +294,7 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         self.assertIn(past.id, ids(tree, 'missing_timesheets'))
         # Scope = my own Team A only: the Team B coverage is not listed.
         for instance_id in ('coverage', 'missing_timesheets'):
-            self._dash(self.tp)._sc_layout_update(
+            self._dash(self.tp)._pk_dash_layout_update(
                 instance_id, settings={'scope_team_ids': self.team_a.ids})
         _text, tree = self._get('/my/home')
         self.assertNotIn(upcoming.id, ids(tree, 'coverage'))
@@ -316,10 +317,10 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
 
     def _zones(self, layout):
         return {zone: [inst['id'] for inst in layout if inst['zone'] == zone]
-                for zone in sc_dashboard.ZONES}
+                for zone in dash_engine.ZONES}
 
     def test_default_zones(self):
-        layout = self._dash(self.tp)._sc_layout()
+        layout = self._dash(self.tp)._pk_dash_layout()
         self.assertEqual(self._zones(layout), self.DEFAULT_ZONES)
         self.assertTrue(all(inst['enabled'] for inst in layout))
         by_id = {inst['id']: inst for inst in layout}
@@ -329,76 +330,76 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         self.assertEqual(by_id['watch']['settings']['level'], 'red_yellow')
         self.assertFalse(any(inst['settings'].get('scope_team_ids') for inst in layout))
         # A coach: their widgets, same relative order and zones.
-        coach = self._zones(self._dash(self.coach)._sc_layout())
+        coach = self._zones(self._dash(self.coach)._pk_dash_layout())
         self.assertEqual(coach, dict(self.DEFAULT_ZONES, left=['today', 'todo', 'coverage']))
 
     # -- UC-Z2 ---------------------------------------------------------------
     def test_v1_layout_migrates(self):
         old = ['today', 'todo', 'coverage', 'missing_timesheets', 'indicators', 'announcements',
                'followed', 'recent_changes', 'watch']
-        self.tp.sudo().sc_dashboard_layout = {'v': 1, 'instances': [
+        self.tp.sudo().pk_dashboard_layout = {'v': 1, 'instances': [
             {'id': key, 'widget': key, 'enabled': key not in ('recent_changes', 'watch'),
              'settings': {'level': 'red'} if key == 'watch' else {}} for key in old]}
         dash = self._dash(self.tp)
-        layout = dash._sc_layout()
+        layout = dash._pk_dash_layout()
         self.assertEqual([inst['id'] for inst in layout], old)
         self.assertEqual(self._zones(layout), {
             'left': old[:5], 'right': old[5:], 'bottom': []})
         self.assertFalse(next(i for i in layout if i['id'] == 'watch')['enabled'])
         self.assertEqual(next(i for i in layout if i['id'] == 'watch')['settings']['level'], 'red')
         # A v1 with fewer sections: the missing ones join their default zone.
-        self.tp.sudo().sc_dashboard_layout = {'v': 1, 'instances': [
+        self.tp.sudo().pk_dashboard_layout = {'v': 1, 'instances': [
             {'id': key, 'widget': key, 'enabled': True, 'settings': {}}
             for key in ('watch', 'today', 'indicators')]}
-        zones = self._zones(dash._sc_layout())
+        zones = self._zones(dash._pk_dash_layout())
         self.assertEqual(zones['left'][:2], ['watch', 'today'])
         self.assertEqual(zones['right'][0], 'indicators')
         self.assertEqual(zones['bottom'], ['recent_changes'])
         # The next save writes v2, zones included.
-        dash._sc_layout_update('today', title='Mine')
-        stored = self.tp.sudo().sc_dashboard_layout
+        dash._pk_dash_layout_update('today', title='Mine')
+        stored = self.tp.sudo().pk_dashboard_layout
         self.assertEqual(stored['v'], 2)
-        self.assertTrue(all(inst['zone'] in sc_dashboard.ZONES for inst in stored['instances']))
+        self.assertTrue(all(inst['zone'] in dash_engine.ZONES for inst in stored['instances']))
         # Unknown version: the default.
-        self.tp.sudo().sc_dashboard_layout = {'v': 3, 'instances': []}
-        self.assertEqual(self._zones(dash._sc_layout()), self.DEFAULT_ZONES)
+        self.tp.sudo().pk_dashboard_layout = {'v': 3, 'instances': []}
+        self.assertEqual(self._zones(dash._pk_dash_layout()), self.DEFAULT_ZONES)
         # A v2 save without zones / with a bad zone is refused.
-        layout = dash._sc_layout()
+        layout = dash._pk_dash_layout()
         with self.assertRaises(ValidationError):
-            dash._sc_layout_save([dict(layout[0], zone='middle')] + layout[1:])
+            dash._pk_dash_layout_save([dict(layout[0], zone='middle')] + layout[1:])
 
     # -- UC-Z3 ---------------------------------------------------------------
     def test_zone_render_order(self):
-        self._dash(self.tp)._sc_layout_place('watch', 'left', 0)
+        self._dash(self.tp)._pk_dash_layout_place('watch', 'left', 0)
         self._login_tp()
         _text, tree = self._get('/my/home')
-        dash = tree.xpath('//*[@data-sc-dashboard]')[0]
-        zones = dash.xpath('./div[@data-sc-zone]')
-        self.assertEqual([z.get('data-sc-zone') for z in zones], ['left', 'right', 'bottom'])
-        got = {z.get('data-sc-zone'): [s.get('data-sc-instance') for s in z.xpath('./section')]
+        dash = tree.xpath('//*[@data-pk-dashboard]')[0]
+        zones = dash.xpath('./div[@data-pk-dash-zone]')
+        self.assertEqual([z.get('data-pk-dash-zone') for z in zones], ['left', 'right', 'bottom'])
+        got = {z.get('data-pk-dash-zone'): [s.get('data-pk-dash-instance') for s in z.xpath('./section')]
                for z in zones}
         self.assertEqual(got['left'], ['watch'] + self.DEFAULT_ZONES['left'])
         self.assertEqual(got['bottom'], ['recent_changes'])
         # Phone order = document order: left, right, bottom.
-        self.assertEqual([s.get('data-sc-instance') for s in self._sections(tree)],
+        self.assertEqual([s.get('data-pk-dash-instance') for s in self._sections(tree)],
                          got['left'] + got['right'] + got['bottom'])
-        scss = file_open('bemade_sports_clinic/static/src/scss/sc_dashboard.scss').read()
+        scss = file_open('bemade_portal_kit_dashboard/static/src/scss/pk_dashboard.scss').read()
         self.assertIn('grid-template-areas: "left right" "bottom bottom"', scss)
         self.assertNotIn('column-count', scss)
         # Only one side column used: it spans the width.
         for key in ('indicators', 'announcements', 'followed'):
-            self._dash(self.tp)._sc_layout_place(key, 'bottom')
+            self._dash(self.tp)._pk_dash_layout_place(key, 'bottom')
         _text, tree = self._get('/my/home')
-        zones = tree.xpath('//*[@data-sc-dashboard]/div[@data-sc-zone]')
-        self.assertEqual([z.get('data-sc-zone') for z in zones], ['left', 'bottom'])
-        self.assertIn('o_sc_dash_zone_solo', zones[0].get('class'))
+        zones = tree.xpath('//*[@data-pk-dashboard]/div[@data-pk-dash-zone]')
+        self.assertEqual([z.get('data-pk-dash-zone') for z in zones], ['left', 'bottom'])
+        self.assertIn('o_pk_dash_zone_solo', zones[0].get('class'))
 
     # -- UC-Z4 ---------------------------------------------------------------
     def test_place_routes_and_add_zone(self):
         dash = self._dash(self.tp)
         # ▲ / ▼ within the zone only.
-        dash._sc_layout_move('indicators', -1)
-        self.assertEqual(self._zones(dash._sc_layout())['right'][0], 'indicators')
+        dash._pk_dash_layout_move('indicators', -1)
+        self.assertEqual(self._zones(dash._pk_dash_layout())['right'][0], 'indicators')
         self._login_tp()
         csrf = self._csrf()
 
@@ -409,44 +410,44 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         resp = move(instance_id='today', zone='right', position='1')
         self.assertEqual(resp.status_code, 200, resp.text)
         self.assertEqual(resp.json(), {'ok': True})
-        zones = self._zones(dash._sc_layout())
+        zones = self._zones(dash._pk_dash_layout())
         self.assertEqual(zones['right'][:2], ['indicators', 'today'])
         self.assertNotIn('today', zones['left'])
         resp = move(instance_id='today', zone='bottom')  # « Move to »: the end
-        self.assertEqual(self._zones(dash._sc_layout())['bottom'][-1], 'today')
+        self.assertEqual(self._zones(dash._pk_dash_layout())['bottom'][-1], 'today')
         resp = move(instance_id='today', zone='middle')
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(self._zones(dash._sc_layout())['bottom'][-1], 'today')
+        self.assertEqual(self._zones(dash._pk_dash_layout())['bottom'][-1], 'today')
         # Add: default = the shorter column (left 3 vs right 3 -> left on a
         # tie; then right 3 < left 4 -> right); an explicit zone wins.
-        self.assertEqual(dash._sc_layout_add('watch'), 'watch-2')
+        self.assertEqual(dash._pk_dash_layout_add('watch'), 'watch-2')
         self.assertEqual(self._instance(self.tp, 'watch-2')['zone'], 'left')
-        dash._sc_layout_add('watch')
+        dash._pk_dash_layout_add('watch')
         self.assertEqual(self._instance(self.tp, 'watch-3')['zone'], 'right')
-        dash._sc_layout_add('watch', zone='bottom')
+        dash._pk_dash_layout_add('watch', zone='bottom')
         self.assertEqual(self._instance(self.tp, 'watch-4')['zone'], 'bottom')
         # « Configurer »: three zones, each row with its controls.
         _text, tree = self._get('/my/app/dashboard/configure')
-        lists = tree.xpath('//ol[@data-sc-dash-zone]')
-        self.assertEqual([ol.get('data-sc-dash-zone') for ol in lists], ['left', 'right', 'bottom'])
+        lists = tree.xpath('//ol[@data-pk-dash-zone]')
+        self.assertEqual([ol.get('data-pk-dash-zone') for ol in lists], ['left', 'right', 'bottom'])
         for ol in lists:
-            for item in ol.xpath('./li[@data-sc-dash-item]'):
-                self.assertTrue(item.xpath('.//*[@data-sc-dash-drag]'))
-                select = item.xpath('.//select[@data-sc-dash-zone-select]')[0]
-                self.assertEqual(select.xpath('./option[@selected]/@value'), [ol.get('data-sc-dash-zone')])
-            items = ol.xpath('./li[@data-sc-dash-item]')
+            for item in ol.xpath('./li[@data-pk-dash-item]'):
+                self.assertTrue(item.xpath('.//*[@data-pk-dash-drag]'))
+                select = item.xpath('.//select[@data-pk-dash-zone-select]')[0]
+                self.assertEqual(select.xpath('./option[@selected]/@value'), [ol.get('data-pk-dash-zone')])
+            items = ol.xpath('./li[@data-pk-dash-item]')
             if items:
-                self.assertTrue(items[0].xpath('.//button[@data-sc-dash-move="up"][@disabled]'))
-                self.assertTrue(items[-1].xpath('.//button[@data-sc-dash-move="down"][@disabled]'))
-        add_zone = tree.xpath('//select[@id="sc_dash_add_zone"]/option[@selected]/@value')
+                self.assertTrue(items[0].xpath('.//button[@data-pk-dash-move="up"][@disabled]'))
+                self.assertTrue(items[-1].xpath('.//button[@data-pk-dash-move="down"][@disabled]'))
+        add_zone = tree.xpath('//select[@id="pk_dash_add_zone"]/option[@selected]/@value')
         self.assertEqual(len(add_zone), 1)
 
     # -- UC-Z5 ---------------------------------------------------------------
     def test_reset_gives_default_zones(self):
         dash = self._dash(self.tp)
-        dash._sc_layout_place('today', 'bottom')
-        dash._sc_layout_update('watch', enabled=False)
-        dash._sc_layout_reset()
-        layout = dash._sc_layout()
+        dash._pk_dash_layout_place('today', 'bottom')
+        dash._pk_dash_layout_update('watch', enabled=False)
+        dash._pk_dash_layout_reset()
+        layout = dash._pk_dash_layout()
         self.assertEqual(self._zones(layout), self.DEFAULT_ZONES)
         self.assertTrue(all(inst['enabled'] for inst in layout))

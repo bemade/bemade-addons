@@ -12,7 +12,7 @@ function assert(condition, message) {
     }
 }
 
-const PANEL = 'section[data-sc-tab-panel="activities"]:not([hidden])';
+const PANEL = 'section[data-pk-tab-panel="activities"]:not([hidden])';
 
 function rowTitles() {
     return [...document.querySelectorAll(`${PANEL} [data-sc-activity-row] .o_pk_row_title`)].map(

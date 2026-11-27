@@ -33,7 +33,7 @@ async function openList() {
     const input = document.querySelector(`${TEAMS} input.o_pk_tags_search`);
     input.focus();
     input.click();
-    await waitFor(() => document.querySelector(`${TEAMS} [data-sc-tags-open="1"]`), "the list opens");
+    await waitFor(() => document.querySelector(`${TEAMS} [data-pk-tags-open="1"]`), "the list opens");
 }
 
 async function pickTeam(label) {
@@ -102,7 +102,7 @@ tours.add("sc_1597_event_org_filter", {
         {
             // Task 1723 (review round 1): a change that drops teams asks first.
             content: "Confirm « Change organization »",
-            trigger: `${TEAMS} [data-sc-org-confirm-box] button[data-sc-org-confirm]`,
+            trigger: `${TEAMS} [data-pk-group-confirm-box] button[data-pk-group-confirm]`,
             run: "click",
         },
         {

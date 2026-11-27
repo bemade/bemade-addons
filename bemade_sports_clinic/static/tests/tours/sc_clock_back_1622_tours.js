@@ -44,12 +44,12 @@ function activitiesSteps() {
         },
         {
             content: "Switch to the All tab",
-            trigger: '.o_pk_app a[data-sc-tab="all"]',
+            trigger: '.o_pk_app a[data-pk-tab="all"]',
             run: "click",
         },
         {
             content: "All tab: the arrow is still there; go back",
-            trigger: '.o_pk_app section[data-sc-tab-panel="all"]:not([hidden])',
+            trigger: '.o_pk_app section[data-pk-tab-panel="all"]:not([hidden])',
             run() {
                 assert(window.location.search.includes("sc_from="), window.location.href);
                 assert(visible(".o_pk_back"), "tab switch: back arrow gone");

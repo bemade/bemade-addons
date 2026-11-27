@@ -115,7 +115,7 @@ class PlayerDocuments1432Common(Parity1577Common):
         return '/my/player?player_id=%s&tab=documents' % self.player.id
 
     def _tab(self, tree):
-        nodes = tree.xpath('//*[@data-sc-tab-panel="documents"]')
+        nodes = tree.xpath('//*[@data-pk-tab-panel="documents"]')
         return nodes[0] if nodes else None
 
     def _tab_item(self, tree, doc):
@@ -259,8 +259,8 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
         _text, tree = self._get(self._tab_url())
         item = self._tab_item(tree, self.doc_player)
         self.assertEqual(item.get('data-pk-edit-card'), 'player-document-%s' % self.doc_player.id)
-        self.assertTrue(item.xpath('.//button[@data-sc-action="documents.edit"]'))
-        self.assertTrue(item.xpath('.//button[@data-sc-action="documents.delete"]'))
+        self.assertTrue(item.xpath('.//button[@data-pk-action="documents.edit"]'))
+        self.assertTrue(item.xpath('.//button[@data-pk-action="documents.delete"]'))
         props = {json.loads(p)['field'] for p in item.xpath('.//owl-component/@props')}
         self.assertEqual(props, {'name', 'category', 'description', 'injury_id'})
         injury_prop = [json.loads(p) for p in item.xpath('.//owl-component/@props')
@@ -272,13 +272,13 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
         # Task 1736 (deliberate update, owner 2026-11-01): « delete » only
         # archives a document — the archive icon posts its inline form (no
         # confirmation sheet: an undo toast).
-        form = item.xpath('.//form[.//button[@data-sc-action="documents.delete"]]')[0]
+        form = item.xpath('.//form[.//button[@data-pk-action="documents.delete"]]')[0]
         self.assertEqual(form.get('action'), '/my/injury/document/delete/%s' % self.doc_player.id)
         self.assertIn('documents', form.xpath('.//input[@name="return_url"]/@value')[0])
         # The injury card too.
         card = tree.xpath('//*[@data-pk-edit-card="document-%s"]' % self.doc_injury.id)
         self.assertTrue(card)
-        self.assertTrue(card[0].xpath('.//form[.//button[@data-sc-action="documents.delete"]]'))
+        self.assertTrue(card[0].xpath('.//form[.//button[@data-pk-action="documents.delete"]]'))
 
     def test_buttons_hidden_for_other_therapist(self):
         self._login_tp2()
@@ -287,8 +287,8 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
             item = self._tab_item(tree, doc)
             self.assertIsNotNone(item, 'listed (read-only)')
             self.assertFalse(item.get('data-pk-edit-card'))
-            self.assertFalse(item.xpath('.//button[@data-sc-action="documents.edit"]'))
-            self.assertFalse(item.xpath('.//button[@data-sc-action="documents.delete"]'))
+            self.assertFalse(item.xpath('.//button[@data-pk-action="documents.edit"]'))
+            self.assertFalse(item.xpath('.//button[@data-pk-action="documents.delete"]'))
             self.assertTrue(item.xpath('.//a[@data-sc-action="documents.download"]'))
         self.assertFalse(tree.xpath('//*[@data-pk-edit-card="document-%s"]' % self.doc_injury.id))
         self.assertFalse(tree.xpath('//dialog[@id="sc_delete_document_%s"]' % self.doc_injury.id))
@@ -311,9 +311,10 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
         for row in rows:
             trailing = row.xpath('.//*[contains(@class, "o_sc_doc_row")]/*[contains(@class, "o_pk_row_trailing")]')[0]
             self.assertEqual(
-                trailing.xpath('.//*[@data-sc-card-icons]//*[self::a or self::button]/@data-sc-action'),
+                trailing.xpath('.//*[@data-pk-card-icons]//*[self::a or self::button]'
+                               '/@*[name()="data-sc-action" or name()="data-pk-action"]'),
                 ['documents.download', 'documents.delete', 'documents.edit'])
-            archive = trailing.xpath('.//*[@data-sc-action="documents.delete"]')[0]
+            archive = trailing.xpath('.//*[@data-pk-action="documents.delete"]')[0]
             self.assertIn('o_pk_card_archive', archive.get('class').split())
             self.assertNotIn('o_pk_icon_btn_danger', archive.get('class').split())
             self.assertIsNone(archive.get('hidden'))
@@ -371,7 +372,7 @@ class TestPlayerDocumentsFr1432(PlayerDocuments1432Common):
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):
@@ -384,8 +385,8 @@ class TestPlayerDocumentsFr1432(PlayerDocuments1432Common):
         _text, tree = self._get(self._tab_url())
         item = self._tab_item(tree, self.doc_player)
         # Task 1736 (deliberate update): the archive icon, no confirmation.
-        self.assertEqual(item.xpath('.//button[@data-sc-action="documents.delete"]/@title'), ['Archiver'])
-        self.assertEqual(item.xpath('.//button[@data-sc-action="documents.edit"]/@title'), ['Modifier'])
+        self.assertEqual(item.xpath('.//button[@data-pk-action="documents.delete"]/@title'), ['Archiver'])
+        self.assertEqual(item.xpath('.//button[@data-pk-action="documents.edit"]/@title'), ['Modifier'])
         labels = {json.loads(p)['field']: json.loads(p)['label'] for p in item.xpath('.//owl-component/@props')}
         self.assertEqual(labels['injury_id'], 'Lien vers la blessure (optionnel)')
         # Pre-review click-through 2026-10-31: « Category » was left in English.

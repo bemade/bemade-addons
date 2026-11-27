@@ -16,9 +16,9 @@ const tours = registry.category("web_tour.tours");
 const HERO = '[data-pk-section="player.hero"]';
 const STATUS = `${HERO} > [data-pk-section="player.status"]`;
 const MEDICAL = `${STATUS} [data-pk-section="player.medical"]`;
-const EDIT = `${HERO} > [data-sc-edit-view="edit"]`;
-const READ = `${HERO} > [data-sc-edit-view="read"]`;
-const PENCIL = `${HERO} button[data-sc-edit-toggle]`;
+const EDIT = `${HERO} > [data-pk-edit-view="edit"]`;
+const READ = `${HERO} > [data-pk-edit-view="read"]`;
+const PENCIL = `${HERO} button[data-pk-edit-toggle]`;
 
 function assert(condition, message) {
     if (!condition) {
@@ -32,14 +32,14 @@ function visible(selector) {
 }
 
 function toggle(key, tone) {
-    return `${STATUS} [data-sc-pill-select][data-sc-pill-key="${key}"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_${tone}`;
+    return `${STATUS} [data-pk-pill-select][data-pk-pill-key="${key}"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_${tone}`;
 }
 
 function assertOnce() {
     assert(document.querySelectorAll('[data-pk-section="player.status"]').length === 1, "status block duplicated");
     assert(document.querySelectorAll('[data-pk-section="player.status.readonly"]').length === 1, "status pills duplicated");
     assert(document.querySelectorAll(`${HERO} [data-pk-section="player.medical"]`).length === 1, "medical pills duplicated");
-    assert(document.querySelectorAll(`${STATUS} [data-sc-pill-key="match"]`).length === 1, "match pill duplicated");
+    assert(document.querySelectorAll(`${STATUS} [data-pk-pill-key="match"]`).length === 1, "match pill duplicated");
 }
 
 tours.add("sc_1753_hero_pills_edit", {
@@ -73,7 +73,7 @@ tours.add("sc_1753_hero_pills_edit", {
         },
         {
             content: "Pick no",
-            trigger: `${STATUS} [data-sc-pill-key="match"] [role="menuitemradio"][data-sc-pill-value="no"]:not([aria-disabled])`,
+            trigger: `${STATUS} [data-pk-pill-key="match"] [role="menuitemradio"][data-pk-pill-value="no"]:not([aria-disabled])`,
             run: "click",
         },
         {

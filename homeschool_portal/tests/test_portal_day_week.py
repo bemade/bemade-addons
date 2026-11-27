@@ -14,7 +14,7 @@ Acceptance criteria
 4. ``/my/homeschool/<student>/week/<iso-week>`` shows the five-day grid with the blocks
    (name, kind, duration), the days off, links to the days and to the adjacent weeks.
 """
-from odoo.tests import tagged
+from odoo.tests import TransactionCase, tagged
 from odoo.tools.misc import mute_logger
 
 from .common import HomeschoolPortalCase
@@ -146,3 +146,15 @@ class TestPortalDayWeek(HomeschoolPortalCase):
         # the teacher sees the same grid
         self.login(self.teacher)
         self.assertIn("Segment 2 - time", self.text(self.get(self.base() + "/week/2026-W10")))
+
+
+@tagged("post_install", "-at_install")
+class TestWeekOpensOn(TransactionCase):
+
+    def test_weekend_opens_next_week(self):
+        from datetime import date
+        from odoo.addons.homeschool_portal.controllers.portal import _default_monday
+        self.assertEqual(_default_monday(date(2026, 11, 11)), date(2026, 11, 9))   # Wednesday: this week
+        self.assertEqual(_default_monday(date(2026, 11, 13)), date(2026, 11, 9))   # Friday: this week
+        self.assertEqual(_default_monday(date(2026, 11, 14)), date(2026, 11, 16))  # Saturday: what's coming up
+        self.assertEqual(_default_monday(date(2026, 11, 15)), date(2026, 11, 16))  # Sunday: what's coming up

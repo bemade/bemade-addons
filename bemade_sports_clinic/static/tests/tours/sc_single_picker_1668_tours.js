@@ -90,15 +90,15 @@ tours.add("sc_1668_activity_detail", {
     steps: () => [
         {
             content: "Edit the activity (pencil)",
-            trigger: '[data-pk-edit-card="activity"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="activity"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
             content: "« Assigned To » is a picker: pick by typing",
-            trigger: '[data-pk-edit-card="activity"] .o_pk_autosave[data-sc-field="user_id"] .o_pk_picker_input',
+            trigger: '[data-pk-edit-card="activity"] .o_pk_autosave[data-pk-autosave-field="user_id"] .o_pk_picker_input',
             run() {
                 const select = document.querySelector(
-                    '[data-pk-edit-card="activity"] .o_pk_autosave[data-sc-field="user_id"] select'
+                    '[data-pk-edit-card="activity"] .o_pk_autosave[data-pk-autosave-field="user_id"] select'
                 );
                 type(select, "zed");
                 pick(select, "Zed");
@@ -106,7 +106,7 @@ tours.add("sc_1668_activity_detail", {
         },
         {
             content: "Saved on pick",
-            trigger: '[data-pk-edit-card="activity"] .o_pk_autosave[data-sc-field="user_id"][data-sc-state="saved"]',
+            trigger: '[data-pk-edit-card="activity"] .o_pk_autosave[data-pk-autosave-field="user_id"][data-pk-autosave-state="saved"]',
         },
     ],
 });

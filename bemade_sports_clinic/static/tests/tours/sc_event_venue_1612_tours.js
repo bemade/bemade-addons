@@ -9,14 +9,14 @@ import { registry } from "@web/core/registry";
 const tours = registry.category("web_tour.tours");
 
 const CARD = '[data-pk-edit-card="event"]';
-const NAME = `${CARD} .o_pk_autosave[data-sc-field="name"]`;
+const NAME = `${CARD} .o_pk_autosave[data-pk-autosave-field="name"]`;
 const SHEET_FORM = "form[data-sc-venue-form]";
 
 tours.add("sc_1612_event_new_venue", {
     steps: () => [
         {
             content: "Open the event card",
-            trigger: `${CARD} button[data-sc-edit-toggle]`,
+            trigger: `${CARD} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
@@ -33,7 +33,7 @@ tours.add("sc_1612_event_new_venue", {
         },
         {
             content: "Saved",
-            trigger: `${NAME}[data-sc-state="saved"]`,
+            trigger: `${NAME}[data-pk-autosave-state="saved"]`,
         },
         {
             content: "« New venue »",
@@ -56,7 +56,7 @@ tours.add("sc_1612_event_new_venue", {
         {
             content: "The card's venue field holds the new venue",
             // Task 1722: the select is the (hidden) value of the venue picker.
-            trigger: `${CARD} .o_pk_autosave[data-sc-field="venue_id"] select:not(:visible)`,
+            trigger: `${CARD} .o_pk_autosave[data-pk-autosave-field="venue_id"] select:not(:visible)`,
             async run() {
                 const start = Date.now();
                 const shown = () => {
@@ -78,7 +78,7 @@ tours.add("sc_1612_event_new_venue", {
         },
         {
             content: "The read view shows the venue, no error, no reload",
-            trigger: '[data-pk-section="event.hero"] [data-sc-edit-view="read"] dd:contains("Tour 1612 Arena")',
+            trigger: '[data-pk-section="event.hero"] [data-pk-edit-view="read"] dd:contains("Tour 1612 Arena")',
             run() {
                 const error = document.querySelector("[data-sc-venue-error]");
                 if (error && !error.hidden) {

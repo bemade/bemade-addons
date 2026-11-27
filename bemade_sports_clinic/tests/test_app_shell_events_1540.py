@@ -9,7 +9,7 @@ Acceptance criteria covered here:
 * UC-E2 (AC2) List: upcoming / past / calendar segments, type chips
   filtering on ``event_type``, one row per event; « Nouvel événement » for
   therapists only.
-* UC-E3 (AC2) Calendar: the shared sc_calendar component on the unchanged
+* UC-E3 (AC2) Calendar: the shared pk_calendar component on the unchanged
   feed, FullCalendar NOT loaded by a raw <script src>.
 * UC-E4 (AC2/AC5) Detail: the assigned therapist sees their OWN timesheet
   cards + the add / edit / delete sheets (CSRF, today's routes); a coach
@@ -39,28 +39,6 @@ class Events1540Common(Parity1577Common):
 @tagged('post_install', '-at_install')
 class TestAppShellEvents1540(Events1540Common):
 
-    # -- UC-E1 -----------------------------------------------------------
-    def test_switch_off_legacy_pages(self):
-        self._login_tp()
-        hooks = ('_sc_events_values', '_sc_events_calendar_values', '_sc_event_values',
-                 '_sc_event_form_values')
-        patches = [patch.object(EventsPortal, name, side_effect=AssertionError(name)) for name in hooks]
-        for p in patches:
-            p.start()
-        try:
-            for url in ('/my/events', '/my/events/calendar', '/my/event/%s' % self.event.id,
-                        '/my/event/%s/edit' % self.event.id, '/my/event/create'):
-                text, tree = self._get(url)
-                self.assertIsNone(self._shell(tree), url)
-                self.assertNotIn('data-pk-app-shell', text, url)
-        finally:
-            for p in patches:
-                p.stop()
-        text, _tree = self._get('/my/events/calendar')
-        self.assertIn('/web/static/lib/fullcalendar/core/index.global.js', text)
-        feed = self.url_open('/my/events/calendar/data?start=2026-02-01T00:00:00Z&end=2026-03-01T00:00:00Z').json()
-        item = [row for row in feed if row['id'] == self.event.id][0]
-        self.assertEqual(set(item), {'id', 'title', 'start', 'end', 'url', 'extendedProps'})
 
     # -- UC-E2 -----------------------------------------------------------
     def test_list_in_shell(self):
@@ -68,25 +46,25 @@ class TestAppShellEvents1540(Events1540Common):
         self._login_tp()
         _text, tree = self._get('/my/events?no_default_dates=1')
         self.assertIsNotNone(self._shell(tree))
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'), ['upcoming', 'past', 'calendar'])
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'), ['upcoming', 'past', 'calendar'])
         ids = [int(x) for x in tree.xpath('//*[@data-sc-event-id]/@data-sc-event-id')]
         self.assertIn(self.event.id, ids)
         # Task 1607 (deliberate update): « + Ajouter » is in the list header.
-        self.assertEqual(tree.xpath('//div[contains(@class, "o_pk_list_header")]//a[@data-sc-action="events.create"]/@href'), ['/my/event/create'])
+        self.assertEqual(tree.xpath('//div[contains(@class, "o_pk_list_header")]//a[@data-pk-action="events.create"]/@href'), ['/my/event/create'])
         game = tree.xpath('//a[@data-sc-event-type="game"]/@href')[0]
         self.assertIn('event_type=game', game)
         _text, tree = self._get('/my/events?no_default_dates=1&event_type=clinic')
         self.assertNotIn(str(self.event.id), tree.xpath('//*[@data-sc-event-id]/@data-sc-event-id'))
         self._login_coach()
         _text, tree = self._get('/my/events?no_default_dates=1')
-        self.assertFalse(tree.xpath('//*[@data-sc-action="events.create"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-action="events.create"]'))
 
     # -- UC-E3 -----------------------------------------------------------
     def test_calendar_in_shell(self):
         self._switch(True)
         self._login_coach()
         text, tree = self._get('/my/events/calendar?team_id=%s' % self.team_a.id)
-        node = tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_calendar"]')[0]
+        node = tree.xpath('//owl-component[@name="bemade_portal_kit.pk_calendar"]')[0]
         props = json.loads(node.get('props'))
         self.assertEqual(props['feedUrl'], '/my/events/calendar/data')
         self.assertEqual(props['params'], {'team_id': str(self.team_a.id)})
@@ -113,9 +91,9 @@ class TestAppShellEvents1540(Events1540Common):
         self.assertTrue(form.xpath('.//input[@name="csrf_token"]'))
         # Task 1607 (deliberate update): « + Ajouter » in the timesheets list
         # header (was in the app bar).
-        self.assertEqual(tree.xpath('//div[contains(@class, "o_pk_list_header")]//button/@data-sc-sheet-open'),
+        self.assertEqual(tree.xpath('//div[contains(@class, "o_pk_list_header")]//button/@data-pk-sheet-open'),
                          ['sc_ts_add_sheet'])
-        self.assertFalse(tree.xpath('//header//button/@data-sc-sheet-open'))
+        self.assertFalse(tree.xpath('//header//button/@data-pk-sheet-open'))
         # The own timesheet is edited in place (pencil card, owner review 2026-10-11).
         self.assertTrue(tree.xpath('//*[@data-pk-edit-card="timesheet-%s"]' % self.timesheet.id))
 
@@ -125,7 +103,7 @@ class TestAppShellEvents1540(Events1540Common):
         _text, tree = self._get('/my/event/%s' % self.event.id)
         self.assertIsNotNone(self._shell(tree))
         self.assertFalse(tree.xpath('//*[@data-pk-section="event.timesheets"]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-action="event.edit"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-action="event.edit"]'))
 
     # -- UC-E5 -----------------------------------------------------------
     def test_create_and_edit_through_the_shell_form(self):
@@ -155,7 +133,7 @@ class TestAppShellEvents1540(Events1540Common):
         # Owner review 2026-10-11: edited in place on the event page (pencil
         # card, test_app_shell_pencil UC-PE9); the edit page leads there.
         resp = self.url_open('/my/event/%s/edit' % event.id, allow_redirects=False)
-        self.assertIn(resp.status_code, (302, 303))
+        self.assertEqual(resp.status_code, 301)  # task 1541: a permanent redirect
         _text, tree = self._get('/my/event/%s' % event.id)
         props = {json.loads(p)['field']: json.loads(p) for p in tree.xpath(
             '//*[@data-pk-edit-card="event"]//owl-component/@props')}

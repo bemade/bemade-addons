@@ -80,25 +80,13 @@ class TestAppShellTeam1542(AppShellCommon):
 
     @staticmethod
     def _panel(tree, key):
-        nodes = tree.xpath('//section[@data-sc-tab-panel="%s"]' % key)
+        nodes = tree.xpath('//section[@data-pk-tab-panel="%s"]' % key)
         return nodes[0] if nodes else None
 
     def _row_ids(self, tree, section):
         return {int(x) for x in tree.xpath(
             '//*[@data-pk-section="%s"]//*[@data-sc-player-id]/@data-sc-player-id' % section)}
 
-    # -- UC-T1 -----------------------------------------------------------
-    def test_switch_off_renders_legacy_without_shell_values(self):
-        for login in (self._login_coach, self._login_tp):
-            login()
-            with patch.object(TeamManagementPortal, '_sc_team_values',
-                              side_effect=AssertionError('shell values computed')):
-                text, tree = self._get(self.url)
-            self.assertIn('id="dashboard-tab"', text)
-            self.assertIn('o_sc_roster_sort', text)
-            self.assertIsNone(self._shell(tree))
-            self.assertNotIn('data-sc-tab-panel', text)
-            self.assertNotIn('rel="manifest"', text)
 
     # -- UC-T2 -----------------------------------------------------------
     def test_switch_on_tabs_and_deep_links(self):
@@ -107,7 +95,7 @@ class TestAppShellTeam1542(AppShellCommon):
         text, tree = self._get(self.url)
         self.assertIsNotNone(self._shell(tree))
         self.assertNotIn('id="dashboard-tab"', text)
-        tabs = tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab')
+        tabs = tree.xpath('//nav[@data-pk-tabs]/a/@data-pk-tab')
         self.assertEqual(tabs, ['dashboard', 'players', 'activities'])
         self.assertIsNone(self._panel(tree, 'dashboard').get('hidden'))
         self.assertEqual(self._panel(tree, 'players').get('hidden'), 'hidden')
@@ -135,8 +123,8 @@ class TestAppShellTeam1542(AppShellCommon):
             login()
             _text, tree = self._get(self.url)
             self.assertIsNotNone(self._shell(tree))
-            self.assertFalse(tree.xpath('//header//*[@data-sc-action="team.add_player"]'))
-            self.assertFalse(tree.xpath('//header//*[@data-sc-action="team.request_add"]'))
+            self.assertFalse(tree.xpath('//header//*[@data-pk-action="team.add_player"]'))
+            self.assertFalse(tree.xpath('//header//*[@data-pk-action="team.request_add"]'))
             panel = self._panel(tree, 'players')
             self.assertTrue(panel.xpath('.//details[@data-pk-section="%s"]' % card), card)
             other = 'team.request_add' if card == 'team.add_player' else 'team.add_player'
@@ -155,7 +143,7 @@ class TestAppShellTeam1542(AppShellCommon):
             self.assertTrue(tree.xpath('//*[@data-pk-section="team.announcement.edit"]'))
             self.assertTrue(tree.xpath('//*[@data-pk-section="team.announcement.archive"]'))
             self.assertTrue(tree.xpath(
-                '//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'))
+                '//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'))
         self._login_coach()
         text, tree = self._get(self.url)
         self.assertIn('Synthetic announcement', text)
@@ -204,7 +192,7 @@ class TestAppShellTeam1542(AppShellCommon):
         # Task 1626: the card is a player row; its « Details » region holds
         # the lazy URL.
         urls = tree.xpath('//*[@data-pk-section="team.recent_changes"]'
-                          '//*[@data-sc-player-id="%s"]//*[@data-sc-row-detail]/@data-sc-lazy-url'
+                          '//*[@data-sc-player-id="%s"]//*[@data-sc-row-detail]/@data-pk-lazy-url'
                           % self.player.id)
         self.assertEqual(urls, ['/my/player/%s/recent-changes?detail=1&team_id=%s'
                                 % (self.player.id, self.team_a.id)])
@@ -227,7 +215,7 @@ class TestAppShellTeam1542(AppShellCommon):
 
         with patch.object(TeamManagementPortal, '_sc_team_values', no_activities):
             _text, tree = self._get(self.url + '&tab=activities')
-        self.assertNotIn('activities', tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab'))
+        self.assertNotIn('activities', tree.xpath('//nav[@data-pk-tabs]/a/@data-pk-tab'))
         self.assertIsNone(self._panel(tree, 'activities'))
         # Falls back to the dashboard panel.
         self.assertIsNone(self._panel(tree, 'dashboard').get('hidden'))

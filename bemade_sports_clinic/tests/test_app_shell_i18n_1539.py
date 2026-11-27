@@ -84,10 +84,14 @@ class TestAppShellI18n1539(TestAppShellI18n1538):
             self.assertIn(term, text, term)
 
     def test_p2_owl_strings_served_in_french(self):
-        resp = self.url_open('/web/webclient/translations?lang=fr_CA&mods=bemade_sports_clinic')
+        # Task 5382 (kit P4c3): the autosave field's texts are the kit's.
+        resp = self.url_open('/web/webclient/translations?lang=fr_CA'
+                             '&mods=bemade_portal_kit,bemade_sports_clinic')
+        modules = resp.json()['modules']
         messages = {
             m['id']: m['string']
-            for m in resp.json()['modules']['bemade_sports_clinic']['messages']}
+            for name in ('bemade_portal_kit', 'bemade_sports_clinic')
+            for m in modules[name]['messages']}
         for source, french in (('Undo', 'Annuler'), ('Change saved', 'Modification enregistrée'),
                                ('N/A', 'S/O'), ('Clear', 'Effacer')):
             self.assertEqual(messages.get(source), french, source)

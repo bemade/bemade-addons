@@ -18,13 +18,6 @@
         }
     }
 
-    @media (min-width: $pk-laptop) {
-        // « More » entries already on the rail (marked by the template).
-        .o_pk_content [data-sc-in-rail] {
-            display: none;
-        }
-    }
-
     // Player row status line (sc_player_status_line): the legacy card's
     // Match / Practice badges, injury count and ⚡ « Changements récents »
     // flag, under the name so they wrap instead of crowding a phone row.
@@ -61,11 +54,8 @@
         white-space: nowrap;
     }
 
-    // Task 1727: a past « Retour prévu » (the date + « · Dépassé »).
-    .o_sc_overdue,
-    .o_pk_row_line_value.o_sc_overdue {
-        color: var(--pk-overdue);
-    }
+    // Task 1727: a past « Retour prévu » (the date + « · Dépassé »): the
+    // kit's o_pk_overdue since task 5345.
 
     // Task 1626: while « Details » is open, the face's training and
     // « Retour prévu » lines hide — the detail shows them whole, so each
@@ -116,55 +106,17 @@
         }
     }
 
-    // Task 1723 (review round 1): an organisation change that would drop
-    // chosen teams — an inline warning with its two answers.
-    .o_sc_group_confirm {
-        display: flex;
-        flex-direction: column;
-        gap: var(--pk-space-2);
-        padding: var(--pk-space-2) var(--pk-space-3);
-        border: 1px solid var(--pk-line);
-        border-left: 3px solid var(--pk-warn);
-        border-radius: var(--pk-radius-sm);
-
-        .o_sc_group_confirm_text {
-            margin: 0;
-        }
-
-        .o_sc_group_confirm_actions {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            gap: var(--pk-space-2);
-
-            .o_pk_btn {
-                min-height: var(--pk-tap);
-            }
-        }
-    }
-
-    // Task 1726: THE switch (sc_switch macro + the autosave « N/A »): the
-    // label on the left, a pill switch on the right, one line, 44 px tall.
-    // The checkbox covers the track (opacity 0): taps, Space and the forms
-    // all go through the real input.
-    .o_pk_switch {
-        &[data-sc-switch-locked] {
-            cursor: not-allowed;
-
-            .o_pk_switch_label {
-                color: var(--pk-fg-2);
-            }
-        }
-    }
+    // Task 1726: THE switch: the kit's pk_switch, its locked state too
+    // (task 5345).
 
     // The event page's timesheets section (task 1607): its read-fragment
     // holders take no room while empty, nor does the section when all are.
     .o_sc_event_timesheets {
-        > [data-sc-fragment]:empty {
+        > [data-pk-fragment]:empty {
             display: none;
         }
 
-        &:not(:has(> [data-sc-fragment]:not(:empty))) {
+        &:not(:has(> [data-pk-fragment]:not(:empty))) {
             display: none;
         }
     }
@@ -180,38 +132,12 @@
         .o_sc_player_add_reason {
             margin-top: var(--pk-space-2);
         }
-
-        .o_sc_reason_flash {
-            animation: o_sc_reason_flash 0.6s ease-out;
-        }
     }
 
     // Task 1658: the same rule app-wide — every guarded form's primary
-    // action (sc_form_guard.js).
-    form[data-sc-guard] {
-        [data-sc-guard-submit][aria-disabled="true"],
-        .o_pk_form_actions .o_pk_btn[type="submit"][aria-disabled="true"] {
-            opacity: 0.45;
-            cursor: not-allowed;
-        }
-
-        .o_sc_guard_reason {
-            margin-top: var(--pk-space-2);
-        }
-
-        .o_sc_reason_flash {
-            animation: o_sc_reason_flash 0.6s ease-out;
-        }
-    }
-
-    @keyframes o_sc_reason_flash {
-        0% {
-            color: var(--pk-accent);
-        }
-        100% {
-            color: inherit;
-        }
-    }
+    // action, the reason line and its cue — moved to the kit
+    // (pk_components.scss, task 5370); the player-add panel's form is a
+    // guarded form too (data-pk-guard, manual mode).
 }
 
 // Owner review 2026-10-14 (#1590): the patient typeahead (portal_patient_combo,

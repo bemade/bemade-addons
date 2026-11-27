@@ -1,0 +1,17 @@
+{
+  "stepsFile": "../../static/tests/tours/conversation_sender.steps.js",
+  "startPath": "/odoo/action-conversation_base.mail_conversation_action",
+  "login": {"path": "/web/login", "formSelector": ".oe_login_form"},
+  "viewport": {"width": 1280, "height": 800},
+  "lang": "fr_CA",
+  "voice": "fr_FR-siwis-medium",
+  "title": "Voir de quelle boîte une réponse est réellement partie",
+  "introNarration": "Dans cette démonstration, nous voyons qu'une réponse envoyée depuis une conversation garde l'expéditeur que le client a réellement reçu, même quand l'option « Envoyer depuis l'adresse de la signature » est activée.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "Les citations et les transferts de vos propres réponses affichent maintenant la boîte réelle : votre boîte personnelle avec votre nom, ou l'adresse de l'équipe dont la boîte a servi à l'envoi.",
+  "stepOverrides": {
+    "reply-to-sent": {
+      "selector": ".o-mail-Message-actions button[title='Répondre']:visible"
+    }
+  }
+}

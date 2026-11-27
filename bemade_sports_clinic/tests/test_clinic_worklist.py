@@ -291,25 +291,6 @@ class TestClinicWorklist(HttpCase):
             self.assertIn(name, resp.text)
         self.assertNotIn('CW Game Today', resp.text)
 
-    def test_home_card_and_counter(self):
-        self._login_tp()
-        resp = self.url_open('/my')
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn('/my/clinics', resp.text)
-
-    # ==================================================================
-    # DETAIL PAGE + WRITE ROUTES
-    # ==================================================================
-    def test_detail_page_renders_worklist_and_dossier(self):
-        self._add(self.clinic_today, self.patient_a)
-        self._login_tp()
-        resp = self.url_open('/my/clinic/%s' % self.clinic_today.id)
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn('Attendee, Ada', resp.text)
-        # Selection is server-rendered: an explicit ?patient= opens that dossier.
-        resp = self.url_open('/my/clinic/%s?patient=%s' % (
-            self.clinic_today.id, self.patient_a.id))
-        self.assertIn('Add a treatment note', resp.text)
 
     def test_non_clinic_event_is_refused_at_detail(self):
         self._login_tp()
@@ -364,32 +345,41 @@ class TestClinicWorklist(HttpCase):
             ('patient_id', '=', self.patient_out.id)]), 0)
 
     def test_reorder_route_persists_and_keeps_the_selection(self):
+        """Task 1541 (rewritten): the app's JSON twin (/worklist/reorder;
+        the legacy /attendance/reorder form route is gone): the whole order
+        after a drop, or one up / down move; the answer carries the current
+        worklist. A foreign row id is refused, the order unchanged."""
         a = self._add(self.clinic_today, self.patient_a)
         b = self._add(self.clinic_today, self.patient_b)
+        foreign = self._add(self.clinic_future, self.patient_a)
         self._login_tp()
         token = self._csrf()
-        url = '/my/clinic/%s/attendance/reorder' % self.clinic_today.id
+        url = '/my/clinic/%s/worklist/reorder' % self.clinic_today.id
+
+        def order():
+            return list(self.Attendance.search([('event_id', '=', self.clinic_today.id)]))
 
         # Drag path: the whole order in one POST.
-        resp = self.url_open(url, data={
-            'csrf_token': token,
-            'order': '%s,%s' % (b.id, a.id),
-            'patient': self.patient_a.id,
-        })
+        resp = self.url_open(url, data={'csrf_token': token, 'order': '%s,%s' % (b.id, a.id)})
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(
-            list(self.Attendance.search([('event_id', '=', self.clinic_today.id)])),
-            [b, a])
-        # The selected patient survived the round trip.
-        self.assertIn('patient=%s' % self.patient_a.id, resp.url)
+        self.assertEqual(order(), [b, a])
+        self.assertEqual([row['id'] for row in resp.json()['data']['rows']], [b.id, a.id])
 
         # Button path: same endpoint, a single move.
-        self.url_open(url, data={
-            'csrf_token': token, 'attendance_id': a.id, 'direction': 'up',
-            'patient': self.patient_a.id})
-        self.assertEqual(
-            list(self.Attendance.search([('event_id', '=', self.clinic_today.id)])),
-            [a, b])
+        resp = self.url_open(url, data={'csrf_token': token, 'attendance_id': a.id, 'direction': 'up'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(order(), [a, b])
+
+        # A row of another clinic: refused, nothing moves.
+        resp = self.url_open(url, data={'csrf_token': token, 'attendance_id': foreign.id,
+                                        'direction': 'down'})
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(order(), [a, b])
+
+        # The legacy form route is gone.
+        resp = self.url_open('/my/clinic/%s/attendance/reorder' % self.clinic_today.id,
+                             data={'csrf_token': token, 'order': '%s,%s' % (b.id, a.id)})
+        self.assertEqual(resp.status_code, 404)
 
     def test_row_from_another_clinic_is_refused(self):
         foreign = self._add(self.clinic_future, self.patient_a)

@@ -27,10 +27,12 @@ from odoo.tests import TransactionCase, tagged
 from odoo.addons.bemade_portal_kit import tools as pk_tools
 from odoo.addons.bemade_portal_kit.models import portal_kit as pk_model
 from odoo.addons.bemade_portal_kit.models import res_users as pk_users
+from odoo.addons.bemade_portal_kit.controllers import pk_app as pk_controller
 
 from .common import pk_hook
 
-HOOKS = ('_pk_roles', '_pk_nav', '_pk_visibility', '_pk_pages')
+HOOKS = ('_pk_roles', '_pk_nav', '_pk_visibility', '_pk_pages', '_pk_save_specs',
+         '_pk_fragment_fillers', '_pk_activity_can_act', '_pk_activity_assignable_users')
 
 
 @tagged('post_install', '-at_install')
@@ -48,7 +50,7 @@ class TestPkNoLeak(TransactionCase):
         self.assertFalse(contributors - installed, 'hooks from a module not installed here')
 
     def test_no_mutable_module_state(self):
-        for module in (pk_tools, pk_model, pk_users) + tuple(
+        for module in (pk_tools, pk_model, pk_users, pk_controller) + tuple(
                 obj for _name, obj in inspect.getmembers(pk_tools, inspect.ismodule)):
             for name, value in vars(module).items():
                 if name.startswith('__'):

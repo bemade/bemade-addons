@@ -1,0 +1,312 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_portal_kit_dashboard
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-15 02:59+0000\n"
+"PO-Revision-Date: 2026-11-15 02:59+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "<span>Add a section</span>"
+msgstr "<span>Ajouter une section</span>"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_home
+msgid "<span>Configure</span>"
+msgstr "<span>Configurer</span>"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "<span>Section settings</span>"
+msgstr "<span>Réglages</span>"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Add a section"
+msgstr "Ajouter une section"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Back to the dashboard"
+msgstr "Retour au tableau de bord"
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid "Bottom"
+msgstr "Bas"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_section
+msgid "Calendar"
+msgstr "Calendrier"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Configure the dashboard"
+msgstr "Configurer le tableau de bord"
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_page
+msgid "Dashboard"
+msgstr "Tableau de bord"
+
+#. module: bemade_portal_kit_dashboard
+#: model:ir.model.fields,field_description:bemade_portal_kit_dashboard.field_res_users__pk_dashboard_layout
+msgid "Dashboard Layout"
+msgstr "Disposition du tableau de bord"
+
+#. module: bemade_portal_kit_dashboard
+#: model:ir.model.fields,field_description:bemade_portal_kit_dashboard.field_portal_kit__display_name
+#: model:ir.model.fields,field_description:bemade_portal_kit_dashboard.field_portal_kit_dashboard__display_name
+#: model:ir.model.fields,field_description:bemade_portal_kit_dashboard.field_res_users__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Drag to move"
+msgstr "Glisser pour déplacer"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_home
+msgid "Every section is switched off. Use « Configure » to show some."
+msgstr ""
+"Toutes les sections sont désactivées. Utilisez « Configurer » pour en "
+"afficher."
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_section
+msgid "History"
+msgstr "Historique"
+
+#. module: bemade_portal_kit_dashboard
+#: model:ir.model.fields,field_description:bemade_portal_kit_dashboard.field_portal_kit__id
+#: model:ir.model.fields,field_description:bemade_portal_kit_dashboard.field_portal_kit_dashboard__id
+#: model:ir.model.fields,field_description:bemade_portal_kit_dashboard.field_res_users__id
+msgid "ID"
+msgstr "Identifiant"
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/controllers/pk_dashboard.py:0
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid "Invalid dashboard layout."
+msgstr "Disposition du tableau de bord invalide."
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/controllers/pk_dashboard.py:0
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid "Invalid scope."
+msgstr "Portée invalide."
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid "Invalid setting."
+msgstr "Réglage invalide."
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid "Left"
+msgstr "Gauche"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Move down"
+msgstr "Descendre"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Move to"
+msgstr "Déplacer vers"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Move up"
+msgstr "Monter"
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-javascript
+#: code:addons/bemade_portal_kit_dashboard/static/src/js/pk_dashboard_config.js:0
+msgid "No connection: this change was not saved."
+msgstr "Pas de connexion : cette modification n'a pas été enregistrée."
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid "Nothing chosen: everything you have access to."
+msgstr "Rien de choisi : tout ce à quoi vous avez accès."
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid "Nothing in this section's scope. Change it in « Configure »."
+msgstr "Rien dans la portée de cette section. Changez-la dans « Configurer »."
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "OK"
+msgstr "OK"
+
+#. module: bemade_portal_kit_dashboard
+#: model:ir.model,name:bemade_portal_kit_dashboard.model_portal_kit
+msgid "Portal Kit Registries"
+msgstr "Registres de la trousse portail"
+
+#. module: bemade_portal_kit_dashboard
+#: model:ir.model,name:bemade_portal_kit_dashboard.model_portal_kit_dashboard
+msgid "Portal kit: configurable dashboard"
+msgstr "Trousse portail : tableau de bord configurable"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Remove"
+msgstr "Retirer"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Remove this section?"
+msgstr "Retirer cette section ?"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Restore the default"
+msgstr "Rétablir par défaut"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Restore the default dashboard?"
+msgstr "Rétablir le tableau de bord par défaut?"
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid "Right"
+msgstr "Droite"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Save"
+msgstr "Enregistrer"
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-javascript
+#: code:addons/bemade_portal_kit_dashboard/static/src/js/pk_dashboard_config.js:0
+msgid "Saved"
+msgstr "Enregistré"
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-javascript
+#: code:addons/bemade_portal_kit_dashboard/static/src/js/pk_dashboard_config.js:0
+msgid "Saving…"
+msgstr "Enregistrement…"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Scope"
+msgstr "Portée"
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_section
+msgid "See all"
+msgstr "Tout voir"
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/controllers/pk_dashboard.py:0
+msgid "See the %(count)s others"
+msgstr "Voir les %(count)s autres"
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid ""
+"Show, hide, reorder and set up each section. Changes are saved as you go."
+msgstr ""
+"Affichez, masquez, réordonnez et réglez chaque section. Les changements sont"
+" enregistrés au fur et à mesure."
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-javascript
+#: code:addons/bemade_portal_kit_dashboard/static/src/js/pk_dashboard_config.js:0
+msgid "This change could not be saved."
+msgstr "Cette modification n'a pas pu être enregistrée."
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid "This section can be switched off, not removed."
+msgstr "Cette section peut être désactivée, mais pas supprimée."
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid "This section is not available to you."
+msgstr "Cette section ne vous est pas offerte."
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid "This section no longer exists."
+msgstr "Cette section n'existe plus."
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Title"
+msgstr "Titre"
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid "Too many sections."
+msgstr "Trop de sections."
+
+#. module: bemade_portal_kit_dashboard
+#: model:ir.model,name:bemade_portal_kit_dashboard.model_res_users
+msgid "User"
+msgstr "Utilisateur"
+
+#. module: bemade_portal_kit_dashboard
+#. odoo-python
+#: code:addons/bemade_portal_kit_dashboard/models/portal_kit_dashboard.py:0
+msgid "You cannot limit a section to records you do not have access to."
+msgstr ""
+"Vous ne pouvez pas limiter une section à des éléments auxquels vous n'avez "
+"pas accès."
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid ""
+"Your sections, their order, titles and scopes will be replaced by the "
+"default ones."
+msgstr ""
+"Vos sections, leur ordre, leurs titres et leurs portées seront remplacés par"
+" ceux par défaut."
+
+#. module: bemade_portal_kit_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_dashboard.pk_dash_configure
+msgid "Zone"
+msgstr "Zone"

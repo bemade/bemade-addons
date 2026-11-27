@@ -85,23 +85,6 @@ class Clinic1540Common(Parity1577Common):
 @tagged('post_install', '-at_install')
 class TestAppShellClinic1540(Clinic1540Common):
 
-    # -- UC-C1 -----------------------------------------------------------
-    def test_switch_off_legacy_pages(self):
-        self._login_tp()
-        with patch.object(ClinicPortal, '_sc_clinics_values',
-                          side_effect=AssertionError('shell values computed')), \
-                patch.object(ClinicPortal, '_sc_clinic_values',
-                             side_effect=AssertionError('shell values computed')):
-            text, tree = self._get('/my/clinics')
-            self.assertIn('o_sc_clinics', text)
-            self.assertIsNone(self._shell(tree))
-            text, tree = self._get('/my/clinic/%s' % self.clinic.id)
-            self.assertIn('o_sc_clinic_detail', text)
-            self.assertIn('o_sc_worklist', text)
-            self.assertNotIn('data-pk-app-shell', text)
-            self.assertNotIn('sc_clinic_worklist', text)
-        text, _tree = self._get('/my/clinic/%s/worklist/fragment' % self.clinic.id)
-        self.assertIn('o_sc_worklist', text)
 
     # -- UC-C2 -----------------------------------------------------------
     def test_clinics_list_in_shell(self):
@@ -109,9 +92,9 @@ class TestAppShellClinic1540(Clinic1540Common):
         self._login_tp()
         text, tree = self._get('/my/clinics')
         self.assertIsNotNone(self._shell(tree))
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'),
                          ['today', 'upcoming', 'past', 'all'])
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a[@aria-selected="true"]/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a[@aria-selected="true"]/@data-pk-tab'),
                          ['today'])
         ids = [int(x) for x in tree.xpath('//*[@data-sc-clinic-id]/@data-sc-clinic-id')]
         self.assertIn(self.clinic.id, ids)       # mine + today
@@ -130,7 +113,7 @@ class TestAppShellClinic1540(Clinic1540Common):
         self._login_tp()
         _text, tree = self._get('/my/clinic/%s' % self.clinic.id)
         self.assertIsNotNone(self._shell(tree))
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'), ['worklist', 'dossier'])
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'), ['worklist', 'dossier'])
         props = self._props(tree)
         self.assertEqual(props['clinicId'], self.clinic.id)
         self.assertEqual(props['dataUrl'], '/my/clinic/%s/worklist/data' % self.clinic.id)
@@ -155,13 +138,13 @@ class TestAppShellClinic1540(Clinic1540Common):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/clinic/%s?patient=%s' % (self.clinic.id, self.player.id))
-        dossier = tree.xpath('//section[@data-sc-tab-panel="dossier"]')[0]
+        dossier = tree.xpath('//section[@data-pk-tab-panel="dossier"]')[0]
         self.assertIsNone(dossier.get('hidden'))
         fields_ = self._owl_fields(tree)
         # Task 1627: the instant status pair is the Match / Practice pill
         # dropdowns (no autosave field).
         self.assertNotIn('sc_status', fields_)
-        self.assertEqual(len(dossier.xpath('.//*[@data-sc-pill-select][@data-sc-field="sc_status"]')), 2)
+        self.assertEqual(len(dossier.xpath('.//*[@data-pk-pill-select][@data-pk-field="sc_status"]')), 2)
         form = tree.xpath('//form[@data-sc-form="notes.add"]')[0]
         self.assertEqual(form.get('action'), '/my/injury/note/add')
         self.assertEqual(form.xpath('.//input[@name="event_id"]/@value'), [str(self.clinic.id)])
@@ -170,15 +153,15 @@ class TestAppShellClinic1540(Clinic1540Common):
         self.assertTrue(tree.xpath('//details[@id="clinic-injury-%s"][@data-pk-edit-card="injury"]'
                                    % self.injury.id))
         self.assertFalse(tree.xpath('//dialog[@id="sc_clinic_injury_%s"]' % self.injury.id))
-        # The legacy fragment route still answers (the legacy page uses it).
+        # Task 1541: the legacy fragment route is gone with the legacy page.
         resp = self.url_open('/my/injury/%s/form/fragment?clinic_id=%s&patient=%s' % (
             self.injury.id, self.clinic.id, self.player.id))
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 404)
 
     @staticmethod
     def _owl_fields(tree):
         out = {}
-        for node in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+        for node in tree.xpath('//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'):
             props = json.loads(node.get('props'))
             out[props.get('field') or props.get('name')] = props
         return out

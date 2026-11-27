@@ -29,6 +29,16 @@ template edit.** ``internal`` alone does not put a user in the app shell
 (``'app': False``, see ``portal.kit.pk_app_roles()``): an internal user
 without any clinic role keeps the stock portal.
 
+The app (task 5391)
+-------------------
+Every clinic role, nav entry, page, dashboard widget and search provider
+belongs to the kit app ``SC_APP`` (``'fitcrew'``), registered in
+``_pk_apps()`` (its layout, preferences, search placeholder; the PWA and the
+help add theirs in ``sc_app_pwa.py`` / ``sc_app_help.py``; its dashboard
+home is ``sc_app_home``, drawn by ``controllers/app_dashboard.py``). Another consumer installed in the
+same database never sees them, and the clinic's per-app hooks answer for
+``SC_APP`` only (``super()`` for any other app).
+
 Visibility rule (every registry below)
 --------------------------------------
 ``include`` (any-of) and ``exclude`` (none-of). An entry is visible when the
@@ -62,12 +72,13 @@ not nothing. ``exclude`` still wins. Plain coaches are unaffected: the
 flag only ever widens for ``is_system``. Only flag ACTION keys whose
 template gate is a server value that is already True for a system admin.
 """
-from odoo import api, models
+from odoo import _, api, models
 from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.bemade_portal_kit.tools import pk_nav
 
 from . import sc_app_nav
+from .sc_app_nav import SC_APP
 
 _lt = LazyTranslate(__name__)
 
@@ -105,12 +116,41 @@ class SportsClinicPortalKit(models.AbstractModel):
     _inherit = 'portal.kit'
 
     # -----------------------------------------------------------------------
+    # The app (task 5391)
+    # -----------------------------------------------------------------------
+    @api.model
+    def _pk_apps(self):
+        apps = dict(super()._pk_apps())
+        app = dict(apps.get(SC_APP) or {})
+        app.update({
+            'sequence': 10,
+            # The kit's pages (settings, More, account, security) are drawn
+            # on the Fit Crew layout.
+            'layout': 'bemade_sports_clinic.sc_app_layout',
+            # Task 1665: « Recevoir le sommaire quotidien par courriel ».
+            'pref_fields': {'digest_daily_enabled': ('1', '0')},
+            'search_placeholder': _lt("Players, teams, events…"),
+            # The dashboard's home (/my/home, bemade_portal_kit_dashboard):
+            # sc_app_home with the clinic's shell values
+            # (controllers/app_dashboard.py, AppDashboardPortal).
+            'home': 'bemade_sports_clinic.sc_app_home',
+            'home_render': '_sc_dash_render',
+        })
+        apps[SC_APP] = app
+        return apps
+
+    @api.model
+    def _sc_is_app(self):
+        """Is the current request served in the clinic's app?"""
+        return self._pk_current_app() == SC_APP
+
+    # -----------------------------------------------------------------------
     # Roles
     # -----------------------------------------------------------------------
     @api.model
     def _pk_roles(self):
         roles = dict(super()._pk_roles())
-        roles.update({
+        clinic = {
             'coach': {'groups': ('bemade_sports_clinic.group_portal_team_coach',)},
             'head_coach': {'staff_roles': ('head_coach',)},
             'therapist': {'groups': _TP_GROUPS},
@@ -124,7 +164,10 @@ class SportsClinicPortalKit(models.AbstractModel):
             'parent': {'groups': ()},
             'player': {'groups': ()},
             'secretary': {'groups': ()},
-        })
+        }
+        for spec in clinic.values():
+            spec.setdefault('app', SC_APP)
+        roles.update(clinic)
         return roles
 
     # -----------------------------------------------------------------------
@@ -132,7 +175,11 @@ class SportsClinicPortalKit(models.AbstractModel):
     # -----------------------------------------------------------------------
     @api.model
     def _pk_nav(self):
-        return list(super()._pk_nav()) + [
+        return list(super()._pk_nav()) + [dict(entry, app=SC_APP) for entry in self._sc_nav()]
+
+    @api.model
+    def _sc_nav(self):
+        return [
             # « Équipes » opens the full teams list; the dashboard (/my/home) is the
             # login landing page, reached from the logo (owner review 2026-10-10).
             # Owner review 2026-10-10: phone tabs = Teams, Players, Notepad,
@@ -158,6 +205,9 @@ class SportsClinicPortalKit(models.AbstractModel):
             pk_nav('backend', _lt('Back-end'), 'backend', '/odoo', {'internal'}, 150,
                    PLUS_ONLY, subtitle=_lt('The full Odoo application')),
             # Task 1542: per-device install steps (no banner anywhere — owner).
+            # Task 5201 (kit P6): the entry is bemade_portal_kit_pwa's; Fit
+            # Crew re-declares it for its own subtitle (same key: replaced
+            # in place).
             pk_nav('install', _lt('Install the app'), 'install', '/my/app/install', EVERYONE, 160,
                    PLUS_ONLY, subtitle=_lt('Add Le Fit Crew to your home screen')),
         ]
@@ -187,7 +237,7 @@ class SportsClinicPortalKit(models.AbstractModel):
             # Therapist working surface: /my/clinics denies everyone else server-side.
             # Task 1624: the live « Clinics today » chip of the « Today » widget.
             'home.clinic_teaser': {'include': TP},
-            # Task 1624 — the dashboard widgets (models/sc_dashboard.py WIDGETS) and
+            # Task 1624 — the dashboard widgets (models/sc_dashboard.py _pk_widgets) and
             # the « To do » lines. Each line is ALSO bound by its data's access
             # (record rules, _may_remove_from_team) — the registry only hides.
             'dashboard.today': {'include': STAFF},
@@ -227,7 +277,7 @@ class SportsClinicPortalKit(models.AbstractModel):
             # rule: each key is ALSO gated in the template by the controller's
             # existing server-side value (the legacy page's ``is_treatment_prof`` /
             # ``can_*`` flags), and the save route refuses the field server-side
-            # (SAVE_REGISTRY per-role allowlists, controllers/app_shell.py).
+            # (the save specs' per-role allowlists, controllers/app_shell.py).
             'injury.internal_notes': {'include': TP, 'model': 'sports.patient.injury',
                                       'field': 'internal_notes'},
             'players.create': {'include': TP},
@@ -263,7 +313,89 @@ class SportsClinicPortalKit(models.AbstractModel):
     # -----------------------------------------------------------------------
     @api.model
     def _pk_pages(self):
+        # Task 5202 (kit P7): the clinic's home is sc_app_home (/my/home);
+        # task 5391: the app's registration names its own home
+        # (controllers/app_dashboard.py), so the dashboard addon's own
+        # pk_dash_page is not the clinic app's.
         return list(super()._pk_pages()) + sc_app_nav.sc_pages(self)
+
+    # -----------------------------------------------------------------------
+    # Task 5200 (kit P5): the kit's pages, preferences, account, search
+    # (task 5391: the layout, preferences and placeholder are the app's
+    # registration, _pk_apps above)
+    # -----------------------------------------------------------------------
+    @api.model
+    def _pk_account_phone(self, phone, country=None):
+        """Task 1645: « Mon compte »'s phone follows the clinic's phone rule
+        (+1 514-555-0123, or « Invalid phone number. »)."""
+        from .sc_phone import sc_normalize_phone
+        phone = super()._pk_account_phone(phone, country=country)
+        if not self._sc_is_app():
+            return phone
+        return sc_normalize_phone(self.env, phone, country=country or None)
+
+    @api.model
+    def _pk_search_providers(self):
+        """Task 1650: players, teams and events (controllers/app_search.py),
+        for the users who have the Players page (rail)."""
+        def available():
+            roles = self.env.user._pk_roles()
+            return any(entry['key'] == 'players'
+                       for entry in self.pk_visible_nav(roles, 'rail', {}, app=SC_APP))
+        return list(super()._pk_search_providers()) + [
+            {'key': 'players', 'title': _('Players'), 'sequence': 10, 'available': available,
+             'url': '/my/players', 'search': lambda words, limit, ctrl: ctrl._sc_search_players(words),
+             'app': SC_APP},
+            {'key': 'teams', 'title': _('Teams'), 'sequence': 20, 'available': available,
+             'search': lambda words, limit, ctrl: ctrl._sc_search_teams(words), 'app': SC_APP},
+            {'key': 'events', 'title': _('Events'), 'sequence': 30, 'available': available,
+             'search': lambda words, limit, ctrl: ctrl._sc_search_events(words), 'app': SC_APP},
+        ]
+
+    # -----------------------------------------------------------------------
+    # Save engine and screen refresh (task 5199: the kit's hooks)
+    # -----------------------------------------------------------------------
+    @api.model
+    def _pk_save_specs(self):
+        """The clinic's save specs (``controllers/app_shell.py``,
+        ``sc_save_specs()``) and its role allowlist on the kit's
+        ``mail.activity`` spec (every staff role)."""
+        from ..controllers.app_shell import SC_ACTIVITY_FIELD_ROLES, sc_save_specs
+        specs = dict(super()._pk_save_specs())
+        if 'mail.activity' in specs:
+            specs['mail.activity'] = dict(
+                specs['mail.activity'], fields={name: STAFF for name in SC_ACTIVITY_FIELD_ROLES})
+        specs.update(sc_save_specs())
+        return specs
+
+    @api.model
+    def _pk_fragment_fillers(self):
+        """Review 2026-10-21 (#1634): a player card moved to another section
+        is refilled from that section (``sc_fill_moved_row_fragments``)."""
+        from ..controllers.app_shell import sc_fill_moved_row_fragments
+        return list(super()._pk_fragment_fillers()) + [sc_fill_moved_row_fragments]
+
+    @staticmethod
+    def _sc_access_controller():
+        from ..controllers.app_shell import AppShellPortal
+        return AppShellPortal()
+
+    @api.model
+    def _pk_activity_can_act(self, activity):
+        """Task 1589: the one act rule of the activity portal
+        (``AccessControlMixin._activity_act_access``), in the clinic's app."""
+        if not self._sc_is_app():
+            return super()._pk_activity_can_act(activity)
+        return bool(self._sc_access_controller()._activity_act_access(activity))
+
+    @api.model
+    def _pk_activity_assignable_users(self, activity):
+        """Task 1500: the per-actor assignee rule
+        (``AccessControlMixin._activity_assignable_users_for``), in the
+        clinic's app."""
+        if not self._sc_is_app():
+            return super()._pk_activity_assignable_users(activity)
+        return self._sc_access_controller()._activity_assignable_users_for(self.env.user)
 
 
 # ---------------------------------------------------------------------------

@@ -33,7 +33,6 @@ All fixtures are synthetic: this addon's repository is public.
 import re
 from datetime import date, timedelta
 
-from lxml import html as lxml_html
 
 from odoo import Command, fields
 from odoo.exceptions import AccessError, ValidationError
@@ -257,7 +256,8 @@ class TestClinicKioskUnregistered(HttpCase):
         self.assertIn('done=ok', resp.url)
         self.assertNotIn('zed', resp.text)
         self.assertNotIn('Zero', resp.text)
-        self.assertNotIn('2001', resp.text)
+        # The csrf token's expiry stamp is digits too (…o1827200101): not a DOB.
+        self.assertNotIn('2001', re.sub(r'csrf_token: "[^"]*"', '', resp.text))
         self.assertEqual(len(self._rows()), 1)
         resp = self._kiosk_post('Zed', 'Zero', '2001-02-03')
         self.assertIn('done=duplicate', resp.url,
@@ -403,15 +403,8 @@ class TestClinicKioskUnregistered(HttpCase):
     def test_create_patient_several_teams(self):
         _o, row = self._queue('Mo', 'Multi', date(2004, 4, 4), event=self.clinic_multi)
         self._login('uq.tp@example.com', 'uq-tp')
-        page = self._page(self.clinic_multi)
-        select = re.search(
-            r'<select name="team_id"[^>]*id="resolve_team_%s"[^>]*>(.*?)</select>' % row.id,
-            page.text, re.S)
-        self.assertTrue(select, "a team select when several teams")
-        # assigning a TP to a clinic auto-staffs them on its teams
-        # (_sync_event_auto_staff), so both clinic teams are offered here
-        self.assertIn('>UQ Team<', select.group(1))
-        self.assertIn('>UQ Team Two<', select.group(1))
+        # Task 1541: the legacy resolve block (its team select) is gone; the
+        # app's resolve sheet posts the same route.
         # no team posted: flash
         resp = self._post('/my/clinic/%s/attendance/%s/create_patient' % (
             self.clinic_multi.id, row.id), {}, event=self.clinic_multi)
@@ -585,112 +578,13 @@ class TestClinicKioskUnregistered(HttpCase):
         self.assertEqual(self.env.ref('bemade_sports_clinic.portal_tp_clinic_attendance_rule')
                          .domain_force.count("('patient_id', '=', False)"), 1)
 
-    # ==================================================================
-    # WORKLIST PAGE + FRAGMENT
-    # ==================================================================
-    def test_worklist_renders_the_resolve_block(self):
-        _o, row = self._queue()
-        listed = self.Attendance.create({'event_id': self.clinic.id, 'patient_id': self.lou.id})
-        self._login('uq.tp@example.com', 'uq-tp')
-        for url in ('/my/clinic/%s' % self.clinic.id,
-                    '/my/clinic/%s/worklist/fragment' % self.clinic.id):
-            html = self.url_open(url).text
-            self.assertIn('o_sc_unregistered', html)
-            self.assertIn('Unregistered:', html)
-            self.assertIn('Zed Zero', html)
-            self.assertIn('data-unregistered="1"', html)
-            self.assertIn('Resolve', html)
-            self.assertIn('/attendance/%s/link' % row.id, html)
-            self.assertIn('/attendance/%s/create_patient' % row.id, html)
-            self.assertIn('/attendance/%s/remove' % row.id, html)
-            self.assertIn('resolve_patient_%s' % row.id, html)
-            self.assertNotIn('/attendance/%s/state' % row.id, html, "no state buttons")
-            self.assertNotIn('/attendance/%s/confirm' % row.id, html, "no Confirm (the block is it)")
-            self.assertIn('/attendance/%s/state' % listed.id, html, "the linked row keeps them")
-            self.assertNotIn('resolve_team_%s' % row.id, html, "one clinic team: no team select")
-            # the picker lists the TP's patients (link to Lou merges)
-            self.assertIn('Listed, Lou', html)
-            self.assertIn('Queue, Kim', html)
-            self.assertNotIn('Far, Fay', html)
-        # the row carries no dossier link. Look inside the row's own <li>: a
-        # page-wide match on ?patient=<row.id> compared an attendance id with
-        # patient ids, and failed whenever a listed patient shared the number.
-        html = self._page().text
-        row_html = lxml_html.fromstring(html).get_element_by_id('attendance-%s' % row.id)
-        self.assertFalse(
-            row_html.xpath('.//a[contains(@href, "?patient=")]'),
-            "the unregistered row has no link to a patient file",
-        )
-        # no unregistered row: no resolve blocks rendered at all
-        row.unlink()
-        html = self._page().text
-        self.assertNotIn('o_sc_resolve', html)
 
     def test_coach_sees_nothing(self):
         self._queue()
         self._login('uq.coach@example.com', 'uq-coach')
         self.assertEqual(self._page().status_code, 403)
+        # Task 1541: the app's live worklist (the legacy fragment is gone).
         self.assertEqual(self.url_open(
-            '/my/clinic/%s/worklist/fragment' % self.clinic.id).status_code, 403)
+            '/my/clinic/%s/worklist/data' % self.clinic.id).status_code, 403)
 
 
-@tagged('-at_install', 'post_install')
-class TestClinicKioskUnregisteredFrCA(HttpCase):
-    """The unregistered row and its Resolve block must be French for fr_CA
-    therapists (per-view translations: the worklist sub-template is the view
-    the strings belong to). Synthetic fixtures only."""
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        env = cls.env
-        env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'])
-        # With `website` installed the portal language follows the WEBSITE
-        # (URL prefix / frontend_lang cookie / website default), not the user's
-        # lang — the project CI has it, the addon CI does not. Make fr_CA a
-        # website language so the fr_CA request below can win.
-        if env['ir.module.module']._get('website').state == 'installed':
-            fr_lang = env['res.lang']._lang_get('fr_CA')
-            for website in env['website'].sudo().search([]):
-                website.language_ids = [Command.link(fr_lang.id)]
-        cls.org = env['res.partner'].create({'name': 'UQFR Org', 'is_company': True})
-        cls.team = env['sports.team'].create({'name': 'UQFR Team', 'parent_id': cls.org.id})
-        cls.tp = env['res.users'].with_context(no_reset_password=True).create({
-            'name': 'UQFR Therapist', 'login': 'uq.fr@example.com', 'password': 'uq-fr-ca',
-            'lang': 'fr_CA',
-            'group_ids': [Command.set([
-                env.ref('base.group_portal').id,
-                env.ref('bemade_sports_clinic.group_portal_treatment_professional').id,
-            ])],
-        })
-        env['sports.team.staff'].create({
-            'team_id': cls.team.id, 'partner_id': cls.tp.partner_id.id, 'role': 'therapist'})
-        now = fields.Datetime.now()
-        cls.clinic = env['sports.event'].create({
-            'name': 'UQFR Clinique', 'event_type': 'clinic',
-            'team_ids': [Command.set([cls.team.id])],
-            'date_start': now - timedelta(minutes=30),
-            'date_end': now + timedelta(hours=2), 'state': 'confirmed',
-            'assigned_staff_ids': [Command.set([cls.tp.id])],
-        })
-        env['sports.clinic.attendance']._kiosk_sign_in(
-            cls.clinic, 'Zoé', 'Zéro', date(2001, 2, 3))
-
-    def test_resolve_block_renders_in_french(self):
-        self.authenticate('uq.fr@example.com', 'uq-fr-ca')
-        # website: pick fr_CA for this session (no-op without website)
-        self.opener.cookies.set('frontend_lang', 'fr_CA')
-        for url in ('/my/clinic/%s' % self.clinic.id,
-                    '/my/clinic/%s/worklist/fragment' % self.clinic.id):
-            html = self.url_open(url).text
-            self.assertIn('Non inscrit', html)
-            self.assertIn('Zoé Zéro', html)
-            self.assertIn('Résoudre', html)
-            self.assertIn('Lier', html)
-            self.assertIn('Créer le joueur', html)
-            self.assertIn('Retirer', html)
-            self.assertNotIn('Unregistered:', html)
-            self.assertNotIn('>Resolve<', html)
-        page = self.url_open('/my/clinic/%s' % self.clinic.id).text
-        self.assertIn('1 non inscrit', page)

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="repack_wizard_view_form" model="ir.ui.view">
+        <field name="name">stock.package.format.repack.wizard.form</field>
+        <field name="model">stock.package.format.repack.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Repack">
+                <group>
+                    <group>
+                        <field name="product_id" options="{'no_create': True}" />
+                        <field name="location_id" options="{'no_create': True}" />
+                        <field
+              name="source_package_id"
+              options="{'no_create': True}"
+              domain="[('location_id', '=', location_id)]"
+            />
+                        <field name="lot_id" options="{'no_create': True}" />
+                    </group>
+                    <group>
+                        <field name="allowed_format_ids" invisible="1" />
+                        <field name="format_uom_id" options="{'no_create': True}" />
+                        <field name="package_count" />
+                        <field name="quantity" />
+                        <field name="reason" />
+                    </group>
+                </group>
+                <footer>
+                    <button
+            name="action_confirm"
+            type="object"
+            class="btn-primary"
+            string="Repack"
+          />
+                    <button special="cancel" string="Cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_repack_wizard" model="ir.actions.act_window">
+        <field name="name">Repack</field>
+        <field name="res_model">stock.package.format.repack.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem
+    id="menu_repack_wizard"
+    action="action_repack_wizard"
+    parent="stock.menu_stock_adjustments"
+    sequence="60"
+    groups="stock_package_format.group_package_open"
+  />
+</odoo>

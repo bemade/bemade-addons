@@ -6,10 +6,10 @@ from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import (
     AccessControlMixin, parse_portal_date, sc_deadline_in_past, sc_past_deadline_message,
 )
-from .app_shell import AppShellMixin, sc_file_size
+from .app_shell import AppShellMixin, sc_app_page, sc_file_size
 from ..models import sc_app_nav
 from datetime import date, timedelta
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 _logger = logging.getLogger(__name__)
 
@@ -155,6 +155,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return response
 
     @http.route(['/my/activities'], type='http', auth='user', website=True)
+    @sc_app_page
     def view_activities(self, model=None, res_id=None, simplified=False, team_id=None, **kw):
         """Display list of activities accessible to the current user through team relationships.
 
@@ -258,12 +259,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'simplified': bool(simplified),
         }
         
-        # Task 1539: the app shell (switch on) or today's template (off) —
-        # also for the /my/team/activities and /my/event/activities wrappers.
-        if self._sc_app_shell_active():
-            values.update(self._sc_activities_values(values))
-        return self._sc_render('bemade_sports_clinic.portal_my_activities',
-                               'bemade_sports_clinic.sc_app_activities', values)
+        # Also for the /my/team/activities and /my/event/activities wrappers.
+        values.update(self._sc_activities_values(values))
+        return self._sc_render('bemade_sports_clinic.sc_app_activities', values)
 
     def _sc_activities_values(self, values):
         env = request.env
@@ -311,7 +309,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     quote(base + ('?' + query if query else ''), safe=''))
                 if values.get('context_model') and values.get('context_res_id') else False),
             'sc_context_title': context_title,
-            'sc_flash': self._sc_activity_flash(),
+            'pk_flash': self._sc_activity_flash(),
             # Task 1622: opened from the app bar clock — the page it was
             # tapped on (kept by the tab links), the way back. Not on the
             # record wrappers: they have their own parent.
@@ -341,6 +339,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
 
     @http.route(['/my/activity/create'], type='http', auth='user', website=True)
+    @sc_app_page
     def create_activity_form(self, model=None, res_id=None, **kw):
         """Display form to create a new activity"""
         # Validate model and res_id (task 1409: no injury context — activities
@@ -431,11 +430,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'today': date.today().strftime('%Y-%m-%d'),
         }
         
-        # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            values.update(self._sc_activity_form_values(values))
-        return self._sc_render('bemade_sports_clinic.portal_create_activity',
-                               'bemade_sports_clinic.sc_app_activity_form', values)
+        values.update(self._sc_activity_form_values(values))
+        return self._sc_render('bemade_sports_clinic.sc_app_activity_form', values)
 
     @staticmethod
     def _sc_activity_form_values(values):
@@ -450,10 +446,11 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             values.setdefault(key, False)
         return {
             'sc_no_access_ids': ' '.join(str(uid) for uid, ok in access.items() if not ok),
-            'sc_flash': TaskManagementPortal._sc_activity_flash(),
+            'pk_flash': TaskManagementPortal._sc_activity_flash(),
         }
 
     @http.route(['/my/player/activities'], type='http', auth='user', website=True)
+    @sc_app_page
     def view_player_activities(self, player_id=None, team_id=None, **kw):
         """Back-compat redirect (task 1222).
 
@@ -483,6 +480,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return request.redirect(url + '#activities')
 
     @http.route(['/my/team/activities'], type='http', auth='user', website=True)
+    @sc_app_page
     def view_team_activities(self, team_id=None, **kw):
         """Object-specific wrapper: activities for a single team."""
         if not team_id:
@@ -495,6 +493,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return self.view_activities(model='sports.team', res_id=team.id, simplified=True)
 
     @http.route(['/my/injury/activities'], type='http', auth='user', website=True)
+    @sc_app_page
     def view_injury_activities(self, injury_id=None, team_id=None, **kw):
         """Back-compat redirect (task 1409).
 
@@ -523,6 +522,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return request.redirect(url + '#activities')
 
     @http.route(['/my/event/activities'], type='http', auth='user', website=True)
+    @sc_app_page
     def view_event_activities(self, event_id=None, **kw):
         """Object-specific wrapper: activities for a single event."""
         if not event_id:
@@ -819,56 +819,16 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return request.redirect(_append_query(return_url, 'success=activity_reassigned'))
 
     @http.route(['/my/activity/<int:activity_id>/edit'], type='http', auth='user', website=True)
+    @sc_app_page
     def edit_activity_form(self, activity_id, **kw):
-        """Display form to edit an existing activity"""
-        activity = request.env['mail.activity'].browse(activity_id)
-        
-        # Check if the activity exists and user has access to it
-        if not activity.exists():
-            raise request.not_found()
-        # Owner review 2026-10-11: in the app shell the activity is edited
-        # in place (pencil card) on its page.
-        if self._sc_app_shell_active():
-            return request.redirect('/my/activity/%s' % activity.id)
-            
-        # Task 1589: editing is acting — the one act rule.
-        user = request.env.user
-        if not self._activity_act_access(activity):
-            raise request.not_found()
-
-        # Get activity types for the form
-        activity_types = request.env['mail.activity.type'].search([
-            ('res_model', 'in', ['sports.patient', 'sports.team', 'sports.event', False])
-        ])
-        
-        # Available users for the assignee select: the per-actor rule (task
-        # 1500), honoured by /my/activity/update under the same rule.
-        available_users = self._activity_assignable_users_for(user)
-
-        # Advisory access map (task 1402), as on the create page. sudo(): the
-        # team-based access check above is the authorization; the record is
-        # only read for its team scope.
-        assignee_team_access = None
-        if activity.res_model in ('sports.patient', 'sports.team', 'sports.event'):
-            target = request.env[activity.res_model].sudo().browse(activity.res_id)
-            if target.exists():
-                assignee_team_access = self._activity_assignee_team_access(
-                    activity.res_model, target, available_users)
-
-        values = {
-            'activity': activity,
-            'activity_types': activity_types,
-            'available_users': available_users,
-            'assignee_team_access': assignee_team_access,
-            'page_name': 'edit_activity',
-            'today': date.today().strftime('%Y-%m-%d'),
-        }
-        
-        # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            values.update(self._sc_activity_form_values(values))
-        return self._sc_render('bemade_sports_clinic.portal_edit_activity',
-                               'bemade_sports_clinic.sc_app_activity_form', values)
+        """Task 1541: an old link / bookmark — the activity is edited in
+        place (pencil card) on its page (owner review 2026-10-11)."""
+        url = '/my/activity/%s' % int(activity_id)
+        # A refused /my/activity/update still lands here with its message.
+        flash = [(key, kw[key]) for key in ('error', 'success') if kw.get(key)]
+        if flash:
+            url += '?' + urlencode(flash)
+        return request.redirect(url, code=301)
 
     @http.route(['/my/activity/<int:activity_id>/attachment/<int:attachment_id>'],
                 type='http', auth='user', methods=['GET'])
@@ -908,6 +868,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         })
 
     @http.route(['/my/activity/<int:activity_id>'], type='http', auth='user', website=True)
+    @sc_app_page
     def view_activity_detail(self, activity_id, **kw):
         """Display detailed view of a specific activity"""
         activity = request.env['mail.activity'].browse(activity_id)
@@ -966,26 +927,23 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'context_event': context_event,
         }
         
-        # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            # Task 1595: the related records' links, each gated by the
-            # page it leads to (no link to a record the viewer may not open).
-            related_links = self._sc_activity_related(activity)
-            related_url = related_links[0]['url'] if related_links else False
-            assignable = self._activity_assignable_users_for(request.env.user)
-            users = (assignable | activity.sudo().user_id).sorted('name')
-            values.update({
-                'sc_related_url': related_url,
-                'sc_related_links': related_links,
-                'today_date': fields.Date.context_today(request.env.user),
-                'sc_flash': self._sc_activity_flash(),
-                # Owner review 2026-10-11: the pencil card's assignee choices.
-                # Task 1589: pencil + Cancel / Reschedule / Done follow the
-                # one act rule.
-                'sc_activity_editable': self._activity_act_access(activity),
-                'sc_activity_user_options': [(u.id, u.name) for u in users],
-                # Task 1664: the reassign sheet of the detail page.
-                'sc_activity_reassign_users': assignable.sorted('name'),
-            })
-        return self._sc_render('bemade_sports_clinic.portal_activity_detail',
-                               'bemade_sports_clinic.sc_app_activity_detail', values)
+        # Task 1595: the related records' links, each gated by the
+        # page it leads to (no link to a record the viewer may not open).
+        related_links = self._sc_activity_related(activity)
+        related_url = related_links[0]['url'] if related_links else False
+        assignable = self._activity_assignable_users_for(request.env.user)
+        users = (assignable | activity.sudo().user_id).sorted('name')
+        values.update({
+            'sc_related_url': related_url,
+            'sc_related_links': related_links,
+            'today_date': fields.Date.context_today(request.env.user),
+            'pk_flash': self._sc_activity_flash(),
+            # Owner review 2026-10-11: the pencil card's assignee choices.
+            # Task 1589: pencil + Cancel / Reschedule / Done follow the
+            # one act rule.
+            'sc_activity_editable': self._activity_act_access(activity),
+            'sc_activity_user_options': [(u.id, u.name) for u in users],
+            # Task 1664: the reassign sheet of the detail page.
+            'sc_activity_reassign_users': assignable.sorted('name'),
+        })
+        return self._sc_render('bemade_sports_clinic.sc_app_activity_detail', values)

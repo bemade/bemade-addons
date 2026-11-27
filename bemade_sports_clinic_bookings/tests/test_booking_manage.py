@@ -179,10 +179,6 @@ class TestBookingManageAccess(_ManageCommon):
         self.assertEqual(self._times(self.booking_soon), before)
         self.assertTrue(self.booking_soon.active)
 
-    def test_shell_off_no_pages(self):
-        self._switch(False)
-        self._login()
-        self.assertEqual(self.url_open('/my/bookings/%s/edit' % self.booking_soon.id).status_code, 404)
 
     def test_staff_of_type_attending(self):
         """A staff user of the type who attends the booking (not organizer)."""
@@ -237,7 +233,7 @@ class TestBookingEdit(_ManageCommon):
         before = self._times(self.booking_soon)
         resp = self._edit(self.booking_soon, length=7)
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('data-sc-flash-error', resp.text)
+        self.assertIn('data-pk-flash-error', resp.text)
         self.assertEqual(self._times(self.booking_soon), before)
         resp = self._edit(self.booking_soon, length=90)
         self.assertEqual(resp.status_code, 200)
@@ -256,7 +252,7 @@ class TestBookingEdit(_ManageCommon):
         before = self._times(self.booking_soon)
         resp = self._edit(self.booking_soon, day=self.day - timedelta(days=10))
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('data-sc-flash-error', resp.text)
+        self.assertIn('data-pk-flash-error', resp.text)
         self.assertEqual(self._times(self.booking_soon), before)
 
     def test_overlap_warns_then_saves(self):
@@ -417,7 +413,7 @@ class TestBookingManageFrench(_ManageCommon):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic', 'bemade_sports_clinic_bookings', 'appointment_portal_staff'],
+            ['bemade_portal_kit', 'bemade_sports_clinic', 'bemade_sports_clinic_bookings', 'appointment_portal_staff'],
             ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')

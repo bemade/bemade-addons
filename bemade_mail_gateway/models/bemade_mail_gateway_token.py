@@ -104,7 +104,7 @@ class BemadeMailGatewayToken(models.Model):
 
         :raises ValidationError: if ``name`` is empty or already taken.
         """
-        self.check_access_rights('create')
+        self.browse().check_access('create')
         if not name or not name.strip():
             raise ValidationError(_("A label is required."))
 
@@ -140,7 +140,7 @@ class BemadeMailGatewayToken(models.Model):
           DB write, which only reveals "some token matched", a fact the
           attacker already learns from the HTTP status code).
         """
-        self.check_access_rights('read')
+        self.browse().check_access('read')
         if not raw_token:
             return self.browse()
 

@@ -14,7 +14,7 @@ from odoo.exceptions import UserError, AccessError, MissingError, ValidationErro
 from odoo.http import request
 from odoo.tools import format_date
 
-from odoo.addons.bemade_portal_kit.tools import pk_safe_return_url
+from odoo.addons.bemade_portal_kit.tools import pk_form_props, pk_safe_return_url
 from datetime import datetime, time
 import time as systime
 import logging
@@ -204,12 +204,17 @@ class AccessControlMixin:
                 ('team_ids.name', 'ilike', search),
                 ('venue_id.name', 'ilike', search),
             ])
+        # Task 1541 review: a malformed id (an edited URL) is ignored, never
+        # a 500.
+        team_id = self._int_or_none(team_id)
+        organization_id = self._int_or_none(organization_id)
+        assigned_user_id = self._int_or_none(assigned_user_id)
         if team_id:
-            domain.append(('team_ids', 'in', [int(team_id)]))
+            domain.append(('team_ids', 'in', [team_id]))
         if organization_id:
-            domain.append(('partner_id', '=', int(organization_id)))
+            domain.append(('partner_id', '=', organization_id))
         if assigned_user_id:
-            domain.append(('assigned_staff_ids', 'in', [int(assigned_user_id)]))
+            domain.append(('assigned_staff_ids', 'in', [assigned_user_id]))
         if date_from:
             dt_utc = self._date_bound_to_utc(date_from, end_of_day=False)
             if dt_utc:
@@ -416,7 +421,7 @@ class AccessControlMixin:
         if not allowed:
             return link
         link['url'] = pattern % record.id
-        if model == 'sports.patient.injury' and self._sc_app_shell_active():
+        if model == 'sports.patient.injury':
             # Task 1616: the injury's open card (no injury page any more).
             link['url'] = self._sc_injury_card_url(record)
         if model == 'sports.patient':
@@ -677,7 +682,7 @@ class AccessControlMixin:
 
     @staticmethod
     def _sc_activity_tab_badge(activities):
-        """Task 1635 — the Activities tab's count pill (``sc_page_tabs``'
+        """Task 1635 — the Activities tab's count pill (``pk_page_tabs``'
         optional 5th tuple item): ``{'count', 'tone', 'label'}``, or None at
         0. ``activities`` is the recordset the tab itself lists — searched
         as the viewer, so the record rules make the count per viewer (no
@@ -859,7 +864,7 @@ class AccessControlMixin:
             'data': data,
             'team_target': target_id,
             'team_csv': chosen,
-            'team_props': self._sc_form_props(
+            'team_props': pk_form_props(
                 target_id, env._("Teams"), value=chosen,
                 options=[(t.id, t.name) for t in targets],
                 placeholder=env._("Add a team…")),
@@ -1142,6 +1147,14 @@ class AccessControlMixin:
         except (TypeError, ValueError):
             return None
 
+    @classmethod
+    def _sc_record_id(cls, value):
+        """Task 1541 review: the id of a record lookup — a missing or
+        malformed id (an edited / truncated URL) is an id that does not
+        exist (``0`` browses an empty recordset, so the caller's
+        ``exists()`` check answers « not found »), never a 500."""
+        return cls._int_or_none(value) or 0
+
     @staticmethod
     def _safe_return_url(value, fallback, prefixes=None):
         """``value`` if it is a same-site relative path, else ``fallback``
@@ -1169,7 +1182,7 @@ class AccessControlMixin:
         :raises: MissingError if team not found
         :raises: AccessError if user doesn't have permission
         """
-        team = request.env['sports.team'].browse(int(team_id))
+        team = request.env['sports.team'].browse(self._sc_record_id(team_id))
         if not team.exists():
             raise MissingError(_("Team not found"))
             
@@ -1223,7 +1236,7 @@ class AccessControlMixin:
         :raises: UserError if user doesn't have permission or patient not found
         """
         user = request.env.user
-        patient = request.env['sports.patient'].browse(int(patient_id))
+        patient = request.env['sports.patient'].browse(self._sc_record_id(patient_id))
         
         if not patient.exists():
             raise MissingError(_('Patient not found.'))
@@ -1263,7 +1276,7 @@ class AccessControlMixin:
         :raises: UserError if user doesn't have permission or injury not found
         """
         user = request.env.user
-        injury = request.env['sports.patient.injury'].browse(int(injury_id))
+        injury = request.env['sports.patient.injury'].browse(self._sc_record_id(injury_id))
         
         if not injury.exists():
             raise MissingError(_('Injury not found.'))
@@ -1299,7 +1312,7 @@ class AccessControlMixin:
         - system users always allowed
         """
         user = request.env.user
-        event = request.env['sports.event'].browse(int(event_id))
+        event = request.env['sports.event'].browse(self._sc_record_id(event_id))
 
         if not event.exists():
             raise MissingError(_('Event not found.'))

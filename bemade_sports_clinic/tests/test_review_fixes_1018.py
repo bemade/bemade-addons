@@ -48,12 +48,12 @@ class TestReviewFixes1018(PlayerInlineCommon):
     def test_settings_without_classic_portal(self):
         self._login_tp()
         _text_, tree = self._get('/my/app/settings')
-        main = tree.xpath('//main[@id="sc_content"]')[0]
+        main = tree.xpath('//main[@id="pk_content"]')[0]
         hrefs = set(main.xpath('.//a/@href'))
         self.assertIn('/my/account', hrefs)
         self.assertIn('/my/security', hrefs)
         self.assertFalse([h for h in hrefs if 'classic=1' in h])
-        self.assertTrue(main.xpath('.//section[@id="sc_account"]'))
+        self.assertTrue(main.xpath('.//section[@id="pk_account"]'))
 
     # -- RF-1617 ---------------------------------------------------------
     def test_events_list_filters_closed_even_when_filtered(self):
@@ -93,7 +93,7 @@ class TestReviewFixes1018(PlayerInlineCommon):
     # -- RF-DATES (a) ----------------------------------------------------
     def _card(self, injury):
         _text_, tree = self._get(self._url(tab='injuries', injury=injury.id))
-        cards = tree.xpath('//details[@id and .//*[@data-sc-fragment="sports.patient.injury:%s:read"]]' % injury.id)
+        cards = tree.xpath('//details[@id and .//*[@data-pk-fragment="sports.patient.injury:%s:read"]]' % injury.id)
         self.assertEqual(len(cards), 1)
         return cards[0]
 
@@ -102,7 +102,7 @@ class TestReviewFixes1018(PlayerInlineCommon):
         injury.write({'predicted_resolution_date': '2030-03-01'})
         self._login_tp()
         card = self._card(injury)
-        read = _text(card.xpath('.//*[@data-sc-fragment="sports.patient.injury:%s:read"]' % injury.id)[0])
+        read = _text(card.xpath('.//*[@data-pk-fragment="sports.patient.injury:%s:read"]' % injury.id)[0])
         self.assertIn('Predicted Resolution Date', read)
         self.assertNotIn('Resolution Date', read.replace('Predicted Resolution Date', ''))
         predicted = card.xpath('.//*[@data-sc-stage-of="%s"][@data-sc-stage-hide="resolved"]' % injury.id)[0]
@@ -114,7 +114,7 @@ class TestReviewFixes1018(PlayerInlineCommon):
         # Resolved: the resolution date, not the predicted one.
         injury.action_resolve_injury(resolution_date=date(2026, 10, 1))
         card = self._card(injury)
-        read = _text(card.xpath('.//*[@data-sc-fragment="sports.patient.injury:%s:read"]' % injury.id)[0])
+        read = _text(card.xpath('.//*[@data-pk-fragment="sports.patient.injury:%s:read"]' % injury.id)[0])
         self.assertNotIn('Predicted Resolution Date', read)
         self.assertIn('Resolution Date', read)
         predicted = card.xpath('.//*[@data-sc-stage-of="%s"][@data-sc-stage-hide="resolved"]' % injury.id)[0]
@@ -203,8 +203,8 @@ class TestReviewFixes1018(PlayerInlineCommon):
         hero = tree.xpath('//*[@data-pk-section="player.hero"]')[0]
         removes = hero.xpath('.//*[@data-sc-action="player.remove"]')
         for node in removes:
-            self.assertTrue(node.xpath('ancestor::*[@data-sc-edit-view="edit"]'))
-        self.assertFalse(hero.xpath('./*[@data-sc-edit-view="read"]//*[@data-sc-action="player.remove"]'))
+            self.assertTrue(node.xpath('ancestor::*[@data-pk-edit-view="edit"]'))
+        self.assertFalse(hero.xpath('./*[@data-pk-edit-view="read"]//*[@data-sc-action="player.remove"]'))
         self.assertFalse(hero.xpath('./*[contains(@class, "o_pk_actions_row")]//*[@data-sc-action="player.remove"]'))
 
 
@@ -238,5 +238,5 @@ class TestReviewFixes1018I18n(TestAppShellI18n1538):
         ret = tree.xpath('//*[@data-pk-section="player.return"]')[0]
         self.assertIn('Retour réel', _text(ret))
         # Task 1736 (deliberate update): in the hero's top-bar icon group.
-        toggle = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-sc-card-icons]/button[@data-sc-edit-toggle]')[0]
+        toggle = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-pk-card-icons]/button[@data-pk-edit-toggle]')[0]
         self.assertEqual(toggle.get('aria-label'), 'Modifier')

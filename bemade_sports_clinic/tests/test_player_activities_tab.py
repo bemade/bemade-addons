@@ -21,11 +21,11 @@ class TestPlayerActivitiesTab(PortalCovCommon):
         activities, including the ones about an injury (patient-scoped,
         injury_id link, prefixed summary) (acceptance #1 / 1409 AC1)."""
         self._login_tp()
-        resp = self.url_open(f'/my/player?player_id={self.player.id}')
+        resp = self.url_open(f'/my/player?player_id={self.player.id}&tab=activities')
         self.assertEqual(resp.status_code, 200)
-        # The new tab pane + nav button exist.
-        self.assertIn('id="activities"', resp.text)
-        self.assertIn('id="activities-tab"', resp.text)
+        # Task 1541: the app's Activities tab (panel + nav entry).
+        self.assertIn('data-pk-tab-panel="activities"', resp.text)
+        self.assertIn('tab=activities', resp.text)
         # Both the plain player activity and the injury-prefixed one appear.
         self.assertIn('Player task', resp.text)
         self.assertIn('[Injury: Sprain] Injury task', resp.text)
@@ -126,10 +126,12 @@ class TestPlayerActivitiesTab(PortalCovCommon):
         })
         self.authenticate('pc.other@example.com', 'pc-other')
         resp = self.url_open(f'/my/player?player_id={self.player.id}')
-        self.assertEqual(resp.status_code, 200,
+        # Task 1541 (owner 2026-11-25): a staffer with no clinic app role
+        # gets « Pas d'accès » (403) — never a 500, never the player's data.
+        self.assertEqual(resp.status_code, 403,
                          'player page must not 500 for an other-role staffer')
-        self.assertNotIn('id="activities-tab"', resp.text,
-                         'Activities tab must be hidden from non-TP/non-coach staff')
+        self.assertIn('data-sc-no-access-page', resp.text)
+        self.assertNotIn('Player task', resp.text)
 
     def test_activities_tab_scoped_to_this_player(self):
         """Activities of other records (team, event, another player) must never

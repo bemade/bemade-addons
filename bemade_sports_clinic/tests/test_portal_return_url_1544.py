@@ -100,7 +100,16 @@ class TestPortalReturnUrl1544(PortalCovCommon):
                     '&return_url=//evil.example/x' % self.player.id):
             resp = self.url_open(url)
             self.assertEqual(resp.status_code, 200, url)
-            self.assertNotIn('evil.example', resp.text)
+            # Task 1541: the app pages (the contact pages redirect to the
+            # player's Info tab, dropping return_url). The page's own URL may
+            # ride, URL-encoded, in a local link's query (the activity clock's
+            # sc_from, sanitized again on use) — never as a link target.
+            from lxml import html as lxml_html
+            tree = lxml_html.fromstring(resp.text)
+            targets = tree.xpath('//@href | //@action | //@src | //@formaction | //input[@name="return_url"]/@value')
+            bad = [t for t in targets if t.strip().lower().startswith(('javascript:', '//evil', 'http://evil', 'https://evil'))
+                   or 'evil.example' in t.split('?')[0]]
+            self.assertFalse(bad, url)
             self.assertNotIn('alert(1544)', resp.text)
 
     def test_patient_document_upload(self):

@@ -6,7 +6,7 @@
  * hidden: the header is the one control). Opening moves the focus to the
  * panel's first TEXT field — task 1646: never a select / picker, and
  * nothing at all on a phone (pk_focus.js). aria-expanded follows the panel however it opens —
- * the button, a « …#<id> » link (sc_app_ui.js), a script — through the
+ * the button, a « …#<id> » link (the consumer's script), a script — through the
  * <details> « toggle » event. The sort menu is pk_user_menu.js's popup.
  * Inert outside .o_pk_app.
  *

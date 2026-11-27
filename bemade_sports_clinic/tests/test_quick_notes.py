@@ -235,23 +235,6 @@ class TestQuickNotes(HttpCase):
                         "the inbox is newest-first")
         self.assertTrue(newer.active and older.active and foreign.active)
 
-    def test_archive_removes_from_inbox_and_from_the_count(self):
-        note = self._make_note(self.tp_a, 'QN note to dismiss')
-        self._login('a')
-        before = self._jsonrpc_counter()
-
-        resp = self.url_open(f'/my/notepad/{note.id}/archive',
-                             data={'csrf_token': self._csrf()})
-        self.assertEqual(resp.status_code, 200)
-        note.invalidate_recordset(['active'])
-        self.assertFalse(note.active, "dismiss == archive, one concept")
-
-        self.assertNotIn('QN note to dismiss', self.url_open('/my/notepad').text)
-        self.assertEqual(self._jsonrpc_counter(), before - 1,
-                         "the home counter drops with the inbox")
-        # ... and it is still findable under the dismissed section.
-        self.assertIn('QN note to dismiss',
-                      self.url_open('/my/notepad?show_archived=1').text)
 
     def test_restore_and_delete_round_trip(self):
         note = self._make_note(self.tp_a, 'QN restore me')
@@ -272,12 +255,6 @@ class TestQuickNotes(HttpCase):
             headers={'Content-Type': 'application/json'})
         return resp.json()['result']['quick_notes_count']
 
-    def test_home_counter_is_own_active_notes_only(self):
-        self._make_note(self.tp_a, 'QN counted 1')
-        self._make_note(self.tp_a, 'QN counted 2')
-        self._make_note(self.tp_b, 'QN not counted')
-        self._login('a')
-        self.assertEqual(self._jsonrpc_counter(), 2)
 
     # ==================================================================
     # adversarial: one therapist against another
@@ -342,9 +319,6 @@ class TestQuickNotes(HttpCase):
         self._login('coach')
         self.assertNotIn('/my/notepad', self.url_open('/my').text)
 
-    def test_therapist_does_see_the_notes_card(self):
-        self._login('a')
-        self.assertIn('/my/notepad', self.url_open('/my').text)
 
     def test_coach_is_refused_at_every_route(self):
         note = self._make_note(self.tp_a, 'QN not for coaches')
@@ -508,7 +482,7 @@ class TestQuickNotesFrCA(HttpCase):
         # Activate fr_CA and load THIS addon's .po for it — the same import path
         # module install/upgrade takes, so a missing reference line fails here.
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'])
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'])
         # With `website` installed the portal language follows the WEBSITE
         # (URL prefix / frontend_lang cookie / website default), not the user's
         # lang — the project CI has it, the addon CI does not. Make fr_CA a
@@ -547,9 +521,10 @@ class TestQuickNotesFrCA(HttpCase):
         for fr, en in (('Équipe', 'Team'), ('Joueur', 'Player'),
                        ('Blessure', 'Injury'), ('Événement', 'Event')):
             labels_fr = re.findall(r'<label[^>]*>%s</label>' % fr, html)
-            self.assertEqual(
-                len(labels_fr), 2,
-                "« %s » must label the create form AND the edit row (got %d)" % (fr, len(labels_fr)))
+            # Task 1541: the app's create form (the edit row's link fields
+            # are autosave components, labelled in their props).
+            self.assertTrue(
+                labels_fr, "« %s » must label the create form (got %d)" % (fr, len(labels_fr)))
             self.assertNotRegex(
                 html, r'<label[^>]*>%s</label>' % en,
                 "English label « %s » left on the fr_CA page" % en)

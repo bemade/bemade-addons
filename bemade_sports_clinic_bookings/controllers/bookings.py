@@ -2,8 +2,10 @@
 
 ``appointment_portal_staff`` renders ``/my/bookings`` and
 ``/my/bookings/calendar`` with ``request.render``, which returns a LAZY
-response carrying its template and ``qcontext``: when the app shell is
-active, this override re-renders that same context with the shell template.
+response carrying its template and ``qcontext``: for a user with a clinic
+app role (``AppShellMixin._sc_app_user``, task 1541: whatever the kit's
+switch says), this override re-renders that same context with the shell
+template.
 The bookings addon's search, filters, record rules and JSON feed are used
 as they are — nothing is re-implemented here.
 """
@@ -18,8 +20,8 @@ from odoo.http import request
 from odoo.tools import format_datetime
 
 from odoo.addons.appointment_portal_staff.controllers.portal import BookingPortal
-from odoo.addons.bemade_portal_kit.tools import pk_safe_return_url
-from odoo.addons.bemade_sports_clinic.controllers.app_shell import AppShellMixin, sc_contact_href
+from odoo.addons.bemade_portal_kit.tools import pk_contact_href, pk_safe_return_url
+from odoo.addons.bemade_sports_clinic.controllers.app_shell import AppShellMixin
 
 from ..models.calendar_event import SC_BOOKING_LENGTHS
 
@@ -47,7 +49,7 @@ def sc_bookings_list_url(params):
 class BookingShellPortal(BookingPortal, AppShellMixin):
 
     def _sc_bookings_shell(self, response, template, extra):
-        if not self._sc_app_shell_active() or not getattr(response, 'qcontext', None):
+        if not self._sc_app_user() or not getattr(response, 'qcontext', None):
             return response
         values = dict(response.qcontext)
         values.update(extra)
@@ -60,7 +62,7 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
         response = super().portal_my_bookings(
             page=page, sortby=sortby, filterby=filterby, date_from=date_from,
             date_to=date_to, appointment_type_id=appointment_type_id, **kwargs)
-        if not self._sc_app_shell_active():
+        if not self._sc_app_user():
             return response
         # Task 1596: only an EXPLICIT (valid) sort choice travels with the
         # segment links — without one each segment keeps its own default
@@ -74,7 +76,7 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
     @http.route()
     def portal_my_bookings_calendar(self, **kwargs):
         response = super().portal_my_bookings_calendar(**kwargs)
-        if not self._sc_app_shell_active():
+        if not self._sc_app_user():
             return response
         env = request.env
         props = {
@@ -131,7 +133,7 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
     @http.route()
     def portal_my_bookings_calendar_data(self, start=None, end=None, **kwargs):
         response = super().portal_my_bookings_calendar_data(start=start, end=end, **kwargs)
-        if not self._sc_app_shell_active():
+        if not self._sc_app_user():
             return response
         payload = json.loads(response.get_data(as_text=True) or '[]')
         if not payload:
@@ -224,9 +226,9 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
                     when, details['appointment_type']) if part),
                 # Task 1585: the client's phone / email as tap links.
                 'phone': details['phone'],
-                'phone_href': sc_contact_href('tel', details['phone']),
+                'phone_href': pk_contact_href('tel', details['phone']),
                 'email': details['email'],
-                'email_href': sc_contact_href('mailto', details['email']),
+                'email_href': pk_contact_href('mailto', details['email']),
                 'status': details['status'],
                 'cancelled': details['cancelled'],
                 # Task 1732: the booking form's answers.
@@ -259,10 +261,10 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
         }
 
     def _sc_managed_booking(self, booking_id):
-        """The (sudo) booking when the shell is on and the viewer may manage
-        it — its staff user or a clinic administrator — else None (404:
+        """The (sudo) booking when the viewer is in the clinic app and may
+        manage it — its staff user or a clinic administrator — else None (404:
         another user's booking is not revealed)."""
-        if not self._sc_app_shell_active():
+        if not self._sc_app_user():
             return None
         booking = request.env['calendar.event'].sudo().with_context(active_test=False).browse(
             int(booking_id)).exists()
@@ -293,7 +295,7 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
     def _sc_booking_page(self, template, booking, values):
         env = request.env
         values = dict(values, booking=booking, page_name='booking')
-        values.setdefault('sc_flash', {'success': None, 'error': None})
+        values.setdefault('pk_flash', {'success': None, 'error': None})
         tz = env.user.tz or booking.appointment_type_id.appointment_tz
         details = self._booking_detail_values(booking)
         values.update({
@@ -326,7 +328,7 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
                                         dt_format='HH:mm') + ' – ' + format_datetime(
                     request.env, event.stop, tz=request.env.user.tz, dt_format='HH:mm'),
             } for event in (overlap or [])],
-            'sc_flash': {'success': None, 'error': error},
+            'pk_flash': {'success': None, 'error': error},
         })
 
     @http.route('/my/bookings/<int:booking_id>/edit', type='http', auth='user', website=True,

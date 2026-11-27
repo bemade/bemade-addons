@@ -1,0 +1,91 @@
+unit;key;prompt;options;hint
+Irregular plurals;ip-01;One man, two ___.;mens|*men|mans;man → men (the a changes to e).
+Irregular plurals;ip-02;One woman, three ___.;womans|*women|womens;woman → women, like man → men.
+Irregular plurals;ip-03;Léa has one child. Samuel has three ___.;childs|*children|childrens;child → children. Never childrens.
+Irregular plurals;ip-04;I hurt my foot. Now both ___ hurt.;foots|feets|*feet;foot → feet (oo → ee).
+Irregular plurals;ip-05;The dragon has sharp ___. (tooth);teeths|*teeth|tooths;tooth → teeth, like foot → feet.
+Irregular plurals;ip-06;The dragon caught two ___. (mouse);mices|*mice|mouses;mouse → mice.
+Irregular plurals;ip-07;Ten ___ are waiting for the bus. (person);*people|peoples|persones;person → people.
+Irregular plurals;ip-08;The farmer has five ___. (sheep);sheepes|*sheep|sheeps;sheep stays sheep: one sheep, five sheep.
+Irregular plurals;ip-09;Noah caught four ___ in the lake. (fish);fishs|*fish|fishies;fish usually stays fish: one fish, four fish.
+Irregular plurals;ip-10;Three ___ live in the forest. (wolf);*wolves|wolfs|wolfes;-f → -ves: wolf → wolves.
+Irregular plurals;ip-11;In the fall, the ___ turn red. (leaf);*leaves|leafs|leafes;-f → -ves: leaf → leaves.
+Irregular plurals;ip-12;Put the ___ in the drawer. (knife);*knives|knifes|knifs;-fe → -ves: knife → knives.
+Irregular plurals;ip-13;Cut the apple into two ___. (half);*halves|halfs|halfes;-f → -ves: half → halves.
+Irregular plurals;ip-14;The books are on the ___. (shelf);shelfs|*shelves|shelfes;-f → -ves: shelf → shelves.
+Irregular plurals;ip-15;Two ___ swim on the pond. (goose);gooses|*geese|geeses;goose → geese (oo → ee).
+The possessive 's;po-01;The dog of Samuel → ___ dog.;Samuels|Samuel|*Samuel's;Add 's to the owner: Samuel's dog.
+The possessive 's;po-02;The bike of Emma → ___ bike.;Emma|Emmas|*Emma's;Add 's to the owner: Emma's bike.
+The possessive 's;po-03;The book of my brother → my ___ book.;*brother's|brothers|brothers';One brother → brother's.
+The possessive 's;po-04;The bone of the dog → the ___ bone.;dogs'|*dog's|dogs;One dog → dog's.
+The possessive 's;po-05;The wings of the dragon → the ___ wings.;dragons'|dragons|*dragon's;One dragon → dragon's.
+The possessive 's;po-06;The cave of the dragon → the ___ cave.;dragon|dragons|*dragon's;One dragon → dragon's.
+The possessive 's;po-07;The room of my sister → my ___ room.;*sister's|sister|sisters;One sister → sister's.
+The possessive 's;po-08;The hat of Noah → ___ hat.;Noahs|Noah|*Noah's;Add 's to the owner: Noah's hat.
+The possessive 's;po-09;The name of the cat → the ___ name.;cats'|cats|*cat's;One cat → cat's.
+The possessive 's;po-10;The phone of my mom → my ___ phone.;moms|moms'|*mom's;One mom → mom's.
+The possessive 's;po-11;The toy of the baby → the ___ toy.;babys|*baby's|babies;One baby → baby's.
+The possessive 's;po-12;Pick the right sentence.;That is Zoé pencil.|*That is Zoé's pencil.|That is Zoés pencil.;The owner takes 's: Zoé's pencil.
+The possessive 's;po-13;Pick the right sentence.;The dragons tail is long.|*The dragon's tail is long.|The dragon tail's is long.;'s goes on the owner (the dragon), not on the thing.
+The possessive 's;po-14;Pick the right sentence.;I like Léa drawing's.|*I like Léa's drawing.|I like Léas drawing.;'s goes on the owner (Léa), not on the thing.
+The possessive 's;po-15;Pick the right sentence.;*Olivier's house is big.|Oliviers house is big.|Olivier house's is big.;'s goes on the owner (Olivier), not on the thing.
+Past tense: -ed spelling;ed-01;Yesterday, we ___ a game. (play);*played|plaied|playd;Vowel + y → just add -ed: play → played.
+Past tense: -ed spelling;ed-02;The frog ___ into the pond. (jump);jumpt|*jumped|jumpd;Most verbs add -ed: jump → jumped.
+Past tense: -ed spelling;ed-03;I ___ the movie a lot. (like);*liked|likked|likeed;Ends in -e → add -d: like → liked.
+Past tense: -ed spelling;ed-04;The dragon ___ near the castle. (stop);stopd|*stopped|stoped;Short verb, vowel + consonant → double it: stop → stopped.
+Past tense: -ed spelling;ed-05;The baby ___ all night. (cry);cryed|*cried|cryied;Consonant + y → -ied: cry → cried.
+Past tense: -ed spelling;ed-06;Noah ___ the heavy box. (carry);carryed|*carried|carryied;Consonant + y → -ied: carry → carried.
+Past tense: -ed spelling;ed-07;We ___ home because it was raining. (stay);stayd|staied|*stayed;Vowel + y → just add -ed: stay → stayed.
+Past tense: -ed spelling;ed-08;Emma ___ to open the door. (try);*tried|tryed|trid;Consonant + y → -ied: try → tried.
+Past tense: -ed spelling;ed-09;Zoé ___ at the camera. (smile);*smiled|smilled|smileed;Ends in -e → add -d: smile → smiled.
+Past tense: -ed spelling;ed-10;Olivier ___ his little sister. (hug);huged|hugd|*hugged;Short verb, vowel + consonant → double it: hug → hugged.
+Past tense: -ed spelling;ed-11;Léa ___ for her test. (study);studyed|studdied|*studied;Consonant + y → -ied: study → studied.
+Past tense: -ed spelling;ed-12;We ___ the party. (enjoy);enjoied|*enjoyed|enjoyd;Vowel + y → just add -ed: enjoy → enjoyed.
+Past tense: -ed spelling;ed-13;Everybody ___ at the wedding. (dance);dancd|danceed|*danced;Ends in -e → add -d: dance → danced.
+Past tense: -ed spelling;ed-14;The cat ___ the glass off the table. (drop);*dropped|dropd|droped;Short verb, vowel + consonant → double it: drop → dropped.
+Past tense: -ed spelling;ed-15;The people ___ at the end of the show. (clap);clapd|claped|*clapped;Short verb, vowel + consonant → double it: clap → clapped.
+Irregular past verbs;iv-01;Yesterday, we ___ to the park. (go);wented|*went|goed;go → went.
+Irregular past verbs;iv-02;The dragon ___ over the mountain. (fly);flyed|*flew|flied;fly → flew.
+Irregular past verbs;iv-03;Samuel ___ a big sandwich. (eat);eated|eatted|*ate;eat → ate.
+Irregular past verbs;iv-04;Last night, I ___ a shooting star. (see);seed|seen|*saw;see → saw.
+Irregular past verbs;iv-05;Emma ___ her umbrella to school. (take);tooked|taked|*took;take → took.
+Irregular past verbs;iv-06;The dog ___ after the ball. (run);run|runned|*ran;run → ran.
+Irregular past verbs;iv-07;Zoé ___ across the lake. (swim);swimmed|swum|*swam;swim → swam.
+Irregular past verbs;iv-08;Olivier ___ the ball. (catch);catched|cought|*caught;catch → caught.
+Irregular past verbs;iv-09;I ___ about my answer. (think);thinkt|*thought|thinked;think → thought.
+Irregular past verbs;iv-10;Léa ___ a new book at the store. (buy);buyed|boughted|*bought;buy → bought.
+Irregular past verbs;iv-11;My cousins ___ to my house on Sunday. (come);*came|comed|camed;come → came.
+Irregular past verbs;iv-12;Noah ___ a letter to his grandma. (write);writed|wroted|*wrote;write → wrote.
+Irregular past verbs;iv-13;We ___ a cake for Mom. (make);maked|*made|maded;make → made.
+Irregular past verbs;iv-14;The knight ___ the dragon's cave. (find);finded|*found|findt;find → found.
+Irregular past verbs;iv-15;The baby ___ all afternoon. (sleep);*slept|sleept|sleeped;sleep → slept.
+Capitals and end marks;ce-01;Pick the right sentence.;My dog is big|*My dog is big.|my dog is big.;Capital at the start, period at the end.
+Capitals and end marks;ce-02;Pick the right sentence.;*Where is the cave?|where is the cave?|Where is the cave.;A question ends with a question mark.
+Capitals and end marks;ce-03;Pick the right sentence.;*Noah and I like dragons.|noah and I like dragons.|Noah and i like dragons.;Names and the word I always take a capital.
+Capitals and end marks;ce-04;Pick the right sentence.;*We live in Canada.|We live in canada.|we live in Canada.;Names of places take a capital.
+Capitals and end marks;ce-05;Pick the right sentence.;Is it cold today.|*Is it cold today?|is it cold today?;A question ends with a question mark.
+Capitals and end marks;ce-06;Pick the right sentence.;I see a red dragon|*I see a red dragon.|i see a red dragon.;The word I is always a capital.
+Capitals and end marks;ce-07;Pick the right sentence.;*On Monday, Emma has a test.|On Monday, emma has a test.|On monday, Emma has a test.;Days of the week and names take a capital.
+Capitals and end marks;ce-08;Pick the right sentence.;*Can you help me?|can you help me?|Can you help me.;A question ends with a question mark.
+Capitals and end marks;ce-09;Pick the right sentence.;The dragon lives in a cave|the dragon lives in a cave.|*The dragon lives in a cave.;Capital at the start, period at the end.
+Capitals and end marks;ce-10;Pick the right sentence.;Zoé and olivier play hockey.|*Zoé and Olivier play hockey.|zoé and Olivier play hockey.;Names of people always take a capital.
+Capitals and end marks;ce-11;Pick the right sentence.;*What time is it?|What time is it|What time is it.;A question ends with a question mark.
+Capitals and end marks;ce-12;Pick the right sentence.;today I am ten years old.|Today i am ten years old.|*Today I am ten years old.;Capital at the start. The word I is always a capital.
+Capitals and end marks;ce-13;Pick the right sentence.;*Do dragons eat fish?|do dragons eat fish?|Do dragons eat fish.;A question ends with a question mark.
+Capitals and end marks;ce-14;Pick the right sentence.;My birthday is in may.|my birthday is in May.|*My birthday is in May.;Months take a capital.
+Capitals and end marks;ce-15;Pick the right sentence.;*Samuel lives in Montreal.|samuel lives in Montreal.|Samuel lives in montreal.;Names of people and places take a capital.
+One idea per sentence;os-01;Fix it: I like dragons they can fly.;I like dragons, they can fly.|*I like dragons. They can fly.|I like. Dragons they can fly.;Cut where the second idea starts: They can fly.
+One idea per sentence;os-02;Fix it: The dragon was hungry it ate a fish.;The dragon. Was hungry it ate a fish.|*The dragon was hungry. It ate a fish.|The dragon was hungry, it ate a fish.;Cut where the second idea starts: It ate a fish.
+One idea per sentence;os-03;Fix it: We went to the park we played soccer.;We went. To the park we played soccer.|*We went to the park. We played soccer.|We went to the park, we played soccer.;Cut where the second idea starts: We played soccer.
+One idea per sentence;os-04;Fix it: The sun came out the snow melted.;The sun came out, the snow melted.|*The sun came out. The snow melted.|The sun came. Out the snow melted.;Cut where the second idea starts: The snow melted.
+One idea per sentence;os-05;Fix it: Léa has a cat its name is Max.;Léa has a cat, its name is Max.|*Léa has a cat. Its name is Max.|Léa has a cat its. Name is Max.;Cut where the second idea starts: Its name is Max.
+One idea per sentence;os-06;Fix it: The cave was dark we could not see.;The cave was dark, we could not see.|*The cave was dark. We could not see.|The cave. Was dark we could not see.;Cut where the second idea starts: We could not see.
+One idea per sentence;os-07;Fix it: My brother is tall he plays basketball.;My brother is tall, he plays basketball.|*My brother is tall. He plays basketball.|My brother. Is tall he plays basketball.;Cut where the second idea starts: He plays basketball.
+One idea per sentence;os-08;Fix it: Zoé opened the box a puppy jumped out.;Zoé opened. The box a puppy jumped out.|Zoé opened the box, a puppy jumped out.|*Zoé opened the box. A puppy jumped out.;Cut where the second idea starts: A puppy jumped out.
+One idea per sentence;os-09;Fix it: The dragon flew over the castle the people looked up.;*The dragon flew over the castle. The people looked up.|The dragon flew. Over the castle the people looked up.|The dragon flew over the castle, the people looked up.;Cut where the second idea starts: The people looked up.
+One idea per sentence;os-10;Fix it: Noah likes pizza he eats it every Friday.;Noah likes. Pizza he eats it every Friday.|*Noah likes pizza. He eats it every Friday.|Noah likes pizza, he eats it every Friday.;Cut where the second idea starts: He eats it every Friday.
+One idea per sentence;os-11;Fix it: It was raining we stayed inside.;It was. Raining we stayed inside.|*It was raining. We stayed inside.|It was raining, we stayed inside.;Cut where the second idea starts: We stayed inside.
+One idea per sentence;os-12;Fix it: The bell rang the class started.;The bell rang, the class started.|*The bell rang. The class started.|The bell. Rang the class started.;Cut where the second idea starts: The class started.
+One idea per sentence;os-13;Fix it: Emma lost her pencil she found it under the desk.;*Emma lost her pencil. She found it under the desk.|Emma lost. Her pencil she found it under the desk.|Emma lost her pencil, she found it under the desk.;Cut where the second idea starts: She found it under the desk.
+One idea per sentence;os-14;Fix it: Olivier is sad his team lost.;*Olivier is sad. His team lost.|Olivier is sad, his team lost.|Olivier is. Sad his team lost.;Cut where the second idea starts: His team lost.
+One idea per sentence;os-15;Fix it: I am tired I want to sleep.;*I am tired. I want to sleep.|I am tired, I want to sleep.|I am. Tired I want to sleep.;Cut where the second idea starts: I want to sleep.

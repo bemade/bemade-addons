@@ -7,7 +7,7 @@ Acceptance criteria:
 * AC-1 The shared player-card detail head (recent-changes detail, row
   detail) has no « Last consultation » line; the player file's Infos still
   shows it.
-* AC-2 The injury card's Notes read view (``data-sc-edit-view="read"``)
+* AC-2 The injury card's Notes read view (``data-pk-edit-view="read"``)
   carries, under each note, its stamp as an ``o_pk_meta`` line
   (``data-sc-note-stamp="external" / "internal"``): a therapist sees both,
   a coach only the external one, nobody sees one when the note has no
@@ -119,7 +119,7 @@ class TestCardNoteStampsI18n1669(Stamps1669Common):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Task 5201 (kit P6): Settings › Portal App › Installable app (the
+     current company's app name, colours and icons). -->
+<odoo>
+    <record id="pk_pwa_res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.bemade_portal_kit_pwa</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="bemade_portal_kit.pk_res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='bemade_portal_kit_settings']" position="after">
+                <block title="Installable app" id="bemade_portal_kit_pwa_settings">
+                    <setting string="App name" help="The installed app's name and the name under its icon. Empty: the company name.">
+                        <div class="content-group">
+                            <div class="row mt8">
+                                <label for="pk_pwa_name" class="col-lg-4 o_light_label"/>
+                                <field name="pk_pwa_name"/>
+                            </div>
+                            <div class="row">
+                                <label for="pk_pwa_short_name" class="col-lg-4 o_light_label"/>
+                                <field name="pk_pwa_short_name"/>
+                            </div>
+                        </div>
+                    </setting>
+                    <setting string="App colours" help="The splash screen and offline page background, and the title bar of the installed app. Empty: the app's light theme colour.">
+                        <div class="content-group">
+                            <div class="row mt8">
+                                <label for="pk_pwa_background_color" class="col-lg-4 o_light_label"/>
+                                <field name="pk_pwa_background_color" widget="color"/>
+                            </div>
+                            <div class="row">
+                                <label for="pk_pwa_theme_color" class="col-lg-4 o_light_label"/>
+                                <field name="pk_pwa_theme_color" widget="color"/>
+                            </div>
+                        </div>
+                    </setting>
+                    <setting string="App icons" help="PNG images, square. Empty: the kit's neutral icons. The maskable icon fills its square; iOS takes the 180 px one.">
+                        <div class="content-group">
+                            <div class="row mt8">
+                                <label for="pk_pwa_icon_192" class="col-lg-4 o_light_label"/>
+                                <field name="pk_pwa_icon_192" widget="image" class="w-auto" options="{'size': [48, 48]}"/>
+                            </div>
+                            <div class="row">
+                                <label for="pk_pwa_icon_512" class="col-lg-4 o_light_label"/>
+                                <field name="pk_pwa_icon_512" widget="image" class="w-auto" options="{'size': [48, 48]}"/>
+                            </div>
+                            <div class="row">
+                                <label for="pk_pwa_icon_maskable_512" class="col-lg-4 o_light_label"/>
+                                <field name="pk_pwa_icon_maskable_512" widget="image" class="w-auto" options="{'size': [48, 48]}"/>
+                            </div>
+                            <div class="row">
+                                <label for="pk_pwa_apple_touch_icon" class="col-lg-4 o_light_label"/>
+                                <field name="pk_pwa_apple_touch_icon" widget="image" class="w-auto" options="{'size': [48, 48]}"/>
+                            </div>
+                            <div class="row">
+                                <label for="pk_pwa_logo" class="col-lg-4 o_light_label"/>
+                                <field name="pk_pwa_logo" widget="image" class="w-auto" options="{'size': [48, 48]}"/>
+                            </div>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -25,6 +25,7 @@ from lxml import html as lxml_html
 
 from odoo import Command
 from odoo.tests import tagged
+from odoo.tools.misc import mute_logger
 
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
@@ -48,7 +49,7 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
         self._switch(True)
 
     def _card(self, tree):
-        panel = tree.xpath('//section[@data-sc-tab-panel="players"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="players"]')[0]
         # Task 1655: the shared inline create panel (same id, sc_add_player).
         cards = panel.xpath('./details[@id="sc_add_player"][@data-pk-section="team.add_player"]')
         self.assertEqual(len(cards), 1)
@@ -67,7 +68,7 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
         for name in ('first_name', 'last_name', 'date_of_birth', 'team_ids', 'context_team_id'):
             self.assertIn(name, names)
         self.assertEqual(form.xpath('.//input[@name="team_ids"]/@value'), [str(self.team_a.id)])
-        self.assertFalse(tree.xpath('//header//*[@data-sc-action="team.add_player"]'))
+        self.assertFalse(tree.xpath('//header//*[@data-pk-action="team.add_player"]'))
 
     # -- UC-AP2 ----------------------------------------------------------
     def test_search_results(self):
@@ -101,6 +102,20 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
         self.assertEqual(target.path, '/my/team')
         self.assertEqual(args.get('tab'), ['players'])
         self.assertEqual(args.get('success'), ['player_added_to_team'])
+
+    @mute_logger('odoo.addons.bemade_sports_clinic.controllers.team_management_portal')
+    def test_invalid_dob_is_refused_not_500(self):
+        """Task 1541: moved from the deleted /add_player/submit test — a
+        malformed date of birth is a refusal on the app's route, never a 500,
+        and creates nothing."""
+        self._login_tp()
+        resp = self.url_open('/my/team/%s/player/add' % self.team_a.id, data={
+            'csrf_token': self._csrf(), 'first_name': 'Baddob', 'last_name': 'Synthetic1541',
+            'date_of_birth': 'garbage', 'force_new': '1', 'sc_inline': '1',
+        }, allow_redirects=False)
+        self.assertLess(resp.status_code, 500, resp.text[:200])
+        self.assertFalse(self.env['sports.patient'].sudo().search_count(
+            [('last_name', '=', 'Synthetic1541')]))
 
     # -- UC-AP4 ----------------------------------------------------------
     def test_create_new_opens_player(self):
@@ -138,7 +153,7 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
     def test_coach_request_inline(self):
         self._login_coach()
         _text, tree = self._get(self.url)
-        panel = tree.xpath('//section[@data-sc-tab-panel="players"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="players"]')[0]
         self.assertFalse(panel.xpath('./details[@data-pk-section="team.add_player"]'))
         form = panel.xpath('./details[@data-pk-section="team.request_add"]//form')[0]
         self.assertEqual(form.get('action'), '/my/team/%s/player/request_add' % self.team_a.id)

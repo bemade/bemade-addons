@@ -1,10 +1,10 @@
 import logging
 from odoo import http, fields, _, Command
-from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
+from odoo.exceptions import AccessError, MissingError, ValidationError
 from odoo.http import request
-from odoo.addons.portal.controllers.portal import CustomerPortal, pager
+from odoo.addons.portal.controllers.portal import CustomerPortal
 from .access_control_mixin import AccessControlMixin
-from .app_shell import AppShellMixin
+from .app_shell import AppShellMixin, sc_app_page
 from dateutil.relativedelta import relativedelta
 
 _logger = logging.getLogger(__name__)
@@ -16,111 +16,11 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     # Access control methods now inherited from AccessControlMixin
     
     @http.route(['/my/player/create'], type='http', auth='user', website=True)
+    @sc_app_page
     def create_player_form(self, **get):
-        """Standalone create player with search-first workflow.
-        Shows a search UI first; only renders the full create form when a search
-        is attempted and yields no matching players.
-        """
-        # Task 1655: in the app the page is retired — the Joueurs list's
-        # inline panel creates players (search as you type, then create).
-        pending = request.session.get('portal_flash')
-        if self._sc_app_shell_active() and self._sc_player_add_allowed() and not (
-                isinstance(pending, dict) and pending.get('scope') == ['player_create']):
-            return request.redirect('/my/players?add=1')
-        user = request.env.user
-        is_treatment_prof = self._is_treatment_professional()
-        is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
-
-        # Gather query params for search-first flow
-        first_name = (get.get('first_name') or '').strip()
-        last_name = (get.get('last_name') or '').strip()
-        dob = (get.get('date_of_birth') or '').strip()
-        attempted = any(k in get for k in ('first_name', 'last_name', 'date_of_birth'))
-        searched = bool(first_name or last_name or dob)
-
-        # Perform search similar to team add/link, but without team context
-        Patient = request.env['sports.patient']
-        active_rs = Patient.browse([])
-        archived_rs = Patient.browse([])
-        if searched and (first_name or last_name):
-            like_first = f"%{first_name}%" if first_name else "%"
-            like_last = f"%{last_name}%" if last_name else "%"
-            domain = [
-                ('first_name', 'ilike', like_first),
-                ('last_name', 'ilike', like_last),
-            ]
-            if dob:
-                domain.append(('date_of_birth', '=', dob))
-            active_rs = Patient.search(domain + [('active', '=', True)], limit=20)
-            # Only TPs/admins can see archived
-            if is_treatment_prof or request.env.user.has_group('base.group_system'):
-                archived_rs = Patient.with_context(active_test=False).search(domain + [('active', '=', False)], limit=20)
-
-        def _to_dict(p):
-            return {
-                'id': p.id,
-                'name': p.name,
-                # Task 1421: « #12 First Last » for the result rows.
-                'label': p._portal_heading_name(),
-                'jersey_number': p.jersey_number or '',
-                'first_name': p.first_name,
-                'last_name': p.last_name,
-                'date_of_birth': p.date_of_birth or '',
-                'active': bool(p.active),
-            }
-
-        # Staff-only teams for multi-select
-        all_teams = self._team_targets()
-
-        canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
-        states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
-        countries = canada if canada else request.env['res.country'].search([], order='name')
-
-        values = self._prepare_portal_layout_values()
-        # Task 1726: the app form picks the teams with the tag picker (one
-        # hidden ``team_ids`` = the chosen ids, comma separated); a single
-        # team is chosen up front, as the lone checkbox used to be.
-        team_csv = str(all_teams.id) if len(all_teams) == 1 else ''
-        values.update({
-            'sc_team_csv': team_csv,
-            'sc_team_props': self._sc_form_props(
-                'sc_new_team_ids', _("Teams"), value=team_csv,
-                options=[(t.id, t.name) for t in all_teams],
-                placeholder=_("Add a team…")),
-            'page_name': 'create_player',
-            'is_treatment_prof': is_treatment_prof,
-            'is_coach': is_coach,
-            'all_teams': all_teams,
-            'states': states,
-            'countries': countries,
-            'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-            # search-first context
-            'first_name': first_name,
-            'last_name': last_name,
-            'date_of_birth': dob,
-            'attempted': attempted,
-            'searched': searched,
-            'active_results': [_to_dict(p) for p in active_rs],
-            'archived_results': [_to_dict(p) for p in archived_rs],
-        })
-        if attempted and not searched:
-            values['error'] = _('Provide at least a first or last name to search')
-
-        # PRG: a failed create submit stashed the error + input; re-show the full
-        # create form (not the search step) with the error and the entered values.
-        flash_error, flash_data = self._portal_pop_flash(('player_create',))
-        if flash_error:
-            values.update(flash_data)
-            values.update({
-                'error': flash_error,
-                'attempted': True,
-                'searched': True,
-                'active_results': [],
-                'archived_results': [],
-            })
-        # Task 1539: the app shell (switch on) or today's template (off).
-        return self._sc_render('bemade_sports_clinic.portal_create_player',
-                               'bemade_sports_clinic.sc_app_player_create', values)
+        """Task 1541: an old link / bookmark of the retired create page —
+        the Players list's inline « create a player » panel (task 1655)."""
+        return request.redirect('/my/players?add=1', code=301)
 
     @http.route(['/my/player/create/save'], type='http', auth='user', website=True, methods=['POST'])
     def create_player_submit(self, **post):
@@ -280,24 +180,23 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return url
 
     @http.route(['/my/player/edit'], type='http', auth='user', website=True)
-    def edit_player_form(self, patient_id, **post):
-        """Show form to edit player information"""
+    @sc_app_page
+    def edit_player_form(self, patient_id=None, **post):
+        """Task 1541: an old link / bookmark of the retired edit page — the
+        player's Info tab, where every field is edited inline (owner review
+        2026-10-10), in the validated team / clinic context.
+
+        Review 2026-11-26: no id → the players list; a malformed or unknown
+        id → not found (``player_id`` is accepted too)."""
+        patient_id = patient_id or post.get('player_id')
+        if not patient_id:
+            return request.redirect('/my/players')
         patient = self._check_access_to_patient(patient_id)
-        
-        # Check if user is a treatment professional or coach
-        user = request.env.user
-        is_treatment_prof = self._is_treatment_professional()
-        is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
-        
         teams = patient.team_ids
-        # All teams for multi-select limited to current user's staff teams
-        all_teams = self._team_targets()
-        
-        # Determine team context from query or post and whether a coach can request removal
-        # Only consider a team context if the current user is staff on that team and the player is a member
+        # A team context only if the user is staff on that team and the
+        # player is a member.
         raw_team_ctx = request.httprequest.args.get('team_id') or post.get('team_id')
         team_context_id = None
-        team = None
         if raw_team_ctx:
             try:
                 cand_id = int(raw_team_ctx)
@@ -305,120 +204,15 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 team_obj = self._check_team_access(cand_id, check_staff=True)
                 if team_obj and team_obj in teams:
                     team_context_id = cand_id
-                    team = team_obj
             except Exception:
                 # Ignore invalid team context silently
                 team_context_id = None
 
-        # Compute removal visibility/target for coaches
-        player_team_count = len(teams)
-        can_request_removal = bool(is_coach and ((team_context_id is not None) or (player_team_count == 1)))
-        removal_team_id = None
-        if can_request_removal:
-            if team_context_id is not None:
-                removal_team_id = team_context_id
-            elif player_team_count == 1:
-                removal_team_id = teams[0].id
-        
         # Clinic navigation context (task 1410): validated, dropped if invalid.
         clinic_event = self._clinic_context(post)
 
-        # Owner review 2026-10-10: in the app shell every field is edited
-        # inline on the player page — this page is retired there.
-        if self._sc_app_shell_active():
-            return request.redirect(self._sc_player_tab_url(
-                patient.id, 'info', team_context_id, clinic_event))
-
-        # Build default return_url based on validated team context if not explicitly provided
-        return_url = self._local_return_url(
-            post.get('return_url') or request.httprequest.args.get('return_url'), None)
-        if not return_url:
-            if team_context_id is not None:
-                return_url = f'/my/player?player_id={patient_id}&team_id={team_context_id}'
-            else:
-                return_url = f'/my/player?player_id={patient_id}'
-            return_url = self._with_clinic(return_url, clinic_event)
-
-        # Create a dictionary with patient info for protected fields
-        patient_info = {}
-        
-        # Only include protected fields if user has appropriate permissions
-        if is_treatment_prof:
-            # Access fields directly - field-level security is already defined
-            # with appropriate groups for each field
-            
-            # Additional fields available to treatment professionals
-            
-            # Basic fields
-            patient_info['date_of_birth'] = patient.date_of_birth
-            patient_info['age'] = patient.age
-            # Task 1630: the allergy / medical-alert block (edit form).
-            for _name in patient.SC_MEDICAL_FIELDS:
-                patient_info[_name] = patient[_name]
-            patient_info['team_info_notes'] = patient.team_info_notes
-            
-            # Status fields
-            patient_info['position'] = patient.position
-            patient_info['match_status'] = patient.match_status
-            patient_info['practice_status'] = patient.practice_status
-            patient_info['training_recommendation'] = patient.training_recommendation
-            patient_info['last_consultation_date'] = patient.last_consultation_date
-
-            # Injury tracking fields
-            patient_info['injured_since'] = patient.injured_since
-            
-            # Add any other protected fields that should be available to treatment professionals
-            # You can add more fields here as needed
-            
-            # Patient info prepared for treatment professional view
-        
-        # Get Canada and Canadian provinces/territories for address dropdowns
-        canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
-        states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
-        countries = canada if canada else request.env['res.country'].search([], order='name')
-        # Determine primary emergency contact (lowest sequence)
-        primary_contact = request.env['sports.patient.contact'].search([
-            ('patient_id', '=', patient.id)
-        ], order='sequence,id', limit=1)
-        
-        values = {
-            'patient': patient,  # Keep original patient
-            'patient_info': patient_info,  # Add patient_info for protected fields
-            'teams': teams,
-            'all_teams': all_teams,
-            'states': states,
-            'countries': countries,
-            'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-            # Primary emergency contact defaults for prefill
-            'ec_name': primary_contact.name if primary_contact else '',
-            'ec_contact_type': primary_contact.contact_type if primary_contact else '',
-            'ec_mobile': primary_contact.mobile if primary_contact else '',
-            'ec_email': primary_contact.email if primary_contact else '',
-            'return_url': return_url,
-            'page_name': 'edit_player',
-            'is_treatment_prof': is_treatment_prof,
-            'is_coach': is_coach,
-            # Coach removal request context
-            'can_request_removal': can_request_removal,
-            'removal_team_id': removal_team_id,
-            'team_context_id': team_context_id,
-            'team': team,
-            'clinic_event': clinic_event,
-        }
-
-        # PRG: surface a stashed validation error + the rejected input — of
-        # THIS player's form only (task 1600: scoped + expiring).
-        flash_error, flash_data = self._portal_pop_flash(('player_edit', patient.id))
-        if flash_error:
-            values['error'] = flash_error
-            values['form_data'] = flash_data
-            if flash_data.get('return_url'):
-                values['return_url'] = self._safe_return_url(
-                    flash_data['return_url'], values.get('return_url'))
-
-        # The shell redirects to the player page above (owner review
-        # 2026-10-10): this is today's page only.
-        return request.render('bemade_sports_clinic.portal_edit_player', values)
+        return request.redirect(self._sc_player_tab_url(
+            patient.id, 'info', team_context_id, clinic_event), code=301)
 
     @http.route(['/my/player/save'], type='http', auth='user', website=True, methods=['POST'])
     def edit_player_submit(self, **post):
@@ -753,43 +547,16 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return request.redirect(self._url_with_query(return_url, 'success=player_updated'))
 
     @http.route(['/my/player/contact/add'], type='http', auth='user', website=True)
-    def add_contact_form(self, patient_id, **post):
-        """Show form to add a new emergency contact for a player"""
+    @sc_app_page
+    def add_contact_form(self, patient_id=None, **post):
+        """Task 1541: an old link / bookmark of the retired add-contact page —
+        the contacts are added inline on the player's Info tab (owner review
+        2026-10-10). No id → the players list; a malformed one → not found."""
+        if not patient_id:
+            return request.redirect('/my/players')
         patient = self._check_access_to_patient(patient_id)
-        if self._sc_app_shell_active():
-            # Owner review 2026-10-10: added inline on the Contacts tab.
-            return request.redirect(self._sc_player_tab_url(patient.id, 'info'))
-            
-        # Task 1544: same-site paths only (rendered as a link, then posted back).
-        return_url = self._safe_return_url(
-            post.get('return_url'), f'/my/player?player_id={patient_id}')
-        
-        # Check if user is a treatment professional or coach
-        user = request.env.user
-        is_treatment_prof = self._is_treatment_professional()
-        is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
-        
-        # Only TPs and coaches can add emergency contacts
-        if not (is_treatment_prof or is_coach):
-            return request.redirect(return_url)
-        
-        values = {
-            'patient': patient,
-            'return_url': return_url,
-            'page_name': 'add_contact',
-            'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-        }
+        return request.redirect(self._sc_player_tab_url(patient.id, 'info'), code=301)
 
-        # PRG: surface a stashed validation error + re-prefill the entered fields.
-        flash_error, flash_data = self._portal_pop_flash(('contact_add', patient.id))
-        if flash_error:
-            values['error'] = flash_error
-            values.update(flash_data)
-
-        # The shell redirects to the Contacts tab above (owner review
-        # 2026-10-10): this is today's page only.
-        return request.render('bemade_sports_clinic.portal_add_contact', values)
-    
     @http.route(['/my/player/contact/save'], type='http', auth='user', website=True, methods=['POST'])
     def add_contact_submit(self, **post):
         """Process the form submission to add a new emergency contact"""
@@ -841,48 +608,19 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return request.redirect(return_url)
     
     @http.route(['/my/player/contact/edit'], type='http', auth='user', website=True)
-    def edit_contact_form(self, contact_id, **post):
-        """Show form to edit an existing emergency contact"""
-        contact = request.env['sports.patient.contact'].browse(int(contact_id))
-        
-        if not contact.exists():
+    @sc_app_page
+    def edit_contact_form(self, contact_id=None, **post):
+        """Task 1541: an old link / bookmark of the retired edit-contact page
+        — the contacts are edited inline on the player's Info tab. No id →
+        the players list; a malformed or unknown id → not found."""
+        if not contact_id:
             return request.redirect('/my/players')
-            
+        contact = request.env['sports.patient.contact'].browse(self._sc_record_id(contact_id))
+        if not contact.exists():
+            raise request.not_found()
         patient = self._check_access_to_patient(contact.patient_id.id)
-        if self._sc_app_shell_active():
-            # Owner review 2026-10-10: edited inline on the Contacts tab.
-            return request.redirect(self._sc_player_tab_url(patient.id, 'info'))
-            
-        # Task 1544: same-site paths only (rendered as a link, then posted back).
-        return_url = self._safe_return_url(
-            post.get('return_url'), f'/my/player?player_id={patient.id}')
-        
-        # Check if user is a treatment professional or coach
-        is_treatment_prof = self._is_treatment_professional()
-        is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
-        
-        # Only TPs and coaches can edit emergency contacts
-        if not (is_treatment_prof or is_coach):
-            return request.redirect(return_url)
-        
-        values = {
-            'patient': patient,
-            'contact': contact,
-            'return_url': return_url,
-            'page_name': 'edit_contact',
-            'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-        }
+        return request.redirect(self._sc_player_tab_url(patient.id, 'info'), code=301)
 
-        # PRG: surface a stashed validation error + re-prefill the entered fields.
-        flash_error, flash_data = self._portal_pop_flash(('contact_edit', contact.id))
-        if flash_error:
-            values['error'] = flash_error
-            values.update(flash_data)
-
-        # The shell redirects to the Contacts tab above (owner review
-        # 2026-10-10): this is today's page only.
-        return request.render('bemade_sports_clinic.portal_edit_contact', values)
-    
     @http.route(['/my/player/contact/update'], type='http', auth='user', website=True, methods=['POST'])
     def edit_contact_submit(self, **post):
         """Process the form submission to update an emergency contact"""

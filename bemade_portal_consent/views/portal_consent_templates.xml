@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2026 Bemade Inc. - License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html). -->
+<odoo>
+    <template id="portal_consent_page" name="Portal Consent">
+        <t t-call="portal.portal_layout">
+            <div class="o_portal_consent mx-auto py-2" style="max-width: 48rem;" data-portal-consent="1">
+                <p class="text-muted small mb-1" t-if="consent_total &gt; 1">
+                    <t t-out="consent_total"/> documents to read and accept
+                </p>
+                <h1 class="h3 mb-1" t-out="consent_document.name"/>
+                <p class="text-muted small">
+                    Version <t t-out="consent_version.number"/>
+                    <t t-if="consent_version.published_at">
+                        · <span t-field="consent_version.published_at" t-options="{'widget': 'date'}"/>
+                    </t>
+                </p>
+                <p>Please read this document. You can use the portal once you have accepted it.</p>
+                <div class="o_portal_consent_body border rounded bg-white p-3 mb-3 text-break"
+                     t-field="consent_version.body"/>
+                <form method="post" action="/my/consent/accept" data-portal-consent-form="1">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="version_id" t-att-value="consent_version.id"/>
+                    <input type="hidden" name="redirect" t-att-value="consent_redirect"/>
+                    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1 flex-sm-grow-0">I accept</button>
+                        <a class="btn btn-outline-secondary" href="/web/session/logout?redirect=/web/login"
+                           data-portal-consent-logout="1">Log out</a>
+                    </div>
+                </form>
+            </div>
+        </t>
+    </template>
+</odoo>

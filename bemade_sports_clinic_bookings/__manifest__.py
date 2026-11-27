@@ -1,6 +1,6 @@
 {
     'name': 'Sports Clinic Bookings on the App Shell',
-    'version': '19.0.1.7.3',
+    'version': '19.0.1.8.2',
     'summary': "Glue: the portal bookings pages (appointment_portal_staff) on the Sports Clinic app shell.",
     'description': """
 Sports Clinic Bookings on the App Shell
@@ -11,9 +11,9 @@ Glue between ``bemade_sports_clinic`` (the Fit Crew portal app shell) and
 Neither addon depends on the other; this one is installed automatically when
 both are.
 
-When the app shell is active (system switch
-``bemade_sports_clinic.app_shell_enabled`` on AND the viewer holds an app
-role), ``/my/bookings`` and ``/my/bookings/calendar`` render on the shell:
+For a user who holds a clinic app role (task 1541: whatever the kit's
+``bemade_portal_kit.enabled`` switch says — the clinic portal is the app
+only), ``/my/bookings`` and ``/my/bookings/calendar`` render on the shell:
 
 * the list: upcoming / past / all segments, the appointment-type filter,
   one row per booking (client, type, time, status; cancelled badged; the
@@ -55,8 +55,8 @@ role), ``/my/bookings`` and ``/my/bookings/calendar`` render on the shell:
   unchanged. A staff member who cancels a booking for later today gets no
   « Booking cancelled » notice about their own cancellation.
 
-With the switch off (or for a user without an app role) both pages render
-exactly the ``appointment_portal_staff`` templates. The bookings addon
+For a user without a clinic app role both pages render exactly the
+``appointment_portal_staff`` templates. The bookings addon
 itself is unchanged; the routes, domains and record rules are its own.
 """,
     'category': 'Services/Medical',
@@ -67,7 +67,7 @@ itself is unchanged; the routes, domains and record rules are its own.
     'data': [
         'data/ir_cron.xml',
         'views/sc_app_bookings.xml',
-        'views/sc_app_settings.xml',
+        'views/sc_app_settings_booking_emails.xml',
         'views/sc_booking_mails.xml',
     ],
     'assets': {

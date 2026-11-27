@@ -10,17 +10,17 @@ registry.category("web_tour.tours").add("sc_1588_lang_switch", {
     steps: () => [
         {
             content: "« Paramètres » in French, FR pressed",
-            trigger: 'html[lang="fr-CA"] #sc_language button[name="lang"][value="fr_CA"][aria-pressed="true"]',
+            trigger: 'html[lang="fr-CA"] #pk_language button[name="lang"][value="fr_CA"][aria-pressed="true"]',
         },
         {
             content: "Choose EN",
-            trigger: '#sc_language button[name="lang"][value="en_US"]',
+            trigger: '#pk_language button[name="lang"][value="en_US"]',
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "The page is now English, EN pressed",
-            trigger: 'html[lang="en-US"] #sc_language:contains("Language") button[value="en_US"][aria-pressed="true"]',
+            trigger: 'html[lang="en-US"] #pk_language:contains("Language") button[value="en_US"][aria-pressed="true"]',
         },
         {
             content: "Tamper the language cookie back to French, reload",
@@ -33,7 +33,7 @@ registry.category("web_tour.tours").add("sc_1588_lang_switch", {
         },
         {
             content: "Still the profile language (English), cookie reset",
-            trigger: 'html[lang="en-US"] #sc_language button[value="en_US"][aria-pressed="true"]',
+            trigger: 'html[lang="en-US"] #pk_language button[value="en_US"][aria-pressed="true"]',
             run() {
                 if (!document.cookie.includes("frontend_lang=en_US")) {
                     throw new Error("frontend_lang cookie not reset: " + document.cookie);

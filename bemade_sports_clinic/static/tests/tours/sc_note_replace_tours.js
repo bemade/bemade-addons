@@ -17,36 +17,36 @@ function assert(condition, message) {
 
 const CURRENT = "T1582 tour current text";
 const NEW = "T1582 tour replaced text";
-const FIELD = '.o_pk_autosave[data-sc-field="external_notes"]';
+const FIELD = '.o_pk_autosave[data-pk-autosave-field="external_notes"]';
 
 tours.add("sc_1582_note_replace", {
     steps: () => [
         {
             content: "Edit the notes card (pencil)",
             // Task 1616: the open injury card's Notes group.
-            trigger: 'details.o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"] button[data-sc-edit-toggle]',
+            trigger: 'details.o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
             content: "The current text is shown read-only above an EMPTY editor",
-            trigger: `${FIELD} [data-sc-replace="current"] .o_sc_replace_current_text:contains(${CURRENT})`,
+            trigger: `${FIELD} [data-pk-replace="current"] .o_pk_replace_current_text:contains(${CURRENT})`,
             run() {
-                const area = document.querySelector(`${FIELD} textarea[data-sc-replace="new"]`);
+                const area = document.querySelector(`${FIELD} textarea[data-pk-replace="new"]`);
                 assert(area, "no « New note » editor");
                 assert(area.value === "", `editor not empty: ${area.value}`);
                 assert(area.placeholder, "no placeholder");
-                assert(document.querySelector(`${FIELD} .o_sc_replace_reuse`), "no « Reuse » button");
-                assert(document.querySelector(`${FIELD} .o_sc_replace_hint`), "no replace hint");
+                assert(document.querySelector(`${FIELD} .o_pk_replace_reuse`), "no « Reuse » button");
+                assert(document.querySelector(`${FIELD} .o_pk_replace_hint`), "no replace hint");
             },
         },
         {
             content: "Type something…",
-            trigger: `${FIELD} textarea[data-sc-replace="new"]`,
+            trigger: `${FIELD} textarea[data-pk-replace="new"]`,
             run: "edit T1582 tour scratch",
         },
         {
             content: "…empty the editor again and leave it",
-            trigger: `${FIELD}[data-sc-state="dirty"] textarea[data-sc-replace="new"]`,
+            trigger: `${FIELD}[data-pk-autosave-state="dirty"] textarea[data-pk-replace="new"]`,
             run() {
                 this.anchor.value = "";
                 this.anchor.dispatchEvent(new Event("input", { bubbles: true }));
@@ -55,42 +55,42 @@ tours.add("sc_1582_note_replace", {
         },
         {
             content: "An empty editor never saves: idle, the current text untouched",
-            trigger: `${FIELD}[data-sc-state="idle"] .o_sc_replace_current_text:contains(${CURRENT})`,
+            trigger: `${FIELD}[data-pk-autosave-state="idle"] .o_pk_replace_current_text:contains(${CURRENT})`,
         },
         {
             content: "« Reuse current text » prefills the editor",
-            trigger: `${FIELD} .o_sc_replace_reuse`,
+            trigger: `${FIELD} .o_pk_replace_reuse`,
             run: "click",
         },
         {
             content: "The editor holds the current text, cursor at the start",
-            trigger: `${FIELD} textarea[data-sc-replace="new"]`,
+            trigger: `${FIELD} textarea[data-pk-replace="new"]`,
             run() {
                 assert(this.anchor.value === CURRENT, `prefill: ${this.anchor.value}`);
                 assert(this.anchor.selectionStart === 0, `cursor: ${this.anchor.selectionStart}`);
                 // The button goes away while the editor holds text.
-                assert(!document.querySelector(`${FIELD} .o_sc_replace_reuse`), "reuse still offered");
+                assert(!document.querySelector(`${FIELD} .o_pk_replace_reuse`), "reuse still offered");
             },
         },
         {
             content: "Write the new state of the injury",
-            trigger: `${FIELD} textarea[data-sc-replace="new"]`,
+            trigger: `${FIELD} textarea[data-pk-replace="new"]`,
             run: `edit ${NEW}`,
         },
         {
             content: "Leave the field so it saves",
-            trigger: `${FIELD} textarea[data-sc-replace="new"]`,
+            trigger: `${FIELD} textarea[data-pk-replace="new"]`,
             run() {
                 this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
             },
         },
         {
             content: "Saved: the new text is the current one, the editor is empty again",
-            trigger: `${FIELD}[data-sc-state="saved"] .o_sc_replace_current_text:contains(${NEW})`,
+            trigger: `${FIELD}[data-pk-autosave-state="saved"] .o_pk_replace_current_text:contains(${NEW})`,
             run() {
-                const area = document.querySelector(`${FIELD} textarea[data-sc-replace="new"]`);
+                const area = document.querySelector(`${FIELD} textarea[data-pk-replace="new"]`);
                 assert(area.value === "", `editor not emptied: ${area.value}`);
-                const read = document.querySelector('[data-sc-display$=":external_notes"]');
+                const read = document.querySelector('[data-pk-display$=":external_notes"]');
                 assert(read && read.textContent.includes(NEW), "read view not refreshed");
             },
         },
@@ -98,10 +98,10 @@ tours.add("sc_1582_note_replace", {
         // scopes, each entry labelled), in edit mode too.
         {
             content: "No « History » next to the replace hint; the head's one opens the history",
-            trigger: `section[data-pk-section="injury.notes"] > .o_pk_edit_card_head [data-sc-sheet-open^="sc_note_history_sheet_"]`,
+            trigger: `section[data-pk-section="injury.notes"] > .o_pk_edit_card_head [data-pk-sheet-open^="sc_note_history_sheet_"]`,
             run(helpers) {
                 assert(
-                    !document.querySelector(`${FIELD} [data-sc-sheet-open^="sc_note_history_sheet_"]`),
+                    !document.querySelector(`${FIELD} [data-pk-sheet-open^="sc_note_history_sheet_"]`),
                     "a per-field History link"
                 );
                 return helpers.click();

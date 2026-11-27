@@ -56,7 +56,7 @@ tours.add("sc_1640_team", {
         },
         {
             content: "Open the compose form (the announcement card's pencil)",
-            trigger: '[data-pk-edit-card="announcement"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="announcement"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
@@ -77,7 +77,7 @@ tours.add("sc_1640_team", {
         },
         {
             content: "The plain QWeb « add player » DOB input is stamped (on load)",
-            trigger: "main#sc_content",
+            trigger: "main#pk_content",
             run() {
                 // Task 1655: the inline create panel's date of birth.
                 assertBounds(document.querySelector('#sc_add_player [data-sc-player-add-field="dob"]'), "add-player DOB (QWeb)");
@@ -85,9 +85,9 @@ tours.add("sc_1640_team", {
         },
         {
             content: "Injected inputs: a fragment swap, a lazy body, a focus; existing bounds kept",
-            trigger: "main#sc_content",
+            trigger: "main#pk_content",
             run() {
-                const main = document.querySelector("main#sc_content");
+                const main = document.querySelector("main#pk_content");
                 const box = document.createElement("div");
                 box.innerHTML =
                     '<input type="date" id="t1640_frag"/>' +
@@ -129,7 +129,7 @@ tours.add("sc_1640_player", {
     steps: () => [
         {
             content: "The player's autosave date inputs carry the bounds",
-            trigger: 'main#sc_content:has(.o_pk_autosave input[type="date"])',
+            trigger: 'main#pk_content:has(.o_pk_autosave input[type="date"])',
             run() {
                 const inputs = [...document.querySelectorAll('.o_pk_autosave input[type="date"]')];
                 assert(inputs.length >= 1, "no autosave date input");

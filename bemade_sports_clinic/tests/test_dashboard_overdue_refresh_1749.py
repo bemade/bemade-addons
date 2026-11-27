@@ -9,7 +9,7 @@ to « Oui » saved but the card kept « Match : Non » until a reload — folded
 « Changements récents » (that card refreshed, the overdue one did not).
 Cause: the change takes the player OUT of the overdue line (match ≠ Non),
 so the fresh render has no card under that key and the page keeps the stale
-one (data-sc-fragment-keep, #1634); sc_fill_moved_row_fragments never
+one (data-pk-fragment-keep, #1634); sc_fill_moved_row_fragments never
 applies on the dashboard (its scopes « dash-… » are not ``\\w+`` and the
 section that now lists the player is not on the page). Same for « Joueurs
 à surveiller »: a change makes the player a recent change, so they leave
@@ -117,7 +117,7 @@ class TestOverdueRefresh1749(_Overdue1749, FragmentsMixin, Dashboard1624Common):
 
     def _match_value(self, html):
         node = lxml_html.fragment_fromstring(html)
-        return node.xpath('.//*[@data-sc-pill-key="match"]/button/@data-sc-pill-value')[0]
+        return node.xpath('.//*[@data-pk-pill-key="match"]/button/@data-pk-pill-value')[0]
 
     def _fresh(self, keys):
         answer = self._fragments('/my/home', keys)
@@ -132,12 +132,12 @@ class TestOverdueRefresh1749(_Overdue1749, FragmentsMixin, Dashboard1624Common):
         tree = self._home()
         line = self._section(tree, 'todo').xpath('.//details[@data-sc-todo="returns"]')[0]
         folded = line.xpath('.//details[@data-sc-dw-more]')[0]
-        self.assertTrue(folded.xpath('.//*[@data-sc-fragment="%s"]' % row_key(self.shared, RETURNS)))
-        self.assertTrue(folded.xpath('.//*[@data-sc-fragment="%s"]' % row_key(self.yellow, RETURNS)))
-        self.assertFalse(folded.xpath('.//*[@data-sc-fragment="%s"]' % row_key(self.red, RETURNS)))
-        self.assertTrue(line.xpath('.//*[@data-sc-fragment="%s"]' % row_key(self.red, RETURNS)))
-        self.assertTrue(tree.xpath('//*[@data-sc-fragment="%s"]' % row_key(self.shared, CHANGES)))
-        self.assertTrue(tree.xpath('//*[@data-sc-fragment="%s"]' % row_key(self.red, WATCH)))
+        self.assertTrue(folded.xpath('.//*[@data-pk-fragment="%s"]' % row_key(self.shared, RETURNS)))
+        self.assertTrue(folded.xpath('.//*[@data-pk-fragment="%s"]' % row_key(self.yellow, RETURNS)))
+        self.assertFalse(folded.xpath('.//*[@data-pk-fragment="%s"]' % row_key(self.red, RETURNS)))
+        self.assertTrue(line.xpath('.//*[@data-pk-fragment="%s"]' % row_key(self.red, RETURNS)))
+        self.assertTrue(tree.xpath('//*[@data-pk-fragment="%s"]' % row_key(self.shared, CHANGES)))
+        self.assertTrue(tree.xpath('//*[@data-pk-fragment="%s"]' % row_key(self.red, WATCH)))
 
     # -- UC-1 ---------------------------------------------------------------
     def test_visible_card_follows_match_change(self):
@@ -166,7 +166,7 @@ class TestOverdueRefresh1749(_Overdue1749, FragmentsMixin, Dashboard1624Common):
         for key in keys:
             self.assertEqual(self._match_value(answer['fragments'][key]), 'yes', key)
             # Each card keeps its own scope (key, menu ids, detail region).
-            self.assertIn('data-sc-fragment="%s"' % key, answer['fragments'][key])
+            self.assertIn('data-pk-fragment="%s"' % key, answer['fragments'][key])
         self.assertNotIn('-%s"' % CHANGES, answer['fragments'][keys[0]])
 
     # -- UC-4 ---------------------------------------------------------------
@@ -177,7 +177,7 @@ class TestOverdueRefresh1749(_Overdue1749, FragmentsMixin, Dashboard1624Common):
         answer = self._fresh([row_key(self.red, WATCH), row_key(self.red, RETURNS)])
         for key in (row_key(self.red, WATCH), row_key(self.red, RETURNS)):
             node = lxml_html.fragment_fromstring(answer['fragments'][key])
-            self.assertEqual(node.xpath('.//*[@data-sc-pill-key="practice"]/button/@data-sc-pill-value'),
+            self.assertEqual(node.xpath('.//*[@data-pk-pill-key="practice"]/button/@data-pk-pill-value'),
                              ['yes'], key)
 
     # -- UC-5 ---------------------------------------------------------------
@@ -187,12 +187,12 @@ class TestOverdueRefresh1749(_Overdue1749, FragmentsMixin, Dashboard1624Common):
         tree = self._home()
         # Still overdue: listed in the line as before.
         line = self._section(tree, 'todo').xpath('.//details[@data-sc-todo="returns"]')[0]
-        self.assertTrue(line.xpath('.//*[@data-sc-fragment="%s"]' % row_key(self.red, RETURNS)))
+        self.assertTrue(line.xpath('.//*[@data-pk-fragment="%s"]' % row_key(self.red, RETURNS)))
         self._saved(self.red, 'sc_status', 'yes:yes')
         tree = self._home()
-        self.assertFalse(tree.xpath('//*[@data-sc-fragment="%s"]' % row_key(self.red, RETURNS)),
+        self.assertFalse(tree.xpath('//*[@data-pk-fragment="%s"]' % row_key(self.red, RETURNS)),
                          'a full render never carries a card its section dropped')
-        self.assertFalse(tree.xpath('//*[@data-sc-dash-kept]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-dash-kept]'))
 
     def test_unreadable_player_stays_missing(self):
         """Pat Two (Team B: nobody of ours) is not readable by the therapist:

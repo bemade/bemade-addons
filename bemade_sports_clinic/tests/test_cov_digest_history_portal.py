@@ -56,6 +56,11 @@ class TestDigestHistoryPortal(PortalCovCommon):
     def _preview_url(self):
         return '/my/team/%d/digest-history/recent' % self.team_a.id
 
+    def _digest_ids(self, text):
+        """Task 1541: the team_a snapshots a rendered app page links to (its
+        rows carry the page link and the lazy ``/body`` link)."""
+        return set(re.findall(r'/my/team/%d/digest/(\d+)' % self.team_a.id, text))
+
     def _dates_in(self, text):
         """Snapshot ISO dates present in a rendered response."""
         return set(re.findall(r'\d{4}-\d{2}-\d{2}', text))
@@ -65,7 +70,8 @@ class TestDigestHistoryPortal(PortalCovCommon):
         self._login_coach()
         resp = self.url_open(self._page_url())
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(self.today.isoformat(), resp.text)
+        # Task 1541: the app's page lists each date as a row (its digest link).
+        self.assertTrue(self._digest_ids(resp.text))
         # team_b's snapshot must NOT appear (scoping); its date equals today so we
         # instead assert the link to team_b's digest is absent.
         self.assertNotIn('/my/team/%d/digest/%d' % (self.team_b.id, self.other_snap.id),
@@ -76,37 +82,23 @@ class TestDigestHistoryPortal(PortalCovCommon):
         self._login_tp()
         p1 = self.url_open(self._page_url())
         self.assertEqual(p1.status_code, 200)
-        links1 = re.findall(r'/my/team/%d/digest/\d+' % self.team_a.id, p1.text)
+        links1 = self._digest_ids(p1.text)
         self.assertEqual(len(links1), 20)
         # Pager present -> the standard portal /page/2 link is rendered.
         self.assertIn('/digest-history/page/2', p1.text)
         p2 = self.url_open('/my/team/%d/digest-history/page/2' % self.team_a.id)
         self.assertEqual(p2.status_code, 200)
-        links2 = re.findall(r'/my/team/%d/digest/\d+' % self.team_a.id, p2.text)
+        links2 = self._digest_ids(p2.text)
         self.assertEqual(len(links2), 5)
+        self.assertFalse(links1 & links2)
 
-    def test_preview_modal_limited_to_window(self):
-        """?preview fragment shows only the last 14 days, plus the Voir tout link."""
-        self._login_coach()
-        resp = self.url_open(self._preview_url())
-        self.assertEqual(resp.status_code, 200)
-        links = re.findall(r'/my/team/%d/digest/\d+' % self.team_a.id, resp.text)
-        # 14-day window inclusive of today -> at most 15 daily snapshots; here the
-        # snapshots are consecutive so days 0..14 => 15 rows.
-        self.assertLessEqual(len(links), 15)
-        self.assertGreater(len(links), 0)
-        # The oldest snapshot (24 days back) must be excluded.
-        oldest = (self.today - timedelta(days=24)).isoformat()
-        self.assertNotIn(oldest, resp.text)
-        # "Voir tout" link to the full page is present.
-        self.assertIn('/my/team/%d/digest-history' % self.team_a.id, resp.text)
 
     def test_coach_and_tp_same_date_list(self):
         """Dates carry no content: coach and TP see an identical date set."""
         self._login_coach()
-        coach_dates = self._dates_in(self.url_open(self._page_url()).text)
+        coach_dates = self._digest_ids(self.url_open(self._page_url()).text)
         self._login_tp()
-        tp_dates = self._dates_in(self.url_open(self._page_url()).text)
+        tp_dates = self._digest_ids(self.url_open(self._page_url()).text)
         self.assertTrue(coach_dates)
         self.assertEqual(coach_dates, tp_dates)
 
@@ -114,16 +106,21 @@ class TestDigestHistoryPortal(PortalCovCommon):
         """A plain portal user (no team) is forbidden on both modes."""
         self._login_plain()
         self.assertEqual(self.url_open(self._page_url()).status_code, 403)
-        self.assertEqual(self.url_open(self._preview_url()).status_code, 403)
+        # Task 1541: the modal fragment is gone for everyone.
+        self.assertEqual(self.url_open(self._preview_url()).status_code, 404)
 
     def test_back_param_offsite_rejected(self):
         """A crafted off-site back falls back to the team dashboard link."""
         self._login_coach()
         resp = self.url_open(self._page_url(back='https://evil.example.com/x'))
         self.assertEqual(resp.status_code, 200)
-        self.assertNotIn('evil.example.com', resp.text)
-        # Backlink defaults to the team dashboard.
-        self.assertIn('href="/my/team/%d"' % self.team_a.id, resp.text)
+        # Task 1541: the app page's navigation is the parent registry's; the
+        # crafted back is never a link (it may ride, URL-encoded, in the
+        # pager / app-bar query strings, sanitized again on use).
+        from lxml import html as lxml_html
+        hrefs = lxml_html.fromstring(resp.text).xpath('//a/@href | //form/@action')
+        self.assertFalse([h for h in hrefs if 'evil.example.com' in h.split('?')[0]
+                          or h.startswith(('http://evil', 'https://evil', '//evil'))])
 
     def test_back_param_local_preserved(self):
         """A valid local /my/... back is honoured on the backlink."""

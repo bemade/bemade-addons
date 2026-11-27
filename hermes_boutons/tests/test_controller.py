@@ -3,6 +3,7 @@
 
 from odoo import Command, http
 from odoo.tests import HttpCase, new_test_user, tagged
+from odoo.tools.misc import mute_logger
 
 
 @tagged("post_install", "-at_install", "hermes_boutons")
@@ -64,6 +65,7 @@ class TestHermesBoutonsController(HttpCase):
         self.assertEqual(response.status_code, 405)
         self.assertEqual(self._message_count(), before)
 
+    @mute_logger("odoo.http")
     def test_post_without_csrf_is_rejected(self):
         before = self._message_count()
 
@@ -103,6 +105,7 @@ class TestHermesBoutonsController(HttpCase):
         )
         self.assertEqual(message.author_id, self.user.partner_id)
 
+    @mute_logger("odoo.http")
     def test_post_to_inaccessible_channel_is_rejected(self):
         before = self.env["mail.message"].sudo().search_count(
             [

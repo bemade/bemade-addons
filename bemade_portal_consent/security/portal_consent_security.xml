@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2026 Bemade Inc. - License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html). -->
+<odoo>
+    <record id="res_groups_privilege_portal_consent" model="res.groups.privilege">
+        <field name="name">Portal Consent</field>
+        <field name="sequence">90</field>
+        <field name="category_id" ref="base.module_category_administration"/>
+    </record>
+
+    <record id="group_portal_consent_manager" model="res.groups">
+        <field name="name">Consent Manager</field>
+        <field name="privilege_id" ref="res_groups_privilege_portal_consent"/>
+        <field name="comment">Manages the portal consent documents and their versions, reads the acceptance log.</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="implied_by_ids" eval="[(4, ref('base.group_system'))]"/>
+    </record>
+
+    <record id="rule_portal_consent_acceptance_portal_own" model="ir.rule">
+        <field name="name">Portal consent acceptance: own rows only</field>
+        <field name="model_id" ref="model_portal_consent_acceptance"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+    </record>
+</odoo>

@@ -178,8 +178,8 @@ class TestNearMatchApp1674(PlayerAdd1655Common):
         self._login_tp()
         resp = self.url_open('/my/app/search?q=jonahtan')
         tree = lxml_html.fromstring(resp.text)
-        near = tree.xpath('//*[@data-sc-search-group="players_near"]//li/@data-sc-search-player')
-        exact = tree.xpath('//*[@data-sc-search-group="players"]//li/@data-sc-search-player')
+        near = tree.xpath('//*[@data-pk-search-group="players_near"]//li/@data-pk-search-row')
+        exact = tree.xpath('//*[@data-pk-search-group="players"]//li/@data-pk-search-row')
         self.assertIn(str(self.jonathan_twin.id), exact)
         self.assertIn(str(self.jonathan.id), near)
 

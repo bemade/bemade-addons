@@ -2,6 +2,8 @@
 <!--
     Task 5369 (kit P3c1): the kit's frontend layout, adopted from the first
     consumer (same ir.ui.view record, see tools/adopt.py).
+    Task 5345 (kit P3c2): the app layout (pk_app_layout), its user menu
+    (pk_user_menu_popup, adopted) and the neutral brand mark.
 -->
 <odoo>
 
@@ -13,6 +15,269 @@
         <xpath expr="//head/meta[@name='viewport']" position="attributes">
             <attribute name="content">width=device-width, initial-scale=1, viewport-fit=cover</attribute>
         </xpath>
+    </template>
+
+    <!-- Task 5345 (kit P3c2): the kit's neutral brand mark (a rounded square
+         with a plus), drawn in the brand-mark colour (token pk-brand-mark). A
+         consumer passes its own mark in the layout's pk_brand_mark slot. -->
+    <template id="pk_brand_mark" name="Portal kit: brand mark">
+        <svg viewBox="0 0 24 24" class="o_pk_icon o_pk_logo_mark" aria-hidden="true" focusable="false"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 12h6M12 9v6"/></svg>
+    </template>
+
+    <!--
+        Task 5345 (kit P3c2) — the app layout: the shell of every page of a
+        portal app, on pk_frontend_layout (web.frontend_layout without the
+        website / portal header and footer). Laptop: a left rail; phone:
+        bottom tabs; both: the app bar (back / title / theme / actions / user
+        menu), the crumb trail on a sub-page, the content (id pk_content), the
+        form guard's texts and the toast host.
+
+        Called with the page as body (0). Values (all optional):
+          pk_title          the app-bar title (also the <title>)
+          pk_active_nav     the key of the active rail / tab entry
+          pk_page_key       « <model>:<id> » of the page's record: the title
+                            and the crumb are read fragments (<key>:appbar,
+                            <key>:crumb) a save of that record refreshes
+          pk_content_class  extra classes of the content area
+          pk_rail, pk_tabs  the nav entries [{key, url, icon, label}]
+                            (portal.kit.pk_visible_nav)
+          pk_parent_url     the parent page (a sub-page: back chevron, home
+                            picto and crumbs; False: a top-level page, logo)
+          pk_crumbs         [(label, url), ...] ancestors, top first
+          pk_context        the line under the title on a sub-page
+          pk_theme          dark | light (default light)
+          pk_theme_choice   the app-bar theme toggle is offered; it posts
+                            pk_theme_field (default pk_theme) = the other
+                            theme to pk_pref_url (no URL: no toggle), with
+                            redirect = pk_current_url
+          pk_show_done      False: the edit cards' « Done » buttons are
+                            hidden (data-pk-hide-done)
+          pk_edit_done_label  the ✓ pencil's label (the kit's by default)
+          pk_user_initials, pk_user_name, pk_user_role   the user menu
+          pk_settings_url   the user menu's settings item (none without);
+                            pk_settings_active: it is the current page
+          pk_home_url, pk_home_same_params   data-pk-home (pk_confirm.js)
+          pk_db, pk_uid     the device drafts' namespace (pk_draft_store.js)
+          pk_guard_params   the URL params a refusal comes back in
+                            (default « error »)
+          pk_notification   the session notification (pk_toast_host)
+          pk_help           {key, base, url, home, map_json, tabbed}: the « ? »
+                            of the app bar and the user menu's « Help »
+                            (portal.kit.help.pk_help_for; task 5200)
+          pk_search         {placeholder, href}: the magnifier and the
+                            search sheet (task 5200; none without)
+          pk_brand          {name, home_url, home_label, theme_colors:
+                            {light, dark}}, merged over
+                            portal.kit.pk_brand() (neutral defaults)
+        Slots (t-set bodies, empty by default):
+          pk_head_extra       more of the <head>
+          pk_brand_mark       the logo (default: pk_brand_mark)
+          pk_appbar_actions   app-bar icons before the user menu
+          pk_user_menu_extra  user-menu items after the settings item
+          pk_layout_sheets    the page-level sheets and dialogs, after the
+                              content (rendered after the body)
+    -->
+    <template id="pk_app_layout" name="Portal kit: app layout">
+        <t t-set="pk_brand" t-value="request.env['portal.kit'].pk_brand(pk_brand)"/>
+        <t t-set="pk_theme" t-value="pk_theme if pk_theme in ('dark', 'light') else 'light'"/>
+        <t t-set="pk_theme_color" t-value="pk_brand['theme_colors'].get(pk_theme)"/>
+        <t t-if="not pk_edit_done_label"><t t-set="pk_edit_done_label">Finish editing</t></t>
+        <t t-call="bemade_portal_kit.pk_frontend_layout">
+            <t t-set="no_header" t-value="True"/>
+            <t t-set="no_footer" t-value="True"/>
+            <t t-set="no_livechat" t-value="True"/>
+            <!-- <html lang>: the frontend scripts (OWL templates, _t) take
+                 their language from it. -->
+            <t t-set="html_data" t-value="{'lang': (request.env.lang or 'en_US').replace('_', '-')}"/>
+            <t t-set="body_classname" t-value="'o_pk_app_body o_pk_app_body_%s' % pk_theme"/>
+            <t t-set="title" t-value="pk_title"/>
+            <t t-set="head">
+                <meta t-if="pk_theme_color" name="theme-color" t-att-content="pk_theme_color"/>
+                <t t-out="pk_head_extra"/>
+            </t>
+            <div class="o_pk_app" data-pk-app-shell="1"
+                 t-att-data-pk-theme="pk_theme"
+                 t-att-data-pk-theme-color-light="pk_brand['theme_colors'].get('light')"
+                 t-att-data-pk-theme-color-dark="pk_brand['theme_colors'].get('dark')"
+                 t-att-data-pk-hide-done="'1' if pk_show_done is False else None"
+                 t-att-data-pk-edit-done-label="pk_edit_done_label"
+                 t-att-data-pk-top="'0' if pk_parent_url else '1'"
+                 t-att-data-pk-db="pk_db" t-att-data-pk-uid="pk_uid"
+                 t-att-data-pk-rendered-at="pk_rendered_at"
+                 t-att-data-pk-home="pk_home_url or None"
+                 t-att-data-pk-home-same-params="pk_home_same_params or None">
+
+                <!-- Laptop: the left rail -->
+                <aside class="o_pk_rail" aria-label="Navigation">
+                    <a t-att-href="pk_brand['home_url']" class="o_pk_rail_brand">
+                        <t t-if="pk_brand_mark" t-out="pk_brand_mark"/>
+                        <t t-else="" t-call="bemade_portal_kit.pk_brand_mark"/>
+                        <span class="o_pk_rail_brand_name" t-out="pk_brand['name']"/>
+                    </a>
+                    <nav class="o_pk_rail_nav" aria-label="Main">
+                        <t t-foreach="pk_rail or []" t-as="entry">
+                            <a t-att-href="entry['url']" t-att-data-pk-nav-key="entry['key']"
+                               t-att-aria-current="'page' if entry['key'] == pk_active_nav else None">
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="entry['icon']"/></t>
+                                <span t-out="entry['label']"/>
+                            </a>
+                        </t>
+                    </nav>
+                </aside>
+
+                <div class="o_pk_main">
+                    <!-- The app bar -->
+                    <header class="o_pk_appbar">
+                        <t t-set="pk_back_label">Back</t>
+                        <a t-if="pk_parent_url" t-att-href="pk_parent_url" data-pk-back="1"
+                           class="o_pk_icon_btn o_pk_back" t-att-aria-label="pk_back_label" t-att-title="pk_back_label">
+                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'back'"/></t>
+                        </a>
+                        <!-- A phone sub-page keeps the back chevron AND the
+                             brand mark right after it: one tap home. The
+                             laptop rail carries the brand link already, so
+                             the picto is phone-only (pk_components.scss). -->
+                        <a t-if="pk_parent_url" t-att-href="pk_brand['home_url']" class="o_pk_home_picto"
+                           t-att-aria-label="pk_brand['home_label']" t-att-title="pk_brand['home_label']">
+                            <t t-if="pk_brand_mark" t-out="pk_brand_mark"/>
+                            <t t-else="" t-call="bemade_portal_kit.pk_brand_mark"/>
+                        </a>
+                        <a t-if="not pk_parent_url" t-att-href="pk_brand['home_url']" class="o_pk_logo"
+                           t-att-aria-label="pk_brand['name']">
+                            <t t-if="pk_brand_mark" t-out="pk_brand_mark"/>
+                            <t t-else="" t-call="bemade_portal_kit.pk_brand_mark"/>
+                        </a>
+                        <h1 class="o_pk_appbar_title" t-att-data-pk-fragment="('%s:appbar' % pk_page_key) if pk_page_key else None">
+                            <span class="o_pk_appbar_title_text" t-out="pk_title"/>
+                            <small t-if="pk_context and pk_parent_url"
+                                   class="o_pk_appbar_context" t-out="pk_context"/>
+                        </h1>
+                        <!-- The theme toggle: a plain POST form (no-JS path);
+                             pk_theme_pref.js switches the theme in place. -->
+                        <form t-if="pk_theme_choice and pk_pref_url" method="post" t-att-action="pk_pref_url"
+                              class="o_pk_theme_toggle" data-pk-pref="1" data-pk-no-dirty="1">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="redirect" t-att-value="pk_current_url"/>
+                            <t t-set="pk_theme_label">Toggle theme</t>
+                            <button type="submit" t-att-name="pk_theme_field or 'pk_theme'" data-pk-theme-toggle="1"
+                                    t-att-value="'light' if pk_theme != 'light' else 'dark'"
+                                    class="o_pk_icon_btn" t-att-aria-label="pk_theme_label" t-att-title="pk_theme_label">
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'moon'"/></t>
+                            </button>
+                        </form>
+                        <t t-out="pk_appbar_actions"/>
+                        <!-- Task 5200 (P5): « ? » — this page's help article,
+                             in a new tab (pk_help.js follows the page's tab
+                             when data-pk-help-tabbed is set). -->
+                        <t t-if="pk_help and pk_help['url']">
+                            <t t-set="pk_help_label">Help on this page</t>
+                            <a t-att-href="pk_help['url']" target="_blank" rel="noopener"
+                               class="o_pk_icon_btn o_pk_appbar_help" data-pk-help="1"
+                               t-att-data-pk-help-key="pk_help['key']" t-att-data-pk-help-base="pk_help['base']"
+                               t-att-data-pk-help-home="pk_help['home'] or ''" t-att-data-pk-help-map="pk_help['map_json']"
+                               t-att-data-pk-help-tabbed="'1' if pk_help.get('tabbed') else None"
+                               t-att-aria-label="pk_help_label" t-att-title="pk_help_label">
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'help'"/></t>
+                            </a>
+                        </t>
+                        <!-- Task 5200 (P5): the magnifier opens the search
+                             sheet (pk_search.js); the link is the no-JS way. -->
+                        <a t-if="pk_search" t-att-href="pk_search['href']" class="o_pk_icon_btn o_pk_appbar_search"
+                           data-pk-search-open="1" aria-haspopup="dialog" aria-controls="pk_search_sheet"
+                           aria-label="Search" title="Search">
+                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'search'"/></t>
+                        </a>
+                        <!-- The initials open the user menu: the only one, at
+                             every width, last in the bar (pk_user_menu.js). -->
+                        <div class="o_pk_user_menu o_pk_user_menu_bar" data-pk-user-menu="bar">
+                            <t t-set="pk_user_menu_label">User menu</t>
+                            <button type="button" class="o_pk_icon_btn o_pk_appbar_me" data-pk-user-menu-toggle="1"
+                                    aria-haspopup="menu" aria-expanded="false" aria-controls="pk_user_menu_bar"
+                                    t-att-aria-label="pk_user_menu_label" t-att-title="pk_user_menu_label">
+                                <span class="o_pk_avatar" aria-hidden="true" t-out="pk_user_initials"/>
+                            </button>
+                            <t t-call="bemade_portal_kit.pk_user_menu_popup">
+                                <t t-set="pk_menu_id" t-value="'pk_user_menu_bar'"/>
+                            </t>
+                        </div>
+                    </header>
+
+                    <!-- The crumb trail (laptop width) -->
+                    <nav t-if="pk_parent_url" class="o_pk_crumbs" aria-label="Breadcrumb">
+                        <ol>
+                            <li t-foreach="pk_crumbs or []" t-as="crumb">
+                                <a t-att-href="crumb[1]" t-out="crumb[0]"/>
+                            </li>
+                            <li class="o_pk_crumb_current" aria-current="page"
+                                t-att-data-pk-fragment="('%s:crumb' % pk_page_key) if pk_page_key else None" t-out="pk_title"/>
+                        </ol>
+                    </nav>
+
+                    <main t-attf-class="o_pk_content #{pk_content_class or ''}" id="pk_content">
+                        <t t-out="0"/>
+                    </main>
+                    <t t-if="pk_search" t-call="bemade_portal_kit.pk_search_sheet"/>
+                    <t t-out="pk_layout_sheets"/>
+                    <!-- The form guard's shared texts (pk_form_guard.js) and
+                         the URL params a refusal comes back in. -->
+                    <t t-set="pk_guard_missing">Complete:</t>
+                    <t t-set="pk_guard_generic">This could not be saved. Please check the form and try again.</t>
+                    <t t-set="pk_guard_offline">No connection. Nothing was sent; try again when you are back online.</t>
+                    <span hidden="hidden" data-pk-guard-texts="1" t-att-data-pk-guard-error-params="pk_guard_params or 'error'"
+                          t-att-data-missing="pk_guard_missing" t-att-data-generic="pk_guard_generic"
+                          t-att-data-offline="pk_guard_offline"/>
+                    <t t-call="bemade_portal_kit.pk_toast_host"/>
+                </div>
+
+                <!-- Phone: the bottom tabs -->
+                <nav class="o_pk_tabs" aria-label="Main">
+                    <t t-foreach="pk_tabs or []" t-as="entry">
+                        <a t-att-href="entry['url']" class="o_pk_tab" t-att-data-pk-nav-key="entry['key']"
+                           t-att-aria-current="'page' if entry['key'] == pk_active_nav else None">
+                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="entry['icon']"/></t>
+                            <span t-out="entry['label']"/>
+                        </a>
+                    </t>
+                </nav>
+            </div>
+        </t>
+    </template>
+
+    <!-- Task 1606 / 5345 — the user menu's popup, under the app-bar avatar at
+         every width (pk_user_menu.js opens / closes it: tap, Enter / Space,
+         the arrow keys, Escape, an outside tap). Adopted from the first
+         consumer (tools/adopt.py). Values: pk_menu_id (the id the trigger's
+         aria-controls names), pk_user_initials, pk_user_name, pk_user_role,
+         pk_settings_url (+ pk_settings_active), pk_user_menu_extra (more
+         items, after the settings item). -->
+    <template id="pk_user_menu_popup" name="Portal kit: user menu popup">
+        <div t-att-id="pk_menu_id" class="o_pk_user_menu_popup" hidden="hidden" data-pk-user-menu-popup="1">
+            <div class="o_pk_user_menu_head" data-pk-user-menu-head="1">
+                <span class="o_pk_avatar" aria-hidden="true" t-out="pk_user_initials"/>
+                <span class="o_pk_user_menu_who">
+                    <strong class="o_pk_user_menu_name" t-out="pk_user_name"/>
+                    <small t-if="pk_user_role" class="o_pk_user_menu_role" t-out="pk_user_role"/>
+                </span>
+            </div>
+            <div role="menu" class="o_pk_user_menu_items" t-att-aria-label="pk_user_name">
+                <a t-if="pk_settings_url" role="menuitem" t-att-href="pk_settings_url" class="o_pk_user_menu_item" tabindex="-1"
+                   t-att-aria-current="'page' if pk_settings_active else None">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'settings'"/></t>
+                    <span>Settings</span>
+                </a>
+                <!-- Task 5200 (P5): the help home (new tab), after « Settings ». -->
+                <a t-if="pk_help and pk_help['home']" role="menuitem" t-att-href="pk_help['home']" target="_blank" rel="noopener"
+                   class="o_pk_user_menu_item" tabindex="-1" data-pk-help-home-link="1">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'help'"/></t>
+                    <span>Help</span>
+                </a>
+                <t t-out="pk_user_menu_extra"/>
+                <a role="menuitem" href="/web/session/logout?redirect=/" class="o_pk_user_menu_item" tabindex="-1">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'logout'"/></t>
+                    <span>Sign out</span>
+                </a>
+            </div>
+        </div>
     </template>
 
 </odoo>

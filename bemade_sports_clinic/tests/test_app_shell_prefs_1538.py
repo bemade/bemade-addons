@@ -3,7 +3,7 @@ Synthetic fixtures only.
 
 Acceptance criteria covered here:
 
-* UC-P1 ``sc_theme`` (dark | light, default dark) is self-readable and
+* UC-P1 ``pk_theme`` (dark | light, default dark) is self-readable and
   self-writable by a portal user, and by nobody else's hand. (Task 1579
   removed ``sc_nav_mode``: the screen width decides the navigation.)
 * UC-P2 ``POST /my/app/pref`` (CSRF) sets ONLY that field on the
@@ -35,67 +35,67 @@ class TestAppShellPrefs1538(AppShellCommon):
 
     # -- UC-P1 -----------------------------------------------------------
     def test_prefs_self_writable_and_defaults(self):
-        self.assertEqual(self.coach.sc_theme, 'dark')
-        self.coach.with_user(self.coach).write({'sc_theme': 'light'})
-        self.assertEqual(self.coach.sc_theme, 'light')
+        self.assertEqual(self.coach.pk_theme, 'dark')
+        self.coach.with_user(self.coach).write({'pk_theme': 'light'})
+        self.assertEqual(self.coach.pk_theme, 'light')
         with self.assertRaises(AccessError):
-            self.tp.with_user(self.coach).write({'sc_theme': 'light'})
+            self.tp.with_user(self.coach).write({'pk_theme': 'light'})
 
     # -- UC-P2 -----------------------------------------------------------
     def test_pref_route_sets_own_prefs_json(self):
         self._theme_choice(True)  # task 1602: else the answer is the forced dark
         self._login_coach()
-        resp = self._post_pref({'sc_theme': 'light'})
+        resp = self._post_pref({'pk_theme': 'light'})
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json().get('sc_theme'), 'light')
-        self.assertEqual(self.coach.sc_theme, 'light')
+        self.assertEqual(resp.json().get('pk_theme'), 'light')
+        self.assertEqual(self.coach.pk_theme, 'light')
         # Task 1579: the navigation-mode key is refused like any other.
         resp = self._post_pref({'sc_nav_mode': 'crumbs'})
         self.assertEqual(resp.status_code, 400)
 
     def test_pref_route_form_post_redirects_back(self):
         self._login_coach()
-        resp = self._post_pref({'sc_theme': 'light', 'redirect': '/my/teams'},
+        resp = self._post_pref({'pk_theme': 'light', 'redirect': '/my/teams'},
                                json_accept=False)
         self.assertIn(resp.status_code, (302, 303))
         self.assertTrue(resp.headers['Location'].endswith('/my/teams'))
-        self.assertEqual(self.coach.sc_theme, 'light')
+        self.assertEqual(self.coach.pk_theme, 'light')
         # An off-site redirect is ignored.
-        resp = self._post_pref({'sc_theme': 'dark', 'redirect': '//evil.example.com/x'},
+        resp = self._post_pref({'pk_theme': 'dark', 'redirect': '//evil.example.com/x'},
                                json_accept=False)
         self.assertNotIn('evil.example.com', resp.headers['Location'])
 
     def test_pref_route_rejects_other_fields(self):
         self._login_coach()
         before = self.coach.name
-        resp = self._post_pref({'sc_theme': 'light', 'name': 'Renamed'})
+        resp = self._post_pref({'pk_theme': 'light', 'name': 'Renamed'})
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(self.coach.name, before)
-        self.assertEqual(self.coach.sc_theme, 'dark')
+        self.assertEqual(self.coach.pk_theme, 'dark')
         resp = self._post_pref({'teams_sort_mode': 'alpha'})
         self.assertEqual(resp.status_code, 400)
 
     def test_pref_route_rejects_bad_values(self):
         self._login_coach()
-        resp = self._post_pref({'sc_theme': 'neon'})
+        resp = self._post_pref({'pk_theme': 'neon'})
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(self.coach.sc_theme, 'dark')
+        self.assertEqual(self.coach.pk_theme, 'dark')
         resp = self._post_pref({})
         self.assertEqual(resp.status_code, 400)
 
     def test_pref_route_rejects_other_users_record(self):
         self._login_coach()
-        resp = self._post_pref({'sc_theme': 'light', 'user_id': str(self.tp.id)})
+        resp = self._post_pref({'pk_theme': 'light', 'user_id': str(self.tp.id)})
         self.assertEqual(resp.status_code, 403)
-        self.assertEqual(self.tp.sc_theme, 'dark')
-        self.assertEqual(self.coach.sc_theme, 'dark')
+        self.assertEqual(self.tp.pk_theme, 'dark')
+        self.assertEqual(self.coach.pk_theme, 'dark')
 
     def test_pref_route_requires_csrf(self):
         self._login_coach()
-        resp = self.url_open('/my/app/pref', data={'sc_theme': 'light', 'csrf_token': 'bogus'},
+        resp = self.url_open('/my/app/pref', data={'pk_theme': 'light', 'csrf_token': 'bogus'},
                              allow_redirects=False)
         self.assertGreaterEqual(resp.status_code, 400)
-        self.assertEqual(self.coach.sc_theme, 'dark')
+        self.assertEqual(self.coach.pk_theme, 'dark')
 
     # -- UC-P3 -----------------------------------------------------------
     def _more(self):
@@ -122,17 +122,17 @@ class TestAppShellPrefs1538(AppShellCommon):
             menu = set(tree.xpath('//*[@data-pk-user-menu-popup]//a/@href'))
             self.assertTrue([h for h in menu if h.startswith('/web/session/logout')])
             # Appearance control; no navigation setting (task 1579).
-            self.assertTrue(tree.xpath('//form[@data-sc-pref]//*[@name="sc_theme"]'))
+            self.assertTrue(tree.xpath('//form[@data-pk-pref]//*[@name="pk_theme"]'))
             self.assertFalse(tree.xpath('//*[@name="sc_nav_mode"]'))
 
     def test_more_role_scoped_entries(self):
         self._switch(True)
         self._login_coach()
-        keys = self._more().xpath('//main//a/@data-sc-nav-key')
+        keys = self._more().xpath('//main//a/@data-pk-nav-key')
         self.assertNotIn('notepad', keys)
         self.assertNotIn('timesheets', keys)
         self._login_tp()
-        keys = self._more().xpath('//main//a/@data-sc-nav-key')
+        keys = self._more().xpath('//main//a/@data-pk-nav-key')
         self.assertIn('notepad', keys)
         self.assertIn('timesheets', keys)
 

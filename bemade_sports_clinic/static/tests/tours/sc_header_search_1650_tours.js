@@ -19,14 +19,14 @@ function assert(condition, message) {
     }
 }
 
-const SHEET = "dialog#sc_search_sheet";
-const INPUT = `${SHEET}[open] input[data-sc-search-input]`;
+const SHEET = "dialog#pk_search_sheet";
+const INPUT = `${SHEET}[open] input[data-pk-search-input]`;
 
 tours.add("sc_1650_search_tap", {
     steps: () => [
         {
             content: "The magnifier opens the search",
-            trigger: "header.o_pk_appbar a[data-sc-search-open]",
+            trigger: "header.o_pk_appbar a[data-pk-search-open]",
             run: "click",
         },
         {
@@ -78,11 +78,11 @@ tours.add("sc_1650_search_keys", {
         },
         {
             content: "ArrowDown highlights the first result, Enter opens it",
-            trigger: `${SHEET} [data-sc-search-result]`,
+            trigger: `${SHEET} [data-pk-search-result]`,
             run() {
                 const input = document.querySelector(INPUT);
                 input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
-                const first = document.querySelector(`${SHEET} [data-sc-search-result]`);
+                const first = document.querySelector(`${SHEET} [data-pk-search-result]`);
                 assert(first.classList.contains("o_pk_search_active"), "ArrowDown highlighted nothing");
                 input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
             },
@@ -90,7 +90,7 @@ tours.add("sc_1650_search_keys", {
         },
         {
             content: "A player page",
-            trigger: ".o_pk_app nav[data-sc-tabs]",
+            trigger: ".o_pk_app nav[data-pk-tabs]",
         },
     ],
 });

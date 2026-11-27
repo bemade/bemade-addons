@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_portal_kit_help_system,Portal kit help: system administrators,model_portal_kit_help,base.group_system,1,1,1,1
+access_portal_kit_notification_pref_portal,Portal kit notification pref: portal users (own rows),model_portal_kit_notification_pref,base.group_portal,1,1,1,1
+access_portal_kit_notification_pref_user,Portal kit notification pref: internal users (own rows),model_portal_kit_notification_pref,base.group_user,1,1,1,1
+access_portal_kit_notification_pref_system,Portal kit notification pref: system administrators,model_portal_kit_notification_pref,base.group_system,1,1,1,1

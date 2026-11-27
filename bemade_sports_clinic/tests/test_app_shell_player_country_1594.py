@@ -60,11 +60,11 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
 
     def _props(self, tree, field, scope='//'):
         found = [json.loads(p) for p in tree.xpath(
-            '%s/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props' % scope)]
+            '%s/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props' % scope)]
         return [p for p in found if p.get('field') == field and p.get('model') == 'sports.patient']
 
     def _display(self, tree, field):
-        return tree.xpath('//*[@data-sc-display="sports.patient:%s:%s"]' % (self.player.id, field))
+        return tree.xpath('//*[@data-pk-display="sports.patient:%s:%s"]' % (self.player.id, field))
 
     # -- UC-1 ------------------------------------------------------------
     def test_country_read_and_edit_for_every_staff_role(self):
@@ -72,10 +72,10 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
             login()
             _text, tree = self._get(self._url())
             card = self._card(tree, 'contact')
-            shown = card.xpath('.//*[@data-sc-edit-view="read"]//*[@data-sc-display="sports.patient:%s:country_id"]'
+            shown = card.xpath('.//*[@data-pk-edit-view="read"]//*[@data-pk-display="sports.patient:%s:country_id"]'
                                % self.player.id)
             self.assertEqual(shown[0].text_content().strip(), self.canada.name)
-            props = self._props(card, 'country_id', scope='.//*[@data-sc-edit-view="edit"]/')
+            props = self._props(card, 'country_id', scope='.//*[@data-pk-edit-view="edit"]/')
             self.assertEqual(len(props), 1)
             self.assertEqual(props[0]['inputType'], 'select')
             self.assertEqual(props[0]['value'], self.canada.id)
@@ -193,8 +193,8 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
         self._login_tp()
         _text, tree = self._get(self._url())
         medical = self._card(tree, 'medical')
-        self.assertEqual(len(self._props(medical, 'return_date', scope='.//*[@data-sc-edit-view="edit"]/')), 1)
-        self.assertTrue(medical.xpath('.//*[@data-sc-display="sports.patient:%s:return_date"]' % self.player.id))
+        self.assertEqual(len(self._props(medical, 'return_date', scope='.//*[@data-pk-edit-view="edit"]/')), 1)
+        self.assertTrue(medical.xpath('.//*[@data-pk-display="sports.patient:%s:return_date"]' % self.player.id))
         resp = self._save(self.player, 'return_date', '2026-11-02')
         self.assertEqual(resp.status_code, 200, resp.text)
         self.assertTrue(resp.json()['display'])
@@ -272,8 +272,8 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
             _text, tree = self._get(self._url())
             hero = tree.xpath('//*[@data-pk-section="player.hero"]')[0]
             self.assertFalse(hero.xpath('.//*[@data-sc-stage-chip]'))
-            pills = hero.xpath('.//*[@data-sc-pill-readonly]')
-            self.assertEqual([p.get('data-sc-pill-key') for p in pills], ['match', 'practice'], vals)
+            pills = hero.xpath('.//*[@data-pk-pill-readonly]')
+            self.assertEqual([p.get('data-pk-pill-key') for p in pills], ['match', 'practice'], vals)
             for pill, tone, label in zip(pills, tones, labels):
                 self.assertIn('o_pk_chip_%s' % tone, pill.get('class'), vals)
                 self.assertEqual(' '.join(pill.text_content().split()), label)
@@ -288,7 +288,7 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
         self.assertFalse(tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-sc-stage-chip]'))
         self.assertEqual(len(status.xpath('.//button[contains(@class, "o_pk_pill_select")]')), 2)
         self.assertFalse(status.xpath('.//owl-component'))
-        edit = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-sc-edit-view="edit"]')[0]
+        edit = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-pk-edit-view="edit"]')[0]
         self.assertFalse(self._props(edit, 'sc_status', scope='.//*'))
 
     def test_injury_cards_carry_stage_badge(self):
@@ -360,7 +360,7 @@ class TestPlayerCountryI18n1594(TestAppShellI18n1538):
         tree = lxml_html.fromstring(self._fr(self._url()))
         self.assertFalse(tree.xpath('//*[@data-sc-stage-chip]'))
         pills = [' '.join(p.text_content().split()) for p in tree.xpath(
-            '//*[@data-sc-pill-readonly][@data-sc-pill-key="match" or @data-sc-pill-key="practice"]')]
+            '//*[@data-pk-pill-readonly][@data-pk-pill-key="match" or @data-pk-pill-key="practice"]')]
         self.assertEqual(pills, ['Match : Oui', 'Pratique : Oui'])
 
     @mute_logger('odoo.http')

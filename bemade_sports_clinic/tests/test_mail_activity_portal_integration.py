@@ -755,12 +755,8 @@ class TestMailActivityPortalIntegration(HttpCase):
                          "My Activities must NOT list a team activity assigned to "
                          "someone else (self-scope), even though I can access the "
                          "related team record")
-        # Assignee now shown in the My Activities list via the initials paradigm.
-        self.assertIn('o_sc_note_author', my.text,
-                      "My Activities list must render the assignee initials badge")
-        self.assertIn('data-author="%s"' % self.therapist_user.name, my.text,
-                      "The initials badge must carry the assignee full name for the "
-                      "hover popover")
+        # Task 1541: the legacy initials badge went with the legacy list (the
+        # app's rows show the assignee by name).
 
         # --- Team (context) view: broad, NOT self-scoped ---
         ctx = self.url_open(f'/my/team/activities?team_id={team.id}', timeout=30)
@@ -807,22 +803,24 @@ class TestMailActivityPortalIntegration(HttpCase):
         # 2) The TP CAN find the unteamed patient in the add-to-team search.
         # Assert on the per-result link form (name="existing_id" value=<id>),
         # which only renders for an actual result row.
+        # Task 1541 (rewritten): the team page's « Add a player » panel checks
+        # the typed names (/my/app/player-check; the legacy add/link page is
+        # gone).
         search = self.url_open(
-            f'/my/team/{team.id}/player/add_link?first_name=Unteamed&last_name=Zzqxlinktest',
+            f'/my/app/player-check?first=Unteamed&last=Zzqxlinktest&team_ids={team.id}',
             timeout=30,
         )
-        self.assertEqual(search.status_code, 200, "TP should reach the add/link page")
+        self.assertEqual(search.status_code, 200, "TP should reach the panel's check")
         self.assertIn(
-            f'name="existing_id" value="{unteamed.id}"', search.text,
+            f'data-sc-check-player="{unteamed.id}"', search.text,
             "Add-to-team search must surface the unteamed patient as a linkable "
             "result (task 640) - not just echo the query term",
         )
 
         # 3) Linking the unteamed patient to the TP's team succeeds.
-        # Use the csrf_token rendered into the page's link form (a session-valid
-        # token) rather than self.csrf_token(), which the POST handler rejects.
-        m = re.search(r'name="csrf_token"\s+value="([^"]+)"', search.text)
-        self.assertTrue(m, "add/link page should render a csrf_token in its form")
+        team_page = self.url_open(f'/my/team?team_id={team.id}&tab=players&add=1', timeout=30)
+        m = re.search(r'name="csrf_token"\s+value="([^"]+)"', team_page.text)
+        self.assertTrue(m, "the team page should render a csrf_token in its forms")
         self.url_open(
             f'/my/team/{team.id}/player/add',
             data={'csrf_token': m.group(1), 'existing_id': unteamed.id},

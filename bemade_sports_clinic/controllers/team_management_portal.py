@@ -3,10 +3,10 @@ from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from .access_control_mixin import AccessControlMixin, parse_portal_date, sc_past_deadline_message
-from .app_shell import AppShellMixin
+from .app_shell import AppShellMixin, sc_app_page
 import logging
 from datetime import date, timedelta
-from urllib.parse import urlparse, quote
+from urllib.parse import urlparse
 from dateutil.relativedelta import relativedelta
 from werkzeug.exceptions import Forbidden
 
@@ -19,9 +19,6 @@ _logger = logging.getLogger(__name__)
 SC_ANNOUNCEMENT_UNDO_KEY = 'sc_announcement_undo'
 SC_ANNOUNCEMENT_UNDO_SECONDS = 30
 
-# Task 1389: the digest-history modal shows this many days of recent snapshots
-# for the quick glance; the "Voir tout" page shows the full retained archive.
-DIGEST_HISTORY_MODAL_DAYS = 14
 # Task 1389: rows per page on the full digest-history archive page.
 DIGEST_HISTORY_PAGE_SIZE = 20
 # Task 1421: roster tab sort modes -> ORM order. « status » is the historical
@@ -38,10 +35,6 @@ SC_STAGE_TONES = {'no_play': 'red', 'practice_ok': 'yellow', 'healthy': 'green'}
 
 class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     
-    def _prepare_home_portal_values(self, counters):
-        values = super()._prepare_home_portal_values(counters)
-        return values
-
     # Access control methods now inherited from AccessControlMixin
 
     @http.route(['/my/team/<int:team_id>/player/<int:player_id>/request_removal'],
@@ -178,56 +171,16 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             }
             return request.redirect(f"/my/team/{team_id}")
     
-    def _render_add_player(self, values):
-        """Render the portal_add_player template, guaranteeing the context the
-        template needs. The template calls user_has_group(...), which is a
-        controller-injected value (not a QWeb global); every render path must
-        provide it or the page 500s with KeyError: 'user_has_group'.
-        """
-        values.setdefault('user_has_group', request.env.user.has_group)
-        values.setdefault('user', request.env.user)
-        return request.render("bemade_sports_clinic.portal_add_player", values)
-
-    @http.route(['/my/team/<int:team_id>/add_player'],
-                type='http', auth="user", website=True)
+    @http.route(['/my/team/<int:team_id>/add_player',
+                 '/my/team/<int:team_id>/player/add_link'],
+                type='http', auth="user", website=True, methods=['GET'])
+    @sc_app_page
     def portal_add_player_form(self, team_id, **kw):
-        """Display the form to add a new player to a team."""
-        try:
-            team = self._check_team_access(team_id)
-            values = self._prepare_portal_layout_values()
-            
-            # Check for success/error messages
-            success = request.httprequest.args.get('success')
-            if success == 'player_reactivated':
-                values['success'] = _("An archived player was found and reactivated, and has been added to this team.")
-            elif success == 'player_added_to_team':
-                values['success'] = _("An existing player was found and has been added to this team.")
-            elif success == 'player_created':
-                values['success'] = _("A new player has been created and added to the team.")
-            
-            values.update({
-                'team': team,
-                'page_name': 'add_player',
-                'error': request.httprequest.args.get('error'),
-            })
-
-            # PRG: a failed submit stashed the error + submitted fields in the
-            # session; surface them and re-prefill the form.
-            flash_error, flash_data = self._portal_pop_flash(('team_add', team.id))
-            if flash_error:
-                values['error'] = flash_error
-                for field in ('first_name', 'last_name', 'email', 'phone', 'date_of_birth'):
-                    values[field] = flash_data.get(field, '')
-
-            return self._render_add_player(values)
-            
-        except (AccessError, MissingError) as e:
-            return request.redirect('/my')
-        except Exception as e:
-            _logger.exception("Error in portal_add_player_form")
-            values = request.params.copy()
-            values['error'] = _("An error occurred while loading the form. Please try again.")
-            return self._render_add_player(values)
+        """Task 1541: old links / bookmarks of the legacy add-player pages —
+        the team page's Players tab with the app's « Add a player » panel
+        open (``add=1``; the page itself checks the team access)."""
+        return request.redirect(
+            '/my/team?team_id=%s&tab=players&add=1' % int(team_id), code=301)
 
     def _roster_resolve_sort(self, requested):
         """Effective roster sort mode; an explicit ``?sort=`` becomes the
@@ -246,6 +199,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return stored or 'status'
 
     @http.route(['/my/team', '/my/team/<int:team_id>'], type='http', auth="user", website=True)
+    @sc_app_page
     def portal_team_players(self, team_id=None, sort=None, tab=None, **kw):
         """Display the list of players for a team.
 
@@ -435,10 +389,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # Task 1542: the app shell (switch on) or today's template, byte
             # for byte (switch off). The shell-only values are computed only
             # when the shell renders.
-            if self._sc_app_shell_active():
-                values.update(self._sc_team_values(team, values))
-            return self._sc_render('bemade_sports_clinic.portal_my_team_players',
-                                   'bemade_sports_clinic.sc_app_team', values)
+            values.update(self._sc_team_values(team, values))
+            return self._sc_render('bemade_sports_clinic.sc_app_team', values)
             
         except (AccessError, MissingError) as e:
             # 1577 review: never the raw exception text in the URL / on the
@@ -584,6 +536,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
     @http.route(['/my/team/<int:team_id>/digest/<int:digest_id>'],
                 type='http', auth="user", website=True)
+    @sc_app_page
     def portal_team_digest(self, team_id, digest_id, **kw):
         """Historical view of one stored team-digest snapshot (task 1267).
 
@@ -608,12 +561,9 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'announcement': (digest.item_data or {}).get('announcement'),
             'default_url': f'/my/team?team_id={team.id}',
         }
-        # Task 1540: the app shell (switch on) or today's template (off);
-        # team_digest_render is rendered unchanged inside the shell card.
-        if self._sc_app_shell_active():
-            values['sc_digest_date'] = format_date(request.env, digest.snapshot_date)
-        return self._sc_render('bemade_sports_clinic.portal_team_digest',
-                               'bemade_sports_clinic.sc_app_team_digest', values)
+        # team_digest_render is rendered unchanged inside the app card.
+        values['sc_digest_date'] = format_date(request.env, digest.snapshot_date)
+        return self._sc_render('bemade_sports_clinic.sc_app_team_digest', values)
 
     @http.route(['/my/team/<int:team_id>/digest/<int:digest_id>/body'],
                 type='http', auth="user", website=True)
@@ -659,28 +609,25 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return parsed.path + (('?' + parsed.query) if parsed.query else '')
 
     @http.route(['/my/team/<int:team_id>/digest-history',
-                 '/my/team/<int:team_id>/digest-history/page/<int:page>',
-                 '/my/team/<int:team_id>/digest-history/recent'],
+                 '/my/team/<int:team_id>/digest-history/page/<int:page>'],
                 type='http', auth="user", website=True)
+    @sc_app_page
     def portal_team_digest_history(self, team_id, page=1, back=None,
                                    preview=None, **kw):
-        """Task 1389: navigable history of a team's daily digest snapshots.
-
-        One method, two modes:
-
-        - **Modal fragment** (``?preview=1`` or the ``/digest-history/recent``
-          sibling): the last ``DIGEST_HISTORY_MODAL_DAYS`` days of snapshots
-          (date desc) as a bare list fragment + a "Voir tout l'historique" link
-          carrying the caller path as ``?back=``. Lazy-fetched by
-          ``portal_digest_history.js`` on first modal open.
-        - **Full page** (default): every retained snapshot (date desc) with the
-          standard portal pager and a validated-local backlink.
+        """Task 1389: navigable history of a team's daily digest snapshots —
+        every retained snapshot (date desc), paged, with a validated-local
+        backlink; each date expands in place (task 1614).
 
         The list exposes ONLY snapshot dates — no content — so it is
         audience-safe as-is; the per-snapshot ``/digest/<id>`` render re-gates
         coach (external only) vs TP (internal + external). Membership is enforced
         exactly like the single-snapshot route (non-member -> 403).
+
+        Task 1541: the legacy modal fragment (``?preview=1``, and the
+        ``/digest-history/recent`` sibling, no longer routed) is gone: 404.
         """
+        if preview:
+            raise request.not_found()
         try:
             team = self._check_team_access(team_id)
         except MissingError:
@@ -690,29 +637,6 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 _("You don't have permission to view this team's digest history."))
 
         Digest = request.env['sports.team.digest'].sudo()
-        is_preview = (bool(preview)
-                      or request.httprequest.path.endswith('/digest-history/recent'))
-
-        if is_preview:
-            cutoff = (fields.Date.context_today(request.env.user)
-                      - relativedelta(days=DIGEST_HISTORY_MODAL_DAYS))
-            digests = Digest.search(
-                [('team_id', '=', team.id), ('snapshot_date', '>=', cutoff)],
-                order='snapshot_date desc',
-            )
-            # The caller path (validated) rides through to the full-history page
-            # so its backlink returns wherever the modal was opened from.
-            safe_back = self._sanitize_local_back(back, team.id)
-            history_url = '/my/team/%d/digest-history?back=%s' % (
-                team.id, quote(safe_back, safe=''))
-            values = {
-                'team': team,
-                'digests': digests,
-                'history_url': history_url,
-            }
-            return request.render(
-                'bemade_sports_clinic.portal_team_digest_history_modal', values)
-
         # Full paginated page.
         domain = [('team_id', '=', team.id)]
         total = Digest.search_count(domain)
@@ -737,23 +661,19 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'pager': pgr,
             'back_url': safe_back,
         }
-        # Task 1540: the full history on the app shell (the modal fragment
-        # above — also the P1b sheet — is unchanged).
-        if self._sc_app_shell_active():
-            # Task 1614: each date expands in place (lazy body) with its
-            # counts as the subtitle — a coach's re-gated (see _sc_counts).
-            role = ('tp' if (self._is_treatment_professional()
-                             or request.env.user.has_group('base.group_system'))
-                    else 'coach')
-            values['sc_digest_rows'] = [{
-                'id': d.id,
-                'label': format_date(request.env, d.snapshot_date),
-                'subtitle': d._sc_counts_label(role),
-                'url': '/my/team/%d/digest/%d' % (team.id, d.id),
-                'body_url': '/my/team/%d/digest/%d/body' % (team.id, d.id),
-            } for d in digests]
-        return self._sc_render('bemade_sports_clinic.portal_team_digest_history',
-                               'bemade_sports_clinic.sc_app_team_digest_history', values)
+        # Task 1614: each date expands in place (lazy body) with its
+        # counts as the subtitle — a coach's re-gated (see _sc_counts).
+        role = ('tp' if (self._is_treatment_professional()
+                         or request.env.user.has_group('base.group_system'))
+                else 'coach')
+        values['sc_digest_rows'] = [{
+            'id': d.id,
+            'label': format_date(request.env, d.snapshot_date),
+            'subtitle': d._sc_counts_label(role),
+            'url': '/my/team/%d/digest/%d' % (team.id, d.id),
+            'body_url': '/my/team/%d/digest/%d/body' % (team.id, d.id),
+        } for d in digests]
+        return self._sc_render('bemade_sports_clinic.sc_app_team_digest_history', values)
 
     def _announcement_error_redirect(self, team_id, message):
         """Redirect back to the team page with a flash error (task 1407)."""
@@ -959,537 +879,6 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'entries': self._sc_announcement_history_entries(team),
         })
 
-    def _find_existing_patient(self, first_name, last_name, email=None, phone=None):
-        """Search for an existing patient by name and contact information.
-
-        Task 640: for TPs/admins the lookup is done sudo so unteamed patients
-        hidden by per-record ir.rules can still be found (and subsequently linked
-        to a team). Coaches keep the rule-scoped, active-only behaviour.
-        """
-        is_tp_admin = self._is_tp_or_system()
-        Patient = request.env['sports.patient'].sudo() if is_tp_admin else request.env['sports.patient']
-        domain = [
-            ('first_name', '=ilike', first_name.strip()),
-            ('last_name', '=ilike', last_name.strip()),
-            '|',
-            ('active', '=', True),
-            ('active', '=', False),  # Include inactive to handle archived players
-        ]
-        
-        # Additional search criteria if email or phone is provided
-        if email and email.strip():
-            domain = ['|'] + domain + [
-                '&',
-                ('partner_id.email', '=ilike', email.strip()),
-                ('partner_id.email', '!=', False)
-            ]
-        if phone and phone.strip():
-            domain = ['|'] + domain + [
-                '&',
-                ('partner_id.phone', '=', phone.strip()),
-                ('partner_id.phone', '!=', False)
-            ]
-        
-        # Search active records first. For TPs/admins Patient is sudo (see above),
-        # so unteamed/rule-hidden patients are found; coaches stay rule-scoped.
-        active_patient = Patient.search(domain + [('active', '=', True)], limit=1)
-        if active_patient:
-            return active_patient
-
-        # Archived records are only relevant to treatment professionals / admins.
-        if is_tp_admin:
-            return Patient.search(domain + [('active', '=', False)], limit=1)
-
-        return request.env['sports.patient'].browse([])  # Empty recordset if no matches
-
-    @http.route(['/my/team/<int:team_id>/player/add_link'], type='http', auth='user', website=True, methods=['GET'])
-    def portal_add_link_player_page(self, team_id, **get):
-        """Render a dedicated page to search and add/link a player to the team.
-        Server-rendered search results avoid fragile modal JS.
-        """
-        try:
-            team = self._check_team_access(team_id)
-
-            # Only therapists/admins can add directly; others should use request flow
-            if not self._is_tp_or_system():
-                request.session['notification'] = {
-                    'type': 'danger',
-                    'title': _('Access Denied'),
-                    'message': _("You don't have permission to add players. You may submit a request instead."),
-                    'sticky': False,
-                }
-                return request.redirect(f"/my/team/{team.id}")
-
-            # Gather query params
-            first_name = (get.get('first_name') or '').strip()
-            last_name = (get.get('last_name') or '').strip()
-            dob = (get.get('date_of_birth') or '').strip()
-            # Consider a search attempted if the query params include any of the fields,
-            # even if empty (user pressed Search without filling fields)
-            attempted = any(k in get for k in ('first_name', 'last_name', 'date_of_birth'))
-            # Trigger search when at least one identifier is provided
-            searched = bool(first_name or last_name or dob)
-
-            # Perform search when query present
-            Patient = request.env['sports.patient']
-            active_rs = Patient.browse([])
-            archived_rs = Patient.browse([])
-            if searched and (first_name or last_name):
-                like_first = f"%{first_name}%" if first_name else "%"
-                like_last = f"%{last_name}%" if last_name else "%"
-                domain = [
-                    ('first_name', 'ilike', like_first),
-                    ('last_name', 'ilike', like_last),
-                ]
-                if dob:
-                    domain.append(('date_of_birth', '=', dob))
-                # Task 640: this route is already restricted to TPs/admins above, who
-                # must be able to FIND any patient by name/DOB to add them to a team -
-                # including unteamed patients that the per-record ir.rules would hide.
-                # sudo() the identity-level lookup; only name/DOB are surfaced (see
-                # _to_dict). Full record access stays rule-gated elsewhere.
-                active_rs = Patient.sudo().search(domain + [('active', '=', True)], limit=20)
-                archived_rs = Patient.sudo().with_context(active_test=False).search(domain + [('active', '=', False)], limit=20)
-
-            def _to_dict(p):
-                return {
-                    'id': p.id,
-                    'name': p.name,
-                    # Task 1421: « #12 First Last » for the result rows.
-                    'label': p._portal_heading_name(),
-                    'jersey_number': p.jersey_number or '',
-                    'first_name': p.first_name,
-                    'last_name': p.last_name,
-                    'date_of_birth': p.date_of_birth or '',
-                    'active': bool(p.active),
-                    'on_team': team in p.team_ids,
-                }
-
-            values = self._prepare_portal_layout_values()
-            values.update({
-                'page_name': 'add_link_player',
-                'team': team,
-                'first_name': first_name,
-                'last_name': last_name,
-                'date_of_birth': dob,
-                'searched': searched,
-                'active_results': [_to_dict(p) for p in active_rs],
-                'archived_results': [_to_dict(p) for p in archived_rs],
-                # Extra context to support inline full create form
-                'is_treatment_prof': self._is_tp_or_system(),
-                'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
-                'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                'all_teams': self._team_targets(),
-                'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                'prefill_team_id': team.id,
-            })
-            if attempted and not searched:
-                values['error'] = _('Provide at least a first or last name to search')
-            return request.render('bemade_sports_clinic.portal_add_link_player_page', values)
-        except (AccessError, MissingError):
-            return request.redirect('/my/teams')
-        except Exception:
-            _logger.exception('Error rendering add/link player page')
-            request.session['notification'] = {
-                'type': 'danger',
-                'title': _('Error'),
-                'message': _('Unable to open Add/Link Player page right now.'),
-                'sticky': False,
-            }
-            return request.redirect(f"/my/team/{team_id}")
-
-    @http.route(['/my/team/<int:team_id>/player/create_full'], type='http', auth='user', website=True, methods=['POST'], csrf=True)
-    def portal_create_player_full(self, team_id, **post):
-        """Create a brand new player with full details (inline edit form) and link to team.
-        This is used when the search yields no results and we render the full form inline.
-        Only treatment professionals/admins may create directly.
-        """
-        # Task 1639: the identity guard for internal users too.
-        request.update_context(sc_identity_guard=True)
-        try:
-            team = self._check_team_access(team_id)
-
-            # Permission: only therapists/admins can create directly
-            is_tp = self._is_tp_or_system()
-            if not is_tp:
-                raise AccessError(_("You don't have permission to create players."))
-
-            # Required basics
-            first_name = (post.get('first_name') or '').strip()
-            last_name = (post.get('last_name') or '').strip()
-            dob = (post.get('date_of_birth') or '').strip()
-
-            if not first_name or not last_name:
-                raise UserError(_('First name and last name are required'))
-            if not dob:
-                raise UserError(_('Date of birth is required'))
-
-            # Validate DOB format explicitly to avoid ValueError down in ORM
-            try:
-                dob_date = fields.Date.to_date(dob)
-            except Exception:
-                values = self._prepare_portal_layout_values()
-                values.update({
-                    'page_name': 'add_link_player',
-                    'team': team,
-                    'first_name': post.get('first_name') or '',
-                    'last_name': post.get('last_name') or '',
-                    'date_of_birth': dob,
-                    'searched': True,
-                    'active_results': [],
-                    'archived_results': [],
-                    'is_treatment_prof': self._is_tp_or_system(),
-                    'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
-                    'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                    'all_teams': self._team_targets(),
-                    'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                    'form_data': dict(post),
-                    'error': _('Please enter a valid Date of Birth (YYYY-MM-DD).'),
-                    'prefill_team_id': team.id,
-                })
-                return request.render('bemade_sports_clinic.portal_add_link_player_page', values)
-
-            # Enforce DOB not in future and not older than 120 years
-            today = fields.Date.context_today(request.env.user) or fields.Date.today()
-            min_dob = today - relativedelta(years=120)
-            if dob_date > today or dob_date < min_dob:
-                values = self._prepare_portal_layout_values()
-                values.update({
-                    'page_name': 'add_link_player',
-                    'team': team,
-                    'first_name': post.get('first_name') or '',
-                    'last_name': post.get('last_name') or '',
-                    'date_of_birth': dob,
-                    'searched': True,
-                    'active_results': [],
-                    'archived_results': [],
-                    'is_treatment_prof': self._is_tp_or_system(),
-                    'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
-                    'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                    'all_teams': self._team_targets(),
-                    'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                    'form_data': dict(post),
-                    'error': _('Date of Birth must not be in the future and not be more than 120 years ago.'),
-                    'prefill_team_id': team.id,
-                })
-                return request.render('bemade_sports_clinic.portal_add_link_player_page', values)
-
-            # Build values similar to edit form, honoring permissions
-            # Collect team_ids from multi-select; ensure current team is included by default
-            try:
-                selected_team_ids = [int(tid) for tid in request.httprequest.form.getlist('team_ids')]
-            except Exception:
-                selected_team_ids = []
-            if not selected_team_ids:
-                selected_team_ids = [team.id]
-            if team.id not in selected_team_ids:
-                selected_team_ids.append(team.id)
-            # Restrict to teams where current user is staff (defense-in-depth against tampering)
-            allowed_team_ids = self._team_targets().ids
-            selected_team_ids = [tid for tid in selected_team_ids if tid in allowed_team_ids]
-            vals = {
-                'first_name': first_name,
-                'last_name': last_name,
-                'date_of_birth': dob,
-                'team_ids': [(6, 0, list(set(selected_team_ids)))],
-            }
-
-            # Contact info
-            email = (post.get('email') or '').strip()
-            phone = (post.get('phone') or '').strip()
-            if email:
-                vals['email'] = email
-            if phone:
-                vals['phone'] = phone
-
-            # Address info
-            for f in ['street', 'street2', 'city', 'zip']:
-                if f in post:
-                    vals[f] = post.get(f) or False
-            # State/Country
-            if post.get('state_id'):
-                try:
-                    vals['state_id'] = int(post.get('state_id'))
-                except Exception:
-                    pass
-            if post.get('country_id'):
-                try:
-                    vals['country_id'] = int(post.get('country_id'))
-                except Exception:
-                    pass
-
-            # Extra medical/status fields (only for TP/admin)
-            if is_tp:
-                # Task 1630: the allergy / medical-alert block.
-                vals.update(request.env['sports.patient']._sc_medical_vals_from_post(post))
-                if 'team_info_notes' in post:
-                    vals['team_info_notes'] = post.get('team_info_notes') or False
-                if post.get('match_status'):
-                    vals['match_status'] = post.get('match_status')
-                if post.get('practice_status'):
-                    vals['practice_status'] = post.get('practice_status')
-
-            # Create through secured helper
-            # Task 1600: a refused create leaves no orphan contact behind.
-            with request.env.cr.savepoint():
-                patient = request.env['sports.patient']._create_portal_patient(vals)
-
-            # Optionally create a primary emergency contact if provided (TP/admin only)
-            if is_tp:
-                ec_name = (post.get('ec_name') or '').strip()
-                ec_type = (post.get('ec_contact_type') or '').strip()
-                if ec_name and ec_type:
-                    contact_vals = {
-                        'patient_id': patient.id,
-                        'name': ec_name,
-                        'contact_type': ec_type,
-                    }
-                    if post.get('ec_mobile'):
-                        contact_vals['mobile'] = post.get('ec_mobile')
-                    if post.get('ec_email'):
-                        contact_vals['email'] = post.get('ec_email')
-                    try:
-                        request.env['sports.patient.contact'].sudo().create(contact_vals)
-                    except Exception:
-                        _logger.exception('Failed to create primary emergency contact during inline player create')
-
-            request.session['notification'] = {
-                'type': 'success',
-                'title': _('Player Created'),
-                'message': _('%s has been created and added to the team.') % patient.name,
-                'sticky': False,
-            }
-            # After one-step create, return to team page
-            return request.redirect(f"/my/team/{team.id}")
-
-        except (AccessError, UserError, ValidationError) as e:
-            # Re-render the add/link page with preserved form values and error
-            values = self._prepare_portal_layout_values()
-            team = self._check_team_access(team_id)
-            values.update({
-                'page_name': 'add_link_player',
-                'team': team,
-                'first_name': post.get('first_name') or '',
-                'last_name': post.get('last_name') or '',
-                'date_of_birth': post.get('date_of_birth') or '',
-                'searched': True,
-                'active_results': [],
-                'archived_results': [],
-                'is_treatment_prof': self._is_tp_or_system(),
-                'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
-                'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                'all_teams': self._team_targets(),
-                'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                'form_data': dict(post),
-                'error': self._user_error_text(e, 'team'),
-                'prefill_team_id': team.id,
-            })
-            return request.render('bemade_sports_clinic.portal_add_link_player_page', values)
-        except Exception:
-            _logger.exception('Error creating player from inline full form')
-            # Render with generic error and preserved inputs
-            values = self._prepare_portal_layout_values()
-            team = self._check_team_access(team_id)
-            values.update({
-                'page_name': 'add_link_player',
-                'team': team,
-                'first_name': post.get('first_name') or '',
-                'last_name': post.get('last_name') or '',
-                'date_of_birth': post.get('date_of_birth') or '',
-                'searched': True,
-                'active_results': [],
-                'archived_results': [],
-                'is_treatment_prof': self._is_tp_or_system(),
-                'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
-                'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                'all_teams': self._team_targets(),
-                'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                'form_data': dict(post),
-                'error': _('An unexpected error occurred.'),
-                'prefill_team_id': team.id,
-            })
-            return request.render('bemade_sports_clinic.portal_add_link_player_page', values)
-
-    @http.route(['/my/team/<int:team_id>/add_player/submit'],
-                type='http', auth="user", website=True, methods=['POST'], csrf=True)
-    def portal_add_player_submit(self, team_id, **post):
-        """Handle the form submission to add a new player."""
-        # Task 1639: the identity guard for internal users too.
-        request.update_context(sc_identity_guard=True)
-        try:
-            team = self._check_team_access(team_id)
-            
-            # Basic validation
-            first_name = (post.get('first_name') or '').strip()
-            last_name = (post.get('last_name') or '').strip()
-            email = (post.get('email') or '').strip()
-            phone = (post.get('phone') or '').strip()
-            dob = (post.get('date_of_birth') or '').strip()
-            
-            if not first_name or not last_name:
-                raise UserError(_("First name and last name are required"))
-            # Enforce DOB for data integrity
-            if not dob:
-                raise UserError(_("Date of birth is required"))
-
-            # Validate DOB format explicitly
-            try:
-                dob_date = fields.Date.to_date(dob)
-            except Exception:
-                self._portal_flash(_('Please enter a valid Date of Birth (YYYY-MM-DD).'), post, ('team_add', team_id))
-                return request.redirect(f'/my/team/{team_id}/add_player')
-
-            # Enforce DOB not in future and not older than 120 years
-            today = fields.Date.context_today(request.env.user) or fields.Date.today()
-            min_dob = today - relativedelta(years=120)
-            if dob_date > today or dob_date < min_dob:
-                self._portal_flash(
-                    _('Date of Birth must not be in the future and not be more than 120 years ago.'), post, ('team_add', team_id))
-                return request.redirect(f'/my/team/{team_id}/add_player')
-            
-            # Determine if current user is allowed to set medical/status fields
-            is_tp_or_admin = self._is_tp_or_system()
-
-            # Check for existing player
-            existing_patient = self._find_existing_patient(
-                first_name, last_name, email, phone
-            )
-            
-            if existing_patient:
-                # Determine the action taken for logging and messaging
-                action_taken = []
-                
-                # Reactivate if archived
-                if not existing_patient.active:
-                    existing_patient.write({'active': True})
-                    action_taken.append("reactivated")
-                    _logger.debug(
-                        "Reactivated archived player %s for team %s by user %s",
-                        existing_patient.name, team.name, request.env.user.name
-                    )
-                
-                # Add to team if not already a member
-                if team not in existing_patient.team_ids:
-                    existing_patient.write({
-                        'team_ids': [(4, team.id)],
-                    })
-                    action_taken.append("added to team")
-                    _logger.debug(
-                        "Added existing player %s to team %s by user %s",
-                        existing_patient.name, team.name, request.env.user.name
-                    )
-                
-                # Determine the appropriate success message
-                if "reactivated" in action_taken:
-                    success_param = "player_reactivated"
-                else:
-                    success_param = "player_added_to_team"
-                
-                # Redirect to team page with appropriate message
-                return request.redirect(
-                    f"/my/team?team_id={team.id}&success={success_param}"
-                )
-            
-            # No existing player found, create a new one
-            patient_vals = {
-                'first_name': first_name,
-                'last_name': last_name,
-                'team_ids': [(4, team.id)],
-                'email': email or False,
-                'phone': phone or False,
-                'date_of_birth': dob,
-            }
-            # Pass through status fields if permitted
-            if is_tp_or_admin:
-                if post.get('match_status'):
-                    patient_vals['match_status'] = post.get('match_status')
-                if post.get('practice_status'):
-                    patient_vals['practice_status'] = post.get('practice_status')
-            
-            # Create patient through the private _create_portal_patient method which has proper access controls
-            # Task 1600: a refused create (e.g. the exact-duplicate check)
-            # leaves no orphan contact behind.
-            with request.env.cr.savepoint():
-                patient = request.env['sports.patient']._create_portal_patient(patient_vals)
-            
-            # Log the action
-            _logger.debug(
-                "Created new player %s and added to team %s by user %s",
-                patient.name, team.name, request.env.user.name
-            )
-            
-            # Redirect to edit page with return_url back to team page for two-stage add flow
-            edit_url = f"/my/player/edit?patient_id={patient.id}&return_url=/my/team/{team.id}"
-            return request.redirect(edit_url)
-            
-        except UserError as e:
-            self._portal_flash(self._user_error_text(e, 'team'), post, ('team_add', team_id))
-            return request.redirect(f'/my/team/{team_id}/add_player')
-
-        except (AccessError, MissingError) as e:
-            return request.redirect('/my')
-
-        except Exception as e:
-            _logger.exception("Error in portal_add_player_submit")
-            self._portal_flash(_("An error occurred while adding the player. Please try again later."), post, ('team_add', team_id))
-            return request.redirect(f'/my/team/{team_id}/add_player')
-
-    @http.route(['/my/team/<int:team_id>/player/search'], type='jsonrpc', auth="user", methods=['POST'])
-    def portal_search_player(self, team_id, **post):
-        """JSON endpoint to search players by name and optional date_of_birth.
-        Includes archived records for treatment professionals/admins.
-        """
-        try:
-            team = self._check_team_access(team_id)
-            # Basic inputs (confidential: only name + dob)
-            first_name = (post.get('first_name') or '').strip()
-            last_name = (post.get('last_name') or '').strip()
-            dob = (post.get('date_of_birth') or '').strip()
-
-            if not (first_name or last_name):
-                return {'ok': False, 'error': _('Provide at least a first or last name')}
-
-            # Base domain (use ilike for partial, case-insensitive matching)
-            like_first = f"%{first_name}%" if first_name else "%"
-            like_last = f"%{last_name}%" if last_name else "%"
-            domain = [
-                ('first_name', 'ilike', like_first),
-                ('last_name', 'ilike', like_last),
-            ]
-            if dob:
-                domain.append(('date_of_birth', '=', dob))
-
-            # Always search active first
-            Patient = request.env['sports.patient']
-            active_rs = Patient.search(domain + [('active', '=', True)], limit=10)
-
-            # If user can view archived, include them too (need active_test=False)
-            archived_rs = Patient.browse([])
-            if self._is_tp_or_system():
-                archived_rs = Patient.with_context(active_test=False).search(domain + [('active', '=', False)], limit=10)
-
-            def _to_dict(p):
-                return {
-                    'id': p.id,
-                    'name': p.name,
-                    'label': p._portal_heading_name(),
-                    'jersey_number': p.jersey_number or '',
-                    'first_name': p.first_name,
-                    'last_name': p.last_name,
-                    'date_of_birth': p.date_of_birth or '',
-                    'active': bool(p.active),
-                    'on_team': team in p.team_ids,
-                }
-
-            return {
-                'ok': True,
-                'active': [_to_dict(p) for p in active_rs],
-                'archived': [_to_dict(p) for p in archived_rs],
-            }
-        except Exception as e:
-            _logger.error('Player search failed: %s', e, exc_info=True)
-            return {'ok': False, 'error': _('Search failed. Please try again.')}
-
     @http.route(['/my/team/<int:team_id>/player/add'], type='http', auth="user", website=True, methods=['POST'], csrf=True)
     def portal_add_player_modal_submit(self, team_id, **post):
         """Handle modal submission to link existing or create a new player.
@@ -1524,7 +913,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # links a chosen result (existing_id) or, with force_new, creates
             # exactly the typed player (no fuzzy re-match), then lands on the
             # Players tab / the new player's page.
-            sc_inline = bool(post.get('sc_inline')) and self._sc_app_shell_active()
+            sc_inline = bool(post.get('sc_inline'))
             force_new = sc_inline and bool(post.get('force_new'))
             if force_new and not (first_name and last_name):
                 raise UserError(_('First name and last name are required'))
@@ -1687,80 +1076,6 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sticky': False,
         }
         return request.redirect(return_url)
-
-    @http.route(['/my/team/<int:team_id>/player/create'], type='http', auth='user', website=True, methods=['POST'], csrf=True)
-    def portal_create_player_submit(self, team_id, **post):
-        """Create a brand new player and link to team from the Add/Link page.
-        Separate endpoint from link flow to simplify validation and UX.
-        """
-        # Task 1639: the identity guard for internal users too.
-        request.update_context(sc_identity_guard=True)
-        try:
-            team = self._check_team_access(team_id)
-
-            # Only therapists/admins can create directly
-            if not self._is_tp_or_system():
-                raise AccessError(_("You don't have permission to create players."))
-
-            first_name = (post.get('first_name') or '').strip()
-            last_name = (post.get('last_name') or '').strip()
-            dob = (post.get('date_of_birth') or '').strip()
-            email = (post.get('email') or '').strip()
-            phone = (post.get('phone') or '').strip()
-
-            if not first_name or not last_name:
-                raise UserError(_('First name and last name are required'))
-            # Enforce DOB for data integrity
-            if not dob:
-                raise UserError(_('Date of birth is required'))
-
-            vals = {
-                'first_name': first_name,
-                'last_name': last_name,
-                'team_ids': [(4, team.id)],
-                'date_of_birth': dob,
-            }
-            if email:
-                vals['email'] = email
-            if phone:
-                vals['phone'] = phone
-            # Pass through status fields
-            if post.get('match_status'):
-                vals['match_status'] = post.get('match_status')
-            if post.get('practice_status'):
-                vals['practice_status'] = post.get('practice_status')
-
-            # Task 1600: a refused create leaves no orphan contact behind.
-            with request.env.cr.savepoint():
-                patient = request.env['sports.patient']._create_portal_patient(vals)
-
-            request.session['notification'] = {
-                'type': 'success',
-                'title': _('Player Created'),
-                'message': _('%s has been created and added to the team.') % patient.name,
-                'sticky': False,
-            }
-            # Redirect to edit page with return_url back to team page for two-stage add flow
-            edit_url = f"/my/player/edit?patient_id={patient.id}&return_url=/my/team/{team.id}"
-            return request.redirect(edit_url)
-
-        except (AccessError, UserError, ValidationError) as e:
-            request.session['notification'] = {
-                'type': 'danger',
-                'title': _('Create Player Failed'),
-                'message': self._user_error_text(e, 'team'),
-                'sticky': False,
-            }
-            return request.redirect(f"/my/team/{team_id}")
-        except Exception:
-            _logger.exception('Error creating player from add/link page')
-            request.session['notification'] = {
-                'type': 'danger',
-                'title': _('Create Player Failed'),
-                'message': _('An unexpected error occurred.'),
-                'sticky': False,
-            }
-            return request.redirect(f"/my/team/{team_id}")
 
     @http.route(['/my/team/<int:team_id>/player/request_add'], type='http', auth='user', website=True, methods=['POST'], csrf=True)
     def portal_request_player_add(self, team_id, **post):

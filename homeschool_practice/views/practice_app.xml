@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Practice in the homeschool portal app (homeschool_portal on the Bemade
+    portal kit): « Today »'s quests widget, the tutor's progress page and the
+    « Practice » icon. The game itself stays its own full-screen page
+    (practice_app, portal_templates.xml).
+-->
+<odoo>
+    <!-- « Practice » (Feather Icons 4.29 « target », MIT). -->
+    <template id="hs_practice_icon" inherit_id="bemade_portal_kit.pk_icon_extra" name="Homeschool practice: icon">
+        <xpath expr="//t[@t-else]" position="before">
+            <t t-elif="icon == 'hs_practice'"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></t>
+        </xpath>
+    </template>
+
+    <!-- Today's quests: label and progress only (never a mastery state or a
+         timing); « Start » opens the quest in the game, for the learner. -->
+    <template id="hs_dash_quests" name="Homeschool practice: today's quests widget">
+        <t t-if="section['hs_rest_day'] and not section['hs_quests']" t-call="bemade_portal_kit.pk_empty_state">
+            <t t-set="message">Rest day! No quests today.</t>
+        </t>
+        <t t-elif="not section['hs_quests']" t-call="bemade_portal_kit.pk_empty_state">
+            <t t-set="message">No quest today.</t>
+        </t>
+        <ul t-else="" class="o_pk_list o_hs_dash_quests list-unstyled mb-0">
+            <li t-foreach="section['hs_quests']" t-as="quest"
+                t-attf-class="o_pk_card o_hs_dash_quest #{'o_hs_done' if quest['done'] else ''}"
+                t-att-data-hs-quest="quest['id']">
+                <span class="o_hs_dash_line_text">
+                    <span class="o_pk_row_title" t-out="quest['label']"/>
+                    <span t-if="quest['target'] &gt; 1" class="o_pk_row_subtitle">
+                        <t t-out="quest['progress']"/> / <t t-out="quest['target']"/><t t-if="quest.get('minutes')"> <span>min</span></t>
+                    </span>
+                </span>
+                <span t-if="quest['done']" class="o_pk_chip o_pk_chip_green">Done!</span>
+                <a t-elif="quest['start_url']" t-att-href="quest['start_url']" class="o_pk_btn o_pk_btn_primary"
+                   data-hs-quest-start="1">Start</a>
+            </li>
+        </ul>
+        <p t-if="section.get('hs_practice_url')" class="o_hs_dash_more">
+            <a t-att-href="section['hs_practice_url']" class="o_pk_btn o_pk_btn_ghost">Free practice</a>
+        </p>
+    </template>
+
+    <!-- The tutor's progress page: per deck, the units unlocked, their
+         proficiency and when they were last practised. -->
+    <template id="portal_practice_progress" name="Homeschool practice: progress">
+        <t t-call="{{ hs_layout or 'portal.portal_layout' }}">
+            <div class="o_hs_portal o_hs_practice_progress">
+                <t t-call="homeschool_portal.portal_student_nav"/>
+                <h3 class="mb-3">Practice progress</h3>
+                <p class="text-muted">
+                    For the adults who follow the learner: the learner never sees this page.
+                </p>
+                <div t-if="not decks" class="alert alert-info" role="alert">
+                    No unit is unlocked yet.
+                </div>
+                <div t-foreach="decks" t-as="row" class="card mb-3" t-att-data-hs-deck="row['deck'].id">
+                    <div class="card-body">
+                        <h5 class="card-title mb-2" t-out="row['deck'].name"/>
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Unit</th>
+                                    <th class="text-end">Proficiency</th>
+                                    <th class="text-end">Sessions</th>
+                                    <th class="text-end d-none d-md-table-cell">Answers</th>
+                                    <th class="d-none d-md-table-cell">Unlocked on</th>
+                                    <th>Last practised</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="row['units']" t-as="u" t-att-data-hs-unit="u['unit'].id">
+                                    <td t-out="u['unit'].name"/>
+                                    <td class="text-end"><t t-out="u['proficiency']"/> %</td>
+                                    <td class="text-end" data-hs-sessions="1" t-out="u['sessions']"/>
+                                    <td class="text-end d-none d-md-table-cell" data-hs-answers="1" t-out="u['answers']"/>
+                                    <td class="d-none d-md-table-cell" t-out="u['unlocked_on']"/>
+                                    <td>
+                                        <t t-if="u['last_practised']" t-out="u['last_practised']"/>
+                                        <span t-else="" class="text-muted">Not yet</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

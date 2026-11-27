@@ -96,7 +96,7 @@ function stuck(label, { warning = false } = {}) {
             const select = document.querySelector(ORG);
             assert(labelOf(select) === label, `the organisation is « ${labelOf(select)} »`);
             assert(select.nextElementSibling.querySelector(".o_pk_picker_list").hidden, "the list stayed open");
-            const box = document.querySelector(`${TEAMS} [data-sc-org-confirm-box]`);
+            const box = document.querySelector(`${TEAMS} [data-pk-group-confirm-box]`);
             assert(Boolean(box) === warning, warning ? "no drop warning" : "a drop warning with no team to drop");
         },
     };

@@ -12,6 +12,15 @@
         manifest. Inert while knowledge is not installed (the bundle is then
         never rendered).
     -->
+    <!-- Task 5200 (kit P5): the player is the kit's module, before the
+         clinic's starter that imports it. -->
+    <record id="asset_guide_video_kit_knowledge_webclient" model="ir.asset">
+        <field name="name">Sports clinic: the kit's guide video player in the Knowledge portal client</field>
+        <field name="bundle">knowledge.webclient</field>
+        <field name="directive">append</field>
+        <field name="path">bemade_portal_kit/static/src/js/pk_guide_video.js</field>
+        <field name="sequence">99</field>
+    </record>
     <record id="asset_guide_video_knowledge_webclient" model="ir.asset">
         <field name="name">Sports clinic: guide videos in the Knowledge portal client</field>
         <field name="bundle">knowledge.webclient</field>

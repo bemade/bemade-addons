@@ -7,3 +7,7 @@ from . import test_manage_own_signature
 from . import test_regeneration_triggers
 from . import test_employees_only
 from . import test_show_mobile
+from . import test_sender_address
+from . import test_signature_per_record
+from . import test_send_from_setting
+from . import test_reply_routing

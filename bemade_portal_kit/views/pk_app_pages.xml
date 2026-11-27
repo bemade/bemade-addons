@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 5200 (kit P5): the kit's own pages, drawn on the layout pk_layout
+    (portal.kit._pk_layout: the kit's app layout or a consumer's wrapper),
+    with the values of PortalKitShell._pk_app_values (controllers/pk_shell.py):
+
+    * pk_app_more      /my/app/more — the « plus » nav entries (pk_plus), the
+                       user guide (the help home) and the slot
+                       //t[@name='pk_more_extra'] (an inheriting view adds
+                       there, e.g. a footnote);
+    * pk_app_settings  /my/app/settings — language, appearance (when the
+                       theme choice is on), the slot
+                       //t[@name='pk_settings_extra'] (an inheriting view
+                       adds its own sections there), « Done » buttons,
+                       account rows. Each preference posts to /my/app/pref;
+    * pk_search_sheet / pk_search_results — the app bar's search (the sheet
+                       is drawn by pk_app_layout when pk_search is set; the
+                       results are GET /my/app/search's answer).
+    Adopted from the first consumer (tools/adopt.py): the same view records.
+-->
+<odoo>
+
+    <template id="pk_app_more" name="Portal kit: more">
+        <t t-call="{{ pk_layout }}">
+            <t t-set="pk_title">More</t>
+            <t t-set="pk_active_nav" t-value="'more'"/>
+
+            <div t-if="pk_plus" class="o_pk_list">
+                <t t-foreach="pk_plus" t-as="entry">
+                    <t t-call="bemade_portal_kit.pk_entity_row">
+                        <t t-set="href" t-value="entry['url']"/>
+                        <t t-set="lead_icon" t-value="entry['icon']"/>
+                        <t t-set="title" t-value="entry['label']"/>
+                        <t t-set="subtitle" t-value="entry['subtitle']"/>
+                        <!-- Entries also on the laptop rail are hidden there;
+                             the phone keeps them here. -->
+                        <t t-set="row_attrs" t-value="{'data-pk-nav-key': entry['key'], 'data-pk-in-rail': '1' if 'rail' in entry['placement'] else None}"/>
+                    </t>
+                </t>
+            </div>
+
+            <!-- The user guide (new tab). -->
+            <div t-if="pk_help and pk_help['home']" class="o_pk_list" data-pk-section="more.guide">
+                <t t-call="bemade_portal_kit.pk_entity_row">
+                    <t t-set="href" t-value="pk_help['home']"/>
+                    <t t-set="lead_icon" t-value="'help'"/>
+                    <t t-set="title">User guide</t>
+                    <t t-set="subtitle">Articles and videos</t>
+                    <t t-set="row_attrs" t-value="{'target': '_blank', 'rel': 'noopener', 'data-pk-help-home-link': '1'}"/>
+                </t>
+            </div>
+
+            <t name="pk_more_extra"/>
+        </t>
+    </template>
+
+    <template id="pk_app_settings" name="Portal kit: settings">
+        <t t-call="{{ pk_layout }}">
+            <t t-set="pk_title">Settings</t>
+            <t t-set="pk_active_nav" t-value="False"/>
+
+            <!-- The profile language (res.users.lang), a plain POST (full
+                 reload: the whole page changes language). -->
+            <section t-if="pk_langs" class="o_pk_section" id="pk_language">
+                <t t-call="bemade_portal_kit.pk_section_header">
+                    <t t-set="title">Language</t>
+                </t>
+                <form method="post" t-att-action="pk_pref_url" class="o_pk_segmented o_pk_segmented_full">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="redirect" value="/my/app/settings"/>
+                    <t t-foreach="pk_langs" t-as="pk_lang">
+                        <button type="submit" name="lang" t-att-value="pk_lang['code']"
+                                t-att-title="pk_lang['name']"
+                                t-att-lang="pk_lang['code'].replace('_', '-')"
+                                t-att-aria-pressed="'true' if pk_lang['active'] else 'false'"
+                                t-out="pk_lang['label']"/>
+                    </t>
+                </form>
+            </section>
+
+            <!-- Hidden while everyone gets the default theme. -->
+            <section t-if="pk_theme_choice" class="o_pk_section" id="pk_appearance">
+                <t t-call="bemade_portal_kit.pk_section_header">
+                    <t t-set="title">Appearance</t>
+                </t>
+                <!-- A switch (on = dark); pk_switch.js posts on change. -->
+                <form method="post" t-att-action="pk_pref_url" data-pk-pref="1" data-pk-no-dirty="1" class="o_pk_card o_pk_switch_card">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="redirect" value="/my/app/settings"/>
+                    <t t-call="bemade_portal_kit.pk_switch">
+                        <t t-set="sw_name" t-value="pk_theme_field or 'pk_theme'"/>
+                        <t t-set="sw_value" t-value="'dark'"/>
+                        <t t-set="sw_off" t-value="'light'"/>
+                        <t t-set="sw_checked" t-value="pk_theme == 'dark'"/>
+                        <t t-set="sw_attrs" t-value="{'data-pk-switch-submit': '1', 'data-pk-theme-switch': '1'}"/>
+                        <t t-set="sw_label">Dark mode</t>
+                    </t>
+                </form>
+            </section>
+
+            <!-- Task 5516 (kit 1.17): one segmented control per kind of
+                 notification of the app (portal.kit._pk_notification_kinds);
+                 a plain POST to /my/app/notify-pref. No kind: no section. -->
+            <t t-set="pk_notify_rows" t-value="request.env['portal.kit'].pk_notification_rows()"/>
+            <section t-if="pk_notify_rows" class="o_pk_section" id="pk_notifications" data-pk-section="settings.notifications">
+                <t t-call="bemade_portal_kit.pk_section_header">
+                    <t t-set="title">Notifications</t>
+                </t>
+                <p class="o_pk_meta">What we send you by e-mail.</p>
+                <!-- Task 5546 (kit 1.18): the phone column, while phone
+                     notifications can be sent (portal.kit._pk_push_available)
+                     and a kind has a phone switch. The device state is
+                     filled in by the installed app's script (pk_push.js):
+                     one [data-pk-push-show] shown, the others hidden. -->
+                <t t-set="pk_notify_push" t-value="any(row['push'] is not None for row in pk_notify_rows)"/>
+                <div t-if="pk_notify_push" class="o_pk_card o_pk_push_state" data-pk-push-state="1">
+                    <p class="o_pk_push_state_line" data-pk-push-show="on" hidden="hidden">Enabled on this phone</p>
+                    <div class="o_pk_push_state_line" data-pk-push-show="off" hidden="hidden">
+                        <p>Not enabled yet</p>
+                        <button type="button" class="o_pk_btn o_pk_btn_primary" data-pk-push-enable="1">Turn on for this phone</button>
+                    </div>
+                    <p class="o_pk_push_state_line" data-pk-push-show="denied" hidden="hidden">Blocked: turn them back on in the phone's settings</p>
+                    <p class="o_pk_push_state_line" data-pk-push-show="ios-install" hidden="hidden">Add the app to your home screen to get notifications</p>
+                    <p class="o_pk_push_state_line" data-pk-push-show="unsupported" hidden="hidden">This browser cannot show notifications</p>
+                </div>
+                <div t-foreach="pk_notify_rows" t-as="pk_notify_row" class="o_pk_card o_pk_notify_row">
+                    <strong class="o_pk_notify_label" t-out="pk_notify_row['label']"/>
+                    <form method="post" action="/my/app/notify-pref" class="o_pk_segmented o_pk_segmented_full"
+                          t-att-data-pk-notify-pref="pk_notify_row['key']" data-pk-no-dirty="1">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="kind" t-att-value="pk_notify_row['key']"/>
+                        <input type="hidden" name="redirect" value="/my/app/settings#pk_notifications"/>
+                        <t t-foreach="pk_notify_row['modes']" t-as="pk_notify_mode">
+                            <button type="submit" name="mode" t-att-value="pk_notify_mode[0]"
+                                    t-att-aria-pressed="'true' if pk_notify_mode[0] == pk_notify_row['current'] else 'false'"
+                                    t-out="pk_notify_mode[1]"/>
+                        </t>
+                    </form>
+                    <form t-if="pk_notify_row['push'] is not None" method="post" action="/my/app/notify-pref"
+                          class="o_pk_notify_push" t-att-data-pk-notify-push="pk_notify_row['key']" data-pk-no-dirty="1">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="kind" t-att-value="pk_notify_row['key']"/>
+                        <input type="hidden" name="redirect" value="/my/app/settings#pk_notifications"/>
+                        <t t-call="bemade_portal_kit.pk_switch">
+                            <t t-set="sw_name" t-value="'push'"/>
+                            <t t-set="sw_value" t-value="'1'"/>
+                            <t t-set="sw_off" t-value="'0'"/>
+                            <t t-set="sw_checked" t-value="pk_notify_row['push']"/>
+                            <t t-set="sw_attrs" t-value="{'data-pk-switch-submit': '1'}"/>
+                            <t t-set="sw_label">On the phone</t>
+                        </t>
+                    </form>
+                </div>
+            </section>
+
+            <t name="pk_settings_extra"/>
+
+            <!-- The edit cards' « Done » buttons (default hidden: the pencil
+                 turns into a ✓ that closes the card). -->
+            <section class="o_pk_section" id="pk_done_buttons" data-pk-section="settings.done_buttons">
+                <form method="post" t-att-action="pk_pref_url" class="o_pk_card o_pk_switch_card">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="redirect" value="/my/app/settings"/>
+                    <t t-call="bemade_portal_kit.pk_switch">
+                        <t t-set="sw_name" t-value="'pk_show_done_buttons'"/>
+                        <t t-set="sw_value" t-value="'1'"/>
+                        <t t-set="sw_off" t-value="'0'"/>
+                        <t t-set="sw_checked" t-value="pk_show_done"/>
+                        <t t-set="sw_attrs" t-value="{'data-pk-switch-submit': '1'}"/>
+                        <t t-set="sw_hint">When off, tap ✓ at the top of a card to finish editing.</t>
+                        <t t-set="sw_label">Show « Done » buttons</t>
+                    </t>
+                </form>
+            </section>
+
+            <section class="o_pk_section" id="pk_account">
+                <t t-call="bemade_portal_kit.pk_section_header">
+                    <t t-set="title">Account</t>
+                </t>
+                <div class="o_pk_list">
+                    <t t-call="bemade_portal_kit.pk_entity_row">
+                        <t t-set="href" t-value="'/my/account'"/>
+                        <t t-set="lead_icon" t-value="'account'"/>
+                        <t t-set="title">My account</t>
+                        <t t-set="subtitle">Name, email, phone</t>
+                    </t>
+                    <t t-call="bemade_portal_kit.pk_entity_row">
+                        <t t-set="href" t-value="'/my/security'"/>
+                        <t t-set="lead_icon" t-value="'security'"/>
+                        <t t-set="title">Security</t>
+                        <t t-set="subtitle">Password and sign-in</t>
+                    </t>
+                </div>
+            </section>
+        </t>
+    </template>
+
+    <!-- The search sheet (opened by the magnifier, « / » or Ctrl/⌘-K;
+         pk_search.js). Values: pk_search {placeholder, href}. -->
+    <template id="pk_search_sheet" name="Portal kit: search sheet">
+        <t t-set="pk_search_label">Search</t>
+        <dialog id="pk_search_sheet" class="o_pk_sheet o_pk_search_sheet" aria-labelledby="pk_search_sheet_title"
+                data-pk-search-sheet="1">
+            <div class="o_pk_sheet_head">
+                <h2 class="o_pk_sheet_title" id="pk_search_sheet_title" t-out="pk_search_label"/>
+                <button type="button" class="o_pk_icon_btn" data-pk-sheet-close="1" aria-label="Close" title="Close">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'close'"/></t>
+                </button>
+            </div>
+            <div class="o_pk_search_box">
+                <input type="search" id="pk_search_input" class="o_pk_input" autocomplete="off"
+                       enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="true"
+                       aria-controls="pk_search_results" t-att-aria-label="pk_search_label"
+                       t-att-placeholder="pk_search['placeholder']" data-pk-search-input="1"/>
+            </div>
+            <div class="o_pk_sheet_body o_pk_search_body" id="pk_search_results" data-pk-search-body="1"
+                 aria-live="polite">
+                <t t-call="bemade_portal_kit.pk_search_results">
+                    <t t-set="pk_too_short" t-value="True"/>
+                </t>
+            </div>
+        </dialog>
+    </template>
+
+    <!-- The results: one group per provider ({key, title, rows}). A row:
+         {id, title, subtitle, url, locked, archived, archived_label,
+         action_label, action_url, template}. A locked row (not openable)
+         shows its action (e.g. « Add »); a row's optional ``template`` is
+         called for its body, with ``row``. -->
+    <template id="pk_search_results" name="Portal kit: search results">
+        <div class="o_pk_search_results" data-pk-search-results="1">
+            <p t-if="pk_too_short" class="o_pk_hint o_pk_search_hint">Type at least 2 letters</p>
+            <t t-else="">
+                <p t-if="not pk_search_groups" class="o_pk_empty">No results</p>
+                <section t-foreach="pk_search_groups or []" t-as="pk_group" class="o_pk_search_group"
+                         t-att-data-pk-search-group="pk_group['key']">
+                    <h3 class="o_pk_search_group_title" t-out="pk_group['title']"/>
+                    <ul class="o_pk_search_list">
+                        <li t-foreach="pk_group['rows']" t-as="row"
+                            t-attf-class="o_pk_search_row #{'o_pk_search_archived' if row.get('archived') else ''} #{'o_pk_search_locked' if row.get('locked') else ''}"
+                            t-att-data-pk-search-row="row.get('id')">
+                            <t t-if="not pk_archived_label"><t t-set="pk_archived_label">Archived</t></t>
+                            <t t-set="pk_row_body">
+                                <t t-if="row.get('template')" t-call="{{ row['template'] }}"/>
+                                <t t-else="">
+                                    <span class="o_pk_row_title" t-out="row['title']"/>
+                                    <span t-if="row.get('subtitle')" class="o_pk_row_subtitle" t-out="row['subtitle']"/>
+                                    <span t-if="row.get('archived')" class="o_pk_chip o_pk_search_flag" t-out="row.get('archived_label') or pk_archived_label"/>
+                                </t>
+                            </t>
+                            <a t-if="row.get('url') and not row.get('locked')" t-att-href="row['url']" class="o_pk_search_link" data-pk-search-result="1">
+                                <t t-out="pk_row_body"/>
+                            </a>
+                            <t t-else="">
+                                <span class="o_pk_search_link" aria-disabled="true"><t t-out="pk_row_body"/></span>
+                                <a t-if="row.get('action_url')" t-att-href="row['action_url']"
+                                   class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm o_pk_search_add"
+                                   data-pk-search-result="1" t-out="row.get('action_label')"/>
+                            </t>
+                        </li>
+                    </ul>
+                </section>
+            </t>
+        </div>
+    </template>
+
+</odoo>

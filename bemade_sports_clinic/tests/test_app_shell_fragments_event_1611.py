@@ -99,7 +99,7 @@ class TestFragmentsEvent1611(FragmentsCommon):
         self.assertNotIn('PC TP', answer['fragments'][self._ekey('read')])
         self._saved(self.event, 'assigned_staff_ids', str(self.tp.id))
         answer = self._fragments(self._url(), [self._ekey('ts-head'), self._ekey('ts-add'), self._ekey('read')])
-        self.assertIn('data-sc-action="timesheet.add"', answer['fragments'][self._ekey('ts-head')])
+        self.assertIn('data-pk-action="timesheet.add"', answer['fragments'][self._ekey('ts-head')])
         self.assertIn('sc_ts_add_sheet', answer['fragments'][self._ekey('ts-add')])
         self.assertIn('PC TP', answer['fragments'][self._ekey('read')])
         self.assertFragmentMatchesPage(self._url(), self._ekey('ts-add'))
@@ -127,7 +127,7 @@ class TestFragmentsEvent1611(FragmentsCommon):
 
         def group_of_card():
             node = self._fragment(url, key)
-            self.assertEqual(node.get('data-sc-fragment-mode'), 'list')
+            self.assertEqual(node.get('data-pk-fragment-mode'), 'list')
             card = node.xpath('.//*[@data-pk-fragment-item="%s"]' % self._tkey('card'))[0]
             group = card.xpath('ancestor::*[@data-sc-group][1]')[0]
             return self._text(group.xpath('./h3')[0])

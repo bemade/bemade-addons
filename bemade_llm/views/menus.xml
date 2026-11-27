@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_bemade_llm_root"
+              name="LLM"
+              parent="base.menu_custom"
+              groups="base.group_system"
+              sequence="90"/>
+    <menuitem id="menu_bemade_llm_provider"
+              name="Providers"
+              parent="menu_bemade_llm_root"
+              action="action_bemade_llm_provider"
+              groups="base.group_system"
+              sequence="10"/>
+    <menuitem id="menu_bemade_llm_stream"
+              name="Streams"
+              parent="menu_bemade_llm_root"
+              action="action_bemade_llm_stream"
+              groups="base.group_system"
+              sequence="20"/>
+</odoo>

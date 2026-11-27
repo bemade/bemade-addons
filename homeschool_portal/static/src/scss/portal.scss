@@ -1,5 +1,6 @@
 // Homeschool portal: light touches on the stock portal look, and a day page that prints well.
-.o_hs_portal {
+.o_hs_portal,
+.o_hs_content {
   .o_hs_block {
     border-left: 4px solid var(--o-hs-kind-color, #{$gray-400});
     &.o_hs_kind_pause {
@@ -71,5 +72,147 @@
   }
   body {
     background: #fff;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// The app (Bemade portal kit shell). Scoped to the shell that carries the
+// homeschool content (.o_hs_content, hs_app_layout): another kit app of the
+// same database keeps its own brand.
+// ---------------------------------------------------------------------------
+.o_pk_app:has(.o_hs_content) {
+  --pk-accent: #2f6f4f;
+  --pk-accent-fg: #ffffff;
+  --pk-brand-mark: #2f6f4f;
+}
+.o_pk_app[data-pk-theme="dark"]:has(.o_hs_content) {
+  --pk-accent: #6fcf97;
+  --pk-accent-fg: #0b1f14;
+  --pk-brand-mark: #6fcf97;
+}
+
+.o_hs_content {
+  // the dashboard
+  .o_hs_dash_intro {
+    margin-bottom: var(--pk-space-3, 0.75rem);
+  }
+  .o_hs_dash_list,
+  .o_hs_dash_blocks,
+  .o_hs_dash_reading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pk-space-2, 0.5rem);
+    > li {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--pk-space-2, 0.5rem);
+      padding: var(--pk-space-2, 0.5rem) var(--pk-space-3, 0.75rem);
+    }
+  }
+  .o_hs_dash_line_text {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+  // A list line is one compact row (tick, then the text): the kit's card stacks its
+  // children, and a stacked 12rem text basis became a 260px-tall line.
+  .o_hs_dash_list > li.o_hs_dash_line.o_pk_card {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    text-align: left;
+    .o_hs_dash_line_text {
+      flex: 1 1 auto;
+    }
+  }
+  .o_hs_tick_form {
+    margin: 0;
+  }
+  .o_hs_tick {
+    width: var(--pk-tap, 44px);
+    height: var(--pk-tap, 44px);
+    border: 2px solid var(--pk-line, #cbd5e1);
+    border-radius: var(--pk-radius-2, 8px);
+    background: var(--pk-surface, #fff);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    &.o_hs_done {
+      border-color: var(--pk-ok, #16a34a);
+      color: var(--pk-ok, #16a34a);
+    }
+  }
+  .o_hs_tick_static {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  .o_hs_dash_line.o_hs_done .o_hs_deliverable_name {
+    text-decoration: line-through;
+    opacity: 0.7;
+  }
+  .o_hs_block {
+    border-left: 4px solid var(--o-hs-kind-color, #{$gray-400});
+  }
+  .o_hs_time {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+}
+
+// The learner switcher (app bar): a plain <details>, no script.
+.o_hs_switcher {
+  position: relative;
+  > summary {
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+  .o_hs_switcher_name {
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .o_hs_switcher_menu {
+    position: absolute;
+    right: 0;
+    z-index: 30;
+    min-width: 12rem;
+    margin: 0.25rem 0 0;
+    padding: 0.25rem 0;
+    list-style: none;
+    background: var(--pk-surface, #fff);
+    border: 1px solid var(--pk-line, #e2e8f0);
+    border-radius: var(--pk-radius-2, 8px);
+    box-shadow: var(--pk-shadow, 0 4px 16px rgba(0, 0, 0, 0.12));
+    a {
+      display: block;
+      padding: 0.6rem 1rem;
+      color: var(--pk-fg, #0f172a);
+      text-decoration: none;
+      &[aria-current="true"] {
+        font-weight: 600;
+        color: var(--pk-accent, #2563eb);
+      }
+    }
+  }
+}
+
+@media print {
+  .o_pk_app:has(.o_hs_content) {
+    .o_pk_rail,
+    .o_pk_appbar,
+    .o_pk_tabs,
+    .o_pk_crumbs {
+      display: none !important;
+    }
   }
 }

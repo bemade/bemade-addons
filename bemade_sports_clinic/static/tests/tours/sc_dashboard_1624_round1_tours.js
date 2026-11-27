@@ -23,16 +23,16 @@ function noHorizontalScroll() {
     assert(doc.scrollWidth <= doc.clientWidth + 1, `horizontal scroll (${doc.scrollWidth} > ${doc.clientWidth})`);
 }
 
-const WATCH = 'section[data-sc-instance="watch"]';
-const TODO = 'section[data-sc-instance="todo"]';
+const WATCH = 'section[data-pk-dash-instance="watch"]';
+const TODO = 'section[data-pk-dash-instance="todo"]';
 
 tours.add("sc_1624_dashboard_round1", {
     steps: () => [
         {
             content: "The dashboard, in the default order (round 2: zone by zone)",
-            trigger: 'section[data-sc-instance="indicators"]',
+            trigger: 'section[data-pk-dash-instance="indicators"]',
             run() {
-                const ids = [...document.querySelectorAll("section[data-sc-instance]")].map((el) => el.dataset.scInstance);
+                const ids = [...document.querySelectorAll("section[data-pk-dash-instance]")].map((el) => el.dataset.pkDashInstance);
                 assert(ids[0] === "today" && ids[1] === "todo" && ids[2] === "coverage", `order: ${ids}`);
                 window.__sc1624NoReload = true;
                 noHorizontalScroll();
@@ -40,7 +40,7 @@ tours.add("sc_1624_dashboard_round1", {
         },
         {
             content: "Open a player card's « Details »",
-            trigger: `${WATCH} .o_sc_player_row button[data-sc-row-expand]`,
+            trigger: `${WATCH} .o_sc_player_row button[data-pk-row-expand]`,
             run: "click",
         },
         {
@@ -66,30 +66,30 @@ tours.add("sc_1624_dashboard_round1", {
             // Task 1736 r1 (deliberate update): « Reschedule » is the card's
             // pencil — the due date is edited in place, on the dashboard.
             content: "Its activity cards, with their actions",
-            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row] button[data-sc-action="activity.edit"]`,
+            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row] button[data-pk-action="activity.edit"]`,
             run: "click",
         },
         {
             content: "The card is edited in place on the dashboard (its due date)",
-            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row][data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden]) input[type="date"]`,
+            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row][data-pk-edit-open] [data-pk-edit-view="edit"]:not([hidden]) input[type="date"]`,
             run() {
                 const card = this.anchor.closest("[data-sc-activity-row]");
                 assert(card.querySelector('[data-sc-action="activity.complete"]'), "« Done » stays");
-                card.querySelector("button[data-sc-edit-toggle]").click();
+                card.querySelector("button[data-pk-edit-toggle]").click();
             },
         },
         {
             content: "Closed again",
-            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row]:not([data-sc-edit-open]) button[data-sc-action="activity.edit"]`,
+            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row]:not([data-pk-edit-open]) button[data-pk-action="activity.edit"]`,
         },
         {
             content: "Fold out an upcoming event's « Details »",
-            trigger: 'section[data-sc-instance="coverage"] [data-sc-event-row] button[data-sc-row-expand]',
+            trigger: 'section[data-pk-dash-instance="coverage"] [data-sc-event-row] button[data-pk-row-expand]',
             run: "click",
         },
         {
             content: "The event's details",
-            trigger: 'section[data-sc-instance="coverage"] [data-sc-event-details]:not([hidden]) [data-sc-ev-field="staff"]',
+            trigger: 'section[data-pk-dash-instance="coverage"] [data-sc-event-details]:not([hidden]) [data-sc-ev-field="staff"]',
             run() {
                 assert(this.anchor.textContent.trim() && this.anchor.textContent.trim() !== "—", "assigned staff");
                 noHorizontalScroll();
@@ -97,7 +97,7 @@ tours.add("sc_1624_dashboard_round1", {
         },
         {
             content: "« Add my timesheet » on a missing one",
-            trigger: 'section[data-sc-instance="missing_timesheets"] a[data-sc-action="dashboard.timesheet.add"]',
+            trigger: 'section[data-pk-dash-instance="missing_timesheets"] a[data-sc-action="dashboard.timesheet.add"]',
             run: "click",
             expectUnloadPage: true,
         },

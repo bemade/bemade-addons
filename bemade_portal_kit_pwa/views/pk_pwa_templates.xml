@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 5201 (kit P6): the installable app's templates. pk_app_install and
+    pk_app_offline were the first consumer's (adopted: same ir.ui.view
+    records, see tools/adopt.py).
+-->
+<odoo>
+
+    <!-- The app's head on every shell page (while the switch is on): the
+         manifest, the iOS icon and title. -->
+    <template id="pk_pwa_head" name="Portal kit: installable app head">
+        <t t-set="pk_pwa_head" t-value="request.env['portal.kit']._pk_pwa()"/>
+        <link rel="manifest" t-att-href="pk_pwa_head['manifest_url']"/>
+        <link rel="apple-touch-icon" t-att-href="pk_pwa_head['icons']['apple-touch-icon.png']"/>
+        <meta name="apple-mobile-web-app-capable" content="yes"/>
+        <meta name="mobile-web-app-capable" content="yes"/>
+        <meta name="apple-mobile-web-app-title" t-att-content="pk_pwa_head['short_name']"/>
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+        <!-- Task 5546: phone notifications (pk_push.js): the viewer's
+             owner tag and the app icon's number. -->
+        <t t-if="not request.env.user._is_public() and request.env['portal.kit']._pk_push_available()">
+            <meta name="pk-push-owner" t-att-content="request.env['portal.kit']._pk_push_owner()"/>
+            <meta name="pk-app-badge" t-att-content="str(request.env['portal.kit']._pk_app_badge_count() or 0)"/>
+        </t>
+    </template>
+
+    <template id="pk_app_layout_pwa" name="Portal kit: installable app in the app layout"
+              inherit_id="bemade_portal_kit.pk_app_layout">
+        <xpath expr="//t[@t-set='head']/t[@t-out='pk_head_extra']" position="before">
+            <t t-if="request.env['portal.kit']._pk_shell_enabled()" t-call="bemade_portal_kit_pwa.pk_pwa_head"/>
+        </xpath>
+    </template>
+
+    <!-- /my/app/install — « More › Install the app » (no banner anywhere).
+         Values: pk_pwa (portal.kit._pk_pwa()). -->
+    <template id="pk_app_install" name="Portal kit: install the app">
+        <t t-call="{{ pk_layout }}">
+            <t t-set="pk_title">Install the app</t>
+            <t t-set="pk_active_nav" t-value="'more'"/>
+
+            <div class="o_pk_card o_pk_install_hero" data-pk-install="1">
+                <img t-att-src="pk_pwa['icons']['icon-192.png']" alt="" width="56" height="56" class="o_pk_install_icon"/>
+                <div>
+                    <strong t-out="pk_pwa['name']"/>
+                    <p class="o_pk_meta"><t name="pk_install_promise">Full screen, an icon on your home screen, instant opening. Your data is never stored on the device.</t></p>
+                </div>
+            </div>
+
+            <!-- Shown by pk_sw_register.js when display-mode is standalone. -->
+            <div class="o_pk_install_done" hidden="hidden" data-pk-install-state="installed">
+                <t t-call="bemade_portal_kit.pk_banner">
+                    <t t-set="title">The app is installed</t>
+                    <t t-set="pk_install_using">You are using %s from your home screen.</t>
+                    <t t-out="pk_install_using % pk_pwa['name']"/>
+                </t>
+            </div>
+
+            <!-- Android / Chrome / Edge: the browser's own prompt, when offered. -->
+            <section class="o_pk_section" data-pk-install-state="prompt" hidden="hidden">
+                <t t-set="pk_install_label">Install %s</t>
+                <button type="button" class="o_pk_btn o_pk_btn_primary" data-pk-install-prompt="1" t-out="pk_install_label % pk_pwa['name']"/>
+            </section>
+
+            <section class="o_pk_section" data-pk-install-steps="ios">
+                <t t-call="bemade_portal_kit.pk_section_header">
+                    <t t-set="title">iPhone and iPad (Safari or Chrome)</t>
+                </t>
+                <ol class="o_pk_steps">
+                    <li>Open this page in Safari or Chrome.</li>
+                    <li>Tap the Share button <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'share'"/></t> at the bottom of the screen (Safari) or in the address bar (Chrome).</li>
+                    <li>Choose « Add to Home Screen », then « Add ».</li>
+                </ol>
+            </section>
+
+            <section class="o_pk_section" data-pk-install-steps="android">
+                <t t-call="bemade_portal_kit.pk_section_header">
+                    <t t-set="title">Android (Chrome)</t>
+                </t>
+                <ol class="o_pk_steps">
+                    <li>Open this page in Chrome.</li>
+                    <li>Open the ⋮ menu at the top right.</li>
+                    <li>Choose « Install app » (or « Add to Home screen »).</li>
+                </ol>
+            </section>
+
+            <section class="o_pk_section" data-pk-install-steps="desktop">
+                <t t-call="bemade_portal_kit.pk_section_header">
+                    <t t-set="title">Computer (Chrome or Edge)</t>
+                </t>
+                <ol class="o_pk_steps">
+                    <li>Click the install icon at the right of the address bar.</li>
+                    <li>Confirm « Install ».</li>
+                </ol>
+            </section>
+            <p class="o_pk_footnote"><t name="pk_install_footnote">Without a connection the app only shows an offline page: no data is kept on the device.</t></p>
+        </t>
+    </template>
+
+    <!--
+        /my/app/offline — what the service worker shows when a navigation
+        fails offline. Cached on the device, so it carries NO data at all: no
+        layout, no user, no session info, no CSRF token, no asset bundle (its
+        own static stylesheet, precached with it). Values: pk_pwa,
+        pk_offline_style (the offline style properties).
+    -->
+    <template id="pk_app_offline" name="Portal kit: offline page">
+        <html t-att-lang="(request.env.lang or 'en_US').replace('_', '-')">
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+                <meta name="theme-color" t-att-content="pk_pwa['theme_color']"/>
+                <meta name="robots" content="noindex"/>
+                <title t-out="pk_pwa['name']"/>
+                <link rel="stylesheet" href="/bemade_portal_kit_pwa/static/src/css/pk_offline.css"/>
+            </head>
+            <body class="o_pk_offline" t-att-style="pk_offline_style or None">
+                <main class="o_pk_offline_main">
+                    <img t-att-src="pk_pwa['icons']['logo.png']" alt="" width="96" height="96"/>
+                    <h1>You are offline</h1>
+                    <p><t name="pk_offline_message">You need a connection to see this page. Your drafts stay on this device and come back when you return to the page.</t></p>
+                    <a t-att-href="pk_pwa['start_url']" class="o_pk_offline_retry">Try again</a>
+                </main>
+            </body>
+        </html>
+    </template>
+</odoo>

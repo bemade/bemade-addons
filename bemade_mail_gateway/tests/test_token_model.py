@@ -14,6 +14,7 @@ from datetime import timedelta
 from odoo import fields
 from odoo.exceptions import ValidationError
 from odoo.tests.common import TransactionCase, tagged
+from odoo.tools.misc import mute_logger
 
 
 @tagged("post_install", "-at_install", "bemade_mail_gateway")
@@ -52,6 +53,7 @@ class TestBemadeMailGatewayToken(TransactionCase):
         with self.assertRaises(ValidationError):
             self.Token.action_generate("   ")
 
+    @mute_logger("odoo.sql_db")
     def test_duplicate_name_rejected(self):
         from psycopg2 import IntegrityError
 

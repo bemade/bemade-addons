@@ -388,18 +388,18 @@ class TestAssigneeRoutes1024(AssignHttpCommon):
     def test_app_hides_picker_with_reason(self):
         self._login_rf()
         tree = self._tree('/my/event/%s' % self.ev_other.id)
-        edit = tree.xpath('//*[@data-pk-edit-card="event"]//*[@data-sc-edit-view="edit"]')[0]
+        edit = tree.xpath('//*[@data-pk-edit-card="event"]//*[@data-pk-edit-view="edit"]')[0]
         props = [json.loads(p) for p in edit.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
         self.assertNotIn('assigned_staff_ids', {p['field'] for p in props})
         self.assertIn('team_ids', {p['field'] for p in props})
         reason = edit.xpath('.//*[@data-sc-event-staff-locked]//*[@data-sc-assign-reason]')
         self.assertEqual(reason[0].text_content().strip(), POLICY_EN)
         # Own team: the picker is there, no reason.
         tree = self._tree('/my/event/%s' % self.ev_own.id)
-        edit = tree.xpath('//*[@data-pk-edit-card="event"]//*[@data-sc-edit-view="edit"]')[0]
+        edit = tree.xpath('//*[@data-pk-edit-card="event"]//*[@data-pk-edit-view="edit"]')[0]
         props = [json.loads(p) for p in edit.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
         self.assertIn('assigned_staff_ids', {p['field'] for p in props})
         self.assertFalse(edit.xpath('.//*[@data-sc-event-staff-locked]'))
 
@@ -407,18 +407,18 @@ class TestAssigneeRoutes1024(AssignHttpCommon):
         self._login_rf()
         tree = self._tree('/my/event/create')
         form = tree.xpath('//form[@data-sc-event-form]')[0]
-        rules = json.loads(form.get('data-sc-guard-rules'))
+        rules = json.loads(form.get('data-pk-guard-rules'))
         assign = [r for r in rules if r['type'] == 'assign']
         self.assertEqual(len(assign), 1)
         self.assertEqual(assign[0]['allowed'], [self.team_own.id])
         self.assertEqual((assign[0]['staff'], assign[0]['teams']), ('assigned_staff_ids', 'team_ids'))
-        self.assertEqual(form.xpath('.//*[@data-sc-guard-msg="assign"]')[0].text_content(), POLICY_EN)
+        self.assertEqual(form.xpath('.//*[@data-pk-guard-msg="assign"]')[0].text_content(), POLICY_EN)
         self.assertEqual({r['type'] for r in rules} - {'assign'}, {'after'})
         # A clinic admin: no rule, the picker.
         self._login_admin()
         tree = self._tree('/my/event/create')
         form = tree.xpath('//form[@data-sc-event-form]')[0]
-        self.assertFalse([r for r in json.loads(form.get('data-sc-guard-rules')) if r['type'] == 'assign'])
+        self.assertFalse([r for r in json.loads(form.get('data-pk-guard-rules')) if r['type'] == 'assign'])
         self.assertTrue(form.xpath('.//*[@data-sc-event-pick="staff"]'))
 
 
@@ -429,7 +429,7 @@ class TestAssigneeI18n1024(AssignHttpCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.env['res.lang']._activate_lang('fr_CA')
-        cls.env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        cls.env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if cls.env['ir.module.module']._get('website').state == 'installed':
             fr_lang = cls.env['res.lang']._lang_get('fr_CA')
             for website in cls.env['website'].sudo().search([]):
@@ -446,7 +446,7 @@ class TestAssigneeI18n1024(AssignHttpCommon):
         self._login_rf()
         self.assertIn(POLICY_FR, self._fr('/my/event/%s' % self.ev_other.id))
         text = self._fr('/my/event/create')
-        self.assertIn('data-sc-guard-msg="assign">%s</span>' % POLICY_FR, text)
+        self.assertIn('data-pk-guard-msg="assign">%s</span>' % POLICY_FR, text)
         Event = self.env['sports.event'].with_context(lang='fr_CA')
         with self._refused("Seule l'administration de la clinique"):
             Event._sc_check_assignment(self.rf_tp, (), self.rf_tp2.ids, (), self.team_other.ids)

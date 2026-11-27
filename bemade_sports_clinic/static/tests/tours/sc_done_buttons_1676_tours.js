@@ -23,7 +23,7 @@ function visible(el) {
 }
 
 const IDENTITY = '[data-pk-edit-card="identity"]';
-const PENCIL = `${IDENTITY} button[data-sc-edit-toggle]`;
+const PENCIL = `${IDENTITY} button[data-pk-edit-toggle]`;
 const NOTE = 'details.o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"]';
 
 tours.add("sc_1676_info_check", {
@@ -32,14 +32,14 @@ tours.add("sc_1676_info_check", {
             content: "Settings off: the app hides « Done »; open a player info card (pencil)",
             trigger: PENCIL,
             run(helpers) {
-                assert(document.querySelector('.o_pk_app[data-sc-hide-done="1"]'), "Done not hidden by default");
+                assert(document.querySelector('.o_pk_app[data-pk-hide-done="1"]'), "Done not hidden by default");
                 window.__sc1676Label = this.anchor.getAttribute("aria-label");
                 return helpers.click();
             },
         },
         {
             content: "Edit mode: no visible « Done », the pencil is a ✓",
-            trigger: `${IDENTITY}[data-sc-edit-open] ${"button[data-sc-edit-toggle]"}[data-sc-edit-toggle-done]`,
+            trigger: `${IDENTITY}[data-pk-edit-open] ${"button[data-pk-edit-toggle]"}[data-pk-edit-toggle-done]`,
             run() {
                 const done = document.querySelector(`${IDENTITY} [data-pk-edit-done]`);
                 assert(done && !visible(done), "« Done » is visible");
@@ -53,15 +53,15 @@ tours.add("sc_1676_info_check", {
         },
         {
             content: "Tap the ✓",
-            trigger: `${IDENTITY} button[data-sc-edit-toggle-done]`,
+            trigger: `${IDENTITY} button[data-pk-edit-toggle-done]`,
             run: "click",
         },
         {
             content: "Closed: the read view is back, the ✓ is a pencil again",
-            trigger: `${IDENTITY}:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `${IDENTITY}:not([data-pk-edit-open]) [data-pk-edit-view="read"]:not([hidden])`,
             run() {
                 const toggle = document.querySelector(PENCIL);
-                assert(!toggle.dataset.scEditToggleDone, "still a ✓");
+                assert(!toggle.dataset.pkEditToggleDone, "still a ✓");
                 assert(toggle.getAttribute("aria-label") === window.__sc1676Label, "label not restored");
                 assert(toggle.getAttribute("aria-expanded") === "false", "aria-expanded");
             },
@@ -75,38 +75,38 @@ tours.add("sc_1676_injury_check", {
             // Task 1736 (deliberate update): « Delete injury » is the top
             // bar's red trash (shown while the Details are edited), no foot.
             content: "No foot (no « Done »); « Delete injury » is the top bar's trash (hidden until editing)",
-            trigger: "details.o_sc_injury_item[open] > summary button[data-sc-edit-toggle][data-sc-edit-for='injury-details']",
+            trigger: "details.o_sc_injury_item[open] > summary button[data-pk-edit-toggle][data-pk-edit-for='injury-details']",
             run() {
                 const card = this.anchor.closest("details");
                 assert(!card.querySelector(".o_sc_injury_card_actions"), "the foot is back");
                 assert(!card.querySelector("[data-sc-injury-done]"), "the bottom « Done » is back");
-                const trash = card.querySelector(":scope > summary button.o_pk_card_trash[data-sc-action='injury.delete']");
+                const trash = card.querySelector(":scope > summary button.o_pk_card_trash[data-pk-action='injury.delete']");
                 assert(trash, "no « Delete injury » in the top bar");
                 assert(!visible(trash), "the trash shows in read mode");
             },
         },
         {
             content: "The external note's pencil",
-            trigger: `${NOTE} button[data-sc-edit-toggle]`,
+            trigger: `${NOTE} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "The ✓ closes the note",
-            trigger: `${NOTE}[data-sc-edit-open] button[data-sc-edit-toggle-done]`,
+            trigger: `${NOTE}[data-pk-edit-open] button[data-pk-edit-toggle-done]`,
             run: "click",
         },
         {
             content: "Closed",
-            trigger: `${NOTE}:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `${NOTE}:not([data-pk-edit-open]) [data-pk-edit-view="read"]:not([hidden])`,
         },
         {
             content: "The Details pencil (top bar)",
-            trigger: "details.o_sc_injury_item[open] > summary button[data-sc-edit-toggle][data-sc-edit-for='injury-details']",
+            trigger: "details.o_sc_injury_item[open] > summary button[data-pk-edit-toggle][data-pk-edit-for='injury-details']",
             run: "click",
         },
         {
             content: "« Delete injury » (the trash, now shown) opens its confirm",
-            trigger: "details.o_sc_injury_item[open] > summary button.o_pk_card_trash[data-sc-action='injury.delete']:visible",
+            trigger: "details.o_sc_injury_item[open] > summary button.o_pk_card_trash[data-pk-action='injury.delete']:visible",
             run: "click",
         },
         {
@@ -122,18 +122,18 @@ tours.add("sc_1676_info_done_on", {
             content: "Setting on: open a player info card",
             trigger: PENCIL,
             run(helpers) {
-                assert(!document.querySelector(".o_pk_app[data-sc-hide-done]"), "Done hidden while the setting is on");
+                assert(!document.querySelector(".o_pk_app[data-pk-hide-done]"), "Done hidden while the setting is on");
                 return helpers.click();
             },
         },
         {
             content: "« Done » is visible and closes the card",
-            trigger: `${IDENTITY}[data-sc-edit-open] button[data-pk-edit-done]`,
+            trigger: `${IDENTITY}[data-pk-edit-open] button[data-pk-edit-done]`,
             run: "click",
         },
         {
             content: "Closed",
-            trigger: `${IDENTITY}:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `${IDENTITY}:not([data-pk-edit-open]) [data-pk-edit-view="read"]:not([hidden])`,
         },
     ],
 });

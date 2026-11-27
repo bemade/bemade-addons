@@ -38,7 +38,7 @@ function clone(data) {
 }
 
 function toast(message) {
-    document.dispatchEvent(new CustomEvent("sc:toast", { detail: { message } }));
+    document.dispatchEvent(new CustomEvent("pk:toast", { detail: { message } }));
 }
 
 export class ScClinicWorklist extends Component {

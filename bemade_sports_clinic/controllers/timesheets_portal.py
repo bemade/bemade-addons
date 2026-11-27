@@ -7,30 +7,13 @@ from urllib.parse import quote as url_quote
 import logging
 
 from .access_control_mixin import AccessControlMixin
-from .app_shell import AppShellMixin
+from .app_shell import AppShellMixin, sc_app_page
 
 _logger = logging.getLogger(__name__)
 
 
 class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     # _parse_portal_datetime now lives on AccessControlMixin (dead-route audit cleanup).
-
-    def _prepare_home_portal_values(self, counters):
-        vals = super()._prepare_home_portal_values(counters)
-        if 'event_timesheets_count' in counters:
-            user = http.request.env.user
-            if self._is_tp_or_system():
-                # Count timesheets owned by the current user OR by an internal user sharing
-                # the same partner. Timesheets on cancelled events stay included: a
-                # last-minute cancellation can still be payable/invoiceable.
-                count_domain = ['|', ('user_id', '=', user.id), ('user_id.partner_id', '=', user.partner_id.id)]
-                count = http.request.env['sports.event.timesheet'].search_count(count_domain)
-                vals['event_timesheets_count'] = count
-                _logger.debug(
-                    "[TimesheetsPortal] Home counter (event_timesheets_count) user=%s(partner=%s) domain=%s -> count=%s",
-                    user.id, user.partner_id.id, count_domain, count,
-                )
-        return vals
 
     def _prepare_timesheets_domain(self, user_only=True):
         user = http.request.env.user
@@ -50,6 +33,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return domain
 
     @http.route(['/my/sc/timesheets', '/my/sc/timesheets/page/<int:page>'], type='http', auth='user', website=True)
+    @sc_app_page
     def view_timesheets(self, page=1, date_from=None, date_to=None, team_id=None, organization_id=None, group_by=None, sortby=None, search=None, **kw):
         _logger.warning("[TimesheetsPortal] ENTER /my/sc/timesheets page=%s", page)
         user = http.request.env.user
@@ -178,11 +162,8 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # Mapping of timesheet.id -> localized datetime strings for edit modal fields
             'timesheet_local_dt': local_dt_map,
         }
-        # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            values.update(self._sc_timesheets_values(values, kw))
-        return self._sc_render('bemade_sports_clinic.portal_timesheets_list',
-                               'bemade_sports_clinic.sc_app_timesheets', values)
+        values.update(self._sc_timesheets_values(values, kw))
+        return self._sc_render('bemade_sports_clinic.sc_app_timesheets', values)
 
     def _sc_timesheets_values(self, values, kw):
         """/my/sc/timesheets in the shell: the same search, one card per
@@ -208,7 +189,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_timesheet_groups': groups,
             'sc_timesheet_rows': [self._sc_timesheet_row(ts) for ts in values['timesheets']],
             'sc_timesheets_return': current,
-            'sc_flash': {'success': success, 'error': None},
+            'pk_flash': {'success': success, 'error': None},
         }
 
     @http.route(['/my/sc/timesheet/<int:ts_id>/edit'], type='http', auth='user', website=True, methods=['POST'])
@@ -266,7 +247,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # an archive) — no banner, « Timesheet archived · Undo » instead.
         if post.get('sc_undo'):
             undo = '/my/sc/timesheet/%s/restore?return_url=%s' % (ts.id, url_quote(target, safe=''))
-            self._sc_offer_undo(http.request.env._("Timesheet archived."), undo)
+            self._pk_offer_undo(http.request.env._("Timesheet archived."), undo)
             return http.request.redirect(target)
         separator = '&' if '?' in target else '?'
         return http.request.redirect(f'{target}{separator}deleted=1')

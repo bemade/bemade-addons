@@ -36,9 +36,223 @@ adopted: ``bemade_sports_clinic.sc_<moved>`` -> ``bemade_portal_kit.pk_<moved>``
 (``tools/adopt.py``, ``ADOPTED_VIEWS``), as exact names
 (``bemade_sports_clinic.sc_card_icons`` stays a clinic template).
 
+Task 5199 (P4a) retires the save engine's and the screen refresh's
+clinic names, moved to the kit under ``pk`` names:
+
+* the attributes ``data-sc-fragment``, ``-fragment-mode``,
+  ``-fragment-keep``, ``-fragment-keep-empty``, ``-keep-open`` and
+  ``-rendered-at`` -> ``data-pk-*``;
+* the events ``sc:saved``, ``sc:refresh``, ``sc:refresh-now`` -> ``pk:*``;
+* the header ``X-Sc-Fragments`` -> ``X-Pk-Fragments``, the storage key
+  ``sc_dirty_at:v1`` -> ``pk_dirty_at:v1``;
+* the Python / QWeb names ``SAVE_REGISTRY`` (now the hook
+  ``portal.kit._pk_save_specs()``), ``sc_fragment_key``, ``sc_now_ms``,
+  ``sc_rendered_at``, ``_sc_save_json`` / ``_value`` / ``_display``,
+  ``_sc_field_unchanged``, ``_sc_save_allowed``, ``sc_refresh_patterns``,
+  ``sc_extract_fragments``, ``_sc_fragment_keys``, ``SC_FRAGMENTS_HEADER``
+  / ``_MAX``, and the module path ``@bemade_sports_clinic/js/sc_fragments``
+  (its one-release alias file names none of them).
+
+Task 5370 (P4b) retires the form guard's, the status pills' and the lazy
+edit's clinic names, moved to the kit under ``pk`` names:
+
+* the attributes ``data-sc-guard`` and ``-guard-*`` (mode, rules, msg,
+  texts, submit, reason, error, block, field-error, invalid, missing,
+  generic, offline), ``-required``, ``-flash-error``, ``-error-for``,
+  ``-field-error``; the pill's ``-pill-*`` and its target ``-model``,
+  ``-record-id``, ``-write-date``, ``-old-value``, ``-undo-message``;
+  ``-lazy-edit``, ``-lazy-edit-host``, ``-lazy-mounted``. The pill's
+  ``data-sc-field`` is retired in its dataset form only (``scField``): the
+  attribute stays the autosave field's, so a ``data-sc-field`` is a hit
+  only on a line that names a pill too;
+* the events ``sc:pill-action`` and ``sc:edit-view-open``;
+* the classes ``o_sc_guard_reason`` and ``o_sc_reason_flash`` (and the
+  keyframes of that name);
+* the header ``X-Sc-Guard``, ``_sc_guard_probe``, the template variables
+  ``sc_pill_target`` / ``sc_pill_menu_id`` and the menu id prefix
+  ``sc-pill-``; the module paths ``@bemade_sports_clinic/js/sc_form_guard``,
+  ``sc_status_pills``, ``sc_lazy_edit`` (their one-release alias files name
+  none of them) and the interaction key
+  ``bemade_sports_clinic.sc_lazy_edit``.
+
+Task 5371 (P4c1) retires the toast's, the session notification's and the
+undo's clinic names, moved to the kit under ``pk`` names:
+
+* the attributes ``data-sc-notify``, ``-notify-title``, ``-notify-tone``,
+  ``-notify-id``, ``-toast-action``, ``-toast-message``, ``-toast-tone`` and
+  ``-toast-room`` (``dataset.scToast*`` too);
+* the event ``sc:toast`` (``pk:toast`` only), the storage key
+  ``sc_notify_shown:v1`` (read once by ``pk_toast.js`` as a fallback);
+* the undo forms' old marker ``data-sc-form="<kind>.undo"`` (``sc.undo``,
+  ``injury.undo``…): an undo form is ``form[data-pk-undo]`` (the session
+  undo) or ``form[data-pk-undo-offer="<kind>"]``; ``data-sc-form`` itself
+  stays a clinic name;
+* ``_sc_pop_notification``, ``_sc_offer_undo`` and the layout value
+  ``sc_notification`` (``PortalKitApp._pk_pop_notification``,
+  ``_pk_offer_undo``, ``pk_notification``).
+
+Task 5381 (P4c2) retires the edit cards', sheets', tabs', lazy load's and
+clamps' clinic names, moved to the kit under ``pk`` names:
+
+* the attributes ``data-sc-edit-toggle``, ``-edit-toggle-done``,
+  ``-edit-view``, ``-edit-open``, ``-edit-open-on-load``, ``-edit-for``,
+  ``-edit-only``, ``-edit-done-label``; ``-tabs``, ``-tab``,
+  ``-tab-panel``, ``-tab-aliases``; ``-sheet-open``, ``-sheet-close``,
+  ``-sheet-url``, ``-sheet-refetch``, ``-sheet-open-on-load``;
+  ``-lazy-url``, ``-lazy-fresh``, ``-lazy-filled``, ``-loaded`` (dataset
+  only), ``-row-expand``; ``-clamp`` and ``-clamp-*`` (more, less, sep,
+  meta, open, ready); ``-draft-clear``; ``-display`` and
+  ``-display-hide-empty`` (``dataset.scX`` too).
+  ``data-sc-edit-card-body`` and the clinic's other names stay;
+* the event ``sc:edit-open`` (``pk:edit-open``);
+* the templates ``sc_edit_card_head``, ``sc_display_row``, ``sc_sheet``
+  and ``sc_page_tabs`` (``ADOPTED_VIEWS``), the render helpers
+  ``sc_display``, ``sc_display_key`` and ``sc_contact_href`` (the kit's
+  ``tools/display.py``: ``pk_display``, ``pk_display_key``,
+  ``pk_contact_href``) and the class ``o_sc_contact_link``.
+
+Task 5382 (P4c3) retires the autosave field's clinic names, moved to the
+kit under ``pk`` names:
+
+* the attributes ``data-sc-autosave``, ``-restored``, ``-value``,
+  ``-tags-open``, ``-tags-index``, ``-tags-typed-error``,
+  ``-tags-group-notice``, ``-replace``, ``-org-confirm-box``,
+  ``-org-cancel``, ``-org-confirm``; the picker hook's ``-picker`` and
+  ``-picker-key`` (``data-pk-picker``, ``-picker-key``; the picker's other
+  ``data-sc-picker-*`` names stay the consumer's) and the option metadata
+  ``-teams`` and ``-player`` (``data-pk-meta-<key>``). The field's
+  ``data-sc-field`` and ``data-sc-state`` (``data-pk-autosave-field``,
+  ``-autosave-state``) are retired on a line that names the autosave field
+  (``data-sc-state`` keeps its other meanings: a worklist row, a timesheet
+  row, an account field);
+* the classes ``o_sc_group_confirm`` (``_text``, ``_actions``),
+  ``o_sc_identity_banner`` / ``_change`` / ``_confirm`` / ``_cancel``
+  (``o_pk_confirm_banner``, ``_change``, ``_ok``, ``_cancel``) and
+  ``o_sc_replace_*`` (``current``, ``current_text``, ``caption``,
+  ``new_head``, ``reuse``, ``hint``);
+* the template ``sc_field_autosave`` (``ADOPTED_VIEWS``), the component's
+  key ``bemade_sports_clinic.sc_autosave_field`` (allowed in the
+  consumer's one-release alias only), its class and template names, the
+  props builders ``sc_field_props``, ``sc_draft_props``, ``sc_form_props``
+  (and their ``_sc_`` methods), ``_sc_options`` (the kit's
+  ``tools/field_props.py``) and the 428 payload key ``confirm_identity``
+  (``confirm``).
+
+Task 5345 (P3c2) retires the app layout's, the user menu's and the shell
+components' clinic names, moved to the kit under ``pk`` names:
+
+* the attributes ``data-sc-hide-done``, ``-top``, ``-pref``,
+  ``-theme-switch``, ``-user-menu``, ``-user-menu-head``; the components'
+  ``-sort``, ``-card-icons``, ``-card-archive``, ``-card-trash``,
+  ``-history-state``, ``-scope``, ``-overdue``, ``-switch-locked``,
+  ``-switch-reason``, ``-confirm-submit``, ``-title-split``,
+  ``-title-link``, ``-row-links``, ``-row-link``, ``-row-link-plain``.
+  ``data-sc-nav-key``, ``-action``, ``-activity-clock`` and
+  ``-activity-overdue`` keep other meanings in the consumer (its « More »
+  page rows, its own buttons, its row clock chip): only their moved
+  meaning is renamed, they are not retired;
+* the classes ``o_sc_card_clock`` (``_overdue``), ``o_sc_overdue``
+  (``_sep``, ``_flag``) and ``o_sc_switch_reason``;
+* the templates ``sc_user_menu_popup``, ``sc_list_header``,
+  ``sc_card_icons``, ``sc_history_entry``, ``sc_history_list``,
+  ``sc_banner``, ``sc_flash_banners``, ``sc_switch``, ``sc_confirm_sheet``,
+  ``sc_link_row``, ``sc_row_links``, ``sc_entity_row``, ``sc_field_static``
+  and ``sc_return_overdue_flag`` (``ADOPTED_VIEWS``);
+* the layout values the kit reads under ``pk`` names now (``sc_title``,
+  ``sc_active_nav``, ``sc_page_key``, ``sc_content_class``, ``sc_tabs``,
+  ``sc_rail``, ``sc_parent_url``, ``sc_crumbs``, ``sc_context``,
+  ``sc_current_url``, ``sc_theme_choice``, ``sc_show_done``,
+  ``sc_user_initials`` / ``_name`` / ``_role``, ``sc_db``, ``sc_uid``,
+  ``sc_menu_id``, ``sc_edit_done_label``, ``sc_flash``) and the ids
+  ``sc_content`` and ``sc_user_menu_bar`` (``pk_content``,
+  ``pk_user_menu_bar``);
+* the consumer's ``sc_app_shell.js`` (the kit's ``pk_theme_pref.js``) and
+  P4c3's one-release alias of the component key (gone, no exception).
+
+Task 5200 (P5) retires the account, settings, preferences, help, search,
+calendar and picker clinic names, moved to the kit under ``pk`` names:
+
+* the attributes ``data-sc-search-*`` (open, sheet, input, body, result,
+  results, group, player — now ``data-pk-search-row`` —, query),
+  ``data-sc-help`` and ``-help-key`` / ``-base`` / ``-home`` / ``-map`` /
+  ``-home-link``, ``data-sc-picker-scope`` / ``-empty`` and the picker's
+  dataset names (out, value, active, ready, narrowed), the calendar's
+  ``-calendar-ready``, ``-calendar-detail``, ``-staff-legend``,
+  ``-staff-dot``, ``-detail-link``, « My account »'s ``-account-form`` /
+  ``-errors`` / ``-state`` / ``-saved``, the guide video's ``-video-done``
+  and « More »'s ``-in-rail``;
+* the classes of the calendar (``o_sc_calendar*``, ``o_sc_staff_*``) and of
+  « My account » / « Security » (``o_sc_account*``, ``o_sc_security*``,
+  ``o_sc_password_group``);
+* the stored names ``bemade_sports_clinic.app_shell_enabled``,
+  ``.sc_theme_choice_enabled``, ``.help_home_url``, the model
+  ``sc.help.article`` and the fields ``sc_theme`` /
+  ``sc_show_done_buttons`` (allowed in the data moves and the migrations
+  that run them);
+* the Python / QWeb names of the switch, the language guard, the
+  preferences, help and search (``_sc_app_shell_active`` …, ``sc_langs``,
+  ``sc_plus``, ``sc_help``, ``sc_search_url``, ``sc_fold`` …), the page keys
+  ``sc_app_settings`` / ``_more`` / ``_account`` / ``_security``
+  (``pk_app_*``) and the templates of ``ADOPTED_VIEWS``;
+* the module paths ``@bemade_sports_clinic/js/sc_picker``, ``sc_search``,
+  ``sc_help``, ``sc_account``, ``sc_calendar`` (nothing imports them any
+  more: no alias) and the component key
+  ``bemade_sports_clinic.sc_calendar`` (allowed in the consumer's
+  one-release alias, ``sc_calendar_alias.js``).
+
+Task 5201 (P6) retires the installable app's clinic names, moved to the
+kit addon ``bemade_portal_kit_pwa`` under ``pk`` names:
+
+* the attributes ``data-sc-sw`` and ``data-sc-install`` / ``-install-state``
+  / ``-install-steps`` / ``-install-prompt`` (``data-pk-*``);
+* the files ``sc_sw_register.js`` (``pk_sw_register.js``, no alias: two
+  register scripts would both run), ``sc_service_worker.js``
+  (``pk_service_worker.js``) and ``sc_offline.css``, the placeholders
+  ``__SC_SW_*`` and the cache prefix ``sc-app-shell-`` (allowed where the
+  new worker deletes the old caches);
+* the templates and page keys ``sc_app_install`` / ``sc_app_offline``
+  (``pk_app_install`` / ``pk_app_offline``, adopted: allowed in the
+  adoption mapping and the migration that runs it) and the controller names
+  ``SW_PRECACHE_STATIC``, ``SW_SOURCE``, ``_sc_sw_version``,
+  ``sc_app_webmanifest``, ``sc_app_service_worker``.
+
+Task 5202 (P7) retires the configurable dashboard's clinic names, moved to
+the kit addon ``bemade_portal_kit_dashboard`` under ``pk`` names:
+
+* the model ``sc.dashboard`` (``portal.kit.dashboard``) and the fragment
+  keys ``sc.dashboard:*`` (``pk.dashboard:*``), the field
+  ``sc_dashboard_layout`` (``pk_dashboard_layout``, moved in place: allowed
+  in the data move mapping, its test and the migration that runs it);
+* the engine's and the controller's names (``_sc_layout*``,
+  ``_sc_normalize``, ``_sc_viewer``, ``_sc_can``, ``_sc_widgets``, …,
+  ``sc_dashboard_configure*``), the templates and page key ``sc_dw_section``
+  / ``sc_app_dashboard_configure`` (``pk_dash_section`` /
+  ``pk_dash_configure``, adopted), their values (``sc_dash_sections``, …)
+  and the script ``sc_dashboard_config.js`` (``pk_dashboard_config.js``, no
+  alias: two scripts would both save);
+* the markers ``data-sc-dash-*`` (any), ``data-sc-dashboard``,
+  ``data-sc-zone``, ``data-sc-instance``, ``data-sc-widget``,
+  ``data-sc-dw-count``, ``data-sc-dw-scope``, ``data-sc-confirm-title`` /
+  ``-message`` and the frame's ``data-sc-action`` keys
+  (``dashboard.configure`` / ``history`` / ``calendar`` / ``list`` /
+  ``back``: ``data-pk-action``); the classes ``o_sc_dash*`` (any) and the
+  frame's ``o_sc_dw``, ``o_sc_dw_header`` / ``title`` / ``title_text`` /
+  ``count`` / ``scope`` / ``body`` (the clinic's widget bodies keep their
+  ``o_sc_dw_*``); the anchors / ids ``sc-dash-*``.
+
+Task 5388 retires the dead marker ``data-sc-draft-form`` (no script reads
+it any more).
+
+The guide videos' class ``o_fc_video`` is still read (stored article HTML
+uses it), next to ``o_pk_video``: it is not retired.
+
+Dataset destructuring (``const { scModel, scField } = el.dataset``) is
+matched too.
+
 The one exception is the documented draft fallback of the kit
 (``pk_draft_store.js`` still reads ``sc_draft:`` once, and its hoot test
-checks that).
+checks that), and the dirty-stamp fallback of ``pk_fragments.js`` (it reads
+``sc_dirty_at:v1`` once).
 """
 import os
 import re
@@ -49,7 +263,9 @@ from odoo.tests import TransactionCase, tagged
 from odoo.addons.bemade_portal_kit.tools.adopt import ADOPTED_VIEWS
 
 KIT = 'bemade_portal_kit'
-SCANNED_ADDONS = (KIT, 'bemade_sports_clinic', 'bemade_sports_clinic_bookings')
+PWA = 'bemade_portal_kit_pwa'
+DASH = 'bemade_portal_kit_dashboard'
+SCANNED_ADDONS = (KIT, PWA, DASH, 'bemade_sports_clinic', 'bemade_sports_clinic_bookings')
 EXTENSIONS = ('.py', '.js', '.xml', '.scss', '.css', '.po')
 SKIP_DIRS = {'__pycache__', 'node_modules', 'lib', 'description'}
 
@@ -62,14 +278,139 @@ ATTRIBUTES = (
     'live-tone-off', 'menu-popup', 'menu-toggle', 'section', 'submitted',
     'submitting', 'switch-off', 'switch-submit', 'user-menu-popup',
     'user-menu-toggle',
+    # Task 5199 (P4a): the screen refresh.
+    'fragment', 'fragment-mode', 'fragment-keep', 'fragment-keep-empty',
+    'keep-open', 'rendered-at',
+    # Task 5370 (P4b): the form guard, the status pills, the lazy edit.
+    'guard', 'guard-mode', 'guard-rules', 'guard-msg', 'guard-texts',
+    'guard-submit', 'guard-reason', 'guard-error', 'guard-block',
+    'guard-field-error', 'guard-invalid', 'guard-missing', 'guard-generic',
+    'guard-offline', 'required', 'flash-error', 'error-for', 'field-error',
+    'pill-select', 'pill-key', 'pill-value', 'pill-post', 'pill-action',
+    'pill-from', 'pill-readonly', 'pill-field', 'model', 'record-id',
+    'write-date', 'old-value', 'undo-message', 'lazy-edit', 'lazy-edit-host',
+    'lazy-mounted',
+    # Task 5371 (P4c1): the toast, the session notification, the undo.
+    'notify', 'notify-title', 'notify-tone', 'notify-id', 'toast-action',
+    'toast-message', 'toast-tone', 'toast-room',
+    # Task 5381 (P4c2): the edit cards, sheets, tabs, lazy load, clamps.
+    'edit-toggle', 'edit-toggle-done', 'edit-view', 'edit-open',
+    'edit-open-on-load', 'edit-for', 'edit-only', 'edit-done-label', 'tabs',
+    'tab', 'tab-panel', 'tab-aliases', 'sheet-open', 'sheet-close',
+    'sheet-url', 'sheet-refetch', 'sheet-open-on-load', 'lazy-url',
+    'lazy-fresh', 'lazy-filled', 'loaded', 'row-expand', 'clamp',
+    'clamp-more', 'clamp-less', 'clamp-sep', 'clamp-meta', 'clamp-open',
+    'clamp-ready', 'draft-clear', 'display', 'display-hide-empty',
+    # Task 5382 (P4c3): the autosave field and its picker hook.
+    'autosave', 'restored', 'value', 'tags-open', 'tags-index',
+    'tags-typed-error', 'tags-group-notice', 'replace', 'org-confirm-box',
+    'org-cancel', 'org-confirm', 'picker', 'picker-key', 'teams', 'player',
+    # Task 5345 (P3c2): the layout, the user menu and the shell components.
+    'hide-done', 'top', 'pref', 'theme-switch', 'user-menu', 'user-menu-head',
+    'sort', 'card-icons', 'card-archive', 'card-trash', 'history-state',
+    'scope', 'overdue', 'switch-locked', 'switch-reason', 'confirm-submit',
+    'title-split', 'title-link', 'row-links', 'row-link', 'row-link-plain',
+    # Task 5200 (P5): search, help, picker, calendar, account, More rows,
+    # guide videos.
+    'search-open', 'search-sheet', 'search-input', 'search-body', 'search-result', 'search-results',
+    'search-group', 'search-player', 'search-query', 'help', 'help-key', 'help-base', 'help-home', 'help-map',
+    'help-home-link', 'picker-scope', 'picker-empty', 'picker-out', 'picker-value', 'picker-active',
+    'picker-ready', 'picker-narrowed', 'calendar-ready', 'calendar-detail', 'staff-legend', 'staff-dot',
+    'detail-link', 'account-form', 'account-errors', 'account-state', 'account-saved', 'video-done',
+    'in-rail',
+    # Task 5201 (P6): the installable app.
+    'sw', 'install', 'install-state', 'install-steps', 'install-prompt',
+    # Task 5388: the announcement form's draft marker (nothing read it).
+    'draft-form',
 )
 EVENTS = (
     'fragments', 'form-reset', 'create-success', 'lazy-loaded',
     'live-count-refresh', 'fetch-error', 'nav-sync',
+    # Task 5199 (P4a).
+    'saved', 'refresh', 'refresh-now',
+    # Task 5370 (P4b).
+    'pill-action', 'edit-view-open',
+    # Task 5371 (P4c1).
+    'toast',
+    # Task 5381 (P4c2).
+    'edit-open',
 )
 STORAGE_KEYS = (
     'sc_draft:', 'sc_pending_toast:v1', 'sc_nav_stack:v1', 'sc_nav_post:v1',
     'sc_nav_up:v1', 'sc_nav_bf_reload:v1', 'sc_filters_open:',
+    # Task 5199 (P4a).
+    'sc_dirty_at:v1', 'X-Sc-Fragments', '@bemade_sports_clinic/js/sc_fragments',
+    # Task 5370 (P4b).
+    'X-Sc-Guard', '@bemade_sports_clinic/js/sc_form_guard',
+    '@bemade_sports_clinic/js/sc_status_pills', '@bemade_sports_clinic/js/sc_lazy_edit',
+    'bemade_sports_clinic.sc_lazy_edit',
+    # Task 5371 (P4c1).
+    'sc_notify_shown:v1',
+    # Task 5382 (P4c3): the component's key and template.
+    'bemade_sports_clinic.sc_autosave_field', 'bemade_sports_clinic.ScAutosaveField',
+    # Task 5345 (P3c2): the theme preference script.
+    'bemade_sports_clinic/static/src/js/sc_app_shell.js',
+    # Task 5200 (P5): the switch's and preferences' stored names, the help
+    # model, the moved modules and the calendar's component (its key is
+    # allowed in the consumer's one-release alias only).
+    'bemade_sports_clinic.app_shell_enabled', 'bemade_sports_clinic.sc_theme_choice_enabled',
+    'bemade_sports_clinic.help_home_url', 'sc.help.article', 'model_sc_help_article',
+    'bemade_sports_clinic.sc_calendar', 'bemade_sports_clinic.ScCalendar',
+    '@bemade_sports_clinic/js/sc_picker', '@bemade_sports_clinic/js/sc_search',
+    '@bemade_sports_clinic/js/sc_help', '@bemade_sports_clinic/js/sc_account',
+    '@bemade_sports_clinic/js/sc_calendar"',
+    # Task 5201 (P6): the installable app's files, placeholders, cache.
+    'sc_sw_register.js', 'sc_service_worker.js', 'sc_offline.css', '__SC_SW_', 'sc-app-shell-',
+)
+# Task 5199 (P4a): the save engine's and the refresh's Python / QWeb names,
+# as whole words.
+SAVE_NAMES = (
+    'SAVE_REGISTRY', 'sc_fragment_key', 'sc_now_ms', 'sc_rendered_at',
+    '_sc_save_json', '_sc_save_value', '_sc_save_display',
+    '_sc_field_unchanged', '_sc_save_allowed', 'sc_refresh_patterns',
+    'sc_extract_fragments', '_sc_fragment_keys', 'SC_FRAGMENTS_HEADER',
+    'SC_FRAGMENTS_MAX',
+    # Task 5370 (P4b).
+    '_sc_guard_probe', 'sc_pill_target', 'sc_pill_menu_id',
+    # Task 5371 (P4c1).
+    '_sc_pop_notification', '_sc_offer_undo', 'sc_notification',
+    # Task 5381 (P4c2): the render helpers.
+    'sc_display', 'sc_display_key', 'sc_contact_href',
+    # Task 5382 (P4c3): the props builders, the class, the 428 key.
+    'sc_field_props', 'sc_draft_props', 'sc_form_props', '_sc_field_props',
+    '_sc_draft_props', '_sc_form_props', '_sc_options', 'ScAutosaveField',
+    'confirm_identity',
+    # Task 5345 (P3c2): the layout values the kit reads under pk names, the
+    # layout's ids.
+    'sc_title', 'sc_active_nav', 'sc_page_key', 'sc_content_class', 'sc_tabs',
+    'sc_rail', 'sc_parent_url', 'sc_crumbs', 'sc_context', 'sc_current_url',
+    'sc_theme_choice', 'sc_show_done', 'sc_user_initials', 'sc_user_name',
+    'sc_user_role', 'sc_db', 'sc_uid', 'sc_menu_id', 'sc_edit_done_label',
+    'sc_flash', 'sc_content', 'sc_user_menu_bar',
+    # Task 5200 (P5): the switch, the preferences, the language guard, help,
+    # search, the matching helpers, the calendar, the moved pages' keys.
+    'sc_theme', 'sc_show_done_buttons', '_sc_app_shell_active', '_sc_app_shell_enabled',
+    '_sc_theme_choice_enabled', '_sc_effective_theme', '_sc_profile_lang', '_sc_lang_url',
+    '_sc_profile_lang_guard', '_sc_lang_options', 'sc_langs', 'sc_plus', 'sc_help', 'sc_search_url',
+    'SC_HELP_HOME_PARAM', '_sc_help_for', '_sc_help_links', 'sc_fold', 'sc_words', 'sc_name_matches',
+    'scFold', 'scWords', 'scNameMatches', 'ScCalendar', 'sc_app_settings', 'sc_app_more',
+    'sc_app_account', 'sc_app_security', 'PREF_FIELDS', 'PREF_BOOLEANS', 'APP_SHELL_PARAM',
+    'THEME_CHOICE_PARAM', 'SC_ACCOUNT_TEMPLATES', '_sc_core_in_shell', '_sc_relaxed_address',
+    'sc_totp_portal', 'sc_can_deactivate', 'sc_saved',
+    # Task 5201 (P6): the installable app's templates, page keys, controller.
+    'sc_app_install', 'sc_app_offline', 'SW_PRECACHE_STATIC', 'SW_SOURCE', '_sc_sw_version',
+    'sc_app_webmanifest', 'sc_app_service_worker',
+    # Task 5202 (P7): the dashboard's engine, controller, templates, values.
+    'sc_dashboard_layout', 'sc_dw_section', 'sc_app_dashboard_configure', 'sc_dashboard_configure',
+    'sc_dashboard_configure_save', 'sc_dashboard_configure_move', 'sc_dashboard_configure_add',
+    'sc_dashboard_configure_remove', 'sc_dashboard_configure_reset', '_sc_layout', '_sc_layout_save',
+    '_sc_layout_update', '_sc_layout_add', '_sc_layout_add_zone', '_sc_layout_move', '_sc_layout_place',
+    '_sc_layout_remove', '_sc_layout_reset', '_sc_layout_migrate', '_sc_layout_default', '_sc_normalize',
+    '_sc_viewer', '_sc_can', '_sc_widgets', '_sc_default_instance', '_sc_clean_settings', '_sc_zone_sorted',
+    '_sc_dashboard_values', '_sc_dash_zones', '_sc_dash_scope_label', '_sc_dash_post', '_sc_dash_done',
+    '_sc_dash_wants_json', 'WIDGETS_BY_KEY', 'sc_dash_sections', 'sc_dash_zones', 'sc_dash_configure_url',
+    'sc_dash_rows', 'sc_dash_cfg_zones', 'sc_dash_zone_choices', 'sc_dash_add_zone', 'sc_dash_add_choices',
+    'sc_dash_error', 'sc_dash_add_widget', 'sc_dashboard_config.js', 'sc_dashboard_config',
 )
 
 # Task 5344 (P3b1): the generic classes, as the name after ``o_sc_``. A name
@@ -143,7 +484,26 @@ GENERIC_CLASSES = (
     'toggle_pill_opt', 'tone_', 'tone_green', 'tone_red', 'tone_yellow',
     'user_menu', 'user_menu_bar', 'user_menu_head', 'user_menu_item',
     'user_menu_items', 'user_menu_name', 'user_menu_popup',
-    'user_menu_role', 'user_menu_who'
+    'user_menu_role', 'user_menu_who',
+    # Task 5370 (P4b): the guard's reason line and its cue (and keyframes).
+    'guard_reason', 'reason_flash',
+    # Task 5381 (P4c2): the contact link of a display row.
+    'contact_link',
+    # Task 5382 (P4c3): the group confirm, the confirm banner, the replace
+    # editor.
+    'group_confirm', 'group_confirm_text', 'group_confirm_actions',
+    'identity_banner', 'identity_change', 'identity_confirm',
+    'identity_cancel', 'replace_current', 'replace_current_text',
+    'replace_caption', 'replace_new_head', 'replace_reuse', 'replace_hint',
+    # Task 5345 (P3c2): the card clock, the overdue flag, the switch reason.
+    'card_clock', 'card_clock_overdue', 'overdue', 'overdue_sep',
+    'overdue_flag', 'switch_reason',
+    # Task 5200 (P5): the calendar, « My account » / « Security ».
+    'calendar', 'calendar_box', 'calendar_detail', 'calendar_staff', 'calendar_wrap', 'staff_dot',
+    'staff_dot_none', 'staff_legend', 'staff_legend_active', 'staff_legend_item', 'staff_legend_static',
+    'staff_legend_title', 'account', 'account_address', 'account_address_lines', 'account_errors',
+    'account_field', 'account_field_', 'account_form', 'account_locked', 'account_pair', 'password_group',
+    'security', 'security_device_name', 'security_device_remove', 'security_devices', 'security_on',
 )
 # Semantic and scale slots of the style tokens (the palette stays ``--sc-``).
 TOKEN_SLOTS = (
@@ -160,12 +520,70 @@ TOKEN_SLOTS = (
 
 # The draft fallback: (path relative to the addon, retired names allowed).
 ALLOWED = {
-    (KIT, '__manifest__.py'): {'sc_draft:'},  # documents the fallback
+    (KIT, '__manifest__.py'): {'sc_draft:', 'sc_notify_shown:v1'},  # documents the fallbacks
     (KIT, 'static/src/js/pk_draft_store.js'): {'sc_draft:'},
     (KIT, 'static/tests/pk_draft_store.test.js'): {'sc_draft:', 'data-sc-db', 'data-sc-uid', 'o_sc_app'},
     # Task 5344: these hoot tests check that an old o_sc_app root is not read.
     (KIT, 'static/tests/pk_app_nav.test.js'): {'o_sc_app'},
     (KIT, 'tests/test_pk_retired_names.py'): None,  # this file: every name
+    # Task 5199: the dirty-stamp fallback (read once) and its hoot test.
+    (KIT, 'static/src/js/pk_fragments.js'): {'sc_dirty_at:v1'},
+    # (and it checks that the old markers are not read any more).
+    (KIT, 'static/tests/pk_fragments.test.js'): {'sc_dirty_at:v1', 'data-sc-fragment', 'data-sc-rendered-at'},
+    (KIT, 'tests/test_pk_guard.py'): {'X-Sc-Guard'},  # the old header is not read
+    # Task 5370: the clinic's migration that removes the old attributes from
+    # the translations names them.
+    ('bemade_sports_clinic', 'migrations/19.0.1.141.0/post-migrate.py'): None,
+    # Task 5370: these hoot tests check that the old names are not read.
+    (KIT, 'static/tests/pk_form_guard.test.js'): {'data-sc-required', 'data-sc-flash-error', 'data-sc-error-for',
+                                                  'data-sc-notify', 'data-sc-notify-tone'},
+    (KIT, 'static/tests/pk_status_pills.test.js'): {'sc:pill-action', 'sc:toast'},
+    # Task 5371: the notification fallback (read once) and the hoot tests
+    # that check the old names are not read.
+    (KIT, 'static/src/js/pk_toast.js'): {'sc_notify_shown:v1'},
+    (KIT, 'static/tests/pk_toast.test.js'): {
+        'sc_notify_shown:v1', 'sc:toast', 'data-sc-notify', 'data-sc-notify-id', 'data-sc-toast-action',
+        'data-sc-toast-message', 'data-sc-form="sc.undo"', 'data-sc-form="injury.undo"'},
+    (KIT, 'static/tests/pk_lazy_edit.test.js'): {'bemade_sports_clinic.sc_lazy_edit', 'sc:edit-view-open'},
+    # Task 5381: the clinic's migration that removes the old attributes from
+    # the translations names them; the hoot tests check the old names are
+    # not read.
+    ('bemade_sports_clinic', 'migrations/19.0.1.143.0/post-migrate.py'): None,
+    (KIT, 'static/tests/pk_edit_cards.test.js'): {'data-sc-edit-toggle', 'data-sc-edit-view', 'sc:edit-open',
+                                                  'data-sc-display'},
+    (KIT, 'static/tests/pk_sheets.test.js'): {'data-sc-sheet-open'},
+    (KIT, 'static/tests/pk_tabs.test.js'): {'data-sc-tabs', 'data-sc-tab', 'data-sc-tab-panel'},
+    (KIT, 'static/tests/pk_shell.test.js'): {'data-sc-draft-clear'},
+    # Task 5382: the clinic's migration that removes the old attributes from
+    # the translations names them.
+    ('bemade_sports_clinic', 'migrations/19.0.1.144.0/post-migrate.py'): None,
+    # Task 5345: the same for P3c2's renamed attributes; the theme
+    # preference's hoot test checks that the old markers are not read.
+    ('bemade_sports_clinic', 'migrations/19.0.1.145.0/post-migrate.py'): None,
+    (KIT, 'static/tests/pk_theme_pref.test.js'): {'data-sc-pref', 'data-sc-theme-switch'},
+    # Task 5200 (P5): the data moves name the old stored names; the
+    # migrations that run them and remove the old markers; the calendar's
+    # one-release alias of its component key.
+    (KIT, 'tools/data_moves.py'): None,
+    (KIT, 'tools/adopt.py'): {'sc_app_more', 'sc_app_settings', 'sc_app_account', 'sc_app_security'},
+    (KIT, 'tests/test_pk_adopt.py'): {'sc_app_more', 'sc_app_settings', 'sc_app_account', 'sc_app_security'},
+    (KIT, 'tests/test_pk_data_moves.py'): None,
+    (KIT, 'migrations/19.0.1.12.0/post-migrate.py'): None,
+    ('bemade_sports_clinic', 'migrations/19.0.1.146.0/pre-migrate.py'): None,
+    ('bemade_sports_clinic', 'migrations/19.0.1.146.0/post-migrate.py'): None,
+    ('bemade_sports_clinic', 'static/src/js/sc_calendar_alias.js'): {'bemade_sports_clinic.sc_calendar'},
+    # Task 5201 (P6): the adoption mapping and the migration that runs it;
+    # the new worker deletes the former caches (and says so).
+    (PWA, 'tools/adopt.py'): {'sc_app_install', 'sc_app_offline'},
+    ('bemade_sports_clinic', 'migrations/19.0.1.147.0/pre-migrate.py'): None,
+    (PWA, 'static/src/sw/pk_service_worker.js'): {'sc-app-shell-'},
+    (PWA, '__manifest__.py'): {'sc-app-shell-'},
+    (PWA, 'tests/test_pk_pwa.py'): {'sc-app-shell-'},
+    # Task 5202 (P7): the adoption / data move mapping, its test and the
+    # clinic's migration that runs it.
+    (DASH, 'tools/adopt.py'): {'sc_dw_section', 'sc_app_dashboard_configure', 'sc_dashboard_layout'},
+    (DASH, 'tests/test_pk_dashboard_migration.py'): {'sc_dashboard_layout'},
+    ('bemade_sports_clinic', 'migrations/19.0.1.148.0/pre-migrate.py'): None,
 }
 
 
@@ -194,6 +612,34 @@ THEME_RE = re.compile(r'(?<![\w])data-sc-theme(?![\w-])')
 # Task 5369 (P3c1): the adopted templates' old full names.
 ADOPTED_OLD_NAMES = tuple('%s.%s' % (module, old) for module, old, _new in ADOPTED_VIEWS)
 TEMPLATE_RE = re.compile(r'(?<![\w.])(%s)(?![\w])' % _alternation(ADOPTED_OLD_NAMES))
+SAVE_RE = re.compile(r'(?<![\w])(%s)(?![\w])' % _alternation(SAVE_NAMES))
+# Task 5202 (P7): the dashboard's model / fragment keys, markers, classes
+# and anchors.
+DASH_RE = re.compile(
+    r'(?<![\w.])sc\.dashboard(?![\w])'
+    r'|(?<![\w])data-sc-(?:dash-[\w-]+|dashboard|zone|instance|widget|dw-count|dw-scope|confirm-title|confirm-message)'
+    r'(?![\w-])'
+    r'|dataset(?:\.|\[\s*["\'])sc(?:Dash\w*|Zone|Instance|Widget|ConfirmTitle|ConfirmMessage)(?![\w])'
+    r'|(?<![\w-])o_sc_dash[\w-]*'
+    r'|(?<![\w-])o_sc_dw(?:_(?:header|title|title_text|count|scope|body))?(?![\w-])'
+    r'|(?<![\w-])sc-dash-'
+    r'|data-sc-action=\\?["\']dashboard\.(?:configure|history|calendar|list|back)["\'\\]'
+)
+# Task 5370 (P4b): dataset destructuring, ``{ scModel, scField: f } = x.dataset``.
+DESTRUCTURE_RE = re.compile(r'\{([^{}]*)\}\s*=\s*[\w.$]*\.dataset\b')
+DESTRUCTURED = frozenset([_camel(a) for a in ATTRIBUTES] + ['scField'])
+# The pill's data-sc-field (dataset form, or the attribute on a pill line).
+PILL_FIELD_RE = re.compile(r'''dataset(?:\.|\[\s*["'])scField(?![\w])''')
+PILL_FIELD_ATTR_RE = re.compile(r'(?<![\w])data-sc-field(?![\w-])')
+PILL_LINE_RE = re.compile(r'pill', re.IGNORECASE)
+# The pill menu's old id prefix (not the tail of ``data-sc-pill-``).
+PILL_ID_RE = re.compile(r'(?<![\w-])sc-pill-')
+# Task 5371 (P4c1): an undo form's old marker, ``data-sc-form="<kind>.undo"``.
+UNDO_FORM_RE = re.compile(r'''(?<![\w])data-sc-form=["'][\w]+\.undo["']''')
+# Task 5382 (P4c3): the autosave field's data-sc-field / data-sc-state, on a
+# line that names the autosave field.
+AUTOSAVE_ATTR_RE = re.compile(r'(?<![\w])data-sc-(?:field|state)(?![\w-])')
+AUTOSAVE_LINE_RE = re.compile(r'autosave', re.IGNORECASE)
 
 
 def retired_names(line):
@@ -207,6 +653,20 @@ def retired_names(line):
     found += [m.group(0) for m in TOKEN_RE.finditer(line)]
     found += [m.group(0) for m in THEME_RE.finditer(line)]
     found += [m.group(0) for m in TEMPLATE_RE.finditer(line)]
+    found += [m.group(0) for m in SAVE_RE.finditer(line)]
+    found += [m.group(0) for m in DASH_RE.finditer(line)]
+    for m in DESTRUCTURE_RE.finditer(line):
+        for part in m.group(1).split(','):
+            name = part.split(':')[0].strip()
+            if name in DESTRUCTURED:
+                found.append(name)
+    found += [m.group(0) for m in PILL_FIELD_RE.finditer(line)]
+    found += [m.group(0) for m in PILL_ID_RE.finditer(line)]
+    found += [m.group(0) for m in UNDO_FORM_RE.finditer(line)]
+    if PILL_LINE_RE.search(line):
+        found += [m.group(0) for m in PILL_FIELD_ATTR_RE.finditer(line)]
+    elif AUTOSAVE_LINE_RE.search(line):
+        found += [m.group(0) for m in AUTOSAVE_ATTR_RE.finditer(line)]
     return found
 
 
@@ -253,7 +713,7 @@ class TestPkRetiredNames(TransactionCase):
 
     def test_matcher_classes_tokens_theme(self):
         """Task 5344 (P3b1): exact tokens, the clinic names left alone."""
-        self.assertEqual(retired_names('<div class="o_sc_card o_sc_card_clock">'), ['o_sc_card'])
+        self.assertEqual(retired_names('<div class="o_sc_card o_sc_card_med">'), ['o_sc_card'])
         self.assertEqual(retired_names('.o_sc_app .o_sc_appbar_title:hover {'), ['o_sc_app', 'o_sc_appbar_title'])
         self.assertEqual(retired_names('<span class="o_sc_chip o_sc_chip_mauve">'), ['o_sc_chip', 'o_sc_chip_mauve'])
         self.assertEqual(retired_names('<span class="o_sc_chip_follow o_sc_row_contacts">'), [])
@@ -263,7 +723,8 @@ class TestPkRetiredNames(TransactionCase):
         self.assertEqual(retired_names("assertIn('o_sc_app_body_%s' % theme"), ['o_sc_app_body_'])
         self.assertEqual(retired_names("cls.split('o_sc_chip_')[1]"), ['o_sc_chip_'])
         self.assertEqual(retired_names('el.classList.toggle(`o_sc_chip_${on}`)'), ['o_sc_chip_'])
-        self.assertEqual(retired_names("'o_sc_med_%s' % tone, 'o_sc_dash_zone_x'"), [])
+        # (Task 5202: o_sc_dash_* is retired since P7; a clinic widget class stays.)
+        self.assertEqual(retired_names("'o_sc_med_%s' % tone, 'o_sc_dw_zone_x'"), [])
         self.assertEqual(retired_names('animation: o_sc_spin 1s linear infinite;'), ['o_sc_spin'])
         self.assertEqual(retired_names('color: var(--sc-accent-fg, var(--sc-fg));'), ['--sc-accent-fg', '--sc-fg'])
         self.assertEqual(retired_names('--sc-bar-fg-2: #fff; --sc-surface-2: #000;'), ['--sc-bar-fg-2', '--sc-surface-2'])
@@ -273,7 +734,8 @@ class TestPkRetiredNames(TransactionCase):
                           'var(--sc-charcoal) var(--sc-grey)'), [])
         self.assertEqual(retired_names('<div data-sc-theme="dark">'), ['data-sc-theme'])
         self.assertEqual(retired_names('<div t-att-data-sc-theme="t">'), ['data-sc-theme'])
-        self.assertEqual(retired_names('<input data-sc-theme-switch="1"/>'), [])
+        # Task 5345 (P3c2): the theme switch is the kit's now.
+        self.assertEqual(retired_names('<input data-sc-theme-switch="1"/>'), ['data-sc-theme-switch'])
         self.assertEqual(retired_names('@mixin sc-theme-dark {'), [])
         self.assertEqual(
             retired_names('<div class="o_pk_app o_pk_chip_secondary" data-pk-theme="light" '
@@ -283,13 +745,242 @@ class TestPkRetiredNames(TransactionCase):
         """Task 5369 (P3c1): the adopted templates' old names, exact."""
         self.assertEqual(retired_names('<t t-call="bemade_sports_clinic.sc_icon">'), ['bemade_sports_clinic.sc_icon'])
         self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_card"'), ['bemade_sports_clinic.sc_card'])
-        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_card_icons"'), [])
+        # Task 5345 (P3c2): the card icons are the kit's now.
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_card_icons"'),
+                         ['bemade_sports_clinic.sc_card_icons'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_activity_clock"'), [])
         self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_empty_state_x"'), [])
         self.assertEqual(retired_names("env.ref('bemade_sports_clinic.sc_frontend_layout')"),
                          ['bemade_sports_clinic.sc_frontend_layout'])
         self.assertEqual(retired_names('arch_db:bemade_sports_clinic.sc_list_add_cancel'),
                          ['bemade_sports_clinic.sc_list_add_cancel'])
         self.assertEqual(retired_names('t-call="bemade_portal_kit.pk_icon" sc_card'), [])
+
+    def test_matcher_p5(self):
+        """Task 5200 (P5): the moved names, the consumer's own left alone."""
+        self.assertEqual(retired_names('<a data-sc-search-open="1" data-sc-help="1" data-sc-help-key="k">'),
+                         ['data-sc-search-open', 'data-sc-help', 'data-sc-help-key'])
+        self.assertEqual(retired_names('<a data-sc-help-guide="1" data-sc-search-x="1">'), [])
+        self.assertEqual(retired_names("get_param('bemade_sports_clinic.app_shell_enabled')"),
+                         ['bemade_sports_clinic.app_shell_enabled'])
+        self.assertEqual(retired_names("env['sc.help.article'] user.sc_theme sc_show_done_buttons"),
+                         ['sc.help.article', 'sc_theme', 'sc_show_done_buttons'])
+        self.assertEqual(retired_names("'sc_app_settings' sc_app_settings_morning_summary pk_app_settings"),
+                         ['sc_app_settings'])
+        self.assertEqual(retired_names('<div class="o_sc_calendar_box o_sc_staff_dot o_sc_account_form">'),
+                         ['o_sc_calendar_box', 'o_sc_staff_dot', 'o_sc_account_form'])
+        self.assertEqual(retired_names('<a class="o_fc_video o_pk_video">'), [])
+        self.assertEqual(retired_names('import { ScCalendar } from "@bemade_sports_clinic/js/sc_calendar";'),
+                         ['@bemade_sports_clinic/js/sc_calendar"', 'ScCalendar'])
+
+    def test_matcher_p6(self):
+        """Task 5201 (P6): the installable app's names."""
+        self.assertEqual(retired_names('<html data-sc-sw="registered"><div data-sc-install="1" data-sc-install-steps="ios">'),
+                         ['data-sc-sw', 'data-sc-install', 'data-sc-install-steps'])
+        self.assertEqual(retired_names('[data-sc-install-state="prompt"] [data-sc-install-prompt]'),
+                         ['data-sc-install-state', 'data-sc-install-prompt'])
+        self.assertEqual(retired_names("'bemade_sports_clinic/static/src/js/sc_sw_register.js' __SC_SW_VERSION__"),
+                         ['sc_sw_register.js', '__SC_SW_'])
+        self.assertEqual(retired_names('caches "sc-app-shell-" + v sc_service_worker.js sc_offline.css'),
+                         ['sc-app-shell-', 'sc_service_worker.js', 'sc_offline.css'])
+        self.assertEqual(retired_names("t-call='bemade_sports_clinic.sc_app_install' SW_SOURCE _sc_sw_version"),
+                         ['sc_app_install', 'SW_SOURCE', '_sc_sw_version'])
+        self.assertEqual(retired_names('data-pk-sw data-pk-install-steps pk_app_install PK_SW_SOURCE pk-app-shell- '
+                                       'data-sc-switch-x sc_app_install_x'), [])
+
+    def test_matcher_p7(self):
+        """Task 5202 (P7): the dashboard's names; the clinic's widget names stay."""
+        self.assertEqual(retired_names("env['sc.dashboard'] 'sc.dashboard:todo:%s' user.sc_dashboard_layout"),
+                         ['sc_dashboard_layout', 'sc.dashboard', 'sc.dashboard'])
+        self.assertEqual(retired_names('<div data-sc-dashboard="1" data-sc-zone="left" data-sc-dash-item="x">'),
+                         ['data-sc-dashboard', 'data-sc-zone', 'data-sc-dash-item'])
+        self.assertEqual(retired_names('<s data-sc-instance="a" data-sc-widget="b" data-sc-dw-count="1">'),
+                         ['data-sc-instance', 'data-sc-widget', 'data-sc-dw-count'])
+        self.assertEqual(retired_names('el.dataset.scDashZone form.dataset.scConfirmTitle'),
+                         ['dataset.scDashZone', 'dataset.scConfirmTitle'])
+        self.assertEqual(retired_names('class="o_sc_dash_cfg o_sc_dw o_sc_dw_body o_sc_dw_title_text"'),
+                         ['o_sc_dash_cfg', 'o_sc_dw', 'o_sc_dw_body', 'o_sc_dw_title_text'])
+        self.assertEqual(retired_names('<a data-sc-action="dashboard.configure" href="#sc-dash-todo">'),
+                         ['data-sc-action="dashboard.configure"', 'sc-dash-'])
+        self.assertEqual(retired_names("Dash._sc_layout_update(x) _sc_viewer() sc_dashboard_config.js"),
+                         ['_sc_layout_update', '_sc_viewer', 'sc_dashboard_config.js'])
+        self.assertEqual(retired_names('o_sc_dw_todo_lines o_sc_dw_more data-sc-dw-more data-sc-todo '
+                                       'data-sc-action="dashboard.timesheet.add" portal.kit.dashboard '
+                                       'pk.dashboard:x sc_dash_kept_rows _sc_dash_player_rows _sc_data_todo'), [])
+
+    def test_matcher_save_engine(self):
+        """Task 5199 (P4a): the save engine and screen refresh names."""
+        self.assertEqual(retired_names('<div t-att-data-sc-fragment="sc_fragment_key(p, \'hero\')">'),
+                         ['data-sc-fragment', 'sc_fragment_key'])
+        self.assertEqual(retired_names('<ul data-sc-fragment-mode="list" data-sc-fragment-keep-empty="1">'),
+                         ['data-sc-fragment-mode', 'data-sc-fragment-keep-empty'])
+        self.assertEqual(retired_names('el.dataset.scFragment; el.dataset.scFragmentKeep; root.dataset.scRenderedAt'),
+                         ['dataset.scFragment', 'dataset.scFragmentKeep', 'dataset.scRenderedAt'])
+        self.assertEqual(retired_names('<details data-sc-keep-open="x">'), ['data-sc-keep-open'])
+        self.assertEqual(retired_names('"sc:saved" "sc:refresh" "sc:refresh-now"'),
+                         ['sc:saved', 'sc:refresh', 'sc:refresh-now'])
+        self.assertEqual(retired_names("headers={'X-Sc-Fragments': k}"), ['X-Sc-Fragments'])
+        self.assertEqual(retired_names('import { x } from "@bemade_sports_clinic/js/sc_fragments";'),
+                         ['@bemade_sports_clinic/js/sc_fragments'])
+        self.assertEqual(retired_names('self._sc_save_json(p) or sc_now_ms() or SAVE_REGISTRY'),
+                         ['_sc_save_json', 'sc_now_ms', 'SAVE_REGISTRY'])
+        self.assertEqual(retired_names('_pk_save_json pk_now_ms pk_fragment_key data-pk-fragment pk:saved'), [])
+        self.assertEqual(retired_names('_sc_save_proposal sc_fragments_1611 data-sc-edit-card-body'), [])
+
+    def test_matcher_guard_pills_lazy(self):
+        """Task 5370 (P4b): the guard, pills and lazy edit names."""
+        self.assertEqual(retired_names('<form data-sc-guard="1" data-sc-guard-mode="fetch">'),
+                         ['data-sc-guard', 'data-sc-guard-mode'])
+        self.assertEqual(retired_names('<p data-sc-flash-error="1"/><p data-sc-error-for="x"/>'),
+                         ['data-sc-flash-error', 'data-sc-error-for'])
+        self.assertEqual(retired_names('el.dataset.scGuardBlock; form.dataset.scGuardMode'),
+                         ['dataset.scGuardBlock', 'dataset.scGuardMode'])
+        self.assertEqual(retired_names('const { scModel, scRecordId: id, scField } = pill.dataset;'),
+                         ['scModel', 'scRecordId', 'scField'])
+        self.assertEqual(retired_names('const { scState } = el.dataset;'), [])
+        self.assertEqual(retired_names('el.dataset.scField === f'), ['dataset.scField'])
+        self.assertEqual(retired_names("tree.xpath('//*[@data-sc-pill-select][@data-sc-field=\"x\"]')"),
+                         ['data-sc-pill-select', 'data-sc-field'])
+        # Task 5382 (P4c3): the autosave field's data-sc-field is retired too.
+        self.assertEqual(retired_names('.o_pk_autosave[data-sc-field="name"]'), ['data-sc-field'])
+        self.assertEqual(retired_names('"sc:pill-action" "sc:edit-view-open" sc:toast'),
+                         ['sc:pill-action', 'sc:edit-view-open', 'sc:toast'])
+        self.assertEqual(retired_names('class="o_sc_guard_reason o_sc_reason_flash"'),
+                         ['o_sc_guard_reason', 'o_sc_reason_flash'])
+        self.assertEqual(retired_names("headers={'X-Sc-Guard': '1'} _sc_guard_probe()"),
+                         ['X-Sc-Guard', '_sc_guard_probe'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_form_guard_slots"'),
+                         ['bemade_sports_clinic.sc_form_guard_slots'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_status_pill_select"'),
+                         ['bemade_sports_clinic.sc_status_pill_select'])
+        self.assertEqual(retired_names('from "@bemade_sports_clinic/js/sc_form_guard";'),
+                         ['@bemade_sports_clinic/js/sc_form_guard'])
+        self.assertEqual(retired_names('<template data-sc-lazy-edit="1"/> data-sc-lazy-urls data-sc-form'),
+                         ['data-sc-lazy-edit'])
+        self.assertEqual(retired_names("'sc-pill-%s' % key"), ['sc-pill-'])
+        self.assertEqual(retired_names('data-pk-guard data-pk-pill-select pk:pill-action o_pk_guard_reason'), [])
+
+    def test_matcher_toast_undo(self):
+        """Task 5371 (P4c1): the toast, notification and undo names."""
+        self.assertEqual(retired_names('<div t-att-data-sc-notify="m" t-att-data-sc-notify-id="i">'),
+                         ['data-sc-notify', 'data-sc-notify-id'])
+        self.assertEqual(retired_names('toast.dataset.scNotifyTone; button.dataset.scToastAction = "1"'),
+                         ['dataset.scNotifyTone', 'dataset.scToastAction'])
+        self.assertEqual(retired_names('document.body.dataset.scToastRoom; t.dataset.scToastTone'),
+                         ['dataset.scToastRoom', 'dataset.scToastTone'])
+        self.assertEqual(retired_names('new CustomEvent("sc:toast", { detail })'), ['sc:toast'])
+        self.assertEqual(retired_names('"sc:toaster" pk:toast'), [])
+        self.assertEqual(retired_names('getItem("sc_notify_shown:v1")'), ['sc_notify_shown:v1'])
+        self.assertEqual(retired_names('<form data-sc-form="sc.undo" t-att-data-sc-toast-action="l">'),
+                         ['data-sc-toast-action', 'data-sc-form="sc.undo"'])
+        self.assertEqual(retired_names("xpath('//form[@data-sc-form=\"injury.undo\"]')"),
+                         ['data-sc-form="injury.undo"'])
+        self.assertEqual(retired_names('<form data-sc-form="team.player.add" data-sc-form="note">'), [])
+        self.assertEqual(retired_names("'sc_notification': self._sc_pop_notification(); self._sc_offer_undo(m, u)"),
+                         ['sc_notification', '_sc_pop_notification', '_sc_offer_undo'])
+        self.assertEqual(retired_names('sc_notification_x _sc_offer_undo_x'), [])
+        self.assertEqual(retired_names('pk_notification data-pk-notify data-pk-undo-offer="injury" pk_notify_shown:v1'),
+                         [])
+
+    def test_matcher_cards_sheets_tabs(self):
+        """Task 5381 (P4c2): longest names first, every form."""
+        self.assertEqual(retired_names('<button data-sc-edit-toggle="1" data-sc-edit-toggle-done="1">'),
+                         ['data-sc-edit-toggle', 'data-sc-edit-toggle-done'])
+        self.assertEqual(retired_names('<div data-sc-edit-card-body="1" data-sc-card-icons="1">'),
+                         ['data-sc-card-icons'])  # task 5345: the card icons are the kit's
+        self.assertEqual(retired_names('[data-sc-edit-open]:not([data-sc-edit-open=""]) [data-sc-edit-open-on-load]'),
+                         ['data-sc-edit-open', 'data-sc-edit-open', 'data-sc-edit-open-on-load'])
+        self.assertEqual(retired_names('<nav data-sc-tabs="1"><a data-sc-tab="x" data-sc-tab-aliases="y">'),
+                         ['data-sc-tabs', 'data-sc-tab', 'data-sc-tab-aliases'])
+        self.assertEqual(retired_names('<section data-sc-tab-panel="x">'), ['data-sc-tab-panel'])
+        self.assertEqual(retired_names('card.dataset.scEditOpen; t.dataset.scTab; d.dataset.scLoaded'),
+                         ['dataset.scEditOpen', 'dataset.scTab', 'dataset.scLoaded'])
+        self.assertEqual(retired_names('o.dataset.scSheetOpen; o.dataset.scSheetUrl; d.dataset.scLazyFresh'),
+                         ['dataset.scSheetOpen', 'dataset.scSheetUrl', 'dataset.scLazyFresh'])
+        self.assertEqual(retired_names('t.dataset.scClampOpen; m.dataset.scDraftClear; r.dataset.scEditDoneLabel'),
+                         ['dataset.scClampOpen', 'dataset.scDraftClear', 'dataset.scEditDoneLabel'])
+        self.assertEqual(retired_names('<p data-sc-clamp="3"/><a data-sc-clamp-more="1"/>'),
+                         ['data-sc-clamp', 'data-sc-clamp-more'])
+        self.assertEqual(retired_names('<span t-att-data-sc-display="sc_display_key(r, f)" t-out="sc_display(r, f)"/>'),
+                         ['data-sc-display', 'sc_display_key', 'sc_display'])
+        self.assertEqual(retired_names('t-att-href="sc_contact_href(k, v)" class="o_sc_contact_link"'),
+                         ['o_sc_contact_link', 'sc_contact_href'])
+        self.assertEqual(retired_names('new CustomEvent("sc:edit-open")'), ['sc:edit-open'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_sheet"'), ['bemade_sports_clinic.sc_sheet'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_page_tabs" sc_sheet_id'),
+                         ['bemade_sports_clinic.sc_page_tabs'])
+        self.assertEqual(retired_names('data-sc-row-expand data-sc-lazy-url data-sc-draft-clear'),
+                         ['data-sc-row-expand', 'data-sc-lazy-url', 'data-sc-draft-clear'])
+        self.assertEqual(retired_names('data-sc-timesheet-id data-sc-ts-edit data-sc-created-injury data-sc-action'), [])
+        self.assertEqual(retired_names('data-pk-edit-toggle data-pk-tab pk:edit-open pk_display o_pk_contact_link'), [])
+
+    def test_matcher_autosave(self):
+        """Task 5382 (P4c3): the autosave field's names, its meanings only."""
+        self.assertEqual(
+            retired_names('.o_pk_autosave[data-sc-field="name"][data-sc-state="saved"] [data-sc-replace="new"]'),
+            ['data-sc-replace', 'data-sc-field', 'data-sc-state'])
+        # Another meaning of data-sc-state (a worklist row) stays.
+        self.assertEqual(retired_names('li[data-sc-state="arrived"][data-sc-patient-id]'), [])
+        self.assertEqual(retired_names('box.dataset.scState = status;'), [])
+        self.assertEqual(retired_names('t-att-data-sc-autosave="m" t-att-data-sc-restored="r"'),
+                         ['data-sc-autosave', 'data-sc-restored'])
+        self.assertEqual(retired_names('<li t-att-data-sc-tags-index="i"/><p data-sc-tags-typed-error="1"/>'),
+                         ['data-sc-tags-index', 'data-sc-tags-typed-error'])
+        self.assertEqual(retired_names('[data-sc-org-confirm-box] [data-sc-org-cancel] [data-sc-org-confirm]'),
+                         ['data-sc-org-confirm-box', 'data-sc-org-cancel', 'data-sc-org-confirm'])
+        self.assertEqual(retired_names('<select data-sc-picker="1" data-sc-picker-key="team">'),
+                         ['data-sc-picker', 'data-sc-picker-key'])
+        # Task 5200 (P5): the picker's empty / scope markers are the kit's now.
+        self.assertEqual(retired_names('<select data-sc-picker-empty="1"><div data-sc-picker-scope="1">'),
+                         ['data-sc-picker-empty', 'data-sc-picker-scope'])
+        self.assertEqual(retired_names('select.dataset.scPickerKey; o.dataset.scTeams; o.dataset.scPlayer'),
+                         ['dataset.scPickerKey', 'dataset.scTeams', 'dataset.scPlayer'])
+        # Task 5200 (P5): the picker's dataset names are the kit's now.
+        self.assertEqual(retired_names('select.dataset.scPickerReady; li.dataset.scPlayerId'),
+                         ['dataset.scPickerReady'])
+        self.assertEqual(retired_names('<option t-att-data-sc-player="p"/> data-sc-player-id="1"'),
+                         ['data-sc-player'])
+        self.assertEqual(retired_names('class="o_sc_identity_banner o_sc_group_confirm o_sc_replace_current_text"'),
+                         ['o_sc_identity_banner', 'o_sc_group_confirm', 'o_sc_replace_current_text'])
+        self.assertEqual(retired_names('<button data-sc-value="no:yes"/>'), ['data-sc-value'])
+        self.assertEqual(retired_names('<owl-component name="bemade_sports_clinic.sc_autosave_field"/>'),
+                         ['bemade_sports_clinic.sc_autosave_field'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_field_autosave"'),
+                         ['bemade_sports_clinic.sc_field_autosave'])
+        self.assertEqual(retired_names("self._sc_field_props(r, 'f', l) sc_draft_props(k) _sc_options(o)"),
+                         ['_sc_field_props', 'sc_draft_props', '_sc_options'])
+        self.assertEqual(retired_names("{'confirm_identity': True} class ScAutosaveField"),
+                         ['confirm_identity', 'ScAutosaveField'])
+        self.assertEqual(
+            retired_names('data-pk-autosave-field data-pk-autosave-state pk_field_props o_pk_confirm_banner '
+                          'bemade_portal_kit.pk_autosave_field data-pk-picker data-pk-meta-group'), [])
+
+    def test_matcher_layout_components(self):
+        """Task 5345 (P3c2): the layout's and the components' names, their
+        moved meanings only."""
+        self.assertEqual(
+            retired_names('<div t-att-data-sc-hide-done="h" t-att-data-sc-top="t" data-sc-user-menu="bar">'),
+            ['data-sc-hide-done', 'data-sc-top', 'data-sc-user-menu'])
+        self.assertEqual(retired_names('<form data-sc-pref="1"><div data-sc-user-menu-head="1">'),
+                         ['data-sc-pref', 'data-sc-user-menu-head'])
+        self.assertEqual(retired_names('<a data-sc-sort="name" data-sc-row-link="m" data-sc-row-link-plain="m">'),
+                         ['data-sc-sort', 'data-sc-row-link', 'data-sc-row-link-plain'])
+        self.assertEqual(retired_names('li.dataset.scScope; label.dataset.scSwitchLocked'),
+                         ['dataset.scScope', 'dataset.scSwitchLocked'])
+        self.assertEqual(retired_names('class="o_sc_card_clock o_sc_card_clock_overdue o_sc_overdue_badge"'),
+                         ['o_sc_card_clock', 'o_sc_card_clock_overdue'])
+        self.assertEqual(retired_names('<span class="o_sc_overdue"><span class="o_sc_overdue_flag" data-sc-overdue="1">'),
+                         ['data-sc-overdue', 'o_sc_overdue', 'o_sc_overdue_flag'])
+        # Other meanings stay: the consumer's own actions, nav rows, row clock.
+        self.assertEqual(retired_names('<a data-sc-action="x" data-sc-nav-key="k" data-sc-activity-clock="1" '
+                                       'data-sc-activity-clock-bar="1" data-sc-sort-key="a">'), [])
+        self.assertEqual(retired_names("t-set=\"sc_title\" sc_active_nav main#sc_content 'sc_flash': f"),
+                         ['sc_title', 'sc_active_nav', 'sc_content', 'sc_flash'])
+        self.assertEqual(retired_names('sc_title_x sc_flash_banners pk_title pk_flash pk_theme'), [])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_return_overdue_flag"'),
+                         ['bemade_sports_clinic.sc_return_overdue_flag'])
+        self.assertEqual(
+            retired_names('data-pk-hide-done data-pk-top data-pk-sort o_pk_card_clock o_pk_overdue_flag pk_content'), [])
 
     def test_no_retired_name_left(self):
         hits = []

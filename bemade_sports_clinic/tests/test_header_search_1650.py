@@ -22,7 +22,7 @@ from lxml import html as lxml_html
 from odoo import Command
 from odoo.tests import tagged
 
-from odoo.addons.bemade_sports_clinic.controllers.app_search import sc_fold, sc_name_matches
+from odoo.addons.bemade_portal_kit.tools import pk_fold, pk_name_matches
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
 
@@ -62,19 +62,19 @@ class Search1650Common(AppShellCommon):
 
     @staticmethod
     def _players(tree):
-        return {int(li.get('data-sc-search-player')): li
-                for li in tree.xpath('//li[@data-sc-search-player]')}
+        return {int(li.get('data-pk-search-row')): li
+                for li in tree.xpath('//li[@data-pk-search-row]')}
 
 
 @tagged('post_install', '-at_install')
 class TestHeaderSearch1650(Search1650Common):
 
     def test_name_matching(self):
-        self.assertEqual(sc_fold('Éloïse'), 'eloise')
-        self.assertTrue(sc_name_matches(['eloi', 'syn'], 'Éloïse', 'Synthétique'))
-        self.assertTrue(sc_name_matches(['synth', 'elo'], 'Éloïse', 'Synthétique'))
-        self.assertFalse(sc_name_matches(['loise'], 'Éloïse', 'Synthétique'))
-        self.assertTrue(sc_name_matches(['other'], 'Eloi', 'Synthetic-Other'))
+        self.assertEqual(pk_fold('Éloïse'), 'eloise')
+        self.assertTrue(pk_name_matches(['eloi', 'syn'], 'Éloïse', 'Synthétique'))
+        self.assertTrue(pk_name_matches(['synth', 'elo'], 'Éloïse', 'Synthétique'))
+        self.assertFalse(pk_name_matches(['loise'], 'Éloïse', 'Synthétique'))
+        self.assertTrue(pk_name_matches(['other'], 'Eloi', 'Synthetic-Other'))
 
     def test_coach_scope(self):
         self._login_coach()
@@ -108,7 +108,7 @@ class TestHeaderSearch1650(Search1650Common):
     def test_archived_last_and_flagged(self):
         self._login_tp()
         _text, tree = self._search('synth')
-        ids = [int(li.get('data-sc-search-player')) for li in tree.xpath('//li[@data-sc-search-player]')]
+        ids = [int(li.get('data-pk-search-row')) for li in tree.xpath('//li[@data-pk-search-row]')]
         self.assertIn(self.old.id, ids)
         self.assertEqual(ids[-1], self.old.id, ids)
         row = self._players(tree)[self.old.id]
@@ -118,18 +118,18 @@ class TestHeaderSearch1650(Search1650Common):
     def test_teams_and_events(self):
         self._login_tp()
         _text, tree = self._search('pc%20team')
-        hrefs = tree.xpath('//section[@data-sc-search-group="teams"]//a/@href')
+        hrefs = tree.xpath('//section[@data-pk-search-group="teams"]//a/@href')
         self.assertIn('/my/team?team_id=%s' % self.team_a.id, hrefs)
         self.assertNotIn('/my/team?team_id=%s' % self.team_b.id, hrefs)
         _text, tree = self._search('pc%20ev')
         self.assertIn('/my/event/%s' % self.event.id,
-                      tree.xpath('//section[@data-sc-search-group="events"]//a/@href'))
+                      tree.xpath('//section[@data-pk-search-group="events"]//a/@href'))
 
     def test_short_query_and_no_private_data(self):
         self._login_tp()
         _text, tree = self._search('e')
         self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_search_hint")]'))
-        self.assertFalse(tree.xpath('//li[@data-sc-search-player]'))
+        self.assertFalse(tree.xpath('//li[@data-pk-search-row]'))
         text, _tree = self._search('eloise')
         for private in ('2010', '514', '555-0190'):
             self.assertNotIn(private, text)
@@ -139,10 +139,10 @@ class TestHeaderSearch1650(Search1650Common):
     def test_header_opens_the_sheet(self):
         self._login_coach()
         _text, tree = self._get('/my/home')
-        opener = tree.xpath('//header//a[@data-sc-search-open]')
+        opener = tree.xpath('//header//a[@data-pk-search-open]')
         self.assertEqual(len(opener), 1)
         self.assertEqual(opener[0].get('href'), '/my/players')
-        self.assertTrue(tree.xpath('//dialog[@id="sc_search_sheet"]//input[@data-sc-search-input]'))
+        self.assertTrue(tree.xpath('//dialog[@id="pk_search_sheet"]//input[@data-pk-search-input]'))
 
 
 @tagged('post_install', '-at_install')

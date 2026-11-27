@@ -111,7 +111,7 @@ class TestAppShellNav1579(Nav1579Common):
             and 't-call="bemade_sports_clinic.sc_app_layout"' in (view.arch_db or '')
         }
         self.assertIn('sc_app_player', pages)
-        registered = set(self.env['portal.kit'].pk_pages())
+        registered = set(self.env['portal.kit'].pk_pages(app=sc_app_nav.SC_APP))
         self.assertFalse(pages - registered, 'pages without a registry entry')
         # And every shell page a controller renders.
         root = os.path.join(get_module_path('bemade_sports_clinic'), 'controllers')
@@ -120,13 +120,12 @@ class TestAppShellNav1579(Nav1579Common):
             if name.endswith('.py'):
                 with open(os.path.join(root, name), encoding='utf-8') as handle:
                     rendered |= set(re.findall(r"'bemade_sports_clinic\.(sc_app_\w+)'", handle.read()))
-        rendered -= {'sc_app_offline'}  # standalone page, no app layout
         rendered -= {'sc_app_search_results'}  # task 1650: a fragment, not a page
         self.assertIn('sc_app_team', rendered)
         self.assertFalse(rendered - registered, 'rendered pages without an entry')
 
     def test_every_sub_page_declares_a_parent(self):
-        pages = self.env['portal.kit'].pk_pages()
+        pages = self.env['portal.kit'].pk_pages(app=sc_app_nav.SC_APP)
         self.assertTrue(sc_app_nav.TOP_LEVEL <= set(pages))
         orphans = [key for key, page in pages.items()
                    if key not in sc_app_nav.TOP_LEVEL and not page.has_parent]
@@ -210,6 +209,8 @@ class TestAppShellNav1579(Nav1579Common):
 
     def test_match_url_validator(self):
         kit = self.env(user=self.coach)['portal.kit']
+        # Task 5391: the coach's lookups are the clinic app's.
+        self.assertEqual(kit._pk_app(), sc_app_nav.SC_APP)
         for bad in ('https://evil.example/my/home', '//evil.example/my/home',
                     'javascript:alert(1)', '/\\evil.example', '/my/home\tx',
                     '/web/login', '/my/account', 'my/home', '',

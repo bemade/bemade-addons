@@ -47,7 +47,7 @@ class TestClinicKiosk(HttpCase):
         # The kiosk renders fr_CA by default (#1433): the route tests below
         # assert FRENCH, which requires the terms to be loaded.
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'])
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'])
 
         cls.org = env['res.partner'].create({'name': 'KK Org', 'is_company': True})
         cls.team = env['sports.team'].create({'name': 'KK Team', 'parent_id': cls.org.id})
@@ -393,7 +393,8 @@ class TestClinicKiosk(HttpCase):
         self.assertIn('Bienvenue', resp.text)
         self.assertNotIn('Kim', resp.text, "the result carries no name (#1433 PRG)")
         self.assertNotIn('2001-02-03', resp.text, "the DOB is never displayed back")
-        self.assertNotIn('2001', resp.text)
+        # The csrf token's expiry stamp is digits too (…o1827200101): not a DOB.
+        self.assertNotIn('2001', re.sub(r'csrf_token: "[^"]*"', '', resp.text))
         self._assert_no_store(resp)
         self.assertIn('http-equiv="refresh"', resp.text, "result auto-returns")
         row = self._rows(patient=self.kim)
@@ -495,24 +496,23 @@ class TestClinicKiosk(HttpCase):
     # TP PAGE + FRAGMENT
     # ==================================================================
     def test_fragment_route_for_tp_and_coach(self):
+        """Task 1541 (rewritten): the live worklist's JSON (/worklist/data;
+        the legacy HTML fragment is gone, 404) — same gate as the page."""
         self.Attendance.create({'event_id': self.clinic.id, 'patient_id': self.kim.id})
         self._login_tp()
-        resp = self.url_open('/my/clinic/%s/worklist/fragment?patient=%s' % (
-            self.clinic.id, self.kim.id))
+        resp = self.url_open('/my/clinic/%s/worklist/data' % self.clinic.id)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.headers.get('Cache-Control'), 'no-store')
-        self.assertIn('o_sc_worklist', resp.text)
-        self.assertIn('Kiosk, Kim', resp.text, "worklist rows read « Last, First » (#1414)")
-        self.assertIn('border-info', resp.text, "selected highlight kept")
-        self.assertNotIn('<html', resp.text, "a fragment, not a page")
-        self.assertNotIn('Sign-in kiosk', resp.text, "only the rows")
+        names = [row['name'] for row in resp.json()['rows']]
+        self.assertIn('Kiosk, Kim', names, "worklist rows read « Last, First » (#1414)")
+        self.assertEqual(self.url_open('/my/clinic/%s/worklist/fragment' % self.clinic.id).status_code, 404)
         # a coach is refused, exactly like on the page
         self.authenticate('kk.coach@example.com', 'kk-coach')
-        resp = self.url_open('/my/clinic/%s/worklist/fragment' % self.clinic.id)
+        resp = self.url_open('/my/clinic/%s/worklist/data' % self.clinic.id)
         self.assertEqual(resp.status_code, 403)
         # not a clinic
         self._login_tp()
-        resp = self.url_open('/my/clinic/%s/worklist/fragment' % self.game.id)
+        resp = self.url_open('/my/clinic/%s/worklist/data' % self.game.id)
         self.assertEqual(resp.status_code, 403)
 
     def test_tp_page_kiosk_pair_and_unbind(self):
@@ -592,28 +592,31 @@ class TestClinicKiosk(HttpCase):
         self.assertEqual(device.clinic_id, self.clinic_future)
 
     def test_tp_page_shows_flag_and_confirms(self):
+        """Task 1541 (rewritten for the app's live worklist, JSON): the row
+        to confirm is flagged; /worklist/confirm clears it; a row from
+        another clinic is refused and stays flagged."""
         self._bind_device()
         self._kiosk_post('Noa', 'Nodob', '2003-03-03')
         row = self._rows(patient=self.noa)
         self.assertTrue(row.needs_confirmation)
         self._login_tp()
-        page = self.url_open('/my/clinic/%s' % self.clinic.id)
-        self.assertIn('To confirm', page.text)
-        self.assertIn('/attendance/%s/confirm' % row.id, page.text)
-        resp = self.url_open('/my/clinic/%s/attendance/%s/confirm' % (self.clinic.id, row.id),
-                             data={'csrf_token': self._csrf_from(page.text)})
+        data = self.url_open('/my/clinic/%s/worklist/data' % self.clinic.id).json()
+        flagged = {r['id']: r['toConfirm'] for r in data['rows']}
+        self.assertTrue(flagged[row.id])
+        token = self._csrf()
+        resp = self.url_open('/my/clinic/%s/worklist/confirm' % self.clinic.id,
+                             data={'csrf_token': token, 'attendance_id': row.id})
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('Identity confirmed', resp.text)
         self.assertFalse(row.needs_confirmation)
-        self.assertNotIn('To confirm', resp.text)
+        self.assertFalse({r['id']: r['toConfirm'] for r in resp.json()['data']['rows']}[row.id])
         # a row from another clinic is refused
         other = self.Attendance.create({
             'event_id': self.clinic_future.id, 'patient_id': self.noa.id,
             'needs_confirmation': True})
-        resp = self.url_open('/my/clinic/%s/attendance/%s/confirm' % (self.clinic.id, other.id),
-                             data={'csrf_token': self._csrf()})
+        resp = self.url_open('/my/clinic/%s/worklist/confirm' % self.clinic.id,
+                             data={'csrf_token': token, 'attendance_id': other.id})
+        self.assertEqual(resp.status_code, 404)
         self.assertTrue(other.needs_confirmation)
-        self.assertIn('/my/clinics', resp.url)
 
     def test_chatter_notes_carry_no_phi(self):
         device = self._bind_device()

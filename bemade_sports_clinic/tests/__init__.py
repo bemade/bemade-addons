@@ -61,7 +61,6 @@ from . import test_player_activities_tab
 from . import test_event_detail_timesheet_confidentiality
 from . import test_injury_note_history
 from . import test_append_query
-from . import test_cov_portal_datetime_lang
 from . import test_law25_anonymize
 from . import test_law25_roster_invariants
 from . import test_team_player_removal_wizard
@@ -328,3 +327,9 @@ from . import test_portal_kit_hooks_5196
 from . import test_hero_pills_edit_mode_1753
 from . import test_instance_banner_1752
 from . import test_icon_extra_5369
+from . import test_pk_layout_wrapper_5345
+from . import test_kit_version_guard_5388
+from . import test_legacy_removal_1541
+from . import test_bad_ids_1541
+from . import test_no_access_theme_1541
+from . import test_in_app_refusal_1541

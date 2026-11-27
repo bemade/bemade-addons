@@ -11,7 +11,7 @@ only, see there). Everything goes through the two members below, always for
   another user's answer: a user's follows are private to them.
 
 The dashboard's « Joueurs que je suis » widget reads them with
-``sc.dashboard._sc_data_followed``.
+``portal.kit.dashboard._sc_data_followed``.
 """
 from odoo import api, fields, models
 
