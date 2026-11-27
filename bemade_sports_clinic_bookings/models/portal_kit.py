@@ -12,17 +12,23 @@ declares a parent — bemade_sports_clinic test_app_shell_nav_1579).
 
 Task 5391: the entries are the clinic app's (``SC_APP``, the kit's per-app
 registries).
+
+Task 1795: the client app (``SC_CLIENT_APP``) gets its own « Rendez-vous »
+tab and page on the same URL (``/my/bookings``, the client's own bookings:
+``controllers/client_bookings.py``); a top-level page (a tab).
 """
 from odoo import api, models
 from odoo.tools.translate import LazyTranslate
 
-from odoo.addons.bemade_portal_kit.tools import Page, pk_nav
-from odoo.addons.bemade_sports_clinic.models.sc_app_nav import SC_APP
+from odoo.addons.bemade_portal_kit.tools import Page, pk_nav, pk_static_page
+from odoo.addons.bemade_sports_clinic.models.sc_app_nav import SC_APP, SC_CLIENT_APP
 from odoo.addons.bemade_sports_clinic.models.sc_app_roles import EVERYONE, RAIL_PLUS
+from odoo.addons.bemade_sports_clinic.models.sc_client_app import CLIENT, TAB_RAIL
 
 _lt = LazyTranslate(__name__)
 
 BOOKINGS_PAGE = 'sc_app_bookings'
+CLIENT_BOOKINGS_PAGE = 'sc_client_bookings'
 # Labels first, keys zipped in (babel's extractor would take a literal that
 # follows an _lt() call in the same tuple for a term).
 _PAGE_LABELS = (_lt('Edit booking'), _lt('Cancel booking'))
@@ -44,6 +50,8 @@ class SportsClinicBookingsPortalKit(models.AbstractModel):
             pk_nav('bookings', _lt('Bookings'), 'bookings', '/my/bookings', EVERYONE, 80,
                    RAIL_PLUS, requires=_booking_card_enabled,
                    subtitle=_lt('Your appointments'), app=SC_APP),
+            pk_nav('bookings', _lt('Appointments'), 'bookings', '/my/bookings', CLIENT, 20,
+                   TAB_RAIL, app=SC_CLIENT_APP),
         ]
 
     @api.model
@@ -55,4 +63,6 @@ class SportsClinicBookingsPortalKit(models.AbstractModel):
             pages.append(Page(
                 key, parent=lambda v: (BOOKINGS_PAGE, {}), label=label,
                 url=lambda v, _s=suffix: '/my/bookings/%s/%s' % (v['booking'].id, _s), app=SC_APP))
+        pages.append(pk_static_page(
+            CLIENT_BOOKINGS_PAGE, '/my/bookings', _lt('Appointments'), app=SC_CLIENT_APP))
         return list(super()._pk_pages()) + pages

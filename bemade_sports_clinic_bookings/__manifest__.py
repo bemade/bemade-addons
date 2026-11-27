@@ -55,7 +55,18 @@ only), ``/my/bookings`` and ``/my/bookings/calendar`` render on the shell:
   unchanged. A staff member who cancels a booking for later today gets no
   « Booking cancelled » notice about their own cancellation.
 
-For a user without a clinic app role both pages render exactly the
+For a user of the client app (task 1795: a portal user without a clinic
+staff role, ``bemade_sports_clinic``), ``/my/bookings`` is « Rendez-vous »:
+their own bookings (Odoo's customer domain: attendee, not organizer, of an
+event with an appointment type), upcoming first and the past ones folded,
+each with Odoo's own links (« Voir les détails »: ``/calendar/view/<token>``;
+« Annuler »: ``/calendar/cancel/<token>``, while the type's minimum notice
+allows it). « Prendre rendez-vous » opens the published appointment type
+(several: a short list of them; none: no button). The client home shows the
+next appointment, the button and a « Mes rendez-vous » shortcut. A portal
+appointment provider keeps the provider page.
+
+For a user without a clinic app role (and not in the client app) both pages render exactly the
 ``appointment_portal_staff`` templates. The bookings addon
 itself is unchanged; the routes, domains and record rules are its own.
 """,
@@ -69,6 +80,7 @@ itself is unchanged; the routes, domains and record rules are its own.
         'views/sc_app_bookings.xml',
         'views/sc_app_settings_booking_emails.xml',
         'views/sc_booking_mails.xml',
+        'views/sc_client_bookings.xml',
     ],
     'assets': {
         'web.assets_frontend': [
