@@ -67,7 +67,9 @@ class TestAppShellRoles1538(TransactionCase):
         self.assertEqual(self.coach._sc_app_roles(), frozenset({'coach'}))
         self.assertEqual(self.tp._sc_app_roles(), frozenset({'therapist'}))
         self.assertEqual(self.both._sc_app_roles(), frozenset({'coach', 'therapist'}))
-        self.assertEqual(self.plain._sc_app_roles(), frozenset())
+        # Task 1795 (deliberate update): a portal user without a clinic role
+        # is a client (the client app's catch-all role).
+        self.assertEqual(self.plain._sc_app_roles(), frozenset({'client'}))
         self.assertEqual(self.head_coach._sc_app_roles(), frozenset({'coach', 'head_coach'}))
         admin_roles = self.env.ref('base.user_admin')._sc_app_roles()
         self.assertIn('internal', admin_roles)
@@ -115,7 +117,9 @@ class TestAppShellRoles1538(TransactionCase):
         for reserved in ('teacher', 'parent', 'player', 'secretary'):
             self.assertIn(reserved, registry.RESERVED_ROLES)
             self.assertEqual(self.env['portal.kit'].pk_roles()[reserved]['groups'], ())
-        self.assertEqual(self.parent._sc_app_roles(), frozenset())
+        # Task 1795 (deliberate update): without a parent group, the user is
+        # a plain portal user — the client app's catch-all role.
+        self.assertEqual(self.parent._sc_app_roles(), frozenset({'client'}))
 
     def test_parent_mapping_is_data_only(self):
         parent_entry = {

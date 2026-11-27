@@ -26,8 +26,9 @@ Acceptance criteria:
   city, zip, country, province, phone optional — an empty phone, or a city
   without the rest of the address, is saved); an empty name or email is
   still refused. ``/my/address/country_info`` answers ``name`` / ``email``
-  as the required fields for them. Shell off, or a plain portal user (no
-  app role): the core rules (the whole address + phone) are unchanged.
+  as the required fields for them (task 1795: a plain portal user is a
+  client, an app user too). Shell off: the core rules (the whole address +
+  phone) are unchanged.
 """
 import json
 
@@ -244,15 +245,18 @@ class TestAccountAutosave1018c(Account1018cCommon):
         info = self._country_info(self.ca)
         self.assertIn('street', info['required_fields'])
 
-    def test_plain_portal_user_keeps_core_rules(self):
+    def test_plain_portal_user_gets_the_app_rules(self):
+        # Task 1795 (deliberate update): a plain portal user is a client — an
+        # app user, « Mon compte » in the client app: the app's relaxed rules
+        # (before: the core rules). Shell off keeps the core rules (above).
         self._login_plain()
         partner = self.plain.partner_id
         partner.sudo().write({'email': self.plain.login})
         result = self._address_post(partner, phone='', street='', city='Synthetic Town',
                                     company_name=None, vat=None)
-        self.assertIn('street', result.get('invalid_fields', []))
+        self.assertNotIn('street', result.get('invalid_fields', []))
         info = self._country_info(self.ca)
-        self.assertIn('street', info['required_fields'])
+        self.assertEqual(sorted(info['required_fields']), ['email', 'name'])
 
     def test_fr_strings(self):
         self._login_coach()
