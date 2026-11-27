@@ -549,6 +549,10 @@ class CalendarEvent(models.Model):
                 ical_event.pop(key, None)
             else:
                 ical_event[key] = value
+        url = ical_event.get("url")
+        if "url" not in event_data and url and VIDEOCALL_URL_RE.match(str(url)):
+            # A video call link Odoo pushed, the video call now gone.
+            ical_event.pop("url")
 
     def _get_caldav_base_event_by_uid(
         self, calendar: caldav.Calendar, uid: str
@@ -571,13 +575,18 @@ class CalendarEvent(models.Model):
     def _get_subcomponent_index_for_recurrence(
         self, caldav_event: caldav.Event
     ) -> int | None:
+        recurrence_id = self._get_ical_recurrence_id()
         ical_instance = caldav_event.icalendar_instance
         for index, component in enumerate(ical_instance.subcomponents):
-            if (
-                component.get("name") == "VEVENT"
-                and (rec_id := component.get("recurrence-id"))
-                and rec_id.dt == self._get_ical_recurrence_id()
-            ):
+            # component.name, not component.get("name"): that is a property,
+            # never set, so no exception was ever found and each change added one.
+            rec_id = component.name == "VEVENT" and component.get("recurrence-id")
+            if not rec_id:
+                continue
+            if not isinstance(rec_id.dt, datetime):
+                if rec_id.dt == recurrence_id.date():
+                    return index
+            elif rec_id.dt == recurrence_id:
                 return index
 
     def _sync_unlink_to_caldav(self):
@@ -777,7 +786,8 @@ class CalendarEvent(models.Model):
             event_data["url"] = vUri(videocall_url)
         else:
             event_data["conference"] = None
-            event_data["url"] = None
+            # URL is left alone here: it may be the event's own link.
+            # _update_ical_event_values drops it only if it is a video call.
         event_data["transp"] = vText(busy.show_as_to_transp(self.show_as))
         # Privacy: the event's own, or its organizer's default when unset.
         ical_class = PRIVACY_TO_ICAL_CLASS.get(self.effective_privacy)
@@ -814,7 +824,11 @@ class CalendarEvent(models.Model):
         """Add the recurrence-id parameter to event data if self is linked
         to a calendar.recurrence record."""
         if self.recurrence_id:
-            event_data["recurrence-id"] = vDatetime(self._get_ical_recurrence_id())
+            event_data["recurrence-id"] = (
+                vDate(self._get_ical_recurrence_id().date())
+                if self.allday
+                else vDatetime(self._get_ical_recurrence_id())
+            )
 
     def _add_event_recurrence(self, event_data: dict) -> None:
         """Add the recurrence rule (rrule) to event data if self is
@@ -1014,8 +1028,12 @@ class CalendarEvent(models.Model):
                 # Its Odoo copy looks newer than the server's, so it would never
                 # be fixed; let the server's version through once.
                 outdated = False
-            owned = (
-                existing_instance and existing_instance.partner_id == user.partner_id
+            # Only the organizer's calendar may change an event an Odoo user
+            # organizes. One organized outside Odoo has no such calendar: the
+            # attendee's copy, updated by the organizer, is the reference.
+            owned = existing_instance and (
+                existing_instance.partner_id == user.partner_id
+                or not existing_instance.user_id
             )
             # Pass for_creation=True only when creating a new event
             values = self._get_values_from_ical_component(
@@ -1096,6 +1114,7 @@ class CalendarEvent(models.Model):
         "videocall_location",
         "partner_ids",
         "privacy",
+        "show_as",
     )
 
     def _get_series_writes(self, changed_vals: dict) -> list:
@@ -1458,11 +1477,16 @@ class CalendarEvent(models.Model):
         :return: True if the iCalendar component is outdated, False otherwise.
         """
         outdated = False
-        # LAST-MODIFIED is bumped on every change to the event. DTSTAMP is not:
-        # servers such as Infomaniak keep the creation time there, so an event
-        # moved on the server would always look older than its Odoo copy.
-        stamp = component.get("last-modified") or component.get("dtstamp")
-        last_modified = stamp and stamp.dt
+        # Servers and clients do not agree on which stamp they bump: Infomaniak
+        # keeps the creation time in DTSTAMP and bumps LAST-MODIFIED, others
+        # rewrite DTSTAMP and leave the LAST-MODIFIED Odoo pushed. The newer
+        # of the two tells when the server's copy last changed.
+        stamps = [
+            stamp.dt if stamp.dt.tzinfo else utc.localize(stamp.dt)
+            for stamp in (component.get("last-modified"), component.get("dtstamp"))
+            if stamp and isinstance(stamp.dt, datetime)
+        ]
+        last_modified = max(stamps) if stamps else None
         if (
             existing_instance
             and last_modified

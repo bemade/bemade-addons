@@ -12,3 +12,5 @@ from . import test_transp_show_as
 from . import test_rrule_until
 from . import test_poll_robustness
 from . import test_poll_read_only
+from . import test_server_edits
+from . import test_push_details
