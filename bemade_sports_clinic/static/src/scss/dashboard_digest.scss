@@ -48,3 +48,15 @@
 .o_pk_overdue_flag {
     font-weight: 600;
 }
+
+/* Task 1793 (lint guard): the digest renderer's inline styles as classes.
+   This file is in both bundles, so the backend snapshot and the app card
+   read as before. */
+.o_sc_digest_prewrap {
+    white-space: pre-wrap;
+}
+
+.o_sc_digest_expired {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
