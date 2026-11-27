@@ -32,9 +32,12 @@
         </xpath>
     </template>
 
-    <!-- The Fit Crew « F » mark: the silver chrome icon (brand « Effet Chrome / Argent »). -->
+    <!-- The Fit Crew « F » mark: the silver chrome icon (brand « Effet Chrome / Argent »).
+         Task 1793 (Lighthouse): a 96 px copy (the mark shows at 28-48 CSS px,
+         3x at most), not the 192 px app logo: ~5 KB instead of 27 KB, on
+         every page. Above the fold: loaded eagerly. -->
     <template id="sc_logo_mark" name="App shell: logo mark">
-        <img src="/bemade_sports_clinic/static/src/img/sc_logo_chrome.png" class="o_pk_logo_mark" alt="" width="192" height="192"/>
+        <img src="/bemade_sports_clinic/static/src/img/sc_logo_mark_96.png" class="o_pk_logo_mark" alt="" width="96" height="96" loading="eager"/>
     </template>
 
     <!-- Player row status line, under the name so it never crowds the row on

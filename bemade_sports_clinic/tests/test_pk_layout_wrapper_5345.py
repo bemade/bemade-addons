@@ -49,7 +49,8 @@ class TestPkLayoutWrapper5345(UserMenuCommon):
         brand = app.xpath('.//a[contains(@class, "o_pk_rail_brand")]')[0]
         self.assertEqual(brand.get('href'), '/my/home')
         self.assertEqual(brand.xpath('.//span[@class="o_pk_rail_brand_name"]/text()'), ['Le Fit Crew'])
-        self.assertEqual(len(app.xpath('.//img[@class="o_pk_logo_mark"][contains(@src, "sc_logo_chrome")]')), 2)
+        # Task 1793 (deliberate update): the 96 px mark, not the 192 px logo.
+        self.assertEqual(len(app.xpath('.//img[@class="o_pk_logo_mark"][contains(@src, "sc_logo_mark_96")]')), 2)
         self.assertFalse(app.xpath('.//svg[contains(@class, "o_pk_logo_mark")]'))
         self.assertEqual(app.get('data-pk-theme-color-dark'), '#120e12')
         self.assertEqual(app.get('data-pk-theme-color-light'), '#243925')
@@ -106,5 +107,5 @@ class TestPkLayoutWrapper5345(UserMenuCommon):
         _text, tree = self._get('/my/app/settings')
         picto = tree.xpath('//a[contains(@class, "o_pk_home_picto")]')[0]
         self.assertEqual((picto.get('href'), picto.get('aria-label')), ('/my/home', 'Dashboard'))
-        self.assertTrue(picto.xpath('.//img[contains(@src, "sc_logo_chrome")]'))
+        self.assertTrue(picto.xpath('.//img[contains(@src, "sc_logo_mark_96")]'))
         self.assertEqual(self._shell(tree).get('data-pk-top'), '0')
