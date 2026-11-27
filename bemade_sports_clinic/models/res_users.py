@@ -2,7 +2,7 @@ from odoo import models, fields, api, _, Command
 from odoo.exceptions import ValidationError
 from odoo.tools import format_datetime
 
-from . import sc_app_roles
+from . import sc_app_nav, sc_app_roles
 from datetime import time, timedelta
 import logging
 
@@ -274,7 +274,26 @@ class User(models.Model):
         for role, staff_roles in staff_map.items():
             if held & staff_roles:
                 roles.add(role)
+        if self._sc_is_client(roles):
+            roles.add(sc_app_nav.SC_CLIENT_ROLE)
         return frozenset(roles)
+
+    def _sc_is_client(self, staff_row_roles):
+        """Task 1795: the catch-all ``client`` role (the client app,
+        ``models/sc_client_app.py``): a portal user (share, not public) who
+        holds no clinic staff role — none of the clinic's staff groups and
+        no staff-row role (``staff_row_roles``, what ``_pk_extra_roles``
+        resolved above). Internal users never get it (a role-less internal
+        user keeps the back end and the stock portal).
+
+        Read from the groups and the staff rows directly, never through
+        ``_pk_roles()`` (it calls ``_pk_extra_roles()``: recursion)."""
+        self.ensure_one()
+        if not self.share or self._is_public() or self._is_internal():
+            return False
+        if set(staff_row_roles) & sc_app_roles.STAFF:
+            return False
+        return not any(self.has_group(xmlid) for xmlid in sc_app_roles.STAFF_GROUPS)
 
     def _compute_accessible_team_ids(self):
         for rec in self:

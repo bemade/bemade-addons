@@ -97,6 +97,14 @@ _TP_GROUPS = (
     'bemade_sports_clinic.group_sports_clinic_treatment_professional',
 )
 
+# Task 1795: the groups that make a user clinic staff (the group-based roles
+# of STAFF below). A portal user holding none of them, and no staff-row role,
+# is a « client » (``res.users._sc_is_client``, the client app).
+STAFF_GROUPS = (
+    'bemade_sports_clinic.group_portal_team_coach',
+    'bemade_sports_clinic.group_sports_clinic_admin',
+) + _TP_GROUPS
+
 # Shorthands for the registries below (every role but ``internal`` is an app
 # role: ``EVERYONE`` == ``env['portal.kit'].pk_app_roles()`` on a clinic
 # database).

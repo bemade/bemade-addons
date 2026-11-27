@@ -66,6 +66,10 @@ _lt = LazyTranslate(__name__)
 # widgets and search providers). Never change it: the kit resolves every
 # lookup per app.
 SC_APP = 'fitcrew'
+# Task 1795: the client app — every portal user without a clinic staff role
+# (``models/sc_client_app.py``). Same rule: never change the key.
+SC_CLIENT_APP = 'fitcrew_client'
+SC_CLIENT_ROLE = 'client'
 
 # ---------------------------------------------------------------------------
 # Helpers

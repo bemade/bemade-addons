@@ -43,6 +43,7 @@ from . import ir_http
 from . import patient_critical_item
 from . import sc_app_help
 from . import sc_app_pwa
+from . import sc_client_app
 from . import patient_duplicate
 from . import sc_dashboard
 from . import sc_follow
