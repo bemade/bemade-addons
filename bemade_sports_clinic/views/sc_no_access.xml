@@ -42,7 +42,11 @@
                     </div>
                     <div class="o_pk_card o_sc_no_access_card">
                         <h1 class="o_sc_no_access_title">No access</h1>
-                        <p class="o_sc_no_access_text">Your account does not have access to the Le Fit Crew app. If this is a mistake, contact Le Fit Crew.</p>
+                        <!-- Review round 2: a client (the client app) is told the
+                             page is the staff's; anyone else keeps the
+                             « no access » text. -->
+                        <p t-if="no_access_home" class="o_sc_no_access_text" data-sc-no-access-text="client">This page is reserved for the Fit Crew team.</p>
+                        <p t-else="" class="o_sc_no_access_text">Your account does not have access to the Le Fit Crew app. If this is a mistake, contact Le Fit Crew.</p>
                         <div class="o_sc_no_access_actions">
                             <!-- Task 1795: a user of an app (the client app) goes back
                                  to their home; anyone else to the stock portal. -->

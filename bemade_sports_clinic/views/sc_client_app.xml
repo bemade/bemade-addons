@@ -42,4 +42,14 @@
         </t>
     </template>
 
+    <!-- Review round 2: « Paramètres » of the client app has no « Done »
+         buttons switch (staff wording); a client keeps the default (the ✓
+         at the top of « Mon compte »'s cards). -->
+    <template id="sc_client_settings_no_done_buttons" inherit_id="bemade_portal_kit.pk_app_settings"
+              name="Sports Clinic App: client settings without the Done buttons switch">
+        <xpath expr="//section[@id='pk_done_buttons']" position="attributes">
+            <attribute name="t-if">pk_app_key != 'fitcrew_client'</attribute>
+        </xpath>
+    </template>
+
 </odoo>
