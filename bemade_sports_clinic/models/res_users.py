@@ -293,7 +293,15 @@ class User(models.Model):
             return False
         if set(staff_row_roles) & sc_app_roles.STAFF:
             return False
-        return not any(self.has_group(xmlid) for xmlid in sc_app_roles.STAFF_GROUPS)
+        # The staff groups, and the groups of any other app role (a reserved
+        # role such as ``parent`` once #1231 gives it a group, another app's
+        # group role): they take precedence over the catch-all. Read from
+        # the role REGISTRY (the specs), not from the user's roles.
+        groups = set(sc_app_roles.STAFF_GROUPS)
+        for spec in self.env['portal.kit'].pk_roles().values():
+            if spec.get('app') and spec['app'] != sc_app_nav.SC_CLIENT_APP:
+                groups.update(spec.get('groups') or ())
+        return not any(self.has_group(xmlid) for xmlid in groups)
 
     def _compute_accessible_team_ids(self):
         for rec in self:
