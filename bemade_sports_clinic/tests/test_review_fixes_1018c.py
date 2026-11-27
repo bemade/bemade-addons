@@ -253,10 +253,12 @@ class TestAccountAutosave1018c(Account1018cCommon):
         partner = self.plain.partner_id
         partner.sudo().write({'email': self.plain.login})
         result = self._address_post(partner, phone='', street='', city='Synthetic Town',
-                                    company_name=None, vat=None)
+                                    country_id=str(self.ca.id), company_name=None, vat=None)
         self.assertNotIn('street', result.get('invalid_fields', []))
         info = self._country_info(self.ca)
-        self.assertEqual(sorted(info['required_fields']), ['email', 'name'])
+        # Review round 2 (deliberate update): the client app requires the
+        # country too (test_client_account_country_1795).
+        self.assertEqual(sorted(info['required_fields']), ['country_id', 'email', 'name'])
 
     def test_fr_strings(self):
         self._login_coach()
