@@ -1,3 +1,33 @@
+## 1.0.5 (2026-11-27)
+
+Contributed by Sabrine Mbarek (JumpTo), for Infomaniak calendars:
+
+- All-day events are synchronized as all-day events both ways (`DATE`
+  values, exclusive `DTEND`), including those imported earlier as 24-hour
+  meetings.
+- Video call links are read from `CONFERENCE`, the Google and Microsoft
+  properties, or a kMeet, Meet, Teams, Zoom, Jitsi or Webex link anywhere in
+  the event, and pushed as `CONFERENCE`, `URL` and a line in the description.
+- Privacy is synchronized with `CLASS`: Public and Private both ways, "Only
+  internal users" pushed as `PRIVATE` and kept when `PRIVATE` comes back.
+- A change on the server is detected from `LAST-MODIFIED` as well as
+  `DTSTAMP`, whichever is newer.
+- An event missing from the server is archived, not deleted, and only if it
+  was on the server before: one whose push failed is kept.
+- A change of a series on the server (title, place, attendees, privacy,
+  "show as") reaches its occurrences, except those changed on their own.
+- Events created in Odoo, split ("this and following") or turned into a
+  single event are created again on the server when Odoo rebuilds them.
+
+Also:
+
+- An event organized outside Odoo follows the server.
+- An edit in Odoo keeps the server event's own `URL`.
+- An all-day exception is pushed with a date `RECURRENCE-ID`, and an
+  exception changed again is updated instead of added once more.
+- The lock on the dates of imported meetings is in the new, optional
+  `caldav_sync_date_lock` module.
+
 ## 1.0.4 (2026-11-25)
 
 - The synchronization from the server never writes to it. A series whose rule

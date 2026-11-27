@@ -26,7 +26,6 @@
     "images": ["static/description/images/main_screenshot.png"],
     "data": [
         "views/res_users_views.xml",
-        "views/calendar_event_views.xml",
         "data/ir_cron_data.xml",
     ],
     "installable": True,

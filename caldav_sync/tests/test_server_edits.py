@@ -7,6 +7,8 @@ Acceptance criteria:
   organizer moves it, Odoo moves it too.
 - "Show as" changed on the series reaches every occurrence that had not been
   changed on its own.
+- An event deleted on the server and renamed in Odoo before the next poll is
+  not created on the server again.
 """
 
 from datetime import datetime, timedelta
@@ -132,3 +134,13 @@ class TestServerEdits(TransactionCase, CaldavTestCommon):
             last_modified=datetime.utcnow() + timedelta(hours=1),
         )
         self.assertEqual(self._poll("series-free").mapped("show_as"), ["free"] * 3)
+
+    # Deleted on the server ------------------------------------------------
+
+    def test_event_deleted_there_is_not_recreated(self):
+        self._put("deleted-there", "SUMMARY:Theirs", last_modified=OLD)
+        event = self._poll("deleted-there").with_user(self.user_1)
+        self.calendar.events.return_value = []
+        event.with_context(caldav_no_sync=False).write({"name": "Renamed"})
+        self.calendar.save_event.assert_not_called()
+        self.calendar.add_event.assert_not_called()

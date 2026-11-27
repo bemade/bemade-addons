@@ -14,7 +14,6 @@ from markdownify import markdownify as md
 from pytz import timezone, utc
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
 
 from odoo.addons.base_caldav.tools import busy
 from odoo.addons.calendar.models.calendar_recurrence import MAX_RECURRENT_EVENT
@@ -175,13 +174,6 @@ class CalendarEvent(models.Model):
         comodel_name="res.users",
         compute="_compute_caldav_users",
     )
-    # Created from the CalDAV server (not in Odoo). The server is the master of
-    # its date and time: they cannot be changed from Odoo.
-    caldav_imported = fields.Boolean(
-        string="Imported from CalDAV",
-        copy=False,
-        readonly=True,
-    )
     # Set once the event is known to be on the CalDAV server (pushed, or seen
     # by a poll). Only those are taken as deleted on the server when they are
     # missing there: one that never reached it is kept, not wiped from Odoo.
@@ -189,11 +181,6 @@ class CalendarEvent(models.Model):
         string="On the CalDAV server",
         copy=False,
         readonly=True,
-    )
-    caldav_date_locked = fields.Boolean(
-        compute="_compute_caldav_date_locked",
-        help="Date and time can only be changed in the external calendar "
-        "this meeting was created in.",
     )
     is_base_event = fields.Boolean(compute="_compute_is_base_event")
     differs_from_base_event = fields.Boolean(compute="_compute_differs_from_base_event")
@@ -264,16 +251,6 @@ class CalendarEvent(models.Model):
                     ]
                 )
                 or not event.follow_recurrence
-            )
-
-    @api.depends("caldav_imported", "recurrence_id.base_event_id.caldav_imported")
-    def _compute_caldav_date_locked(self):
-        # Occurrences of an imported series are created by copy_data() and do
-        # not carry the flag themselves: take it from the series.
-        for event in self:
-            event.caldav_date_locked = (
-                event.caldav_imported
-                or event.recurrence_id.base_event_id.caldav_imported
             )
 
     @api.depends("recurrency", "recurrence_id", "recurrence_id.base_event_id")
@@ -364,66 +341,7 @@ class CalendarEvent(models.Model):
                         f"Failed to sync event to CalDAV server: {e}", exc_info=True
                     )
 
-    # The date and time fields of calendar.event, as the form, the calendar
-    # view (drag and drop, resize) and the API write them.
-    # The recurrence fields too: changing the rule moves the occurrences.
-    CALDAV_LOCKED_DATE_FIELDS = (
-        "start",
-        "stop",
-        "start_date",
-        "stop_date",
-        "allday",
-        "duration",
-        "recurrency",
-        "rrule_type",
-        "rrule_type_ui",
-        "interval",
-        "count",
-        "end_type",
-        "until",
-        "month_by",
-        "day",
-        "weekday",
-        "byday",
-        "mon",
-        "tue",
-        "wed",
-        "thu",
-        "fri",
-        "sat",
-        "sun",
-    )
-
-    def _check_caldav_date_lock(self, vals):
-        """Refuse a date/time change on a meeting that was created in the
-        external calendar: that calendar is the master of its schedule, and a
-        change made in Odoo would be overwritten or diverge from it.
-
-        The import itself (caldav_no_sync in the context) is not affected.
-        """
-        if self.env.context.get("caldav_no_sync"):
-            return
-        names = [name for name in self.CALDAV_LOCKED_DATE_FIELDS if name in vals]
-        if not names:
-            return
-        for event in self.filtered("caldav_date_locked"):
-            for name in names:
-                field = self._fields[name]
-                new = field.convert_to_record(
-                    field.convert_to_cache(vals[name], event), event
-                )
-                if new != event[name]:
-                    raise UserError(
-                        self.env._(
-                            "The date and time of “%(name)s” cannot be changed in "
-                            "Odoo: this meeting was created in the external "
-                            "calendar.",
-                            name=event.name,
-                        )
-                    )
-
     def write(self, vals):
-        self._check_caldav_date_lock(vals)
         # Capture state before write for future_events sync handling
         is_future_events_update = vals.get("recurrence_update") == "future_events"
         old_base_events = {}
@@ -1058,7 +976,7 @@ class CalendarEvent(models.Model):
 
                 new_event = self.with_context(
                     caldav_no_sync=True, caldav_keep_ids=True
-                ).create(values | recurrency_vals | {"caldav_imported": True})
+                ).create(values | recurrency_vals)
                 self.env["calendar.event"].flush_model()
                 if new_event.recurrence_id:
                     synced_events |= new_event.recurrence_id.calendar_event_ids

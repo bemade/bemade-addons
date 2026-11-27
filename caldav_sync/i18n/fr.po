@@ -4,49 +4,121 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0\n"
+"Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"Last-Translator: \n"
-"Language-Team: \n"
+"POT-Creation-Date: 2026-11-27 12:58+0000\n"
+"PO-Revision-Date: 2026-11-27 12:58+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: \n"
-"Plural-Forms: \n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #. module: caldav_sync
-#: model:ir.model.fields,field_description:caldav_sync.field_calendar_event__caldav_imported
-msgid "Imported from CalDAV"
-msgstr "Importé depuis CalDAV"
+#: model_terms:ir.ui.view,arch_db:caldav_sync.res_users_view_form_inherit
+#: model_terms:ir.ui.view,arch_db:caldav_sync.res_users_view_form_simple_modif
+msgid "CalDAV"
+msgstr "CalDAV"
 
 #. module: caldav_sync
-#: model:ir.model.fields,field_description:caldav_sync.field_calendar_event__caldav_date_locked
-msgid "Caldav Date Locked"
-msgstr "Date verrouillée par CalDAV"
+#: model:ir.model.fields,field_description:caldav_sync.field_res_users__caldav_calendar_url
+msgid "CalDAV Calendar URL"
+msgstr "URL du calendrier CalDAV"
 
 #. module: caldav_sync
-#: model:ir.model.fields,help:caldav_sync.field_calendar_event__caldav_date_locked
-msgid ""
-"Date and time can only be changed in the external calendar this meeting was "
-"created in."
-msgstr ""
-"La date et l'heure ne peuvent être modifiées que dans le calendrier externe "
-"où cette réunion a été créée."
+#: model:ir.model.fields,field_description:caldav_sync.field_res_users__caldav_password
+msgid "CalDAV Password"
+msgstr "Mot de passe CalDAV"
 
 #. module: caldav_sync
-#: model_terms:ir.ui.view,arch_db:caldav_sync.calendar_event_view_form
-msgid ""
-"This meeting was created in the external calendar: its date and time cannot "
-"be changed in Odoo."
-msgstr ""
-"Cette réunion a été créée dans le calendrier externe : sa date et son heure "
-"ne peuvent pas être modifiées dans Odoo."
+#: model:ir.model.fields,field_description:caldav_sync.field_calendar_event__caldav_recurrence_id
+msgid "CalDAV Recurrence ID"
+msgstr "ID de récurrence CalDAV"
 
 #. module: caldav_sync
-#. odoo-python
-#: code:addons/caldav_sync/models/calendar_event.py:0
-msgid ""
-"The date and time of “%(name)s” cannot be changed in Odoo: this meeting was "
-"created in the external calendar."
-msgstr ""
-"La date et l'heure de « %(name)s » ne peuvent pas être modifiées dans Odoo : "
-"cette réunion a été créée dans le calendrier externe."
+#: model:ir.actions.server,name:caldav_sync.ir_cron_caldav_sync_ir_actions_server
+msgid "CalDAV Sync"
+msgstr "Synchronisation CalDAV"
+
+#. module: caldav_sync
+#: model:ir.model.fields,field_description:caldav_sync.field_calendar_event__caldav_uid
+msgid "CalDAV UID"
+msgstr "UID CalDAV"
+
+#. module: caldav_sync
+#: model:ir.model.fields,field_description:caldav_sync.field_res_users__caldav_username
+msgid "CalDAV Username"
+msgstr "Nom d'utilisateur CalDAV"
+
+#. module: caldav_sync
+#: model:ir.model.fields,field_description:caldav_sync.field_calendar_recurrence__caldav_uid
+msgid "Caldav Uid"
+msgstr "UID CalDAV"
+
+#. module: caldav_sync
+#: model:ir.model.fields,field_description:caldav_sync.field_calendar_event__caldav_user_ids
+msgid "Caldav User"
+msgstr "Utilisateurs CalDAV"
+
+#. module: caldav_sync
+#: model:ir.model,name:caldav_sync.model_calendar_attendee
+msgid "Calendar Attendee Information"
+msgstr "Informations sur les participants"
+
+#. module: caldav_sync
+#: model:ir.model,name:caldav_sync.model_calendar_event
+msgid "Calendar Event"
+msgstr "Événement du calendrier"
+
+#. module: caldav_sync
+#: model:ir.model.fields,field_description:caldav_sync.field_calendar_event__differs_from_base_event
+msgid "Differs From Base Event"
+msgstr "Diffère de l'événement de base"
+
+#. module: caldav_sync
+#: model:ir.model.fields,field_description:caldav_sync.field_calendar_attendee__display_name
+#: model:ir.model.fields,field_description:caldav_sync.field_calendar_event__display_name
+#: model:ir.model.fields,field_description:caldav_sync.field_calendar_recurrence__display_name
+#: model:ir.model.fields,field_description:caldav_sync.field_res_users__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: caldav_sync
+#: model:ir.model,name:caldav_sync.model_calendar_recurrence
+msgid "Event Recurrence Rule"
+msgstr "Règle de récurrence de l'événement"
+
+#. module: caldav_sync
+#: model:ir.model.fields,field_description:caldav_sync.field_calendar_attendee__id
+#: model:ir.model.fields,field_description:caldav_sync.field_calendar_event__id
+#: model:ir.model.fields,field_description:caldav_sync.field_calendar_recurrence__id
+#: model:ir.model.fields,field_description:caldav_sync.field_res_users__id
+msgid "ID"
+msgstr "ID"
+
+#. module: caldav_sync
+#: model:ir.model.fields,field_description:caldav_sync.field_calendar_event__is_base_event
+msgid "Is Base Event"
+msgstr "Est l'événement de base"
+
+#. module: caldav_sync
+#: model:ir.model.fields,field_description:caldav_sync.field_res_users__is_caldav_enabled
+msgid "Is Caldav Enabled"
+msgstr "CalDAV activé"
+
+#. module: caldav_sync
+#: model:ir.model.fields,field_description:caldav_sync.field_calendar_event__caldav_on_server
+msgid "On the CalDAV server"
+msgstr "Sur le serveur CalDAV"
+
+#. module: caldav_sync
+#: model:ir.model.constraint,message:caldav_sync.constraint_calendar_recurrence_caldav_uid_unique
+msgid "The caldav_uid must be unique."
+msgstr "Le caldav_uid doit être unique."
+
+#. module: caldav_sync
+#: model:ir.model,name:caldav_sync.model_res_users
+msgid "User"
+msgstr "Utilisateur"

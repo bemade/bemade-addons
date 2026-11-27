@@ -1,5 +1,14 @@
-"""A meeting created in the external calendar keeps its date and time there:
-Odoo cannot move it, only the synchronization can."""
+"""A meeting created in the external calendar keeps its date and time there.
+
+Acceptance criteria:
+- An imported meeting cannot be moved, resized or made recurrent in Odoo; its
+  other fields stay editable, and saving unchanged dates is no move.
+- The synchronization still moves it.
+- A meeting created in Odoo can be moved, also once it is back from the
+  server after having been missing there.
+- The occurrences of an imported series are locked too.
+- Once nobody on the meeting synchronizes with CalDAV, it can be moved.
+"""
 
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
@@ -10,7 +19,7 @@ from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
 
-from .common import CaldavTestCommon
+from odoo.addons.caldav_sync.tests.common import CaldavTestCommon
 
 UID = "external-date-lock-test"
 
@@ -144,9 +153,21 @@ class TestExternalDateLock(TransactionCase, CaldavTestCommon):
         self.assertTrue(occurrence)
         self.assertTrue(all(occurrence.mapped("caldav_date_locked")))
 
-    def test_external_event_deleted_there_is_not_recreated(self):
+    def test_unlocked_once_caldav_is_disabled(self):
         event = self._imported()
-        self.calendar.events.return_value = []  # Deleted in the source.
-        event.write({"name": "Renamed"})
-        self.calendar.save_event.assert_not_called()
-        self.calendar.add_event.assert_not_called()
+        self.user_1.write({"caldav_password": False})
+        self.assertFalse(event.caldav_date_locked)
+        later = self.start + timedelta(hours=2)
+        event.write({"start": later, "stop": later + timedelta(hours=1)})
+        self.assertEqual(event.start, later)
+
+    def test_odoo_event_back_from_the_server_is_not_locked(self):
+        """Created in Odoo, missing from one listing of the server (archived as
+        deleted there), then back: it is still Odoo's own."""
+        odoo_event = self._odoo_event()
+        odoo_event.with_context(caldav_no_sync=True).write(
+            {"caldav_uid": UID, "active": False}
+        )
+        event = self._imported()
+        self.assertNotEqual(event, odoo_event)
+        self.assertFalse(event.caldav_date_locked)
