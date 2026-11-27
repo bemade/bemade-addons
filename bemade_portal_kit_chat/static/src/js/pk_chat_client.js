@@ -477,7 +477,13 @@ export class ChatThread {
             this.scrollToBottom();
             document.dispatchEvent(new CustomEvent(PK_CHAT_EVENT, { detail: { channelId: this.channelId } }));
             pkChatPushPrompt(this); // task 5546: once, after a message sent
-        } catch {
+        } catch (error) {
+            // Task 5566: the conversation was closed while it was open here.
+            // Reload it: its closed look (note, chip, no composer) replaces
+            // the composer, and the lists move it under « Ended ».
+            if (error && error.payload && error.payload.error === "closed" && (await this.reloadClosed())) {
+                return;
+            }
             document.dispatchEvent(
                 new CustomEvent("pk:toast", { detail: { message: this.texts.error, tone: "error" } })
             );
@@ -485,6 +491,20 @@ export class ChatThread {
             this.sending = false;
             this.send.disabled = false;
         }
+    }
+
+    /** Task 5566: true once the thread shows its closed state again. */
+    async reloadClosed() {
+        try {
+            await this.load();
+        } catch {
+            return false;
+        }
+        if (!this.isClosed) {
+            return false;
+        }
+        document.dispatchEvent(new CustomEvent(PK_CHAT_EVENT, { detail: { channelId: this.channelId } }));
+        return true;
     }
 
     async markRead() {

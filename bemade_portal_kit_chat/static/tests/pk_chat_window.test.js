@@ -245,6 +245,49 @@ describe("pk_chat_closed", () => {
         expect(api.calls.filter((c) => c[0] === "post").length).toBe(0);
     });
 
+    test("closed while open on screen: a refused send shows the closed state", async () => {
+        const api = fakeApi();
+        const host = getFixture();
+        host.innerHTML = "<div></div>";
+        const thread = new ChatThread(host.firstChild, 11, { api, texts: TEXTS });
+        await thread.load();
+        expect(host.querySelector("[data-pk-chat-composer]").hidden).toBe(false);
+        // The group closes on the server; the next send is refused.
+        api.threads[11] = { ...api.threads[11], closed: true, closed_label: "Ended", composer: "none" };
+        api.post = async () => {
+            throw { status: 403, payload: { error: "closed", message: "Closed" } };
+        };
+        const toasts = [];
+        const onToast = (ev) => toasts.push(ev.detail);
+        document.addEventListener("pk:toast", onToast);
+        host.querySelector("textarea").value = "Hello?";
+        await thread.submit();
+        document.removeEventListener("pk:toast", onToast);
+        expect(host.querySelector("[data-pk-chat-composer]").hidden).toBe(true);
+        expect(host.querySelector("[data-pk-chat-closed-note]").hidden).toBe(false);
+        expect(host.querySelector("[data-pk-chat-closed-chip]").textContent).toBe("Ended");
+        expect(toasts).toEqual([]);
+    });
+
+    test("a send refused for another reason still shows the error toast", async () => {
+        const api = fakeApi();
+        const host = getFixture();
+        host.innerHTML = "<div></div>";
+        const thread = new ChatThread(host.firstChild, 11, { api, texts: TEXTS });
+        await thread.load();
+        api.post = async () => {
+            throw { status: 500, payload: null };
+        };
+        const toasts = [];
+        const onToast = (ev) => toasts.push(ev.detail);
+        document.addEventListener("pk:toast", onToast);
+        host.querySelector("textarea").value = "Hello?";
+        await thread.submit();
+        document.removeEventListener("pk:toast", onToast);
+        expect(toasts).toEqual([{ message: "Error", tone: "error" }]);
+        expect(host.querySelector("[data-pk-chat-composer]").hidden).toBe(false);
+    });
+
     test("an open managed conversation keeps « Reply » and has no chip", async () => {
         const host = getFixture();
         host.innerHTML = "<div></div>";
