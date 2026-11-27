@@ -758,4 +758,33 @@
         </form>
     </template>
 
+    <!-- Task 1793: the app's list pager. Odoo's portal.pager names its
+         chevrons « Previous » / « Next » in its own view, which Odoo's
+         catalogue leaves untranslated (and a clinic catalogue entry cannot
+         reach another module's view safely): the app lists call this copy,
+         whose labels are clinic terms. Same markup and variables
+         (pager, classname, extraLinkClass), no inline style. -->
+    <template id="app_pager" name="App shell: list pager">
+        <ul t-if="pager['page_count'] &gt; 1" t-attf-class="#{ classname or '' } pagination m-0">
+            <li t-attf-class="page-item #{'disabled' if pager['page']['num'] == 1 else ''}">
+                <a t-att-href="pager['page_previous']['url'] if pager['page']['num'] != 1 else None" t-attf-class="page-link #{extraLinkClass}"
+                   aria-label="Previous" title="Previous">
+                    <span class="oi oi-chevron-left" aria-hidden="true"/>
+                </a>
+            </li>
+            <t t-foreach="pager['pages']" t-as="page">
+                <li t-attf-class="page-item #{'active' if page['num'] == pager['page']['num'] else ''} #{'disabled' if page['num'] == '…' else ''}">
+                    <a t-att-href="page['url']" t-attf-class="page-link #{extraLinkClass} #{'px-0' if page['num'] == '…' else ''}"
+                       t-att-aria-current="'page' if page['num'] == pager['page']['num'] else None" t-out="page['num']"/>
+                </li>
+            </t>
+            <li t-attf-class="page-item #{'disabled' if pager['page']['num'] == pager['page_count'] else ''}">
+                <a t-att-href="pager['page_next']['url'] if pager['page']['num'] != pager['page_count'] else None" t-attf-class="page-link #{extraLinkClass}"
+                   aria-label="Next" title="Next">
+                    <span class="oi oi-chevron-right" aria-hidden="true"/>
+                </a>
+            </li>
+        </ul>
+    </template>
+
 </odoo>
