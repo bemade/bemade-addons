@@ -31,14 +31,26 @@
 -->
 <odoo>
 
-    <template id="sc_app_layout" name="Sports Clinic App Layout">
+    <!-- Task 1795: the Fit Crew brand, ONE source for both layouts (the
+         staff app's sc_app_layout and the client app's sc_client_layout):
+         the rail name, the home (/my/home: each person's own home), the
+         browser bar colour of each theme (task 1602) and the logo mark.
+         Value: sc_home_label (the home's label, set by the calling layout).
+         Body (0): the calling layout's slots and the page. -->
+    <template id="sc_brand_layout" name="Sports Clinic App: Fit Crew brand layout">
         <t t-call="bemade_portal_kit.pk_app_layout">
-            <!-- The Fit Crew brand: the rail name, the home (the dashboard)
-                 and the browser bar colour of each theme (task 1602). -->
-            <t t-set="sc_home_label">Dashboard</t>
             <t t-set="pk_brand" t-value="{'name': 'Le Fit Crew', 'home_url': '/my/home', 'home_label': sc_home_label,
                                           'theme_colors': {'dark': '#120e12', 'light': '#243925'}}"/>
             <t t-set="pk_brand_mark"><t t-call="bemade_sports_clinic.sc_logo_mark"/></t>
+            <t t-out="0"/>
+        </t>
+    </template>
+
+    <template id="sc_app_layout" name="Sports Clinic App Layout">
+        <t t-call="bemade_sports_clinic.sc_brand_layout">
+            <!-- The Fit Crew brand (sc_brand_layout); the staff app's home is
+                 the dashboard. -->
+            <t t-set="sc_home_label">Dashboard</t>
             <!-- pk_confirm.js: a page whose access ended goes back home, the
                  players list (a referrer on the same player is skipped). -->
             <t t-set="pk_home_url" t-value="'/my/players'"/>
@@ -148,6 +160,21 @@
                     </div>
                 </dialog>
             </t>
+            <t t-out="0"/>
+        </t>
+    </template>
+
+    <!-- Task 1795: the client app's layout (models/sc_client_app.py) — the
+         Fit Crew brand (sc_brand_layout) and nothing of the staff app: no
+         activity clock, no medical sheets, no injury or proposal dialogs, no
+         sc_can. Page values: as sc_app_layout (pk_title, pk_active_nav, …);
+         the navigation and the user's values are the kit's
+         (PortalKitShell._pk_shell_values). -->
+    <template id="sc_client_layout" name="Sports Clinic App: client layout">
+        <t t-call="bemade_sports_clinic.sc_brand_layout">
+            <t t-set="sc_home_label">Home</t>
+            <!-- pk_confirm.js: a page whose access ended goes back home. -->
+            <t t-set="pk_home_url" t-value="'/my/home'"/>
             <t t-out="0"/>
         </t>
     </template>
