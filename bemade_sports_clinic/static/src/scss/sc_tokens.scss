@@ -73,10 +73,16 @@
     --pk-line: #3b393f;
     --pk-fg: #e5e5e5;
     --pk-fg-2: #a9a8ae;
-    --pk-fg-3: #7a7980;
+    // Task 1793: AA (was #7a7980, 3.99:1 on the surface): 5.03:1 on
+    // --pk-surface, 5.60:1 on --pk-bg.
+    --pk-fg-3: #8b8a91;
     --pk-accent: #a4c754;
     --pk-accent-fg: #120e12;
     --pk-secondary: #b678c4;
+    // Task 1793: Minuit on the filled secondary (the active page tab, the
+    // secondary chip): 5.90:1 (white was 3.24:1). The light theme keeps
+    // white on Mauve (7.39:1, sc-brand-tokens).
+    --pk-secondary-fg: #120e12;
     --pk-ok: #a4c754;
     --pk-warn: #e9b949;
     --pk-bad: #ec6a6a;
@@ -105,8 +111,12 @@
     --pk-accent: #243925;
     --pk-accent-fg: #ffffff;
     --pk-secondary: #783e88;
-    --pk-ok: #5f8f2b;
-    --pk-warn: #b8860b;
+    --pk-secondary-fg: #ffffff; // task 1793: the dark theme's is Minuit
+    // Task 1793: AA, the nearest shades of the same hue (were #5f8f2b
+    // 3.85:1 and #b8860b 3.25:1 on white): text on --pk-surface / --pk-bg
+    // and white text on them (the filled chips) all >= 4.5:1.
+    --pk-ok: #4d7a1f;
+    --pk-warn: #8a6508;
     --pk-bad: #c0392b;
     --pk-overdue: #c2410c; // task 1727: a past « Retour prévu »
     --pk-tone-fg: #ffffff;

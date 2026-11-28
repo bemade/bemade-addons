@@ -16,7 +16,7 @@
                         <strong>Team announcement</strong>
                         <span t-if="announcement.get('is_expired')" class="badge text-bg-secondary">Expired</span>
                     </div>
-                    <div t-attf-style="white-space:pre-wrap;#{announcement.get('is_expired') and 'text-decoration:line-through;opacity:.7;' or ''}"
+                    <div t-attf-class="o_sc_digest_prewrap #{'o_sc_digest_expired' if announcement.get('is_expired') else ''}"
                          t-esc="announcement['body']"/>
                     <div t-if="announcement.get('deadline')" class="small text-muted mt-1">
                         <span>Valid until:</span> <t t-esc="announcement['deadline']"/>
@@ -59,7 +59,7 @@
                              then predicted return (inverted), mirroring the live card. -->
                         <div t-if="player.get('training_recommendation')" class="text-muted small d-flex align-items-start mb-1">
                             <i class="fa fa-heartbeat mt-1" title="Training Recommendation"></i>
-                            <span class="ms-1" style="white-space: pre-wrap;" t-esc="player['training_recommendation']"/>
+                            <span class="ms-1 o_sc_digest_prewrap" t-esc="player['training_recommendation']"/>
                         </div>
                         <div t-if="player.get('predicted_return_date')" class="text-muted small d-flex align-items-center mb-1">
                             <i class="fa fa-clock-o" title="Estimated Return"></i>
