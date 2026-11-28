@@ -390,10 +390,10 @@ class TestBookingCancelFreesSlot(_ManageCommon):
 
         def slots():
             found = set()
-            # Odoo fills only the first month by default: ask for the
-            # booking's month (the day can fall in the next one).
-            month_apt = apt.with_context(appointment_slots_force_month=(self.day.month, self.day.year))
-            for month in month_apt._get_appointment_slots('America/Toronto'):
+            # Odoo fills only the first month of the list: start the list on
+            # the booking's day, so its month is that first month (the day can
+            # fall in the next month, at a month end or in the evening).
+            for month in apt._get_appointment_slots('America/Toronto', reference_date=_local(self.day, 8)):
                 for week in month['weeks']:
                     for day in week:
                         for slot in day.get('slots', []):
