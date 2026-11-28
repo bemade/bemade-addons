@@ -14,7 +14,10 @@
   task 5566: ``closed: True`` keeps the channel listed and readable for its
   members, but nobody may write in it any more (``closed_label``: the
   chip's text, plain text stored as given; default « Ended »);
-* ``_pk_chat_sync(key=None)``: makes the database match the hook, silently.
+* ``_pk_chat_sync(key=None)``: makes the database match the hook, silently;
+* ``_pk_chat_reader_alias(channel)`` (task 5520): the name a READER of the
+  managed ``channel`` sees for another reader's message (« A member »; e.g.
+  « A parent »). Every such author gets the same alias, with a neutral avatar.
 
 The chat registers three notification kinds (kit 1.17) for the apps where
 it is on: ``chat.direct``, ``chat.announcement``, ``chat.reply``; each has
@@ -71,6 +74,16 @@ class PortalKit(models.AbstractModel):
         plain text) replaces the chip's « Ended »; ``False`` or absent:
         open. Default: none."""
         return []
+
+    @api.model
+    def _pk_chat_reader_alias(self, channel):
+        """Task 5520: the name a reader of the managed ``channel`` sees for
+        the author of another reader's message: in the thread, the quoted
+        parent, the e-mails and the phone's title (with a neutral avatar).
+        The same for every such author (nothing to correlate); the viewer's
+        own messages and the posters' keep their names. Plain text, in the
+        env's language. Default: « A member »."""
+        return self.env._("A member")
 
     @api.model
     def _pk_pages(self):

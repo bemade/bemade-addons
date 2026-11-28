@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit: Chat',
-    'version': '19.0.1.2.0',
+    'version': '19.0.1.3.0',
     'category': 'Website/Portal',
     'summary': 'Portal conversations on Discuss: direct chats and managed announcement groups, '
                'a floating window and e-mail notices each user chooses.',
@@ -56,8 +56,9 @@ A nightly cron runs it; a consumer calls it when its data changes (with
 
 Roles: a ``poster`` posts; a ``reader`` may only REPLY (a ``comment``
 whose parent is a message of the same channel). The rule is on the models,
-by uid, so it holds on every route (``message_post``, ``/mail/message/post``,
-a raw ``mail.message.create``). Posters and internal users are
+by uid, so it holds on every route (``message_post``, a raw
+``mail.message.create``; version 1.3: Discuss's routes are closed to
+readers). Posters and internal users are
 unrestricted; reactions stay allowed; authors' names are always shown.
 A reader never sees the member list in the portal; a poster does.
 
@@ -156,12 +157,42 @@ sent to the phone skips its 10-minute « each » e-mail
 phone: nothing changes. Internal members keep Discuss's own push, payload
 and all. The app icon's number is the unread count.
 
-Security note
--------------
-The portal controllers hide what a reader may not see. A reader calling
-Odoo's own Discuss JSON routes (``/discuss/channel/members``, ``/mail/data``,
-mention suggestions) or watching the websocket can still learn member
-names of a managed channel. Nothing in the portal UI shows them.
+Readers' privacy (version 1.3)
+------------------------------
+In a managed group, a READER (a share user with the ``reader`` role) never
+learns who the other members are, through any channel:
+
+* the kit: another reader's message shows as ONE alias with a neutral
+  avatar, everywhere a reader sees an author (the thread, a reply's quoted
+  parent, each e-mail and the digest, the phone's title and icon); the
+  avatar route refuses another reader's picture. The alias is the hook
+  ``portal.kit._pk_chat_reader_alias(channel)`` (default « A member »,
+  e.g. « A parent »). The reader's own messages and the posters' keep
+  their names;
+* Odoo's Discuss routes: the group (and its sub-threads) is invisible to
+  its readers (global ``ir.rule``): ``/discuss/channel/members``,
+  ``/messages``, ``/pinned_messages``, ``/attachments``, typing, read marks,
+  join, sub-threads, ``/mail/thread/messages`` and ``/mail/message/post``
+  answer 404, and ``/mail/data`` does not list it; the kit's routes are a
+  reader's only way in (they reply through « Reply »);
+* the ORM (call_kw): of the group's members a reader reads only their own
+  row; the group and the other members' messages are unreadable;
+  ``/who`` and ``/help`` are refused; a reader's message never mentions
+  anyone (``partner_ids``, ``@everyone``);
+* the websocket: a reader is subscribed to ``(group, "pk_reader")`` only,
+  which carries a content-free ``pk_chat.ping`` ``{channel_id,
+  message_id}`` per new message; seen, typing, reactions, edits, members,
+  the count and calls reach the posters and staff only. The portal client
+  refetches through the kit routes on that ping. A store built for a reader
+  never carries the group's members, count, uuid or personas (a backstop).
+
+Out of scope, by design: posters see the members (and their names in the
+thread); internal users keep vanilla Discuss; family members who share a
+commercial partner may still be mention-suggested (core partner rules); a
+poster who writes someone's name, or mentions them, puts it in the body.
+Odoo minor versions may add broadcasts: they reach the group's channel,
+which readers no longer receive (at worst a reader misses a non-message
+event).
 """,
     'author': 'Bemade Inc.',
     'maintainers': ['dureposd'],
@@ -169,6 +200,7 @@ names of a managed channel. Nothing in the portal UI shows them.
     'license': 'LGPL-3',
     'depends': ['bemade_portal_kit', 'mail', 'bus'],
     'data': [
+        'security/pk_chat_reader_rules.xml',
         'data/ir_cron.xml',
         'data/mail_templates.xml',
         'views/pk_chat_templates.xml',

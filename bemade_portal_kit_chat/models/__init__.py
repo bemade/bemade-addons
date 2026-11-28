@@ -5,6 +5,8 @@ from . import portal_kit
 from . import discuss_channel
 from . import discuss_channel_member
 from . import mail_message
+from . import bus_bus
+from . import ir_websocket
 from . import res_partner
 from . import pk_chat_data
 from . import pk_chat_mail

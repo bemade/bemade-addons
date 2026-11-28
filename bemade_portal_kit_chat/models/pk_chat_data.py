@@ -12,6 +12,14 @@ Task 5566: a closed managed channel's row and thread say so (``closed``,
 ``closed_label``); its rows come after the open ones (most recent first),
 its thread has no composer (``composer: 'none'``) and no « Reply »; its
 unread messages still count.
+
+Task 5520: a READER of a managed channel never learns who the other
+readers are. ``_pk_chat_author_for(member, partner)`` is the ONE place that
+decides what a viewer sees of an author: another reader (or a former
+member) is ``portal.kit._pk_chat_reader_alias(channel)`` with
+``PK_CHAT_NEUTRAL_AVATAR``; the viewer's own messages, the posters' and
+internal users' keep their names. The thread, the quoted parent, the
+e-mails, the phone's title and the avatar route all use it.
 """
 from datetime import datetime, timedelta
 
@@ -22,7 +30,7 @@ from odoo import api, models
 from odoo.tools import html2plaintext
 from odoo.tools.misc import babel_locale_parse
 
-from .discuss_channel import PK_CHAT_TYPES
+from .discuss_channel import PK_CHAT_NEUTRAL_AVATAR, PK_CHAT_TYPES
 
 EXCERPT = 90
 
@@ -107,6 +115,42 @@ class PortalKit(models.AbstractModel):
         return channel.name
 
     @api.model
+    def _pk_chat_viewer_is_reader(self, member):
+        """Task 5520: ``member`` (the viewer's) is a reader of a managed
+        channel, for whom the other readers are anonymous. An internal user
+        never is (vanilla)."""
+        member = member.sudo()
+        if member.pk_role != 'reader' or not member.channel_id.pk_managed_key:
+            return False
+        return not member.partner_id.user_ids.filtered(lambda user: not user.share)
+
+    @api.model
+    def _pk_chat_hides_author(self, member, partner):
+        """Task 5520: does the viewer ``member`` see ``partner`` (an author)
+        only as the alias? Yes when the viewer is a reader and ``partner`` is
+        not themselves, not a poster of the channel and not an internal user
+        (another reader, or a former member)."""
+        if not partner or partner == member.partner_id or not self._pk_chat_viewer_is_reader(member):
+            return False
+        partner = partner.sudo()
+        if partner.user_ids.filtered(lambda user: not user.share):
+            return False
+        return member.channel_id._pk_chat_member_of(partner).pk_role != 'poster'
+
+    @api.model
+    def _pk_chat_author_for(self, member, partner):
+        """Task 5520: ``(name, avatar_url)`` of the author ``partner`` for
+        the viewer ``member``: the alias and the neutral avatar when it is
+        hidden (``_pk_chat_hides_author``), else the name and the kit's
+        avatar route."""
+        channel = member.channel_id.sudo()
+        if not partner:
+            return '', ''
+        if self._pk_chat_hides_author(member, partner):
+            return str(self._pk_chat_reader_alias(channel)), PK_CHAT_NEUTRAL_AVATAR
+        return partner.sudo().name or '', self._pk_chat_avatar_url(channel, partner)
+
+    @api.model
     def _pk_chat_avatar_url(self, channel, partner=None):
         if partner:
             return '/my/app/chat/%s/avatar/%s' % (channel.id, partner.id)
@@ -158,16 +202,17 @@ class PortalKit(models.AbstractModel):
         user_partner = member.partner_id
         parent = message.parent_id
         author = message.author_id
+        author_name, author_avatar_url = self._pk_chat_author_for(member, author)
         return {
             'id': message.id,
-            'author_name': author.name or '',
-            'author_avatar_url': self._pk_chat_avatar_url(member.channel_id, author) if author else '',
+            'author_name': author_name,
+            'author_avatar_url': author_avatar_url,
             'body_html': str(message.body or ''),
             'when': pk_chat_when(self.env, message.date),
             'own': author == user_partner,
             'parent': {
                 'id': parent.id,
-                'author_name': parent.author_id.name or '',
+                'author_name': self._pk_chat_author_for(member, parent.author_id)[0],
                 'excerpt': pk_chat_excerpt(parent.body, 120),
             } if parent and parent.model == 'discuss.channel' and parent.res_id == member.channel_id.id else None,
             'can_reply': bool(member.channel_id.pk_managed_key) and not member.channel_id.pk_closed,

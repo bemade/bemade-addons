@@ -4,7 +4,8 @@
  * pk_picker), the floating window, the inline blocks, and the live updates.
  *
  * Live: Odoo's bus_service is only a « something changed in channel X »
- * signal (discuss.channel/new_message, discuss.channel/joined); the client
+ * signal (discuss.channel/new_message, discuss.channel/joined; task 5520:
+ * pk_chat.ping for a reader of a managed group); the client
  * then refetches from the kit routes. The bus is started here (a portal
  * page does not start it). While it is not connected, a poll (the
  * pk_live_count style: 20 s, backoff on errors, paused while the tab is
@@ -27,6 +28,7 @@ import {
     chatApi,
     chatTexts,
     renderConversations,
+    subscribeChatBus,
 } from "@bemade_portal_kit_chat/js/pk_chat_client";
 import { ChatWindow } from "@bemade_portal_kit_chat/js/pk_chat_window";
 
@@ -121,10 +123,8 @@ export class PkChatBubble extends Interaction {
 
     destroy() {
         clearTimeout(this.timer);
-        const bus = this.services && this.services.bus_service;
-        if (bus && this.onBusMessage) {
-            bus.unsubscribe("discuss.channel/new_message", this.onBusMessage);
-            bus.unsubscribe("discuss.channel/joined", this.onBusJoined);
+        if (this.unsubscribeBus) {
+            this.unsubscribeBus();
         }
     }
 
@@ -136,10 +136,10 @@ export class PkChatBubble extends Interaction {
         if (!bus) {
             return;
         }
-        this.onBusMessage = (payload) => this.channelChanged(payload && payload.id).catch(() => {});
-        this.onBusJoined = () => this.refreshCount();
-        bus.subscribe("discuss.channel/new_message", this.onBusMessage);
-        bus.subscribe("discuss.channel/joined", this.onBusJoined);
+        this.unsubscribeBus = subscribeChatBus(bus, {
+            onChanged: (channelId) => this.channelChanged(channelId).catch(() => {}),
+            onJoined: () => this.refreshCount(),
+        });
         if (bus.addEventListener) {
             bus.addEventListener("BUS:CONNECT", () => (this.busConnected = true));
             bus.addEventListener("BUS:RECONNECT", () => (this.busConnected = true));

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Task 5520: a READER (share user, pk_role 'reader') of a managed channel
+     uses the kit only (its routes read in sudo) and never learns the other
+     members through the ORM. GLOBAL rules (AND-ed for everyone), so each
+     domain is TRUE for internal users (user.share is False) and only hides,
+     for a share user, a managed channel (or a sub-channel of one) where they
+     are a reader. Posters, internal users, other groups and chats: untouched.
+     Not noupdate: these new records follow the module; Odoo's own (noupdate)
+     rules are not edited. -->
+<odoo>
+
+    <record id="pk_chat_rule_reader_channel" model="ir.rule">
+        <field name="name">Portal kit chat: a reader does not read their managed channel (the kit does)</field>
+        <field name="model_id" ref="mail.model_discuss_channel"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">
+            [(1, '=', 1)] if not user.share else [
+                '!',
+                '|',
+                    '&amp;',
+                        ('pk_managed_key', '!=', False),
+                        ('channel_member_ids', 'any', [('partner_id', '=', user.partner_id.id), ('pk_role', '=', 'reader')]),
+                    '&amp;',
+                        ('parent_channel_id.pk_managed_key', '!=', False),
+                        ('parent_channel_id.channel_member_ids', 'any', [('partner_id', '=', user.partner_id.id), ('pk_role', '=', 'reader')]),
+            ]
+        </field>
+    </record>
+
+    <record id="pk_chat_rule_reader_member" model="ir.rule">
+        <field name="name">Portal kit chat: a reader reads only their own member row of their managed channel</field>
+        <field name="model_id" ref="mail.model_discuss_channel_member"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">
+            [(1, '=', 1)] if not user.share else [
+                '|',
+                    ('partner_id', '=', user.partner_id.id),
+                    '!',
+                    ('channel_id', 'any', [
+                        '|',
+                            '&amp;',
+                                ('pk_managed_key', '!=', False),
+                                ('channel_member_ids', 'any', [('partner_id', '=', user.partner_id.id), ('pk_role', '=', 'reader')]),
+                            '&amp;',
+                                ('parent_channel_id.pk_managed_key', '!=', False),
+                                ('parent_channel_id.channel_member_ids', 'any', [('partner_id', '=', user.partner_id.id), ('pk_role', '=', 'reader')]),
+                    ]),
+            ]
+        </field>
+    </record>
+
+</odoo>
