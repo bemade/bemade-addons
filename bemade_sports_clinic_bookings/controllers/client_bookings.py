@@ -36,6 +36,7 @@ from odoo import fields, http
 from odoo.http import request
 from odoo.tools import format_datetime
 
+from odoo.addons.appointment.controllers.portal import AppointmentPortal
 from odoo.addons.appointment_portal_staff.controllers.portal import BookingPortal
 from odoo.addons.bemade_sports_clinic.controllers.app_client import AppClientPortal
 from odoo.addons.bemade_sports_clinic.models.sc_app_nav import SC_CLIENT_APP
@@ -49,7 +50,7 @@ CLIENT_TYPE_INTRO_MAX = 140
 CLIENT_CANCEL_BACK = ('/my/home', '/my/bookings')
 
 
-class ClientBookingsPortal(BookingPortal, AppClientPortal):
+class ClientBookingsPortal(BookingPortal, AppClientPortal, AppointmentPortal):
 
     # ------------------------------------------------------------------
     # Who gets the client page
@@ -232,6 +233,22 @@ class ClientBookingsPortal(BookingPortal, AppClientPortal):
         })
         return self._pk_page(CLIENT_BOOKINGS_TEMPLATE, values)
 
+    # Review round 2: the stock pages a client could still reach by URL
+    # send them to « Rendez-vous »: the bookings calendar (staff only) and
+    # Odoo's « My appointments » (its pages and filters). Staff, a portal
+    # appointment provider and users without an app keep them.
+    @http.route()
+    def portal_my_bookings_calendar(self, **kwargs):
+        if self._sc_client_bookings_active():
+            return request.redirect('/my/bookings')
+        return super().portal_my_bookings_calendar(**kwargs)
+
+    @http.route()
+    def portal_my_appointments(self, *args, **kwargs):
+        if self._sc_client_bookings_active():
+            return request.redirect('/my/bookings')
+        return super().portal_my_appointments(*args, **kwargs)
+
     def _sc_client_home_values(self):
         values = super()._sc_client_home_values()
         values.update({
@@ -240,3 +257,4 @@ class ClientBookingsPortal(BookingPortal, AppClientPortal):
             'sc_client_bookings_url': '/my/bookings',
         })
         return values
+

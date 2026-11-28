@@ -7,3 +7,4 @@ from . import test_booking_emails
 from . import test_bookings_portal_kit_5196
 from . import test_client_bookings_1795
 from . import test_client_cancel_1795
+from . import test_client_redirects_1795

@@ -16,3 +16,4 @@ from . import app_critical_items
 from . import knowledge_public
 from . import app_dashboard
 from . import app_client
+from . import app_client_redirects
