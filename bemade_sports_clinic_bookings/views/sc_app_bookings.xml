@@ -105,7 +105,7 @@
                 <t t-set="message">No bookings.</t>
             </t>
             <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_pk_pager">
-                <t t-call="portal.pager"/>
+                <t t-call="bemade_sports_clinic.app_pager"/>
             </div>
         </t>
     </template>

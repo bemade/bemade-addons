@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1795 — the Fit Crew client app's home (/my/home for a portal user
+    without a clinic staff role; models/sc_client_app.py,
+    controllers/app_client.py). Drawn on sc_client_layout: nothing of the
+    staff app. Values: sc_client_first_name, plus what an addon adds through
+    AppClientPortal._sc_client_home_values (bemade_sports_clinic_bookings:
+    the next appointment and « Réserver », in the slots below).
+-->
+<odoo>
+
+    <template id="sc_client_home" name="Sports Clinic App: client home">
+        <t t-call="bemade_sports_clinic.sc_client_layout">
+            <t t-set="pk_title">Home</t>
+            <t t-set="pk_active_nav" t-value="'home'"/>
+            <section class="o_pk_section o_sc_client_greeting" data-pk-section="client.greeting">
+                <h1 class="o_sc_client_hello">
+                    <t t-if="sc_client_first_name">Hello, <t t-out="sc_client_first_name"/></t>
+                    <t t-else="">Hello</t>
+                </h1>
+                <p class="o_pk_meta">Welcome to your Fit Crew space.</p>
+            </section>
+            <!-- bemade_sports_clinic_bookings: « Prochain rendez-vous » and
+                 « Réserver ». -->
+            <t name="sc_client_home_bookings"/>
+            <section class="o_pk_section" data-pk-section="client.shortcuts">
+                <t t-call="bemade_portal_kit.pk_section_header">
+                    <t t-set="title">Shortcuts</t>
+                </t>
+                <div class="o_pk_list">
+                    <!-- bemade_sports_clinic_bookings: « Mes rendez-vous ». -->
+                    <t name="sc_client_home_shortcuts"/>
+                    <t t-call="bemade_portal_kit.pk_entity_row">
+                        <t t-set="href" t-value="'/my/account'"/>
+                        <t t-set="lead_icon" t-value="'account'"/>
+                        <t t-set="title">My account</t>
+                        <t t-set="subtitle">Your name, email and phone</t>
+                        <t t-set="row_attrs" t-value="{'data-sc-action': 'client.account'}"/>
+                    </t>
+                </div>
+            </section>
+        </t>
+    </template>
+
+    <!-- Review round 2: « Paramètres » of the client app has no « Done »
+         buttons switch (staff wording); a client keeps the default (the ✓
+         at the top of « Mon compte »'s cards). -->
+    <template id="sc_client_settings_no_done_buttons" inherit_id="bemade_portal_kit.pk_app_settings"
+              name="Sports Clinic App: client settings without the Done buttons switch">
+        <xpath expr="//section[@id='pk_done_buttons']" position="attributes">
+            <attribute name="t-if">pk_app_key != 'fitcrew_client'</attribute>
+        </xpath>
+    </template>
+
+</odoo>

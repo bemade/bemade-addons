@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.2.1.0",
+    'version': "19.0.2.2.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -130,6 +130,17 @@ Players I follow (a personal « Follow » on the player cards and page),
 Announcements, Upcoming coverage (« Upcoming events » for coaches) and, for
 therapists, Missing timesheets.
 
+Client app (task 1795): every portal user who holds no clinic staff role
+(no coach, therapist or clinic admin group, no staff-row role) gets the
+``client`` role and the kit app ``fitcrew_client``: the same Fit Crew brand
+and the same installed « Fit Crew » app (manifest, id and start URL
+``/my/home``), with « Accueil » (a greeting, and the shortcuts), « Plus »
+(Mon compte, Sécurité, Paramètres, Installer l'application, Se déconnecter)
+and, with ``bemade_sports_clinic_bookings``, « Rendez-vous ». A clinic URL
+still gives the client « Pas d'accès », now with « Accueil ». Staff (and a
+staff member who is also a client) keep the staff app; internal users
+without a clinic role are unchanged.
+
 Instance banner: Settings > Sports Clinic Portal > Instance banner
 (``bemade_sports_clinic.instance_banner``) puts a red strip with that text
 (e.g. « DÉMO ») at the top of every page (login, backend, portal, app
@@ -244,6 +255,8 @@ nothing; PDF reports never carry it.
         # switch) — components, layout, then the pages that t-call them.
         "views/sc_components.xml",
         "views/sc_app_layout.xml",
+        # Task 1795: the client app's home (on sc_client_layout).
+        "views/sc_client_app.xml",
         # Task 1541 (P4): « Pas d'accès » for a user without a clinic app role.
         "views/sc_no_access.xml",
         "views/instance_banner.xml",
@@ -348,6 +361,8 @@ nothing; PDF reports never carry it.
             # Task 1540: P3 styles, the live clinic waiting list.
             "bemade_sports_clinic/static/src/scss/sc_p3.scss",
             "bemade_sports_clinic/static/src/scss/sc_dashboard.scss",
+            # Task 1795: the client app's home.
+            "bemade_sports_clinic/static/src/scss/sc_client.scss",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml",
             # Task 1540: the event form behaviours (task 5200: the calendar

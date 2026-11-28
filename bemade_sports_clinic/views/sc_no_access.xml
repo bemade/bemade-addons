@@ -4,8 +4,10 @@
     only: a logged-in user without a clinic app role (a portal user with no
     team role, an internal user without a clinic group) who opens a clinic
     URL gets this page, HTTP 403 (AppShellMixin._sc_no_access). No app
-    navigation (the user has no app): the Fit Crew mark, the message, « My
-    account » (the stock portal home) and « Sign out ».
+    navigation (the user has no clinic app): the Fit Crew mark, the message, « My
+    account » (the stock portal home) and « Sign out ». Task 1795: a user of
+    another app (a client) gets « Home » (their app's home) instead of « My
+    account ».
 -->
 <odoo>
 
@@ -40,10 +42,17 @@
                     </div>
                     <div class="o_pk_card o_sc_no_access_card">
                         <h1 class="o_sc_no_access_title">No access</h1>
-                        <p class="o_sc_no_access_text">Your account does not have access to the Le Fit Crew app. If this is a mistake, contact Le Fit Crew.</p>
+                        <!-- Review round 2: a client (the client app) is told the
+                             page is the staff's; anyone else keeps the
+                             « no access » text. -->
+                        <p t-if="no_access_home" class="o_sc_no_access_text" data-sc-no-access-text="client">This page is reserved for the Fit Crew team.</p>
+                        <p t-else="" class="o_sc_no_access_text">Your account does not have access to the Le Fit Crew app. If this is a mistake, contact Le Fit Crew.</p>
                         <div class="o_sc_no_access_actions">
-                            <a href="/my" class="o_pk_btn o_pk_btn_primary" data-sc-action="no_access.account">My account</a>
-                            <a href="/web/session/logout?redirect=/" class="o_pk_btn o_pk_btn_ghost" data-sc-action="no_access.logout">Sign out</a>
+                            <!-- Task 1795: a user of an app (the client app) goes back
+                                 to their home; anyone else to the stock portal. -->
+                            <a t-if="no_access_home" t-att-href="no_access_home" class="o_pk_btn o_pk_btn_primary" data-sc-action="no_access.home">Home</a>
+                            <a t-else="" href="/my" class="o_pk_btn o_pk_btn_primary" data-sc-action="no_access.account">My account</a>
+                            <a href="/web/session/logout?redirect=/web/login" class="o_pk_btn o_pk_btn_ghost" data-sc-action="no_access.logout">Sign out</a>
                         </div>
                     </div>
                 </main>

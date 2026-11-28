@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1795 — the client app's appointments (controllers/client_bookings.py):
+    « Rendez-vous » (/my/bookings in the client app), « Réserver » and the
+    client home's part. Drawn on bemade_sports_clinic.sc_client_layout. The
+    view link is Odoo's own page (/calendar/view/<token>: it leaves the app,
+    stock look); the cancel stays in the app (review round 2: a POST to
+    /my/bookings/<id>/client-cancel, back here with a toast). No inline
+    script / style.
+-->
+<odoo>
+
+    <!-- One booking. Variables: row (ClientBookingsPortal._sc_client_booking_row),
+         actions (bool: the view / cancel buttons), cancel_back (the page the
+         cancel goes back to: /my/home or /my/bookings). -->
+    <template id="sc_client_booking_card" name="Sports Clinic App: client booking card">
+        <div class="o_pk_card o_sc_client_booking" t-att-data-sc-client-booking="row['id']">
+            <div class="o_sc_client_next">
+                <span class="o_sc_client_next_when" t-out="row['when']"/>
+                <span class="o_pk_meta">
+                    <t t-out="row['duration']"/>
+                    <t t-if="row['type']"> · <t t-out="row['type']"/></t>
+                </span>
+                <span t-if="row['staff']" class="o_pk_meta">With <t t-out="row['staff']"/></span>
+                <span t-if="row['location']" class="o_pk_meta" t-out="row['location']"/>
+                <span t-if="row['cancelled']"><span class="o_pk_chip o_pk_chip_red">Cancelled</span></span>
+            </div>
+            <div t-if="actions and (row['view_url'] or row['cancel_url'])" class="o_sc_client_actions">
+                <a t-if="row['view_url']" t-att-href="row['view_url']" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm"
+                   data-sc-action="client_booking.view">See details</a>
+                <!-- The confirm sheet below; without script, Odoo's view page
+                     (its own cancel button). -->
+                <a t-if="row['cancel_url']" t-att-href="row['view_url'] or row['cancel_url']"
+                   class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm" data-sc-action="client_booking.cancel"
+                   t-att-data-pk-sheet-open="'sc_client_cancel_%s' % row['id']">Cancel</a>
+            </div>
+        </div>
+        <t t-if="actions and row['cancel_url']" t-call="bemade_portal_kit.pk_sheet">
+            <t t-set="sheet_id" t-value="'sc_client_cancel_%s' % row['id']"/>
+            <t t-set="title">Cancel this appointment?</t>
+            <p class="o_pk_confirm_message"><t t-out="row['when']"/><t t-if="row['type']"> · <t t-out="row['type']"/></t></p>
+            <form method="post" t-att-action="row['cancel_url']" class="o_pk_form_actions"
+                  data-sc-form="client_booking.cancel">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="back" t-att-value="cancel_back or '/my/bookings'"/>
+                <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-sheet-close="1">Keep it</button>
+                <button type="submit" class="o_pk_btn o_pk_btn_danger"
+                        data-sc-action="client_booking.cancel_confirm">Cancel the appointment</button>
+            </form>
+        </t>
+    </template>
+
+    <!-- « Réserver ». Variable: book (ClientBookingsPortal._sc_client_book:
+         one type -> a link; several -> a sheet listing them). -->
+    <template id="sc_client_book_button" name="Sports Clinic App: client book button">
+        <t t-if="book">
+            <a t-if="book['url']" t-att-href="book['url']" class="o_pk_btn o_pk_btn_primary"
+               data-sc-action="client.book">Book an appointment</a>
+            <t t-else="">
+                <a href="#sc_client_book_types" class="o_pk_btn o_pk_btn_primary" data-sc-action="client.book"
+                   data-pk-sheet-open="sc_client_book_sheet">Book an appointment</a>
+                <t t-call="bemade_portal_kit.pk_sheet">
+                    <t t-set="sheet_id" t-value="'sc_client_book_sheet'"/>
+                    <t t-set="title">Book an appointment</t>
+                    <t t-call="bemade_sports_clinic_bookings.sc_client_book_types"/>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <template id="sc_client_book_types" name="Sports Clinic App: client appointment types">
+        <div class="o_pk_list" data-pk-section="client.book_types">
+            <t t-foreach="book['types']" t-as="btype">
+                <t t-call="bemade_portal_kit.pk_entity_row">
+                    <t t-set="href" t-value="btype['url']"/>
+                    <t t-set="lead_icon" t-value="'bookings'"/>
+                    <t t-set="title" t-value="btype['name']"/>
+                    <t t-set="subtitle" t-value="btype['intro']"/>
+                    <t t-set="row_attrs" t-value="{'data-sc-book-type': btype['id']}"/>
+                </t>
+            </t>
+        </div>
+    </template>
+
+    <!-- « Rendez-vous »: upcoming, then the past ones (folded). -->
+    <template id="sc_client_bookings" name="Sports Clinic App: client bookings">
+        <t t-call="bemade_sports_clinic.sc_client_layout">
+            <t t-set="pk_title">Appointments</t>
+            <t t-set="pk_active_nav" t-value="'bookings'"/>
+            <div t-if="sc_client_book" class="o_sc_client_actions" data-pk-section="client.book">
+                <t t-call="bemade_sports_clinic_bookings.sc_client_book_button">
+                    <t t-set="book" t-value="sc_client_book"/>
+                </t>
+            </div>
+            <section class="o_pk_section" data-pk-section="client.upcoming">
+                <t t-call="bemade_portal_kit.pk_section_header">
+                    <t t-set="title">Upcoming</t>
+                </t>
+                <t t-if="sc_client_upcoming">
+                    <t t-foreach="sc_client_upcoming" t-as="row">
+                        <t t-call="bemade_sports_clinic_bookings.sc_client_booking_card">
+                            <t t-set="actions" t-value="True"/>
+                            <t t-set="cancel_back" t-value="'/my/bookings'"/>
+                        </t>
+                    </t>
+                </t>
+                <t t-elif="sc_client_past" t-call="bemade_portal_kit.pk_empty_state">
+                    <t t-set="message">No upcoming appointments.</t>
+                </t>
+                <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
+                    <t t-set="message">You have no bookings yet.</t>
+                </t>
+            </section>
+            <details t-if="sc_client_past" class="o_pk_disclosure o_pk_section" data-pk-section="client.past">
+                <summary class="o_pk_disclosure_summary">
+                    <span>Past appointments</span>
+                </summary>
+                <t t-foreach="sc_client_past" t-as="row">
+                    <t t-call="bemade_sports_clinic_bookings.sc_client_booking_card">
+                        <t t-set="actions" t-value="False"/>
+                    </t>
+                </t>
+            </details>
+        </t>
+    </template>
+
+    <!-- The client home: « Prochain rendez-vous », « Réserver », and the
+         « Mes rendez-vous » shortcut. -->
+    <template id="sc_client_home_bookings" name="Sports Clinic App: client home, bookings"
+              inherit_id="bemade_sports_clinic.sc_client_home">
+        <xpath expr="//t[@name='sc_client_home_bookings']" position="before">
+            <section class="o_pk_section" data-pk-section="client.next">
+                <t t-call="bemade_portal_kit.pk_section_header">
+                    <t t-set="title">Next appointment</t>
+                    <t t-set="more_url" t-value="sc_client_bookings_url"/>
+                    <t t-set="more_label">See all</t>
+                </t>
+                <t t-if="sc_client_next" t-call="bemade_sports_clinic_bookings.sc_client_booking_card">
+                    <t t-set="row" t-value="sc_client_next"/>
+                    <t t-set="actions" t-value="True"/>
+                    <t t-set="cancel_back" t-value="'/my/home'"/>
+                </t>
+                <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
+                    <t t-set="message">No upcoming appointments.</t>
+                </t>
+                <div t-if="sc_client_book" class="o_sc_client_actions" data-pk-section="client.book">
+                    <t t-call="bemade_sports_clinic_bookings.sc_client_book_button">
+                        <t t-set="book" t-value="sc_client_book"/>
+                    </t>
+                </div>
+            </section>
+        </xpath>
+        <xpath expr="//t[@name='sc_client_home_shortcuts']" position="before">
+            <t t-call="bemade_portal_kit.pk_entity_row">
+                <t t-set="href" t-value="sc_client_bookings_url"/>
+                <t t-set="lead_icon" t-value="'bookings'"/>
+                <t t-set="title">My appointments</t>
+                <t t-set="subtitle">Upcoming and past</t>
+                <t t-set="row_attrs" t-value="{'data-sc-action': 'client.bookings'}"/>
+            </t>
+        </xpath>
+    </template>
+
+</odoo>

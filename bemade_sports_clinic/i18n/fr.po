@@ -1819,6 +1819,7 @@ msgstr "Ajouter une blessure"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
+#: code:addons/bemade_sports_clinic/models/sc_client_app.py:0
 msgid "Add Le Fit Crew to your home screen"
 msgstr "Ajouter Le Fit Crew à l'écran d'accueil"
 
@@ -3031,6 +3032,7 @@ msgstr "Paramètres de configuration"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sc_app_nav.py:0
+#: code:addons/bemade_sports_clinic/models/sc_client_app.py:0
 msgid "Configure the dashboard"
 msgstr "Configurer le tableau de bord"
 
@@ -5460,6 +5462,7 @@ msgstr "Spécifique à la blessure"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
+#: code:addons/bemade_sports_clinic/models/sc_client_app.py:0
 msgid "Install the app"
 msgstr "Installer l'application"
 
@@ -5897,16 +5900,6 @@ msgid "Le Fit Crew"
 msgstr "Le Fit Crew"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_pwa_offline_texts
-msgid ""
-"Le Fit Crew needs a connection to show teams and players. Your drafts stay "
-"on this device and come back when you return to the page."
-msgstr ""
-"Le Fit Crew a besoin d'une connexion pour afficher les équipes et les "
-"joueurs. Vos brouillons restent sur cet appareil et reviennent quand vous "
-"retournez à la page."
-
-#. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
 msgid "Le Fit Crew — Event cancelled: %s"
@@ -6287,6 +6280,7 @@ msgstr "Mois"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
+#: code:addons/bemade_sports_clinic/models/sc_client_app.py:0
 msgid "More"
 msgstr "Plus"
 
@@ -6346,6 +6340,9 @@ msgid "My Uploads"
 msgstr "Mes téléversements"
 
 #. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_client_app.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_client_home
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_no_access
 msgid "My account"
 msgstr "Mon compte"
@@ -9764,6 +9761,7 @@ msgstr "Régler sur la date d'aujourd'hui"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sc_app_nav.py:0
+#: code:addons/bemade_sports_clinic/models/sc_client_app.py:0
 msgid "Settings"
 msgstr "Paramètres"
 
@@ -9839,6 +9837,8 @@ msgid "Sign in for your visit"
 msgstr "Inscrivez-vous pour votre visite"
 
 #. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_client_app.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_no_access
 msgid "Sign out"
 msgstr "Se déconnecter"
@@ -11381,6 +11381,11 @@ msgstr "Ce formulaire ne peut être ouvert qu'à partir d'une clinique."
 msgid "This injury can no longer be undone; delete it from its card."
 msgstr ""
 "Cette blessure ne peut plus être annulée ; supprimez-la depuis sa fiche."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_no_access
+msgid "This page is reserved for the Fit Crew team."
+msgstr "Cette page est réservée à l'équipe Fit Crew."
 
 #. module: bemade_sports_clinic
 #: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sports_patient_duplicate_pair_unique
@@ -13079,6 +13084,13 @@ msgid "You follow this player"
 msgstr "Vous suivez ce joueur"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_pwa_offline_texts
+msgid ""
+"You need a connection to use Le Fit Crew. Your drafts are kept on this "
+"device and come back when you open the page again."
+msgstr "Une connexion est nécessaire pour utiliser Le Fit Crew. Vos brouillons sont conservés sur cet appareil et reviennent quand vous rouvrez la page."
+
+#. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
 msgid ""
@@ -13303,3 +13315,57 @@ msgstr "· <span>Résolution prévue :</span>"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_card_injury_detail
 msgid "· <span>Resolved:</span>"
 msgstr "· <span>Résolue :</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_client_home
+msgid "Hello"
+msgstr "Bonjour"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_client_home
+msgid "Hello,"
+msgstr "Bonjour,"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_client_app.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_client_home
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_client_layout
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_no_access
+msgid "Home"
+msgstr "Accueil"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_client_app.py:0
+msgid "Language and display"
+msgstr "Langue et affichage"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_client_app.py:0
+msgid "Password and sign-in"
+msgstr "Mot de passe et connexion"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_client_app.py:0
+msgid "Security"
+msgstr "Sécurité"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_client_home
+msgid "Shortcuts"
+msgstr "Raccourcis"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_client_home
+msgid "Welcome to your Fit Crew space."
+msgstr "Bienvenue dans votre espace Fit Crew."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_client_app.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_client_home
+msgid "Your name, email and phone"
+msgstr "Votre nom, courriel et téléphone"

@@ -86,6 +86,12 @@ msgstr "Appliquer les filtres"
 
 #. module: bemade_sports_clinic_bookings
 #. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/client_bookings.py:0
+msgid "Appointment cancelled"
+msgstr "Rendez-vous annulé"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
 #: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
 msgid "Appointment type"
@@ -386,6 +392,26 @@ msgstr "La personne qui a réservé sera avisée par courriel."
 
 #. module: bemade_sports_clinic_bookings
 #. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/client_bookings.py:0
+msgid ""
+"This appointment can no longer be cancelled online. Please contact Le Fit "
+"Crew."
+msgstr "Ce rendez-vous ne peut plus être annulé en ligne. Veuillez communiquer avec Le Fit Crew."
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/client_bookings.py:0
+msgid "This appointment cannot be found."
+msgstr "Ce rendez-vous est introuvable."
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/client_bookings.py:0
+msgid "This appointment is already cancelled."
+msgstr "Ce rendez-vous est déjà annulé."
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
 #: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
 msgid "This booking can no longer be changed."
 msgstr "Ce rendez-vous ne peut plus être modifié."
@@ -403,6 +429,7 @@ msgstr "Aujourd'hui"
 #. module: bemade_sports_clinic_bookings
 #. odoo-python
 #: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_bookings
 msgid "Upcoming"
 msgstr "À venir"
 
@@ -430,3 +457,104 @@ msgstr "Vos rendez-vous"
 #: code:addons/bemade_sports_clinic_bookings/models/res_users.py:0
 msgid "Your bookings today"
 msgstr "Vos rendez-vous du jour"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/client_bookings.py:0
+msgid "%(hours)s h"
+msgstr "%(hours)s h"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/client_bookings.py:0
+msgid "%(hours)s h %(minutes)02d"
+msgstr "%(hours)s h %(minutes)02d"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/client_bookings.py:0
+msgid "%(minutes)s min"
+msgstr "%(minutes)s min"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_booking_card
+msgid "<span class=\"o_pk_chip o_pk_chip_red\">Cancelled</span>"
+msgstr "<span class=\"o_pk_chip o_pk_chip_red\">Annulé</span>"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_bookings
+msgid "<span>Past appointments</span>"
+msgstr "<span>Rendez-vous passés</span>"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/models/portal_kit.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_bookings
+msgid "Appointments"
+msgstr "Rendez-vous"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_book_button
+msgid "Book an appointment"
+msgstr "Prendre rendez-vous"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_booking_card
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_booking_card
+msgid "Cancel the appointment"
+msgstr "Annuler le rendez-vous"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_booking_card
+msgid "Cancel this appointment?"
+msgstr "Annuler ce rendez-vous ?"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_booking_card
+msgid "Keep it"
+msgstr "Le garder"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_home_bookings
+msgid "My appointments"
+msgstr "Mes rendez-vous"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_home_bookings
+msgid "Next appointment"
+msgstr "Prochain rendez-vous"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_home_bookings
+msgid "No upcoming appointments."
+msgstr "Aucun rendez-vous à venir."
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_booking_card
+msgid "See details"
+msgstr "Voir les détails"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_home_bookings
+msgid "Upcoming and past"
+msgstr "À venir et passés"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_booking_card
+msgid "With"
+msgstr "Avec"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_bookings
+msgid "You have no bookings yet."
+msgstr "Vous n'avez encore aucun rendez-vous."
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_client_home_bookings
+msgid "See all"
+msgstr "Voir tout"

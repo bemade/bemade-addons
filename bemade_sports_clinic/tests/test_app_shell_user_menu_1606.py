@@ -237,11 +237,23 @@ class TestUserMenu1606(UserMenuCommon):
         self.assertIn(resp.status_code, (302, 303))
         self.assertTrue(resp.headers['Location'].endswith('/my/home'))
 
-    def test_plain_user_has_no_settings_page(self):
+    def test_roleless_internal_user_has_no_settings_page(self):
+        # Task 1795 (deliberate update): a plain PORTAL user is a client now
+        # (the client app has « Paramètres »); a user without any app role —
+        # an internal user without a clinic role — still has none.
+        from odoo import Command
+        self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'PC Internal Nobody 1606', 'login': 'pc.inobody1606@example.com',
+            'password': 'pc-inobody-1606',
+            'group_ids': [Command.set([self.env.ref('base.group_user').id])],
+        })
         self._switch(True)
-        self._login_plain()
+        self.authenticate('pc.inobody1606@example.com', 'pc-inobody-1606')
         resp = self.url_open('/my/app/settings', allow_redirects=False)
         self.assertIn(resp.status_code, (302, 303))
+        self._login_plain()
+        resp = self.url_open('/my/app/settings', allow_redirects=False)
+        self.assertEqual(resp.status_code, 200)
 
 
 @tagged('post_install', '-at_install')

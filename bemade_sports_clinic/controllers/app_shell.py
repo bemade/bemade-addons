@@ -1069,9 +1069,20 @@ class AppShellMixin:
         app role."""
         response = request.render('bemade_sports_clinic.sc_no_access', {
             'no_access_theme': AppShellMixin._sc_no_access_theme(),
+            'no_access_home': AppShellMixin._sc_no_access_home(),
         })
         response.status_code = 403
         return response
+
+    @staticmethod
+    def _sc_no_access_home():
+        """Task 1795: « Home » of « Pas d'accès » — ``/my/home`` for a user
+        in a kit app (the client app: their home), else False (« My
+        account », the stock portal; e.g. a role-less internal user)."""
+        user = request.env.user
+        if user._is_public() or not request.env['portal.kit']._pk_shell_active():
+            return False
+        return '/my/home'
 
     @staticmethod
     def _sc_no_access_theme():

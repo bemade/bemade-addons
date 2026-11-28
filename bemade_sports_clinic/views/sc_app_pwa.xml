@@ -2,7 +2,8 @@
 <!--
     Task 5201 (kit P6): the installable app is bemade_portal_kit_pwa's. Fit
     Crew keeps its own wording on the install and offline pages (health
-    data, teams and players) through the pages' slots; the name, colours
+    data; the offline page is shared by staff and clients) through the
+    pages' slots; the name, colours
     and icons are the company's app fields (models/sc_app_pwa.py).
 -->
 <odoo>
@@ -19,7 +20,13 @@
     <template id="sc_pwa_offline_texts" name="Sports Clinic App: offline page wording"
               inherit_id="bemade_portal_kit_pwa.pk_app_offline">
         <xpath expr="//t[@name='pk_offline_message']" position="replace">
-            <t name="pk_offline_message">Le Fit Crew needs a connection to show teams and players. Your drafts stay on this device and come back when you return to the page.</t>
+            <!-- Review round 2 (#1795): one page for every user of the
+                 installed app (the kit serves the default app's, data-free,
+                 cached on the device): worded for staff and clients alike.
+                 Reworded enough that an upgrade does not carry the old
+                 French over (Odoo keeps a translation for a term >= 90 %
+                 similar). -->
+            <t name="pk_offline_message">You need a connection to use Le Fit Crew. Your drafts are kept on this device and come back when you open the page again.</t>
         </xpath>
     </template>
 </odoo>

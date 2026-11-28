@@ -3,7 +3,8 @@ app layout (``bemade_portal_kit.pk_app_layout``). Synthetic fixtures only.
 
 Acceptance criteria covered here:
 
-* UC-W1 The wrapper keeps its xmlid and t-calls the kit's layout: one shell
+* UC-W1 The wrapper keeps its xmlid and t-calls the kit's layout (task
+  1795: through the shared brand layout ``sc_brand_layout``): one shell
   root, ``main#pk_content``, the kit's user menu (``pk_user_menu_bar``).
 * UC-W2 It fills the kit's slots with the clinic's pieces: the Fit Crew
   brand (name « Le Fit Crew », ``/my/home``, the chrome logo
@@ -29,10 +30,18 @@ from odoo.addons.bemade_sports_clinic.tests.test_app_shell_user_menu_1606 import
 class TestPkLayoutWrapper5345(UserMenuCommon):
 
     def test_wrapper_calls_the_kit_layout(self):
+        # Task 1795 (deliberate update): the wrapper calls the shared Fit Crew
+        # brand layout (sc_brand_layout), which calls the kit's layout; the
+        # client app's layout calls the same brand layout.
         view = self.env.ref('bemade_sports_clinic.sc_app_layout')
-        self.assertIn('bemade_portal_kit.pk_app_layout', view.arch_db)
-        self.assertNotIn('pk_frontend_layout', view.arch_db)
-        self.assertNotIn('o_pk_rail', view.arch_db)
+        brand = self.env.ref('bemade_sports_clinic.sc_brand_layout')
+        client = self.env.ref('bemade_sports_clinic.sc_client_layout')
+        self.assertIn('bemade_sports_clinic.sc_brand_layout', view.arch_db)
+        self.assertIn('bemade_sports_clinic.sc_brand_layout', client.arch_db)
+        self.assertIn('bemade_portal_kit.pk_app_layout', brand.arch_db)
+        for layout in (view, brand, client):
+            self.assertNotIn('pk_frontend_layout', layout.arch_db)
+            self.assertNotIn('o_pk_rail', layout.arch_db)
         # The clinic's old popup is gone (adopted by the kit).
         self.assertFalse(self.env['ir.model.data'].search_count(
             [('module', '=', 'bemade_sports_clinic'), ('name', '=', 'sc_user_menu_popup')]))

@@ -140,7 +140,9 @@ class TestAppShellPwa1542(AppShellCommon):
             self.assertNotIn(leak, text, leak)
         self.assertIn('pk_offline.css', text)
         self.assertIn('href="/my/home"', text)
-        self.assertIn('Le Fit Crew needs a connection to show teams and players.', text)
+        # Task 1795 review round 2 (deliberate update): one wording for staff
+        # and clients (test_client_wording_1795).
+        self.assertIn('You need a connection to use Le Fit Crew.', text)
         tree = lxml_html.document_fromstring(text)
         self.assertEqual(tree.xpath('//title/text()'), ['Le Fit Crew'])
         self.assertEqual(tree.xpath('//meta[@name="theme-color"]/@content'), ['#120e12'])

@@ -204,12 +204,19 @@ class TestAccountShell1620(AccountShellCommon):
         self.assertTrue(tree.xpath('//div[@name="address_div"]'))
         self.assertEqual(self._form_values(tree)['callback'], '/my')
 
-    def test_account_plain_portal_user_keeps_the_core_page(self):
+    def test_account_plain_portal_user_in_the_client_app(self):
+        # Task 1795 (deliberate update): a portal user without a clinic role
+        # is a client — « Mon compte » renders in the client app's shell
+        # (before: the core page), with the same core form.
         self._switch(True)
         self._login_plain()
         text, tree = self._get('/my/account')
-        self.assertIsNone(self._shell(tree))
-        self.assertTrue(tree.xpath('//div[@name="address_div"]'))
+        self.assertIsNotNone(self._shell(tree))
+        form = tree.xpath('//*[contains(@class, "o_customer_address_fill")]'
+                          '//form[contains(@class, "address_autoformat")]')
+        self.assertEqual(len(form), 1)
+        self.assertEqual(form[0].get('action'), '/my/address/submit')
+        self.assertFalse(tree.xpath('//*[@data-sc-activity-clock-bar]'))
 
 
 @tagged('post_install', '-at_install')
@@ -347,12 +354,16 @@ class TestSecurityShell1620(AccountShellCommon):
         self.assertTrue(tree.xpath('//section[@name="portal_change_password"]'))
         self.assertIn('incorrect', text)
 
-    def test_security_plain_portal_user_keeps_the_core_page(self):
+    def test_security_plain_portal_user_in_the_client_app(self):
+        # Task 1795 (deliberate update): « Sécurité » in the client app's
+        # shell for a client (before: the core page), same password form.
         self._switch(True)
         self._login_plain()
         text, tree = self._get('/my/security')
-        self.assertNotIn('data-pk-app-shell', text)
-        self.assertTrue(tree.xpath('//section[@name="portal_change_password"]'))
+        self.assertIn('data-pk-app-shell', text)
+        body = tree.xpath('//*[contains(@class, "o_portal_security_body")]')
+        self.assertEqual(len(body), 1)
+        self.assertEqual(len(body[0].xpath('.//form[@action="/my/security"]')), 1)
 
 
 @tagged('post_install', '-at_install')

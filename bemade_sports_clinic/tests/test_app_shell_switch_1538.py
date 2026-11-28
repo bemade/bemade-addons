@@ -8,7 +8,8 @@ Acceptance criteria covered here:
 * UC-S2 (AC2/AC4) Switch ON (staging): a coach gets the phone tabs without
   « Clinique », a therapist gets « Clinique »; both get « Réservations » only
   when the bookings card is enabled; the website/portal header and footer are
-  NOT rendered; a user without any clinic role keeps the stock portal.
+  NOT rendered; a portal user without any clinic role gets the client app's
+  home (task 1795; before: the stock portal).
 * UC-S3 (AC3) A sub-page renders the back chevron + context line AND the
   crumb row (task 1579: the screen width decides which one shows — the
   former ``sc_nav_mode`` setting is gone).
@@ -64,12 +65,17 @@ class AppShellCommon(PortalCovCommon):
 class TestAppShellSwitch1538(AppShellCommon):
 
 
-    def test_switch_on_plain_user_keeps_stock_portal(self):
+    def test_switch_on_plain_user_gets_client_home(self):
+        # Task 1795 (deliberate update): a portal user without a clinic role
+        # is a client — the client app's home, not the stock portal (nor
+        # the staff app: no staff tab).
         self._switch(True)
         self._login_plain()
         text, tree = self._get('/my/home')
-        self.assertIn('o_portal_my_home', text)
-        self.assertIsNone(self._shell(tree))
+        self.assertNotIn('o_portal_my_home', text)
+        self.assertIsNotNone(self._shell(tree))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="client.greeting"]'))
+        self.assertNotIn('teams', self._nav_keys(tree, 'o_pk_tabs'))
 
     # -- UC-S2 -----------------------------------------------------------
     def test_switch_on_coach_tabs_without_clinic(self):

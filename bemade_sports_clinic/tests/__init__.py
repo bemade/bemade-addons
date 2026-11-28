@@ -337,3 +337,8 @@ from . import test_app_audit_tokens_1793
 from . import test_app_audit_lint_1793
 from . import test_app_audit_i18n_1793
 from . import test_app_pager_i18n_1793
+from . import test_client_app_1795
+from . import test_client_wording_1795
+from . import test_client_account_country_1795
+from . import test_app_logout_1795
+from . import test_client_redirects_1795
