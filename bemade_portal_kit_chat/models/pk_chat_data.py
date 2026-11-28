@@ -35,6 +35,17 @@ from .discuss_channel import PK_CHAT_NEUTRAL_AVATAR, PK_CHAT_TYPES
 EXCERPT = 90
 
 
+def pk_chat_tz(env, user):
+    """The viewer's tz (``pytz``): the user's, else the company's, else UTC;
+    an unknown name is UTC. Never raises. Task 5582: sudo, a portal user
+    cannot read the company's contact."""
+    name = user.tz or env.company.sudo().partner_id.tz or 'UTC'
+    try:
+        return pytz.timezone(name)
+    except pytz.UnknownTimeZoneError:
+        return pytz.utc
+
+
 def pk_chat_when(env, dt, user=None, now=None):
     """``dt`` (naive UTC) for the viewer, CPAS style: the time today,
     « Yesterday », the weekday within the week, else day and month (and the
@@ -42,7 +53,7 @@ def pk_chat_when(env, dt, user=None, now=None):
     if not dt:
         return ''
     user = user or env.user
-    tz = pytz.timezone(user.tz or env.company.partner_id.tz or 'UTC')
+    tz = pk_chat_tz(env, user)
     local = pytz.utc.localize(dt).astimezone(tz)
     today = (now or pytz.utc.localize(datetime.utcnow())).astimezone(tz).date()
     locale = babel_locale_parse(user.lang or env.lang or 'en_US')

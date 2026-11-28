@@ -38,7 +38,7 @@ from odoo import api, fields, models
 
 from .discuss_channel import PK_CHAT_TYPES
 from .portal_kit import KIND_ANNOUNCEMENT, KIND_DIRECT, KIND_REPLY
-from .pk_chat_data import pk_chat_excerpt
+from .pk_chat_data import pk_chat_excerpt, pk_chat_tz
 
 _logger = logging.getLogger(__name__)
 
@@ -197,7 +197,7 @@ class PortalKit(models.AbstractModel):
                 members_by_user.setdefault(user, self.env['discuss.channel.member'].sudo())
                 members_by_user[user] |= member
         for user, members in members_by_user.items():
-            tz = pytz.timezone(user.tz or self.env.company.partner_id.tz or 'UTC')
+            tz = pk_chat_tz(self.env, user)
             local = pytz.utc.localize(now).astimezone(tz)
             if local.hour < PK_CHAT_DIGEST_HOUR:
                 continue

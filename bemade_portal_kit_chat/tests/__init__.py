@@ -15,3 +15,4 @@ from . import test_pk_chat_push
 from . import test_pk_chat_backend
 from . import test_pk_chat_hoot
 from . import test_pk_chat_tours
+from . import test_pk_chat_tz
