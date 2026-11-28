@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit: Chat',
-    'version': '19.0.1.3.0',
+    'version': '19.0.1.3.1',
     'category': 'Website/Portal',
     'summary': 'Portal conversations on Discuss: direct chats and managed announcement groups, '
                'a floating window and e-mail notices each user chooses.',
