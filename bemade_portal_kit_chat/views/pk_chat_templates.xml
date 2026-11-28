@@ -71,7 +71,8 @@
             <div class="o_pk_chat_menu" data-pk-chat-menu="1" data-pk-keep-in-view="1" hidden="hidden">
                 <div class="o_pk_chat_menu_head">
                     <strong t-out="pk_chat_label"/>
-                    <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-chat-new="1">New conversation</button>
+                    <!-- Task 5583: shown by pk_chat_bubble.js once the list says can_start. -->
+                    <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-chat-new="1" hidden="hidden">New conversation</button>
                 </div>
                 <div class="o_pk_chat_picker" data-pk-chat-picker="1" data-pk-picker-scope="1" hidden="hidden"/>
                 <div class="o_pk_chat_list" data-pk-chat-list="1"/>

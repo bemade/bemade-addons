@@ -6,7 +6,9 @@
 ``auth='user'``, JSON, a member check on every call; all answer 404 while
 the chat is off for the viewer's app (``portal.kit._pk_chat_active()``).
 
-* ``GET  /my/app/chat/conversations``          the viewer's conversations
+* ``GET  /my/app/chat/conversations``          the viewer's conversations and
+  ``can_start`` (task 5583: the viewer has at least one contact, so the
+  bubble shows « New conversation »)
 * ``GET  /my/app/chat/<id>/messages``           ``?before=&after=&limit=``
 * ``POST /my/app/chat/<id>/post``               ``body`` (plain text), ``parent_id``
   (403 ``{error: 'closed', message}`` in a closed conversation, task 5566)
@@ -61,7 +63,11 @@ class PortalKitChat(PortalKitShell):
                 sitemap=False, readonly=True)
     def pk_chat_conversations(self, **kw):
         self._pk_chat_guard()
-        return _json({'conversations': request.env['portal.kit'].pk_chat_conversation_rows()})
+        kit = request.env['portal.kit']
+        return _json({
+            'conversations': kit.pk_chat_conversation_rows(),
+            'can_start': bool(kit.pk_chat_contacts()),
+        })
 
     @http.route('/my/app/chat/unread', type='http', auth='user', methods=['GET'], multilang=False,
                 sitemap=False, readonly=True)

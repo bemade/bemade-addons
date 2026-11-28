@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit: Chat',
-    'version': '19.0.1.3.1',
+    'version': '19.0.1.4.0',
     'category': 'Website/Portal',
     'summary': 'Portal conversations on Discuss: direct chats and managed announcement groups, '
                'a floating window and e-mail notices each user chooses.',
@@ -75,8 +75,10 @@ Gates on the core (minimal; internal users unchanged)
 
 Routes (``auth='user'``, JSON, member check; 404 while the chat is off)
 -----------------------------------------------------------------------
-``GET /my/app/chat/conversations`` (``{id, kind, title, avatar_url,
-preview, author_is_me, when, unread}``, the latest activity first),
+``GET /my/app/chat/conversations`` (``{conversations: [{id, kind, title,
+avatar_url, preview, author_is_me, when, unread}], can_start}``, the latest
+activity first; ``can_start``, version 1.4: the viewer has at least one
+contact),
 ``GET /my/app/chat/<id>/messages?before=&after=&limit=`` (comment messages
 only: ``{id, author_name, author_avatar_url, body_html, when, own, parent,
 can_reply}``; ``members`` for a poster only, never a count for a reader),
@@ -93,7 +95,9 @@ else day and month (and year).
 Portal UI
 ---------
 The app bar's bubble (``data-pk-chat-bubble``: the unread badge, the
-conversations, « New conversation » with the kit's picker) and ONE
+conversations, « New conversation » with the kit's picker; version 1.4:
+the button shows only when ``can_start`` is true, so a user without
+contacts never opens an empty picker) and ONE
 floating window (``data-pk-chat-window``; docked bottom-right from 992 px,
 a full-screen sheet below; it follows the user from page to page through
 ``sessionStorage``). A reader of a managed channel has no composer: each
@@ -224,6 +228,7 @@ event).
             'bemade_portal_kit_chat/static/src/js/pk_chat_push_prompt.js',
             'bemade_portal_kit_chat/static/src/js/pk_chat_client.js',
             'bemade_portal_kit_chat/static/src/js/pk_chat_window.js',
+            'bemade_portal_kit_chat/static/src/js/pk_chat_bubble.js',
             'bemade_portal_kit_chat/static/src/backend/pk_chat_portal_partners.js',
         ],
         'web.assets_unit_tests': [

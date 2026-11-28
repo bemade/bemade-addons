@@ -17,6 +17,10 @@
  *
  * Task 5566: the closed conversations come last (the server's order) under
  * a heading [data-pk-chat-closed-section], each with its chip.
+ *
+ * Task 5583: « New conversation » is rendered hidden; it shows only when the
+ * list's ``can_start`` says the user has someone to write to (an open
+ * picker closes otherwise).
  */
 import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
@@ -55,6 +59,7 @@ export class PkChatBubble extends Interaction {
         this.menu = this.el.querySelector("[data-pk-chat-menu]");
         this.list = this.el.querySelector("[data-pk-chat-list]");
         this.pickerHost = this.el.querySelector("[data-pk-chat-picker]");
+        this.newBtn = this.el.querySelector("[data-pk-chat-new]");
         const host = document.querySelector("[data-pk-chat-window]");
         this.window = host
             ? new ChatWindow(host, {
@@ -79,7 +84,7 @@ export class PkChatBubble extends Interaction {
                 this.openConversation(row.dataset.pkChatOpen).catch(() => {});
             }
         });
-        this.addListener(this.el.querySelector("[data-pk-chat-new]"), "click", () =>
+        this.addListener(this.newBtn, "click", () =>
             this.showPicker().catch(() => {})
         );
         this.addListener(document, "click", (ev) => {
@@ -219,8 +224,18 @@ export class PkChatBubble extends Interaction {
         try {
             const data = await this.api.conversations();
             renderConversations(this.list, data.conversations || [], this.texts);
+            this.applyCanStart(Boolean(data.can_start));
         } catch {
             // The list stays as it was.
+        }
+    }
+
+    /** Task 5583: « New conversation » only for a user with a contact. */
+    applyCanStart(canStart) {
+        this.newBtn.hidden = !canStart;
+        if (!canStart) {
+            this.pickerHost.hidden = true;
+            this.pickerHost.innerHTML = "";
         }
     }
 
