@@ -24,9 +24,22 @@
   a member whose phone was pushed gets ``pk_pushed_message_id`` (the « each »
   e-mail skips it). Internal members: Odoo's own push, payload and all,
   exactly as before.
+* Task 5566, a CLOSED managed channel (``pk_closed``, set by the sync from
+  the hook's ``closed: True``): still listed and readable, but nobody posts,
+  edits or deletes in it (``_pk_chat_check_open``: ``message_post``, raw
+  ``mail.message.create``, ``_message_update_content``, a new sub-thread;
+  reactions stay).
+  The rule is by uid, so the core's ``sudo()`` routes refuse too; only the
+  superuser (``__system__``: crons, server code run as it) may still post.
+  A message newer than the closing (``pk_closed_message_id``, the last
+  message when it closed) notifies nobody: no e-mail, inbox or push.
+  Discuss gets ``pk_closed`` / ``pk_closed_label`` in its store (and live,
+  ``_sync_field_names``) to hide its composer.
 """
-from odoo import _, fields, models
+from odoo import SUPERUSER_ID, _, fields, models
 from odoo.exceptions import AccessError
+
+from odoo.addons.mail.tools.discuss import Store
 
 PK_CHAT_TYPES = ('chat', 'group')
 
@@ -37,6 +50,16 @@ class DiscussChannel(models.Model):
     pk_managed_key = fields.Char(
         string="Portal Kit Managed Key", index='btree_not_null', copy=False, readonly=True,
         help="Set: a group channel managed by a portal kit consumer (members and roles are synced).")
+
+    pk_closed = fields.Boolean(
+        string="Portal Kit Closed", copy=False, readonly=True,
+        help="A managed channel the consumer closed: listed and readable, nobody may write in it.")
+    pk_closed_label = fields.Char(
+        string="Portal Kit Closed Label", copy=False, readonly=True,
+        help="The consumer's label of the closed state (empty: « Ended »).")
+    pk_closed_message_id = fields.Many2one(
+        'mail.message', string="Portal Kit Last Message Before Closing", copy=False, readonly=True,
+        ondelete='set null', help="Messages after this one notify nobody.")
 
     _pk_managed_key_unique = models.Constraint(
         'UNIQUE(pk_managed_key)',
@@ -62,11 +85,33 @@ class DiscussChannel(models.Model):
             return False
         return self._pk_chat_member_of(user.partner_id).pk_role == 'reader'
 
-    def _pk_chat_check_post(self, message_type, parent_id):
-        """Raise ``AccessError`` when the current user (a reader) may not
-        post this message here: anything but a reply (``comment`` whose
-        parent is a message of this channel)."""
+    def _pk_chat_check_open(self):
+        """Task 5566: raise ``AccessError`` when this managed channel is
+        closed, for every user (internal included, ``sudo()`` included: the
+        uid decides) but the superuser."""
         self.ensure_one()
+        if self.sudo().pk_closed and self.env.uid != SUPERUSER_ID:
+            raise AccessError(_("This conversation is closed."))
+
+    def _pk_chat_closed_label(self):
+        """The closed chip's text: the consumer's label, else « Ended »."""
+        self.ensure_one()
+        return self.sudo().pk_closed_label or self.env._("Ended")
+
+    def _pk_chat_after_close(self, message):
+        """Task 5566: ``message`` came after the closing of this channel
+        (it notifies nobody)."""
+        self.ensure_one()
+        channel = self.sudo()
+        return bool(channel.pk_closed and message and message.id > (channel.pk_closed_message_id.id or 0))
+
+    def _pk_chat_check_post(self, message_type, parent_id):
+        """Raise ``AccessError`` when the current user may not post this
+        message here: a closed channel (task 5566), or a reader's anything
+        but a reply (``comment`` whose parent is a message of this
+        channel)."""
+        self.ensure_one()
+        self._pk_chat_check_open()
         if not self._pk_chat_is_reader():
             return
         if message_type == 'comment' and parent_id:
@@ -79,6 +124,31 @@ class DiscussChannel(models.Model):
         for channel in self:
             channel._pk_chat_check_post(message_type, kwargs.get('parent_id'))
         return super().message_post(message_type=message_type, partner_ids=partner_ids, **kwargs)
+
+    def _message_update_content(self, message, /, **kwargs):
+        # Task 5566: no edit, no delete (an empty update) in a closed channel.
+        self._pk_chat_check_open()
+        return super()._message_update_content(message, **kwargs)
+
+    def _create_sub_channel(self, from_message_id=None, name=None):
+        # Task 5566: no new sub-thread (a place to write) in a closed channel.
+        self._pk_chat_check_open()
+        return super()._create_sub_channel(from_message_id=from_message_id, name=name)
+
+    # ------------------------------------------------------------------
+    # Task 5566: the closed state in Discuss's store
+    # ------------------------------------------------------------------
+    def _pk_chat_store_fields(self):
+        managed = lambda channel: bool(channel.pk_managed_key)  # noqa: E731
+        return [Store.Attr('pk_closed', predicate=managed), Store.Attr('pk_closed_label', predicate=managed)]
+
+    def _to_store_defaults(self, target):
+        return super()._to_store_defaults(target) + self._pk_chat_store_fields()
+
+    def _sync_field_names(self):
+        res = super()._sync_field_names()
+        res[None] += self._pk_chat_store_fields()
+        return res
 
     # ------------------------------------------------------------------
     # Direct chats: through the kit route only for share users
@@ -95,6 +165,8 @@ class DiscussChannel(models.Model):
         recipients = super()._notify_get_recipients(message, msg_vals=msg_vals, **kwargs)
         if self.channel_type not in PK_CHAT_TYPES:
             return recipients
+        if self._pk_chat_after_close(message):
+            return []  # task 5566: nothing after the closing (e-mail, inbox, push)
         return [r for r in recipients if not (r.get('notif') == 'email' and (r.get('share') or r.get('ushare')))]
 
     # ------------------------------------------------------------------

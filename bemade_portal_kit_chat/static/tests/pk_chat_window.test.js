@@ -2,12 +2,14 @@
  * Task 5516 — the portal chat's client: the ONE window swaps its thread,
  * follows the user from page to page (sessionStorage), a reader of a
  * managed channel only replies, Enter sends, and the backend palette's
- * portal partners. Synthetic fixtures only (a fake API).
+ * portal partners. Task 5566: a closed conversation (no composer, no
+ * « Reply », its chip) and the list's « Ended » section. Synthetic fixtures
+ * only (a fake API).
  */
 import { afterEach, beforeEach, describe, expect, getFixture, test } from "@odoo/hoot";
 import { animationFrame } from "@odoo/hoot-dom";
 
-import { ChatThread, renderMessage } from "@bemade_portal_kit_chat/js/pk_chat_client";
+import { ChatThread, renderConversations, renderMessage } from "@bemade_portal_kit_chat/js/pk_chat_client";
 import { ChatWindow, PK_CHAT_MIN_KEY, PK_CHAT_OPEN_KEY } from "@bemade_portal_kit_chat/js/pk_chat_window";
 import { pkPortalPartners } from "@bemade_portal_kit_chat/backend/pk_chat_portal_partners";
 
@@ -24,6 +26,7 @@ const TEXTS = {
     empty: "Nothing",
     error: "Error",
     older: "Older",
+    closed: "Closed note",
 };
 
 function msg(id, author, extra = {}) {
@@ -48,6 +51,8 @@ function fakeApi() {
               messages: [msg(1, "Avery")] },
         22: { id: 22, kind: "group", title: "Team news", managed: true, composer: "reply", more: false,
               messages: [msg(5, "Coach")] },
+        33: { id: 33, kind: "group", title: "Ended team", managed: true, closed: true, closed_label: "Ended",
+              composer: "none", more: false, messages: [msg(7, "Coach", { can_reply: false })] },
     };
     return {
         calls,
@@ -82,6 +87,7 @@ function windowFixture() {
                 <header data-pk-chat-head="1">
                     <button data-pk-chat-back="1"></button>
                     <strong data-pk-chat-title="1"></strong>
+                    <span data-pk-chat-closed-chip="1" hidden="hidden"></span>
                     <button data-pk-chat-min="1"></button>
                     <button data-pk-chat-close="1"></button>
                 </header>
@@ -214,6 +220,115 @@ describe("pk_chat_client", () => {
         await thread.refresh();
         expect(host.querySelectorAll("[data-pk-chat-msg]").length).toBe(2);
         expect(api.calls.find((c) => c[0] === "messages" && c[2].after)).toEqual(["messages", 11, { after: 1 }]);
+    });
+});
+
+describe("pk_chat_closed", () => {
+    test("a closed conversation: no composer, no « Reply », a note and its chip", async () => {
+        const api = fakeApi();
+        const host = getFixture();
+        host.innerHTML = "<div></div>";
+        const thread = new ChatThread(host.firstChild, 33, { api, texts: TEXTS });
+        await thread.load();
+        expect(host.querySelector("[data-pk-chat-composer]").hidden).toBe(true);
+        expect(host.querySelector("[data-pk-chat-reader-hint]").hidden).toBe(true);
+        expect(host.querySelector("[data-pk-chat-closed-note]").hidden).toBe(false);
+        expect(host.querySelector("[data-pk-chat-closed-note]").textContent).toBe("Closed note");
+        expect(host.querySelector("[data-pk-chat-reply]")).toBe(null);
+        expect(host.querySelectorAll("[data-pk-chat-msg]").length).toBe(1);
+        const chip = host.querySelector("[data-pk-chat-closed-chip]");
+        expect(chip.hidden).toBe(false);
+        expect(chip.textContent).toBe("Ended");
+        // Even forced, nothing is sent.
+        host.querySelector("textarea").value = "Hello?";
+        await thread.submit();
+        expect(api.calls.filter((c) => c[0] === "post").length).toBe(0);
+    });
+
+    test("closed while open on screen: a refused send shows the closed state", async () => {
+        const api = fakeApi();
+        const host = getFixture();
+        host.innerHTML = "<div></div>";
+        const thread = new ChatThread(host.firstChild, 11, { api, texts: TEXTS });
+        await thread.load();
+        expect(host.querySelector("[data-pk-chat-composer]").hidden).toBe(false);
+        // The group closes on the server; the next send is refused.
+        api.threads[11] = { ...api.threads[11], closed: true, closed_label: "Ended", composer: "none" };
+        api.post = async () => {
+            throw { status: 403, payload: { error: "closed", message: "Closed" } };
+        };
+        const toasts = [];
+        const onToast = (ev) => toasts.push(ev.detail);
+        document.addEventListener("pk:toast", onToast);
+        host.querySelector("textarea").value = "Hello?";
+        await thread.submit();
+        document.removeEventListener("pk:toast", onToast);
+        expect(host.querySelector("[data-pk-chat-composer]").hidden).toBe(true);
+        expect(host.querySelector("[data-pk-chat-closed-note]").hidden).toBe(false);
+        expect(host.querySelector("[data-pk-chat-closed-chip]").textContent).toBe("Ended");
+        expect(toasts).toEqual([]);
+    });
+
+    test("a send refused for another reason still shows the error toast", async () => {
+        const api = fakeApi();
+        const host = getFixture();
+        host.innerHTML = "<div></div>";
+        const thread = new ChatThread(host.firstChild, 11, { api, texts: TEXTS });
+        await thread.load();
+        api.post = async () => {
+            throw { status: 500, payload: null };
+        };
+        const toasts = [];
+        const onToast = (ev) => toasts.push(ev.detail);
+        document.addEventListener("pk:toast", onToast);
+        host.querySelector("textarea").value = "Hello?";
+        await thread.submit();
+        document.removeEventListener("pk:toast", onToast);
+        expect(toasts).toEqual([{ message: "Error", tone: "error" }]);
+        expect(host.querySelector("[data-pk-chat-composer]").hidden).toBe(false);
+    });
+
+    test("an open managed conversation keeps « Reply » and has no chip", async () => {
+        const host = getFixture();
+        host.innerHTML = "<div></div>";
+        const thread = new ChatThread(host.firstChild, 22, { api: fakeApi(), texts: TEXTS });
+        await thread.load();
+        expect(host.querySelector("[data-pk-chat-closed-note]").hidden).toBe(true);
+        expect(host.querySelector("[data-pk-chat-closed-chip]").hidden).toBe(true);
+        expect(host.querySelector('[data-pk-chat-reply="5"]')).not.toBe(null);
+    });
+
+    test("the window shows the chip in its header, and drops it for an open one", async () => {
+        const host = windowFixture();
+        const win = new ChatWindow(host, { api: fakeApi(), texts: TEXTS });
+        await win.open(33);
+        const headChip = host.querySelector("header [data-pk-chat-closed-chip]");
+        expect(headChip.hidden).toBe(false);
+        expect(headChip.textContent).toBe("Ended");
+        expect(host.querySelector("[data-pk-chat-thread] [data-pk-chat-closed-chip]").hidden).toBe(true);
+        await win.open(11);
+        expect(headChip.hidden).toBe(true);
+    });
+
+    test("the list: the closed conversations under their heading, each with its chip", () => {
+        const list = getFixture();
+        const row = (id, closed) => ({
+            id, kind: "group", title: `Group ${id}`, avatar_url: "", preview: "", when: "", unread: 0,
+            closed, closed_label: closed ? "Ended" : "",
+        });
+        renderConversations(list, [row(1, false), row(2, false), row(3, true), row(4, true)], {
+            closedSection: "Ended conversations",
+        });
+        const items = [...list.children].map((node) =>
+            node.dataset.pkChatClosedSection ? "section" : node.dataset.pkChatOpen
+        );
+        expect(items).toEqual(["1", "2", "section", "3", "4"]);
+        expect(list.querySelector("[data-pk-chat-closed-section]").textContent).toBe("Ended conversations");
+        expect(list.querySelectorAll("[data-pk-chat-closed-chip]").length).toBe(2);
+        expect(list.querySelector('[data-pk-chat-open="1"] [data-pk-chat-closed-chip]')).toBe(null);
+        // Nothing closed: no heading.
+        renderConversations(list, [row(1, false)], { closedSection: "Ended conversations" });
+        expect(list.querySelector("[data-pk-chat-closed-section]")).toBe(null);
     });
 });
 

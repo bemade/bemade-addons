@@ -12,6 +12,11 @@
  * conversation allows replies), [data-pk-chat-members] (posters only) and
  * the composer form[data-pk-chat-composer] (hidden for a reader of a
  * managed channel until « Reply » opens it with the quoted parent).
+ *
+ * Task 5566: a closed conversation (``closed`` in the thread payload) has
+ * no composer and no « Reply »: a note [data-pk-chat-closed-note] instead,
+ * and its chip [data-pk-chat-closed-chip] (the window shows it in its
+ * header through ``onClosed``; a block, at the top of the thread).
  */
 import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 import { pkChatPushPrompt } from "@bemade_portal_kit_chat/js/pk_chat_push_prompt";
@@ -64,6 +69,7 @@ const DEFAULT_TEXTS = {
     empty: "No messages yet.",
     error: "The message could not be sent.",
     older: "Older messages",
+    closed: "This conversation is closed.",
 };
 
 /** The texts of the page (server-rendered), the kit's English otherwise. */
@@ -137,6 +143,71 @@ export function renderMessage(msg, texts, { canReply, prevId = 0 }) {
     return item;
 }
 
+/** The dropdown's rows (the bubble; task 5566: here, so hoot can test it). */
+export function renderConversations(list, rows, texts) {
+    list.innerHTML = "";
+    if (!rows.length) {
+        const empty = document.createElement("p");
+        empty.className = "o_pk_chat_empty";
+        empty.textContent = texts.noConversations || "";
+        list.append(empty);
+        return;
+    }
+    let section = false;
+    for (const row of rows) {
+        if (row.closed && !section) {
+            section = true;
+            const heading = document.createElement("h3");
+            heading.className = "o_pk_chat_section";
+            heading.dataset.pkChatClosedSection = "1";
+            heading.textContent = texts.closedSection || "";
+            list.append(heading);
+        }
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `o_pk_chat_row${row.unread ? " o_pk_chat_row_unread" : ""}`;
+        button.dataset.pkChatOpen = String(row.id);
+        button.dataset.pkChatKind = row.kind;
+        if (row.closed) {
+            button.dataset.pkChatClosed = "1";
+        }
+        const avatar = document.createElement("img");
+        avatar.className = "o_pk_chat_avatar";
+        avatar.alt = "";
+        avatar.src = row.avatar_url;
+        avatar.loading = "lazy";
+        const text = document.createElement("span");
+        text.className = "o_pk_chat_row_text";
+        const title = document.createElement("strong");
+        title.className = "o_pk_chat_row_title";
+        title.textContent = row.title;
+        const preview = document.createElement("span");
+        preview.className = "o_pk_chat_row_preview";
+        preview.textContent = row.preview;
+        text.append(title, preview);
+        const meta = document.createElement("span");
+        meta.className = "o_pk_chat_row_meta";
+        const when = document.createElement("time");
+        when.textContent = row.when;
+        meta.append(when);
+        if (row.closed && row.closed_label) {
+            const chip = document.createElement("span");
+            chip.className = "o_pk_chip o_pk_chip_ghost o_pk_chat_closed_chip";
+            chip.dataset.pkChatClosedChip = "1";
+            chip.textContent = row.closed_label;
+            meta.append(chip);
+        }
+        if (row.unread) {
+            const count = document.createElement("span");
+            count.className = "o_pk_chat_badge";
+            count.textContent = String(row.unread);
+            meta.append(count);
+        }
+        button.append(avatar, text, meta);
+        list.append(button);
+    }
+}
+
 /**
  * The thread of one conversation inside ``host``. ``options``: ``api``
  * (default chatApi), ``texts``, ``onRead`` (called after the conversation
@@ -150,6 +221,8 @@ export class ChatThread {
         this.texts = options.texts || chatTexts();
         this.onRead = options.onRead || (() => {});
         this.onTitle = options.onTitle || (() => {});
+        // Task 5566: who shows the closed chip (the window: its header).
+        this.onClosed = options.onClosed || null;
         this.data = null;
         this.replyTo = null;
         this.lastId = 0;
@@ -166,6 +239,12 @@ export class ChatThread {
             "data-pk-chat-thread": String(this.channelId),
             "data-pk-push-showing": `/my/app/conversations/${this.channelId}`,
         });
+        this.chip = el("span", "o_pk_chip o_pk_chip_ghost o_pk_chat_closed_chip", {
+            "data-pk-chat-closed-chip": "1",
+            hidden: "hidden",
+        });
+        this.closedNote = el("p", "o_pk_chat_closed_note", { "data-pk-chat-closed-note": "1", hidden: "hidden" });
+        this.closedNote.textContent = this.texts.closed;
         this.members = el("details", "o_pk_chat_members", { "data-pk-chat-members": "1", hidden: "hidden" });
         this.older = el("button", "o_pk_chat_older", {
             type: "button",
@@ -198,7 +277,16 @@ export class ChatThread {
         this.send = el("button", "o_pk_chat_send", { type: "submit", "data-pk-chat-send": "1" });
         this.send.textContent = this.texts.send;
         this.form.append(this.replying, this.input, this.send);
-        this.root.append(this.members, this.older, this.list, this.emptyNote, this.hint, this.form);
+        this.root.append(
+            this.chip,
+            this.members,
+            this.older,
+            this.list,
+            this.emptyNote,
+            this.hint,
+            this.closedNote,
+            this.form
+        );
         this.host.append(this.root);
 
         this.list.addEventListener("click", (ev) => {
@@ -230,6 +318,16 @@ export class ChatThread {
         return Boolean(this.data && this.data.composer === "reply");
     }
 
+    /** Task 5566: an ended conversation, read-only for everyone. */
+    get isClosed() {
+        return Boolean(this.data && this.data.closed);
+    }
+
+    /** « Reply » buttons: a managed channel's messages, unless closed. */
+    get canReply() {
+        return !this.isClosed && (this.isReaderOnly || Boolean(this.data && this.data.managed));
+    }
+
     atBottom() {
         const list = this.list;
         return list.scrollHeight - list.scrollTop - list.clientHeight < 24;
@@ -249,6 +347,7 @@ export class ChatThread {
         this.firstId = data.messages.length ? data.messages[0].id : 0;
         this.older.hidden = !data.more;
         this.renderMembers(data.members);
+        this.renderClosed();
         this.renderComposer();
         this.scrollToBottom();
         await this.markRead();
@@ -261,7 +360,7 @@ export class ChatThread {
         }
         const data = await this.api.messages(this.channelId, { before: this.firstId });
         const height = this.list.scrollHeight;
-        const canReply = this.isReaderOnly || Boolean(this.data.managed);
+        const canReply = this.canReply;
         const items = data.messages.map((msg, index) =>
             renderMessage(msg, this.texts, {
                 canReply,
@@ -292,7 +391,7 @@ export class ChatThread {
     }
 
     append(messages) {
-        const canReply = this.isReaderOnly || Boolean(this.data && this.data.managed);
+        const canReply = this.canReply;
         for (const msg of messages) {
             if (msg.id <= this.lastId) {
                 continue;
@@ -321,7 +420,25 @@ export class ChatThread {
         this.members.hidden = false;
     }
 
+    renderClosed() {
+        const label = this.isClosed ? this.data.closed_label || "" : "";
+        this.chip.textContent = label;
+        this.chip.hidden = !label || Boolean(this.onClosed);
+        if (this.onClosed) {
+            this.onClosed(label);
+        }
+    }
+
     renderComposer() {
+        if (this.isClosed) {
+            this.replyTo = null;
+            this.form.hidden = true;
+            this.hint.hidden = true;
+            this.replying.hidden = true;
+            this.closedNote.hidden = false;
+            return;
+        }
+        this.closedNote.hidden = true;
         const replyOnly = this.isReaderOnly;
         this.form.hidden = replyOnly && !this.replyTo;
         this.hint.hidden = !replyOnly || Boolean(this.replyTo);
@@ -346,7 +463,7 @@ export class ChatThread {
 
     async submit() {
         const body = this.input.value.trim();
-        if (!body || this.sending) {
+        if (!body || this.sending || this.isClosed) {
             return;
         }
         this.sending = true;
@@ -360,7 +477,13 @@ export class ChatThread {
             this.scrollToBottom();
             document.dispatchEvent(new CustomEvent(PK_CHAT_EVENT, { detail: { channelId: this.channelId } }));
             pkChatPushPrompt(this); // task 5546: once, after a message sent
-        } catch {
+        } catch (error) {
+            // Task 5566: the conversation was closed while it was open here.
+            // Reload it: its closed look (note, chip, no composer) replaces
+            // the composer, and the lists move it under « Ended ».
+            if (error && error.payload && error.payload.error === "closed" && (await this.reloadClosed())) {
+                return;
+            }
             document.dispatchEvent(
                 new CustomEvent("pk:toast", { detail: { message: this.texts.error, tone: "error" } })
             );
@@ -368,6 +491,20 @@ export class ChatThread {
             this.sending = false;
             this.send.disabled = false;
         }
+    }
+
+    /** Task 5566: true once the thread shows its closed state again. */
+    async reloadClosed() {
+        try {
+            await this.load();
+        } catch {
+            return false;
+        }
+        if (!this.isClosed) {
+            return false;
+        }
+        document.dispatchEvent(new CustomEvent(PK_CHAT_EVENT, { detail: { channelId: this.channelId } }));
+        return true;
     }
 
     async markRead() {

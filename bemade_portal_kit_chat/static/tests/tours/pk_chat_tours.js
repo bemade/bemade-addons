@@ -106,3 +106,53 @@ tours.add("pk_chat_window_follows", {
         },
     ],
 });
+
+// Task 5566: a closed group in the portal (a reader or a poster): listed
+// last under its heading with its chip; the history reads; no composer.
+tours.add("pk_chat_closed_portal", {
+    steps: () => [
+        { content: "Open the bubble", trigger: "[data-pk-chat-toggle]", run: "click" },
+        {
+            content: "The closed group comes after the heading, with its chip",
+            trigger:
+                "[data-pk-chat-list] [data-pk-chat-closed-section] ~ [data-pk-chat-closed] [data-pk-chat-closed-chip]",
+        },
+        {
+            content: "The open group comes before the heading",
+            trigger: "[data-pk-chat-list] [data-pk-chat-open]:not([data-pk-chat-closed]) ~ [data-pk-chat-closed-section]",
+        },
+        { content: "Open the closed group", trigger: "[data-pk-chat-list] [data-pk-chat-closed]", run: "click" },
+        {
+            content: "The history reads",
+            trigger: "[data-pk-chat-window] .o_pk_chat_msg:contains(Last practice of the season)",
+        },
+        { content: "The chip in the header", trigger: "[data-pk-chat-window] header [data-pk-chat-closed-chip]:visible" },
+        { content: "A closed note", trigger: "[data-pk-chat-window] [data-pk-chat-closed-note]:visible" },
+        { content: "No composer", trigger: "[data-pk-chat-window] [data-pk-chat-composer]:not(:visible)" },
+        {
+            content: "No « Reply »",
+            trigger: "[data-pk-chat-window] [data-pk-chat-messages]:not(:has([data-pk-chat-reply]))",
+        },
+    ],
+});
+
+// Task 5566: the same group, closed, in the back end's Discuss.
+tours.add("pk_chat_closed_discuss", {
+    steps: () => [
+        { content: "The history reads", trigger: ".o-mail-Message:contains(Last practice of the season)" },
+        { content: "The chip in the header", trigger: ".o-mail-DiscussContent-header [data-pk-chat-closed-chip]" },
+        { content: "No composer", trigger: ".o-mail-DiscussContent:not(:has(.o-mail-Composer))" },
+    ],
+});
+
+// Task 5566: reopened, Discuss has its composer back and no chip.
+tours.add("pk_chat_reopened_discuss", {
+    steps: () => [
+        { content: "The history reads", trigger: ".o-mail-Message:contains(Last practice of the season)" },
+        { content: "The composer is back", trigger: ".o-mail-DiscussContent .o-mail-Composer-input" },
+        {
+            content: "No chip",
+            trigger: ".o-mail-DiscussContent-header:not(:has([data-pk-chat-closed-chip]))",
+        },
+    ],
+});

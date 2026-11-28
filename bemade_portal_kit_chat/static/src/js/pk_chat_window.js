@@ -10,6 +10,9 @@
  * The open conversation and the minimised state are kept in
  * sessionStorage (PK_CHAT_OPEN_KEY, PK_CHAT_MIN_KEY): the window follows
  * the user from page to page.
+ *
+ * Task 5566: a closed conversation's chip in the header
+ * ([data-pk-chat-closed-chip]).
  */
 import { ChatThread, chatApi, chatTexts } from "@bemade_portal_kit_chat/js/pk_chat_client";
 
@@ -48,6 +51,7 @@ export class ChatWindow {
         this.onBack = options.onBack || (() => {});
         this.onRead = options.onRead || (() => {});
         this.titleEl = host.querySelector("[data-pk-chat-title]");
+        this.chipEl = host.querySelector("[data-pk-chat-closed-chip]");
         this.threadHost = host.querySelector("[data-pk-chat-thread-host]");
         this.thread = null;
         this.channelId = null;
@@ -91,6 +95,7 @@ export class ChatWindow {
                 texts: this.texts,
                 onRead: (count) => this.onRead(count),
                 onTitle: (text) => this.setTitle(text),
+                onClosed: (label) => this.setClosed(label),
             });
         }
         if (title) {
@@ -115,7 +120,16 @@ export class ChatWindow {
         }
     }
 
+    /** Task 5566: the closed chip (``label`` empty: an open conversation). */
+    setClosed(label) {
+        if (this.chipEl) {
+            this.chipEl.textContent = label || "";
+            this.chipEl.hidden = !label;
+        }
+    }
+
     close() {
+        this.setClosed("");
         this.host.hidden = true;
         delete this.host.dataset.pkChatOpen;
         this.setMinimised(false);

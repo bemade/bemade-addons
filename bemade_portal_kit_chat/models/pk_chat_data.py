@@ -7,6 +7,11 @@ The portal UI talks only to the kit routes; these builders decide what a
 viewer may see: comment messages only, the authors' names, no e-mail or
 phone anywhere, and no member list (nor count) for a reader of a managed
 channel. Internal users see whatever vanilla Discuss shows them.
+
+Task 5566: a closed managed channel's row and thread say so (``closed``,
+``closed_label``); its rows come after the open ones (most recent first),
+its thread has no composer (``composer: 'none'``) and no « Reply »; its
+unread messages still count.
 """
 from datetime import datetime, timedelta
 
@@ -111,7 +116,8 @@ class PortalKit(models.AbstractModel):
     def pk_chat_conversation_rows(self, user=None):
         """The viewer's conversations, the latest activity first:
         ``{id, kind, title, avatar_url, preview, author_is_me, when,
-        unread}``."""
+        unread, closed, closed_label}``. Task 5566: the open ones first,
+        then the closed ones (each by its latest activity)."""
         user = user or self.env.user
         rows = []
         for member in self._pk_chat_members(user):
@@ -133,9 +139,12 @@ class PortalKit(models.AbstractModel):
                 'author_is_me': author_is_me,
                 'when': pk_chat_when(self.env, last.date, user) if last else '',
                 'unread': member.message_unread_counter or 0,
+                'closed': bool(channel.pk_closed),
+                'closed_label': channel._pk_chat_closed_label() if channel.pk_closed else '',
                 '_sort': (last.date or channel.create_date) if last else channel.create_date,
             })
         rows.sort(key=lambda row: row['_sort'], reverse=True)
+        rows.sort(key=lambda row: row['closed'])  # stable: open first, then closed
         for row in rows:
             del row['_sort']
         return rows
@@ -161,14 +170,15 @@ class PortalKit(models.AbstractModel):
                 'author_name': parent.author_id.name or '',
                 'excerpt': pk_chat_excerpt(parent.body, 120),
             } if parent and parent.model == 'discuss.channel' and parent.res_id == member.channel_id.id else None,
-            'can_reply': bool(member.channel_id.pk_managed_key),
+            'can_reply': bool(member.channel_id.pk_managed_key) and not member.channel_id.pk_closed,
         }
 
     @api.model
     def pk_chat_thread(self, member, before=None, after=None, limit=30):
         """The thread of ``member``'s channel for its viewer: ``{id, kind,
-        title, composer: 'full' | 'reply', messages: [...] (oldest first),
-        more}``, plus ``members: [{name, role}]`` for a poster (never for a
+        title, managed, closed, closed_label, composer: 'full' | 'reply' |
+        'none' (task 5566: a closed channel), messages: [...] (oldest
+        first), more}``, plus ``members: [{name, role}]`` for a poster (never for a
         reader)."""
         channel = member.channel_id.sudo()
         reader = member.pk_role == 'reader' and bool(channel.pk_managed_key)
@@ -188,7 +198,9 @@ class PortalKit(models.AbstractModel):
             'kind': 'direct' if channel.channel_type == 'chat' else 'group',
             'title': self._pk_chat_title(member),
             'managed': bool(channel.pk_managed_key),
-            'composer': 'reply' if reader else 'full',
+            'closed': bool(channel.pk_closed),
+            'closed_label': channel._pk_chat_closed_label() if channel.pk_closed else '',
+            'composer': 'none' if channel.pk_closed else ('reply' if reader else 'full'),
             'messages': [self._pk_chat_message_row(message, member, reader) for message in messages],
             'more': more,
         }

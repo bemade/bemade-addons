@@ -287,6 +287,29 @@
     }
 
     .o_pk_chat_empty,
+    // Task 5566: a closed conversation (muted chip, a note instead of the
+    // composer, its section at the bottom of the list).
+    .o_pk_chat_closed_chip {
+        flex: none;
+        align-self: center;
+        color: var(--pk-fg-3);
+    }
+
+    .o_pk_chat_thread > .o_pk_chat_closed_chip {
+        align-self: flex-start;
+        margin: var(--pk-space-2) var(--pk-space-3) 0;
+    }
+
+    .o_pk_chat_section {
+        margin: var(--pk-space-3) var(--pk-space-2) var(--pk-space-1);
+        color: var(--pk-fg-3);
+        font-size: var(--pk-text-xs);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .o_pk_chat_closed_note,
     .o_pk_chat_reader_hint {
         margin: var(--pk-space-3);
         color: var(--pk-fg-3);

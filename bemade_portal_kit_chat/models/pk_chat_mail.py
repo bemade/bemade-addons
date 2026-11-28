@@ -18,6 +18,9 @@ preferences (kit 1.17).
 * Task 5546: a message sent to the member's phone (Web Push, up to
   ``pk_pushed_message_id``) is not « each » e-mailed; the digest ignores the
   phone (owner decision).
+* Task 5566: in a closed managed channel, a message newer than the closing
+  (``pk_closed_message_id``) is neither e-mailed nor counted in a digest;
+  the ones before it keep their normal e-mail and digest.
 
 Kinds: a direct chat's messages are ``chat.direct``; in a group a message
 without parent is ``chat.announcement``, a reply ``chat.reply`` (a poster
@@ -134,6 +137,7 @@ class PortalKit(models.AbstractModel):
             mail = messages.filtered(
                 lambda m: m.author_id != member.partner_id
                 and m.id > pushed  # task 5546: on the phone already
+                and not channel._pk_chat_after_close(m)  # task 5566
                 and (kind := self._pk_chat_kind(member, m))
                 and user._pk_notification_mode(kind) == 'each')
             if mail:
@@ -165,6 +169,19 @@ class PortalKit(models.AbstractModel):
         return (KIND_ANNOUNCEMENT, KIND_REPLY)
 
     @api.model
+    def _pk_chat_digest_count(self, member):
+        """The member's unread messages for the digest: all of them, but in
+        a closed channel only those up to the closing (task 5566)."""
+        channel = member.channel_id.sudo()
+        if not channel.pk_closed or member.message_unread_counter <= 0:
+            return member.message_unread_counter
+        return self.env['mail.message'].sudo().search_count([
+            ('model', '=', 'discuss.channel'), ('res_id', '=', channel.id),
+            ('message_type', 'not in', ('notification', 'user_notification')),
+            ('id', '>=', member.new_message_separator or 0),
+            ('id', '<=', channel.pk_closed_message_id.id or 0)])
+
+    @api.model
     def _pk_chat_cron_digest(self, now=None):
         now = now or fields.Datetime.now()
         sent = 0
@@ -184,14 +201,17 @@ class PortalKit(models.AbstractModel):
                 continue
             rows = []
             for member in members:
-                if member.message_unread_counter <= 0:
+                count = self._pk_chat_digest_count(member)
+                if count <= 0:
                     continue
                 if not any(user._pk_notification_mode(kind) == 'digest' for kind in self._pk_chat_member_kinds(member)):
                     continue
-                last = self._pk_chat_comments(member.channel_id, limit=1)
+                channel = member.channel_id.sudo()
+                before_close = [('id', '<=', channel.pk_closed_message_id.id or 0)] if channel.pk_closed else []
+                last = self._pk_chat_comments(channel, before_close, limit=1)
                 rows.append({
                     'title': self.with_context(lang=user.lang)._pk_chat_title(member),
-                    'count': member.message_unread_counter,
+                    'count': count,
                     'author': last.author_id.name or '',
                     'excerpt': pk_chat_excerpt(last.body),
                     'url': self._pk_chat_url(member.channel_id),
