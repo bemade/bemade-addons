@@ -47,7 +47,8 @@ _lt = LazyTranslate(__name__)
 
 CLIENT = frozenset({SC_CLIENT_ROLE})
 CLIENT_HOME_URL = '/my/home'
-CLIENT_LOGOUT_URL = '/web/session/logout?redirect=/'
+# Review round 2: sign out ends on the login page, in the app's look.
+CLIENT_LOGOUT_URL = '/web/session/logout?redirect=/web/login'
 # Placements (constants: babel's term extractor picks up stray string
 # literals that follow an _lt() call in the same argument list).
 TAB_RAIL = ('tab', 'rail')

@@ -183,4 +183,16 @@
          (bemade_portal_kit.pk_user_menu_popup); the user guide item comes
          through the layout's pk_user_menu_extra slot. -->
 
+    <!-- Task 1795, review round 2: « Se déconnecter » of the Fit Crew apps
+         (staff and client) ends on the login page, not the public website
+         home (/). Other kit apps keep the kit's link, and no clinic name
+         is added to the kit's markup (the kit's own layout tests). -->
+    <template id="sc_user_menu_logout_login" inherit_id="bemade_portal_kit.pk_user_menu_popup"
+              name="Sports Clinic App: user menu, sign out to the login page">
+        <xpath expr="//a[@href='/web/session/logout?redirect=/']" position="attributes">
+            <attribute name="href"/>
+            <attribute name="t-att-href">'/web/session/logout?redirect=/web/login' if pk_app_key in ('fitcrew', 'fitcrew_client') else '/web/session/logout?redirect=/'</attribute>
+        </xpath>
+    </template>
+
 </odoo>
