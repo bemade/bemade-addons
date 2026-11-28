@@ -59,9 +59,10 @@ For a user of the client app (task 1795: a portal user without a clinic
 staff role, ``bemade_sports_clinic``), ``/my/bookings`` is « Rendez-vous »:
 their own bookings (Odoo's customer domain: attendee, not organizer, of an
 event with an appointment type), upcoming first and the past ones folded,
-each with Odoo's own links (« Voir les détails »: ``/calendar/view/<token>``;
-« Annuler »: ``/calendar/cancel/<token>``, while the type's minimum notice
-allows it). « Prendre rendez-vous » opens the published appointment type
+each with « Voir les détails » (Odoo's ``/calendar/view/<token>``) and
+« Annuler »: a confirm sheet posting to ``/my/bookings/<id>/client-cancel``,
+which applies Odoo's cancel (minimum notice, staff notified) and returns to
+the app with a toast. « Prendre rendez-vous » opens the published appointment type
 (several: a short list of them; none: no button). The client home shows the
 next appointment, the button and a « Mes rendez-vous » shortcut. A portal
 appointment provider keeps the provider page.
